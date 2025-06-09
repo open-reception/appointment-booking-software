@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Open Reception - Crypto Testing</title>
+		<script src="/lib/argon2/argon2-bundled.min.js"></script>
+		<script>
+			if (typeof global === 'undefined') {
+				window.global = window;
+			}
+			if (typeof global !== 'undefined' && !global.crypto) {
+				global.crypto = crypto;
+			}
+		</script>
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
+</html>

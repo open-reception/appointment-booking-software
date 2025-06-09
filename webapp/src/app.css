@@ -1,0 +1,106 @@
+:root {
+	font-family: system-ui, Helvetica, Arial, sans-serif;
+	line-height: 1.5;
+	font-weight: 400;
+	color: #213547;
+	background-color: #ffffff;
+}
+
+body {
+	margin: 0;
+	min-width: 320px;
+	min-height: 100vh;
+}
+
+#app {
+	max-width: 1280px;
+	margin: 0 auto;
+	text-align: center;
+}
+
+.card {
+	padding: 2em;
+	border: 1px solid #ddd;
+	border-radius: 8px;
+	margin: 1em 0;
+	background: white;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.result {
+	background: #f8f9fa;
+	border: 1px solid #e9ecef;
+	border-radius: 4px;
+	padding: 1rem;
+	margin: 1rem 0;
+	font-family: monospace;
+	text-align: left;
+}
+
+.performance {
+	background: #e7f3ff;
+	border: 1px solid #b3d9ff;
+	border-radius: 4px;
+	padding: 1rem;
+	margin: 1rem 0;
+}
+
+.error {
+	background: #ffe7e7;
+	border: 1px solid #ffb3b3;
+	color: #d00;
+}
+
+button {
+	background: #646cff;
+	color: white;
+	border: none;
+	padding: 0.6em 1.2em;
+	font-size: 1em;
+	font-weight: 500;
+	cursor: pointer;
+	border-radius: 8px;
+	transition: background-color 0.25s;
+	margin: 0.5rem;
+}
+
+button:hover {
+	background: #535bf2;
+}
+
+button:disabled {
+	background: #ccc;
+	cursor: not-allowed;
+}
+
+input {
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	padding: 0.6em;
+	font-size: 1em;
+	margin: 0.5rem;
+}
+
+h1,
+h2,
+h3 {
+	color: #213547;
+}
+
+table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 1rem 0;
+}
+
+th,
+td {
+	border: 1px solid #ddd;
+	padding: 0.8rem;
+	text-align: left;
+}
+
+th {
+	background: #f5f5f5;
+	font-weight: bold;
+}
