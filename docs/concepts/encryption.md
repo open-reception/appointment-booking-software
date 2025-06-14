@@ -53,7 +53,7 @@ Eine Rekonstruktion des Private Keys ist damit für folgende Szenarien möglich:
 
 Obwohl wir kein Sessionmanagement betreiben und keine direkten Daten über Nutzer auf dem Server ablegen möchten, müssen wir dennoch eine gewisse Rekonstruierbarkeit gewährleisten, damit ohne Aufwand für den Patienten auch ein Zugriff auf mehrere Termine möglich bleibt. Daz nutzen wir:
 
-- **Primär**: PatientID - Hash der E-Mail-Adresse (wiederverwendbar für mehrere Termine)
+- **Primär**: PatientID - Hash (Argon2) der E-Mail-Adresse (wiederverwendbar für mehrere Termine)
 - **Sekundär**: 6-8-stellige PIN zur Schlüssel-Freischaltung
 - **iCal-Integration**: PatientID wird in Kalendereinträgen eingebettet
 
