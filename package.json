@@ -1,0 +1,23 @@
+{
+  "name": "appointment-booking-software",
+  "version": "0.0.1",
+  "description": "End-to-end encrypted appointment booking platform",
+  "type": "module",
+  "scripts": {
+    "build": "echo 'Build placeholder - will be replaced with SvelteKit build'",
+    "docker:dev:up": "docker compose -f docker-compose.dev.yml up -d",
+    "docker:dev:down": "docker compose -f docker-compose.dev.yml down",
+    "docker:dev:logs": "docker compose -f docker-compose.dev.yml logs -f",
+    "docker:dev:clean": "docker compose -f docker-compose.dev.yml down -v --remove-orphans",
+    "docker:prod:build": "docker compose -f docker-compose.prod.yml build --no-cache",
+    "docker:prod:up": "docker compose -f docker-compose.prod.yml up -d",
+    "docker:prod:down": "docker compose -f docker-compose.prod.yml down",
+    "docker:prod:logs": "docker compose -f docker-compose.prod.yml logs -f",
+    "docker:prod:clean": "docker compose -f docker-compose.prod.yml down -v --remove-orphans",    
+    "docker:tag-and-push": "npm run docker:prod:build && docker tag appointment-booking-software-app:latest appointment-booking-software:$npm_package_version && docker push ghcr.io/username/appointment-booking-software:$npm_package_version"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "license": "AGPL-3.0"
+}
