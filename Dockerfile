@@ -1,5 +1,4 @@
-# Production Dockerfile for SvelteKit application
-# Security: rootless container, minimal base image, non-privileged user
+# Dockerfile for appoint-booking application
 
 # Build stage
 FROM node:24-alpine AS builder

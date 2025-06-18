@@ -9,12 +9,14 @@
     "docker:dev:down": "docker compose -f docker-compose.dev.yml down",
     "docker:dev:logs": "docker compose -f docker-compose.dev.yml logs -f",
     "docker:dev:clean": "docker compose -f docker-compose.dev.yml down -v --remove-orphans",
-    "docker:prod:build": "docker compose -f docker-compose.prod.yml build --no-cache",
+    "docker:build": "docker build -t appointment-booking:latest .",
+    "docker:build:tag": "docker tag appointment-booking:latest appointment-booking:$npm_package_version",
+    "docker:push": "docker push appointment-booking:$npm_package_version && docker push appointment-booking:latest",
+    "docker:build-and-push": "npm run docker:build && npm run docker:build:tag && npm run docker:push",
     "docker:prod:up": "docker compose -f docker-compose.prod.yml up -d",
     "docker:prod:down": "docker compose -f docker-compose.prod.yml down",
     "docker:prod:logs": "docker compose -f docker-compose.prod.yml logs -f",
-    "docker:prod:clean": "docker compose -f docker-compose.prod.yml down -v --remove-orphans",    
-    "docker:tag-and-push": "npm run docker:prod:build && docker tag appointment-booking-software-app:latest appointment-booking-software:$npm_package_version && docker push ghcr.io/username/appointment-booking-software:$npm_package_version"
+    "docker:prod:clean": "docker compose -f docker-compose.prod.yml down -v --remove-orphans"
   },
   "engines": {
     "node": ">=24.0.0"

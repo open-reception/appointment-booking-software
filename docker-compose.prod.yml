@@ -40,10 +40,7 @@ services:
     read_only: true
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: production
+    image: appointment-booking:${VERSION:-latest}
     container_name: appointment-booking-app
     restart: unless-stopped
     user: "1001:1001"
