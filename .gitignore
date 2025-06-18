@@ -2,17 +2,33 @@ node_modules/
 .env
 .env.local
 .env.production
-build/
-dist/
-.svelte-kit/
+.env.*
+!.env.example
+!.env.test
 
 # Production secrets - NEVER commit these
 secrets/*.txt
 !secrets/.gitkeep
 
-# Development
+# OS
 .DS_Store
+Thumbs.db
+
+# Development
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+test-results
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
