@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: appointment-booking-postgres
+    container_name: open-reception-postgres
     restart: unless-stopped
     user: postgres
     environment:
@@ -17,7 +17,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d:ro
     networks:
-      - appointment-booking-internal
+      - open-reception-internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$(cat /run/secrets/postgres_user) -d $$(cat /run/secrets/postgres_db)"]
       interval: 10s
@@ -40,15 +40,12 @@ services:
     read_only: true
 
   app:
-    image: appointment-booking:${VERSION:-latest}
-    container_name: appointment-booking-app
+    image: open-reception:${VERSION:-latest}
+    container_name: open-reception-app
     restart: unless-stopped
     user: "1001:1001"
     environment:
       NODE_ENV: production
-      POSTGRES_DB_FILE: /run/secrets/postgres_db
-      POSTGRES_USER_FILE: /run/secrets/postgres_user
-      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
     secrets:
       - postgres_db
       - postgres_user
@@ -57,9 +54,9 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - appointment-booking-internal
+      - open-reception-internal
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -70,11 +67,19 @@ services:
       - ALL
     tmpfs:
       - /tmp
+    command: >
+      sh -c "
+        export POSTGRES_DB=$$(cat /run/secrets/postgres_db)
+        export POSTGRES_USER=$$(cat /run/secrets/postgres_user)
+        export POSTGRES_PASSWORD=$$(cat /run/secrets/postgres_password)
+        export DATABASE_URL=\"postgres://$$POSTGRES_USER:$$POSTGRES_PASSWORD@postgres:5432/$$POSTGRES_DB\"
+        exec node build/index.js
+      "
     read_only: true
 
   caddy:
     image: caddy:2-alpine
-    container_name: appointment-booking-caddy
+    container_name: open-reception-caddy
     restart: unless-stopped
     ports:
       - "80:80"
@@ -84,7 +89,7 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     networks:
-      - appointment-booking-internal
+      - open-reception-internal
     depends_on:
       app:
         condition: service_healthy
@@ -112,6 +117,6 @@ volumes:
     driver: local
 
 networks:
-  appointment-booking-internal:
+  open-reception-internal:
     driver: bridge
     internal: false

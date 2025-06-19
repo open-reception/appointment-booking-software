@@ -1,4 +1,4 @@
-# Dockerfile for appoint-booking application
+# Dockerfile for open-reception application
 
 # Build stage
 FROM node:24-alpine AS builder
@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Install dependencies
 COPY package*.json ./
-RUN npm ci --only=production --ignore-scripts && \
+RUN npm ci --ignore-scripts && \
     npm cache clean --force
 
 # Copy source and build
@@ -40,7 +40,7 @@ EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
 # Start application
 CMD ["node", "build/index.js"]
