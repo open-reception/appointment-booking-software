@@ -2,39 +2,39 @@ name: Main Branch Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test-build-deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-          
+
       - name: Install dependencies
         run: npm ci
-        
+
       - name: Run type checking
         run: npm run check
-        
+
       - name: Run linting
         run: npm run lint
-        
+
       - name: Run unit tests
         run: npm run test:unit -- --run
-        
+
       - name: Build application
         run: npm run build
-        
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
-        
+
       - name: Run E2E tests
         run: npm run test:e2e
