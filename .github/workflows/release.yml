@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run type checking
+        run: npm run check
+        
+      - name: Run linting
+        run: npm run lint
+        
+      - name: Run unit tests
+        run: npm run test:unit -- --run
+        
+      - name: Build application
+        run: npm run build
+        
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+        
+      - name: Run E2E tests
+        run: npm run test:e2e
+        
+      - name: Create Release Archive
+        run: |
+          mkdir -p release-assets
+          tar -czf release-assets/open-reception-${{ github.ref_name }}.tar.gz build/
+          
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          generate_release_notes: true
+          body: |
+            ## Release ${{ github.ref_name }}
+            
+            This release includes the latest version of Open Reception appointment booking software.
+            
+            ### What's Changed
+            <!-- Release notes will be automatically generated above -->
+            
+            ### Installation
+            Extract the archive and follow the deployment instructions in the README.
+            
+            **Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.ref_name }}
+          files: |
+            release-assets/open-reception-${{ github.ref_name }}.tar.gz
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
