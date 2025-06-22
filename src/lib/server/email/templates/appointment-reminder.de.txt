@@ -1,0 +1,25 @@
+Terminerinnerung - Open Reception
+
+Hallo {{recipient.name}},
+
+Dies ist eine Erinnerung an Ihren bevorstehenden Termin:
+
+TERMINDETAILS
+=============
+Datum: {{appointmentDate}}
+Uhrzeit: {{appointmentTime}}
+{{#if location}}
+Ort: {{location}}
+{{/if}}
+{{#if description}}
+Beschreibung: {{description}}
+{{/if}}
+
+{{#if cancelUrl}}
+Termin absagen: {{cancelUrl}}
+{{/if}}
+
+Wir freuen uns auf Ihren Besuch!
+
+--
+Open Reception Team

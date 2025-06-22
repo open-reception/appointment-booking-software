@@ -1,0 +1,11 @@
+Welcome to Open Reception!
+
+Hello {{recipient.name}},
+
+Your account has been successfully created. You can now sign in:
+{{loginUrl}}
+
+If you did not request this email, you can safely ignore it.
+
+--
+Open Reception Team
