@@ -43,7 +43,7 @@ registerOpenAPIRoute('/health/services', 'GET', {
     }
 });
 
-export class ServiceHealthResponse {
+class ServiceHealthResponse {
     core: boolean = true;
     database: boolean = false;
     memory: number = 0;
