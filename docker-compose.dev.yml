@@ -16,7 +16,11 @@ services:
     networks:
       - appointment-booking-dev
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-appointment_booking}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-appointment_booking}"
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
