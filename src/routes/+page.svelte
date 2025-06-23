@@ -1,12 +1,12 @@
 <script>
-    import { onMount } from 'svelte';
-    
-    let envVarsOkay = {};
-    
-    onMount(async () => {
-        const response = await fetch('/api/env');
-        envVarsOkay = (await response.json()).envOkay ? "okay" : "not okay";
-    });
+	import { onMount } from "svelte";
+
+	let envVarsOkay = {};
+
+	onMount(async () => {
+		const response = await fetch("/api/env");
+		envVarsOkay = (await response.json()).envOkay ? "okay" : "not okay";
+	});
 </script>
 
 <h1>Welcome to SvelteKit</h1>
