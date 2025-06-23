@@ -25,6 +25,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Update package.json version
+        run: |
+          TAG_VERSION="${{ github.ref_name }}"
+          VERSION="${TAG_VERSION#v}"
+          npm version "$VERSION" --no-git-tag-version
+
       - name: Run type checking
         run: npm run check
 
@@ -42,6 +48,9 @@ jobs:
 
       - name: Run E2E tests
         run: npm run test:e2e
+
+      - name: Build and push Docker images
+        run: npm run docker:build-and-push
 
       - name: Create Release Archive
         run: |
