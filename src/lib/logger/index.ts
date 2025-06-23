@@ -109,4 +109,6 @@ export const createLogger = (context: string) => {
 	return new UniversalLogger().setContext(context);
 };
 
+export { UniversalLogger };
+
 export default logger;
