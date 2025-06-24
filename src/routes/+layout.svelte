@@ -7,7 +7,7 @@
 		if (!browser) return;
 
 		const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-		const handler = (e: MediaQueryListEvent) => {
+		const handler = () => {
 			const newMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 			setMode(newMode);
 		};
