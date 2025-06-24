@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="595px" height="691px" viewBox="0 0 595 691" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Logo</title>
+    <defs>
+        <linearGradient x1="-77.9852693%" y1="-27.5954404%" x2="115.630666%" y2="93.7077369%" id="linearGradient-1">
+            <stop stop-color="#A50101" stop-opacity="0.344159747" offset="0%"></stop>
+            <stop stop-color="#E1151D" stop-opacity="0.596017264" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="100%" y1="50%" x2="0%" y2="50%" id="linearGradient-2">
+            <stop stop-color="#DCDCDC" offset="0%"></stop>
+            <stop stop-color="#838383" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="100%" y1="50%" x2="0%" y2="50%" id="linearGradient-3">
+            <stop stop-color="#B4B4B4" offset="0%"></stop>
+            <stop stop-color="#707070" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="50%" y1="100%" x2="50%" y2="6.16297582e-31%" id="linearGradient-4">
+            <stop stop-color="#AAAAAA" offset="0%"></stop>
+            <stop stop-color="#2C2C2C" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="50%" y1="99.2242133%" x2="50%" y2="0%" id="linearGradient-5">
+            <stop stop-color="#DCDCDC" offset="0%"></stop>
+            <stop stop-color="#A7A7A7" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="50%" y1="100%" x2="50%" y2="6.16297582e-31%" id="linearGradient-6">
+            <stop stop-color="#E6E6E6" offset="0%"></stop>
+            <stop stop-color="#ABABAB" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="50%" y1="100%" x2="50%" y2="6.16297582e-31%" id="linearGradient-7">
+            <stop stop-color="#AEAEAE" offset="0%"></stop>
+            <stop stop-color="#8E8E8E" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="54.9771526%" y1="61.2188366%" x2="66.1772381%" y2="38.7811634%" id="linearGradient-8">
+            <stop stop-color="#747373" offset="0%"></stop>
+            <stop stop-color="#000000" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="100%" y1="50%" x2="0%" y2="50%" id="linearGradient-9">
+            <stop stop-color="#7C7C7C" offset="0%"></stop>
+            <stop stop-color="#6B6969" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="52.3506076%" y1="82.4632479%" x2="46.08%" y2="50%" id="linearGradient-10">
+            <stop stop-color="#ADAAAA" offset="0%"></stop>
+            <stop stop-color="#838383" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="0%" y1="50%" x2="99.1340691%" y2="50%" id="linearGradient-11">
+            <stop stop-color="#E11F1F" offset="0%"></stop>
+            <stop stop-color="#E15F5F" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="100%" y1="50%" x2="0%" y2="50%" id="linearGradient-12">
+            <stop stop-color="#BABABA" offset="0%"></stop>
+            <stop stop-color="#797979" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="100%" y1="50%" x2="0%" y2="50%" id="linearGradient-13">
+            <stop stop-color="#CFCECE" offset="0%"></stop>
+            <stop stop-color="#AAAAAA" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="100%" y1="50%" x2="0%" y2="50%" id="linearGradient-14">
+            <stop stop-color="#999999" offset="0%"></stop>
+            <stop stop-color="#676767" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="54.032497%" y1="49.836572%" x2="43.5530008%" y2="14.5989782%" id="linearGradient-15">
+            <stop stop-color="#C6C6C6" offset="0%"></stop>
+            <stop stop-color="#CACACA" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="42.0899491%" y1="99.5395929%" x2="42.0899491%" y2="-59.0054907%" id="linearGradient-16">
+            <stop stop-color="#C0C0C0" offset="0%"></stop>
+            <stop stop-color="#F6F6F6" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="56.0311104%" y1="52.9572351%" x2="37.3021535%" y2="44.1983494%" id="linearGradient-17">
+            <stop stop-color="#CACACA" offset="0%"></stop>
+            <stop stop-color="#DFDFDF" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="Logo" stroke="none" fill="none">
+        <rect id="Rectangle" fill="#D0D0D0" fill-rule="evenodd" x="24" y="385" width="104" height="84"></rect>
+        <rect id="Rectangle-Copy" fill="#F02626" fill-rule="evenodd" x="128" y="218" width="104" height="84"></rect>
+        <rect id="Rectangle-Copy-2" fill="#E11515" fill-rule="evenodd" x="232" y="218" width="104" height="84"></rect>
+        <rect id="Rectangle-Copy-3" fill="#BF1313" fill-rule="evenodd" x="336" y="218" width="104" height="84"></rect>
+        <rect id="Rectangle-Copy-7" fill="#FF3434" fill-rule="evenodd" x="24" y="218" width="104" height="84"></rect>
+        <rect id="Rectangle-Copy-6" fill="#ECECEC" fill-rule="evenodd" x="128" y="385" width="104" height="84"></rect>
+        <rect id="Rectangle-Copy-5" fill="#DFDFDF" fill-rule="evenodd" x="232" y="385" width="104" height="84"></rect>
+        <rect id="Rectangle-Copy-4" fill="#CFCFCF" fill-rule="evenodd" x="336" y="385" width="104" height="84"></rect>
+        <rect id="Rectangle-Copy-15" fill="#DBDBDB" fill-rule="evenodd" x="24" y="553" width="104" height="84"></rect>
+        <rect id="Rectangle-Copy-14" fill="#D5D5D5" fill-rule="evenodd" x="128" y="469" width="104" height="84"></rect>
+        <rect id="Rectangle-Copy-13" fill="#B5B5B5" fill-rule="evenodd" x="232" y="469" width="104" height="84"></rect>
+        <rect id="Rectangle-Copy-12" fill="#DADADA" fill-rule="evenodd" x="336" y="469" width="104" height="84"></rect>
+        <path d="M440,468 L440,552 L336,552 L336,468 L440,468 Z M419,489 L358,489 L358,531 L419,531 L419,489 Z" id="Rectangle-Copy-12" fill="url(#linearGradient-1)" fill-rule="nonzero"></path>
+        <rect id="Rectangle-Copy-11" fill="#B6B6B6" fill-rule="evenodd" x="24" y="469" width="104" height="84"></rect>
+        <rect id="Rectangle-Copy-10" fill="#F4F4F4" fill-rule="evenodd" x="128" y="553" width="104" height="84"></rect>
+        <rect id="Rectangle-Copy-9" fill="#E1E1E1" fill-rule="evenodd" x="232" y="553" width="104" height="84"></rect>
+        <polygon id="Rectangle-Copy-8" fill="#CCCCCC" fill-rule="evenodd" points="336 553 440 553 440 637 336 637"></polygon>
+        <rect id="Rectangle-Copy-38" fill="#A50101" fill-rule="evenodd" x="440" y="218" width="104" height="84"></rect>
+        <rect id="Rectangle-Copy-37" fill="#DFDFDF" fill-rule="evenodd" x="440" y="385" width="104" height="84"></rect>
+        <rect id="Rectangle-Copy-36" fill="#A8A8A8" fill-rule="evenodd" x="440" y="469" width="104" height="84"></rect>
+        <polygon id="Rectangle-Copy-35" fill="#DDDDDD" fill-rule="evenodd" points="440 553 544 553 544 637 440 637"></polygon>
+        <rect id="Rectangle-Copy-16" fill="#555555" fill-rule="evenodd" x="160" y="86" width="69" height="66"></rect>
+        <rect id="Rectangle-Copy-46" fill="#7C7C7C" fill-rule="evenodd" x="160" y="152" width="69" height="66"></rect>
+        <rect id="Rectangle-Copy-17" fill="#201F1F" fill-rule="evenodd" x="160" y="20" width="69" height="66"></rect>
+        <rect id="Rectangle-Copy-18" fill="#4B4B4B" fill-rule="evenodd" x="229" y="20" width="69" height="66"></rect>
+        <polygon id="Rectangle-Copy-19" fill="#3F3F3F" fill-rule="evenodd" points="298 20 368 20 368 86 298 86"></polygon>
+        <rect id="Rectangle-Copy-20" fill="#575757" fill-rule="evenodd" x="368" y="20" width="69" height="66"></rect>
+        <rect id="Rectangle-Copy-21" fill="#414141" fill-rule="evenodd" x="368" y="86" width="69" height="66"></rect>
+        <polygon id="Rectangle-Copy-47" fill="#414141" fill-rule="evenodd" points="368 152 437.285714 152 465 185 397.578746 185"></polygon>
+        <polygon id="Rectangle-Copy-24" fill="url(#linearGradient-2)" fill-rule="evenodd" opacity="0.647152218" points="229 86 257 119.333333 257 185 229 152"></polygon>
+        <polygon id="Rectangle-Copy-48" fill="url(#linearGradient-3)" fill-rule="evenodd" opacity="0.647152218" points="229 152 257 185 257 218 229 218"></polygon>
+        <polygon id="Rectangle-Copy-29" fill="url(#linearGradient-4)" fill-rule="evenodd" opacity="0.647152218" points="298.333333 86 333 119 256.733333 119 229 86"></polygon>
+        <polygon id="Rectangle-Copy-31" fill="url(#linearGradient-5)" fill-rule="evenodd" opacity="0.647152218" points="128.25 637 163 670 65.525312 670 24 637"></polygon>
+        <polygon id="Rectangle-Copy-32" fill="url(#linearGradient-6)" fill-rule="evenodd" opacity="0.647152218" points="232.25 637 267 670 162.75 670 128 637"></polygon>
+        <polygon id="Rectangle-Copy-33" fill="url(#linearGradient-7)" fill-rule="evenodd" opacity="0.647152218" points="336.25 637 371 670 266.75 670 232 637"></polygon>
+        <polygon id="Rectangle-Copy-30" fill="url(#linearGradient-8)" fill-rule="evenodd" opacity="0.647152218" points="368 86 368 119 333 119 298.333333 86"></polygon>
+        <polygon id="Rectangle-Copy-25" fill="url(#linearGradient-9)" fill-rule="evenodd" opacity="0.647152218" points="437 86 465 119 465 185 437 152"></polygon>
+        <polygon id="Rectangle-Copy-26" fill="url(#linearGradient-10)" fill-rule="evenodd" opacity="0.647152218" points="437 19 465 63.8209356 465 119 437 85.6666667"></polygon>
+        <polygon id="Rectangle-Copy-22" fill="url(#linearGradient-11)" fill-rule="evenodd" opacity="0.647152218" points="544 219 572 260.921053 572 337 544 302.842105"></polygon>
+        <polygon id="Rectangle-Copy-23" fill="url(#linearGradient-12)" fill-rule="evenodd" opacity="0.647152218" points="544 385 572 419.222222 572 511 544 469"></polygon>
+        <rect id="Rectangle-Copy-45" fill="#E5E5E5" fill-rule="evenodd" x="24" y="302" width="104" height="84"></rect>
+        <rect id="Rectangle-Copy-44" fill="#DCDCDC" fill-rule="evenodd" x="128" y="302" width="104" height="84"></rect>
+        <rect id="Rectangle-Copy-43" fill="#F5F5F5" fill-rule="evenodd" x="232" y="302" width="104" height="84"></rect>
+        <rect id="Rectangle-Copy-42" fill="#C4C4C4" fill-rule="evenodd" x="336" y="302" width="104" height="84"></rect>
+        <rect id="Rectangle-Copy-41" fill="#E7E7E7" fill-rule="evenodd" x="440" y="302" width="104" height="84"></rect>
+        <polygon id="Rectangle-Copy-40" fill="url(#linearGradient-13)" fill-rule="evenodd" opacity="0.647152218" points="544 302 572 336.168142 572 419 544 384.831858"></polygon>
+        <polygon id="Rectangle-Copy-27" fill="url(#linearGradient-14)" fill-rule="evenodd" opacity="0.647152218" points="544 469 572 511 572 595 544 553"></polygon>
+        <polygon id="Rectangle-Copy-28" fill="url(#linearGradient-15)" fill-rule="evenodd" transform="translate(558, 611.5) rotate(180) translate(-558, -611.5)" points="544 628.066372 544 553 572 586.132743 572 670"></polygon>
+        <polygon id="Rectangle-Copy-34" fill="url(#linearGradient-16)" fill-rule="evenodd" transform="translate(402, 653.5) rotate(180) translate(-402, -653.5)" points="363.789474 670 336 637 433.263158 637 468 670"></polygon>
+        <polygon id="Rectangle-Copy-39" fill="url(#linearGradient-17)" fill-rule="evenodd" transform="translate(506, 653.5) rotate(180) translate(-506, -653.5)" points="467.789474 670 440 637 544.210526 637 572 670"></polygon>
+    </g>
+</svg>

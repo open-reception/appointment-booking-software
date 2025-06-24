@@ -13,8 +13,18 @@ describe("/+page.svelte", () => {
 		);
 	});
 
-	test("should render h1", () => {
-		render(Page);
+	test("should render h1", async () => {
+		const mockData = {
+			streamed: {
+				isEnvOk: Promise.resolve(true)
+			}
+		};
+		render(Page, {
+			props: {
+				data: mockData
+			}
+		});
+		await mockData.streamed.isEnvOk;
 		expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
 	});
 });
