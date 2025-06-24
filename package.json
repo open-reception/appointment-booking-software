@@ -44,10 +44,7 @@
 		"@testing-library/jest-dom": "^6.6.3",
 		"@testing-library/svelte": "^5.2.4",
 		"@types/node": "^22",
-<<<<<<< HEAD
 		"@types/nodemailer": "^6.4.17",
-=======
->>>>>>> a2c93964d43d59134f0f3238866ac4c93352ce5a
 		"@types/dotenv": "^6.1.1",
 		"drizzle-kit": "^0.30.2",
 		"eslint": "^9.18.0",
