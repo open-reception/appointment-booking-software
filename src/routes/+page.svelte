@@ -1,20 +1,27 @@
-<script>
-	import { createLogger } from "$lib/logger";
+<script lang="ts">
+	import { HorizontalPagePadding, PageWithClaim } from "$lib/components/ui/page";
+	import { Headline, Text } from "$lib/components/ui/typography";
+	import { toggleMode } from "mode-watcher";
 	import { onMount } from "svelte";
 
 	let envVarsOkay = {};
 
-	const logger = createLogger("HomePage");
-
 	onMount(async () => {
 		const response = await fetch("/api/env");
-		logger.info("Mounted home page");
 		envVarsOkay = (await response.json()).envOkay ? "okay" : "not okay";
-		logger.error("THis should also be send to the server");
 	});
 </script>
 
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
+<svelte:head>
+	<title>Hello - OpenReception</title>
+</svelte:head>
 
-<p>Environment configuration is {envVarsOkay}</p>
+<PageWithClaim>
+	<main>
+		<HorizontalPagePadding>
+			<Headline level="h1" style="h1">Welcome to OpenReception</Headline>
+			<Text style="md">Environment configuration is {envVarsOkay}</Text>
+			<button onclick={toggleMode}>Toggle Mode</button>
+		</HorizontalPagePadding>
+	</main>
+</PageWithClaim>
