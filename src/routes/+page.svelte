@@ -1,11 +1,16 @@
 <script>
+	import { createLogger } from "$lib/logger";
 	import { onMount } from "svelte";
 
 	let envVarsOkay = {};
 
+	const logger = createLogger("HomePage");
+
 	onMount(async () => {
 		const response = await fetch("/api/env");
+		logger.info("Mounted home page");
 		envVarsOkay = (await response.json()).envOkay ? "okay" : "not okay";
+		logger.error("THis should also be send to the server");
 	});
 </script>
 

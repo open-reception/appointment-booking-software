@@ -32,3 +32,6 @@ test-results
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+CLAUDE.md
+.claude/
