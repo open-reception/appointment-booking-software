@@ -1,4 +1,5 @@
 import { type Handle } from "@sveltejs/kit";
+import { logger } from "$lib/logger";
 
 /** In-memory store for rate limiting records per client IP */
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
@@ -92,6 +93,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 	const { request } = event;
 	const clientIP = getClientIP(request);
 
+	const start = Date.now();
+	const requestLogger = logger.setContext("REQUEST");
+
+	requestLogger.info(`Incoming ${event.request.method} ${event.url.pathname}`);
+
 	if (isRateLimited(clientIP)) {
 		return new Response("Too Many Requests", {
 			status: 429,
@@ -154,5 +160,34 @@ export const handle: Handle = async ({ event, resolve }) => {
 		);
 	}
 
+	const responseTime = Date.now() - start;
+
+	requestLogger.logRequest(event.request, responseTime, response.status);
+	
+
 	return response;
 };
+
+type Error = {
+	message?: string;
+	stack?: string;
+};
+
+export async function handleError({ error, event, status, message }) {
+	const errorLogger = logger.setContext("ERROR_HANDLER");
+
+	errorLogger.error("Unhandled error occurred", {
+		error: (error as Error).message,
+		stack: (error as Error).stack,
+		status,
+		message,
+		url: event.url.pathname,
+		method: event.request.method,
+		userAgent: event.request.headers.get("user-agent"),
+		ip: event.getClientAddress()
+	});
+
+	return {
+		message: "Internal server error occurred"
+	};
+}
