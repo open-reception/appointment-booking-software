@@ -33,3 +33,5 @@ jobs:
 
       - name: Build application
         run: npm run build
+        env:
+          DATABASE_URL: "postgresql://test:test@localhost:5432/test"
