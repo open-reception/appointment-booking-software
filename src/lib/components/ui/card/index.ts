@@ -21,5 +21,5 @@ export {
 	Footer as CardFooter,
 	Header as CardHeader,
 	Title as CardTitle,
-	Action as CardAction,
+	Action as CardAction
 };

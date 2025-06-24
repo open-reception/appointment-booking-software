@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { HTMLAttributes } from 'svelte/elements';
-	import { cn, type WithElementRef } from '$lib/utils.js';
-	import HorizontalPagePadding from './horizontal-page-padding.svelte';
-	import { Text } from '../typography';
+	import type { HTMLAttributes } from "svelte/elements";
+	import { cn, type WithElementRef } from "$lib/utils.js";
+	import HorizontalPagePadding from "./horizontal-page-padding.svelte";
+	import { Text } from "../typography";
 
 	let {
 		ref = $bindable(null),
@@ -14,7 +14,7 @@
 
 <div
 	bind:this={ref}
-	class={cn('flex min-h-dvh flex-col justify-between', className)}
+	class={cn("flex min-h-dvh flex-col justify-between", className)}
 	{...restProps}
 >
 	{@render children?.()}

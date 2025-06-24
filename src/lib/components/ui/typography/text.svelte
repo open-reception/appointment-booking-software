@@ -1,19 +1,19 @@
 <script lang="ts">
-	import type { HTMLAttributes } from 'svelte/elements';
-	import { cn, type WithElementRef } from '$lib/utils.js';
-	import { tv, type VariantProps } from 'tailwind-variants';
+	import type { HTMLAttributes } from "svelte/elements";
+	import { cn, type WithElementRef } from "$lib/utils.js";
+	import { tv, type VariantProps } from "tailwind-variants";
 
 	const variants = tv({
 		variants: {
 			style: {
-				lg: 'text-xl',
-				md: 'leading-7 [&:not(:first-child)]:mt-6',
-				sm: 'text-sm font-medium leading-none',
-				xs: 'text-xs'
+				lg: "text-xl",
+				md: "leading-7 [&:not(:first-child)]:mt-6",
+				sm: "text-sm font-medium leading-none",
+				xs: "text-xs"
 			}
 		},
 		defaultVariants: {
-			style: 'xs'
+			style: "xs"
 		}
 	});
 
@@ -24,7 +24,7 @@
 		children,
 		...restProps
 	}: WithElementRef<HTMLAttributes<HTMLSpanElement>> & {
-		style: VariantProps<typeof variants>['style'];
+		style: VariantProps<typeof variants>["style"];
 	} = $props();
 </script>
 
