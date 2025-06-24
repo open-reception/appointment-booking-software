@@ -2,14 +2,8 @@
 	import { HorizontalPagePadding, PageWithClaim } from "$lib/components/ui/page";
 	import { Headline, Text } from "$lib/components/ui/typography";
 	import { toggleMode } from "mode-watcher";
-	import { onMount } from "svelte";
 
-	let envVarsOkay = {};
-
-	onMount(async () => {
-		const response = await fetch("/api/env");
-		envVarsOkay = (await response.json()).envOkay ? "okay" : "not okay";
-	});
+	export let data;
 </script>
 
 <svelte:head>
@@ -18,9 +12,16 @@
 
 <PageWithClaim>
 	<main>
-		<HorizontalPagePadding>
+		<HorizontalPagePadding class="flex flex-col items-start gap-4">
 			<Headline level="h1" style="h1">Welcome to OpenReception</Headline>
-			<Text style="md">Environment configuration is {envVarsOkay}</Text>
+			<Text style="md">
+				Environment configuration is
+				{#await data.streamed.isEnvOk}
+					unknown
+				{:then isEnvOk}
+					{isEnvOk ? "OK" : "NOT OK"}
+				{/await}.
+			</Text>
 			<button onclick={toggleMode}>Toggle Mode</button>
 		</HorizontalPagePadding>
 	</main>
