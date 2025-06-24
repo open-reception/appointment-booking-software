@@ -5,9 +5,12 @@ import { handle } from "./hooks.server.js";
 // Mock the Date.now function for rate limiting tests
 const mockDateNow = vi.fn();
 const OriginalDate = Date;
-vi.stubGlobal("Date", class extends OriginalDate {
-	static now = mockDateNow;
-});
+vi.stubGlobal(
+	"Date",
+	class extends OriginalDate {
+		static now = mockDateNow;
+	}
+);
 
 describe("hooks.server", () => {
 	beforeEach(() => {

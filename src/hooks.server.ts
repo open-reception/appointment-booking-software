@@ -163,7 +163,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 	const responseTime = Date.now() - start;
 
 	requestLogger.logRequest(event.request, responseTime, response.status);
-	
 
 	return response;
 };
