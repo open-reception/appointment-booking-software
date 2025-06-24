@@ -19,7 +19,11 @@ services:
     networks:
       - open-reception-internal
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$(cat /run/secrets/postgres_user) -d $$(cat /run/secrets/postgres_db)"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $$(cat /run/secrets/postgres_user) -d $$(cat /run/secrets/postgres_db)"
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -56,7 +60,8 @@ services:
     networks:
       - open-reception-internal
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/health"]
+      test:
+        ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
