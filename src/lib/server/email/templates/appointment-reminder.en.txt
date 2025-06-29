@@ -1,0 +1,25 @@
+Appointment Reminder - Open Reception
+
+Hello {{recipient.name}},
+
+This is a reminder about your upcoming appointment:
+
+APPOINTMENT DETAILS
+===================
+Date: {{appointmentDate}}
+Time: {{appointmentTime}}
+{{#if location}}
+Location: {{location}}
+{{/if}}
+{{#if description}}
+Description: {{description}}
+{{/if}}
+
+{{#if cancelUrl}}
+Cancel appointment: {{cancelUrl}}
+{{/if}}
+
+We look forward to seeing you!
+
+--
+Open Reception Team

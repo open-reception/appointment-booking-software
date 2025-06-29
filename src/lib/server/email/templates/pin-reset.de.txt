@@ -1,0 +1,12 @@
+PIN zurückgesetzt - Open Reception
+
+Hallo {{recipient.name}},
+
+Ihre PIN wurde erfolgreich zurückgesetzt.
+
+Sie können sich nun mit Ihrer neuen PIN anmelden.
+
+Falls Sie diese Zurücksetzung nicht angefordert haben, wenden Sie sich bitte an den Support.
+
+--
+Open Reception Team

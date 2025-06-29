@@ -1,0 +1,11 @@
+Willkommen bei Open Reception!
+
+Hallo {{recipient.name}},
+
+Ihr Konto wurde erfolgreich erstellt. Sie können sich jetzt anmelden:
+{{loginUrl}}
+
+Falls Sie diese E-Mail nicht angefordert haben, können Sie sie ignorieren.
+
+--
+Open Reception Team
