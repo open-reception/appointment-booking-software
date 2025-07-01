@@ -6,18 +6,23 @@ Please note that this is currently the **unencrypted data model**. Appointments,
 
 ```mermaid
 erDiagram
+    ADMINS {
+        uuid id PK
+        string email
+        string password
+    }
+
     TENANT {
         uuid id PK
         string short_name "Used as subdomain"
         string long_name
-        string description "Optional"
+        text description "Optional"
         blob logo "PNG, JPEG, GIF, or WEBP"
-        string background_color
-        string primary_color
-        string secondary_color
+        string brand_color
         string default_language
+        int max_channels
+        int max_team_members
         int auto_delete_days "Days after appointment to auto-delete"
-        boolean require_confirmation "Must appointments be explicitly confirmed"
     }
 
     CLIENT {
@@ -26,30 +31,49 @@ erDiagram
         string public_key
         string private_key_share
         string email "Optional"
-        string language "Optional"
+        string language
     }
 
     STAFF {
         uuid id PK
+        uuid role_id "Role of staff member (e.g. 'tenant-admin', 'staff')"
         string hash_key "Generated from login name"
         string public_key
         string name "Optional"
-        string position "Optional"
         string email
-        string language "Optional"
+        string language
+    }
+
+    TEAM {
+        uuid id PK
+        string name
+        string description "Optional"
+        blob image "PNG, JPEG, GIF, or WEBP"
     }
 
     CHANNEL {
         uuid id PK
-        enum type "ROOM, MACHINE, PERSONNEL"
         string name
         string description "Optional"
+        boolean public "A channel may be only bookable with Code or internally"
+        boolean require_confirmation "Must appointments be explicitly confirmed"
+        any slot_creation "am Wochentag XY von bis, länge; davon mehrere"
+    }
+
+    SLOT {
+        uuid id PK
+        uuid channel_id FK
+        datetime start
+        int length
+        uuid appointment_id FK "Optional, set when in use"
     }
 
     APPOINTMENT {
         uuid id PK
         uuid client_id FK
         uuid channel_id FK
+        uuid team_id FK
+        uuid slot_id FK
         date appointment_date
         date expiry_date
         string title
@@ -108,6 +132,7 @@ erDiagram
     CLIENT ||--o{ APPOINTMENT : "has"
     CHANNEL ||--o{ APPOINTMENT : "assigned_to"
     CHANNEL ||--o{ QUESTIONNAIRE : "has"
+    CHANNEL }o--o{ TEAM : "associated"
     APPOINTMENT ||--o{ NOTE : "contains"
     APPOINTMENT ||--o{ ATTACHMENT : "contains"
     QUESTIONNAIRE ||--o{ QUESTIONNAIRE_QUESTION : "contains"
