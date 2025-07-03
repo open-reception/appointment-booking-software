@@ -9,6 +9,12 @@
 		"skipLibCheck": true,
 		"sourceMap": true,
 		"strict": true,
+		"baseUrl": ".",
+		"paths": {
+			"$i18n/*": ["src/i18n/*"],
+			"$lib/*": ["src/lib/*"]
+		},
+
 		"moduleResolution": "bundler"
 	}
 	// Path aliases are handled by https://svelte.dev/docs/kit/configuration#alias

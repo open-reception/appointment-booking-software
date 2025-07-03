@@ -1,13 +1,21 @@
 import { logger } from "$lib/logger";
+import type { Handle } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
+import { paraglideMiddleware } from "./i18n/server";
 import { corsHandle } from "./server-hooks/corsHandle";
 import { loggingHandle } from "./server-hooks/loggingHandle";
 import { rateLimitHandle } from "./server-hooks/rateLimitHandle";
 import { secHeaderHandle } from "./server-hooks/secHeaderHandle";
 
-type Error = {
-	message?: string;
-	stack?: string;
+const i18nHandler: Handle = ({ event, resolve }) => {
+	return paraglideMiddleware(event.request, ({ request: localizedRequest, locale }) => {
+		event.request = localizedRequest;
+		return resolve(event, {
+			transformPageChunk: ({ html }) => {
+				return html.replace("%lang%", locale);
+			}
+		});
+	});
 };
 
 export async function handleError({ error, event, status, message }) {
@@ -29,4 +37,10 @@ export async function handleError({ error, event, status, message }) {
 	};
 }
 
-export const handle = sequence(loggingHandle, rateLimitHandle, corsHandle, secHeaderHandle);
+export const handle = sequence(
+	loggingHandle,
+	i18nHandler,
+	rateLimitHandle,
+	corsHandle,
+	secHeaderHandle
+);

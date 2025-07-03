@@ -3,6 +3,7 @@
 	import { cn, type WithElementRef } from "$lib/utils.js";
 	import HorizontalPagePadding from "./horizontal-page-padding.svelte";
 	import { Text } from "../typography";
+	import { m } from "$i18n/messages";
 
 	let {
 		ref = $bindable(null),
@@ -21,7 +22,7 @@
 	<footer>
 		<HorizontalPagePadding class="bg-muted text-muted-foreground py-2 text-center">
 			<Text style="xs">
-				Powered by
+				{m.poweredBy()}
 				<a href="https://open-reception.org" target="_blank" class="underline">OpenReception</a>
 			</Text>
 		</HorizontalPagePadding>
