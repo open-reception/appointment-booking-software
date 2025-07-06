@@ -23,6 +23,9 @@ erDiagram
         int max_channels
         int max_team_members
         int auto_delete_days "Days after appointment to auto-delete"
+        boolean require_email "Requires clients to enter their e-mail address"
+        boolean require_phone "Requires clients to enter a phone number"
+        boolean url "Requires clients to enter a phone number"
     }
 
     CLIENT {
