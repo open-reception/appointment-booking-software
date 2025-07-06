@@ -1,6 +1,20 @@
+import { paraglideMiddleware } from "./i18n/server";
 import { logger } from "$lib/logger";
+import type { Handle } from "@sveltejs/kit";
+import { sequence } from "@sveltejs/kit/hooks";
 
-export async function handle({ event, resolve }) {
+const i18nHandler: Handle = ({ event, resolve }) => {
+	return paraglideMiddleware(event.request, ({ request: localizedRequest, locale }) => {
+		event.request = localizedRequest;
+		return resolve(event, {
+			transformPageChunk: ({ html }) => {
+				return html.replace("%lang%", locale);
+			}
+		});
+	});
+};
+
+const handleRequest: Handle = async ({ event, resolve }) => {
 	const start = Date.now();
 	const requestLogger = logger.setContext("REQUEST");
 
@@ -12,7 +26,7 @@ export async function handle({ event, resolve }) {
 	requestLogger.logRequest(event.request, responseTime, response.status);
 
 	return response;
-}
+};
 
 type Error = {
 	message?: string;
@@ -37,3 +51,5 @@ export async function handleError({ error, event, status, message }) {
 		message: "Internal server error occurred"
 	};
 }
+
+export const handle: Handle = sequence(handleRequest, i18nHandler);
