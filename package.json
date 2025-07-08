@@ -69,13 +69,18 @@
 		"vitest": "^3.2.4"
 	},
 	"dependencies": {
+		"@noble/hashes": "^1.8.0",
+		"@noble/post-quantum": "^0.4.1",
 		"@sveltejs/adapter-node": "^5.2.12",
+		"argon2": "^0.43.0",
+		"argon2-browser": "^1.18.0",
 		"dotenv": "^16.5.0",
 		"dotenv-expand": "^12.0.2",
 		"drizzle-orm": "^0.44.2",
 		"mode-watcher": "^1.0.8",
 		"nodemailer": "^7.0.3",
 		"postgres": "^3.4.7",
+		"secrets.js-34r7h": "^2.0.2",
 		"winston": "^3.17.0"
 	},
 	"engines": {
