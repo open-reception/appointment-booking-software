@@ -50,6 +50,13 @@ services:
     user: "1001:1001"
     environment:
       NODE_ENV: production
+      SMTP_HOST: /run/secrets/smtp_host
+      SMTP_PORT: /run/secrets/smtp_port
+      SMTP_SECURE: /run/secrets/smtp_secure
+      SMTP_USER: /run/secrets/smtp_user
+      SMTP_PASS: /run/secrets/smtp_pass
+      SMTP_FROM_NAME: /run/secrets/smtp_from_name
+      SMTP_FROM_EMAIL: /run/secrets/smtp_from_email
     secrets:
       - postgres_db
       - postgres_user
@@ -112,6 +119,20 @@ secrets:
     file: ./secrets/postgres_user.txt
   postgres_password:
     file: ./secrets/postgres_password.txt
+  smtp_port:
+    file: ./secrets/smtp_port.txt
+  smtp_host:
+    file: ./secrets/smtp_host.txt
+  smtp_secure:
+    file: ./secrets/smtp_secure.txt
+  smtp_user:
+    file: ./secrets/smtp_user.txt
+  smtp_pass:
+    file: ./secrets/smtp_pass.txt
+  smtp_from_name:
+    file: ./secrets/smtp_from_name.txt
+  smtp_from_email:
+    file: ./secrets/smtp_from_email.txt
 
 volumes:
   postgres_data:
