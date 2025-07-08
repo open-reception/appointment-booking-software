@@ -18,7 +18,12 @@ registerOpenAPIRoute("/admin/register", "POST", {
 					type: "object",
 					properties: {
 						name: { type: "string", description: "Admin's full name", example: "Admin Name" },
-						email: { type: "string", format: "email", description: "Admin's email address", example: "admin@example.com" }
+						email: {
+							type: "string",
+							format: "email",
+							description: "Admin's email address",
+							example: "admin@example.com"
+						}
 					},
 					required: ["name", "email"]
 				}
@@ -40,7 +45,8 @@ registerOpenAPIRoute("/admin/register", "POST", {
 						required: ["message", "adminId", "email"]
 					},
 					example: {
-						message: "Admin account created successfully. Please check your email for confirmation.",
+						message:
+							"Admin account created successfully. Please check your email for confirmation.",
 						adminId: "01234567-89ab-cdef-0123-456789abcdef",
 						email: "admin@example.com"
 					}

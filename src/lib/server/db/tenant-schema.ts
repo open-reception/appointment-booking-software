@@ -1,11 +1,5 @@
 import type { InferSelectModel } from "drizzle-orm";
-import {
-	pgTable,
-	uuid,
-	text,
-	date,
-	pgEnum
-} from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, date, pgEnum } from "drizzle-orm/pg-core";
 
 /**
  * Database enums for tenant-specific entities

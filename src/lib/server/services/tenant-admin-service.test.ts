@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // Mock the database module
-vi.mock('../db', () => ({
+vi.mock("../db", () => ({
 	centralDb: {
 		insert: vi.fn(),
 		select: vi.fn(),
@@ -12,20 +12,20 @@ vi.mock('../db', () => ({
 }));
 
 // Mock TenantConfig
-vi.mock('../db/tenant-config', () => ({
+vi.mock("../db/tenant-config", () => ({
 	TenantConfig: {
 		create: vi.fn()
 	}
 }));
 
 // Mock environment variables
-vi.mock('$env/dynamic/private', () => ({
+vi.mock("$env/dynamic/private", () => ({
 	env: {
-		DATABASE_URL: 'postgresql://user:pass@localhost:5432/central_db'
+		DATABASE_URL: "postgresql://user:pass@localhost:5432/central_db"
 	}
 }));
 
-describe('TenantAdminService', () => {
+describe("TenantAdminService", () => {
 	let TenantAdminService: any;
 	let mockCentralDb: any;
 	let mockGetTenantDb: any;
@@ -35,14 +35,14 @@ describe('TenantAdminService', () => {
 		vi.clearAllMocks();
 
 		// Import the service after mocks are set up
-		TenantAdminService = (await import('./tenant-admin-service')).TenantAdminService;
-		
+		TenantAdminService = (await import("./tenant-admin-service")).TenantAdminService;
+
 		// Get mocked modules
-		const dbModule = await vi.importMock('../db');
+		const dbModule = await vi.importMock("../db");
 		mockCentralDb = dbModule.centralDb;
 		mockGetTenantDb = dbModule.getTenantDb;
-		
-		const configModule = await vi.importMock('../db/tenant-config');
+
+		const configModule = await vi.importMock("../db/tenant-config");
 		mockTenantConfig = configModule.TenantConfig;
 	});
 
@@ -50,18 +50,18 @@ describe('TenantAdminService', () => {
 		vi.restoreAllMocks();
 	});
 
-	describe('createTenant', () => {
-		it('should create a new tenant with default configuration', async () => {
+	describe("createTenant", () => {
+		it("should create a new tenant with default configuration", async () => {
 			const newTenant = {
-				shortName: 'test-clinic',
-				longName: 'Test Medical Clinic',
-				description: 'A test clinic'
+				shortName: "test-clinic",
+				longName: "Test Medical Clinic",
+				description: "A test clinic"
 			};
 
 			const mockCreatedTenant = {
-				id: 'tenant-123',
+				id: "tenant-123",
 				...newTenant,
-				databaseUrl: 'postgresql://user:pass@localhost:5432/test-clinic'
+				databaseUrl: "postgresql://user:pass@localhost:5432/test-clinic"
 			};
 
 			const mockConfig = {
@@ -81,17 +81,17 @@ describe('TenantAdminService', () => {
 			expect(mockCentralDb.insert).toHaveBeenCalled();
 			expect(mockInsertBuilder.values).toHaveBeenCalledWith({
 				...newTenant,
-				databaseUrl: 'postgresql://user:pass@localhost:5432/test-clinic'
+				databaseUrl: "postgresql://user:pass@localhost:5432/test-clinic"
 			});
-			expect(mockTenantConfig.create).toHaveBeenCalledWith('tenant-123');
-			expect(mockConfig.setConfig).toHaveBeenCalledWith('brandColor', '#E11E15');
+			expect(mockTenantConfig.create).toHaveBeenCalledWith("tenant-123");
+			expect(mockConfig.setConfig).toHaveBeenCalledWith("brandColor", "#E11E15");
 			expect(result).toBeInstanceOf(TenantAdminService);
 		});
 	});
 
-	describe('getTenantById', () => {
-		it('should get tenant by ID and initialize configuration', async () => {
-			const tenantId = 'tenant-123';
+	describe("getTenantById", () => {
+		it("should get tenant by ID and initialize configuration", async () => {
+			const tenantId = "tenant-123";
 			const mockConfig = {
 				setConfig: vi.fn(),
 				getConfig: vi.fn()
@@ -107,12 +107,12 @@ describe('TenantAdminService', () => {
 		});
 	});
 
-	describe('update', () => {
-		it('should update tenant data', async () => {
-			const tenantId = 'tenant-123';
+	describe("update", () => {
+		it("should update tenant data", async () => {
+			const tenantId = "tenant-123";
 			const updateData = {
-				longName: 'Updated Clinic Name',
-				description: 'Updated description'
+				longName: "Updated Clinic Name",
+				description: "Updated description"
 			};
 
 			const mockConfig = { setConfig: vi.fn() };
@@ -133,9 +133,9 @@ describe('TenantAdminService', () => {
 		});
 	});
 
-	describe('getDb', () => {
-		it('should return database connection', async () => {
-			const tenantId = 'tenant-123';
+	describe("getDb", () => {
+		it("should return database connection", async () => {
+			const tenantId = "tenant-123";
 			const mockConfig = { setConfig: vi.fn() };
 			const mockTenantDb = {
 				select: vi.fn(),
@@ -153,8 +153,8 @@ describe('TenantAdminService', () => {
 			expect(db).toBe(mockTenantDb);
 		});
 
-		it('should cache database connection', async () => {
-			const tenantId = 'tenant-123';
+		it("should cache database connection", async () => {
+			const tenantId = "tenant-123";
 			const mockConfig = { setConfig: vi.fn() };
 			const mockTenantDb = { select: vi.fn() };
 
@@ -162,7 +162,7 @@ describe('TenantAdminService', () => {
 			mockGetTenantDb.mockResolvedValue(mockTenantDb);
 
 			const service = await TenantAdminService.getTenantById(tenantId);
-			
+
 			// First call
 			await service.getDb();
 			// Second call should use cache
@@ -172,12 +172,12 @@ describe('TenantAdminService', () => {
 		});
 	});
 
-	describe('configuration', () => {
-		it('should provide access to tenant configuration', async () => {
-			const tenantId = 'tenant-123';
+	describe("configuration", () => {
+		it("should provide access to tenant configuration", async () => {
+			const tenantId = "tenant-123";
 			const mockConfig = {
 				setConfig: vi.fn(),
-				getConfig: vi.fn().mockReturnValue('test-value')
+				getConfig: vi.fn().mockReturnValue("test-value")
 			};
 
 			mockTenantConfig.create.mockResolvedValue(mockConfig);

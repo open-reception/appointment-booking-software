@@ -21,11 +21,12 @@ Content-Type: application/json
 ```
 
 **Response (201):**
+
 ```json
 {
-  "message": "Admin account created successfully. Please check your email for confirmation.",
-  "adminId": "01234567-89ab-cdef-0123-456789abcdef",
-  "email": "admin@example.com"
+	"message": "Admin account created successfully. Please check your email for confirmation.",
+	"adminId": "01234567-89ab-cdef-0123-456789abcdef",
+	"email": "admin@example.com"
 }
 ```
 
@@ -41,9 +42,10 @@ Content-Type: application/json
 ```
 
 **Response (200):**
+
 ```json
 {
-  "message": "Admin account confirmed successfully. You can now log in."
+	"message": "Admin account confirmed successfully. You can now log in."
 }
 ```
 
@@ -59,39 +61,44 @@ Content-Type: application/json
 ```
 
 **Response (200):**
+
 ```json
 {
-  "message": "Confirmation email resent successfully. Please check your email."
+	"message": "Confirmation email resent successfully. Please check your email."
 }
 ```
 
 ## Error Responses
 
 ### 400 Bad Request
+
 ```json
 {
-  "error": "Invalid admin data"
+	"error": "Invalid admin data"
 }
 ```
 
 ### 404 Not Found
+
 ```json
 {
-  "error": "Invalid or expired confirmation token"
+	"error": "Invalid or expired confirmation token"
 }
 ```
 
 ### 409 Conflict
+
 ```json
 {
-  "error": "An admin with this email already exists"
+	"error": "An admin with this email already exists"
 }
 ```
 
 ### 500 Internal Server Error
+
 ```json
 {
-  "error": "Internal server error"
+	"error": "Internal server error"
 }
 ```
 

@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ValidationError, NotFoundError } from '../utils/errors';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { NotFoundError } from "../utils/errors";
 
 // Mock the database module
-vi.mock('../db', () => ({
+vi.mock("../db", () => ({
 	centralDb: {
 		insert: vi.fn(),
 		select: vi.fn(),
@@ -12,7 +12,7 @@ vi.mock('../db', () => ({
 }));
 
 // Mock the logger
-vi.mock('$lib/logger', () => ({
+vi.mock("$lib/logger", () => ({
 	default: {
 		setContext: vi.fn().mockReturnValue({
 			debug: vi.fn(),
@@ -23,17 +23,17 @@ vi.mock('$lib/logger', () => ({
 }));
 
 // Mock uuid generation
-vi.mock('uuidv7', () => ({
+vi.mock("uuidv7", () => ({
 	uuidv7: vi.fn()
 }));
 
 // Mock date-fns
-vi.mock('date-fns', () => ({
+vi.mock("date-fns", () => ({
 	addMinutes: vi.fn()
 }));
 
 // Mock zod
-vi.mock('zod/v4', () => ({
+vi.mock("zod/v4", () => ({
 	default: {
 		object: vi.fn().mockReturnValue({
 			safeParse: vi.fn().mockReturnValue({ success: true })
@@ -51,7 +51,7 @@ vi.mock('zod/v4', () => ({
 	}
 }));
 
-describe('AdminAccountService', () => {
+describe("AdminAccountService", () => {
 	let AdminAccountService: any;
 	let mockCentralDb: any;
 	let mockUuidv7: any;
@@ -61,21 +61,21 @@ describe('AdminAccountService', () => {
 		vi.clearAllMocks();
 
 		// Import the service after mocks are set up
-		AdminAccountService = (await import('./admin-account-service')).AdminAccountService;
-		
+		AdminAccountService = (await import("./admin-account-service")).AdminAccountService;
+
 		// Get mocked modules
-		const dbModule = await vi.importMock('../db');
+		const dbModule = await vi.importMock("../db");
 		mockCentralDb = dbModule.centralDb;
-		
-		const uuidModule = await vi.importMock('uuidv7');
+
+		const uuidModule = await vi.importMock("uuidv7");
 		mockUuidv7 = uuidModule.uuidv7;
-		
-		const dateFnsModule = await vi.importMock('date-fns');
+
+		const dateFnsModule = await vi.importMock("date-fns");
 		mockAddMinutes = dateFnsModule.addMinutes;
-		
+
 		// Setup default mock returns
-		mockUuidv7.mockReturnValue('test-uuid-123');
-		const futureDate = new Date('2024-01-01T12:10:00Z');
+		mockUuidv7.mockReturnValue("test-uuid-123");
+		const futureDate = new Date("2024-01-01T12:10:00Z");
 		mockAddMinutes.mockReturnValue(futureDate);
 	});
 
@@ -83,19 +83,19 @@ describe('AdminAccountService', () => {
 		vi.restoreAllMocks();
 	});
 
-	describe('createAdmin', () => {
-		it('should create a new admin with valid data', async () => {
+	describe("createAdmin", () => {
+		it("should create a new admin with valid data", async () => {
 			const adminData = {
-				name: 'Test Admin',
-				email: 'test@example.com'
+				name: "Test Admin",
+				email: "test@example.com"
 			};
 
 			const mockCreatedAdmin = {
-				id: 'admin-123',
-				name: 'Test Admin',
-				email: 'test@example.com',
-				token: 'test-uuid-123',
-				tokenValidUntil: new Date('2024-01-01T12:10:00Z'),
+				id: "admin-123",
+				name: "Test Admin",
+				email: "test@example.com",
+				token: "test-uuid-123",
+				tokenValidUntil: new Date("2024-01-01T12:10:00Z"),
 				confirmed: false,
 				isActive: false
 			};
@@ -112,7 +112,7 @@ describe('AdminAccountService', () => {
 			expect(mockCentralDb.insert).toHaveBeenCalled();
 			expect(mockInsertBuilder.values).toHaveBeenCalledWith({
 				...adminData,
-				token: 'test-uuid-123',
+				token: "test-uuid-123",
 				tokenValidUntil: expect.any(Date),
 				confirmed: false,
 				isActive: false
@@ -121,10 +121,10 @@ describe('AdminAccountService', () => {
 		});
 	});
 
-	describe('resendConfirmationEmail', () => {
-		it('should resend confirmation email for existing admin', async () => {
-			const email = 'test@example.com';
-			
+	describe("resendConfirmationEmail", () => {
+		it("should resend confirmation email for existing admin", async () => {
+			const email = "test@example.com";
+
 			const mockUpdateBuilder = {
 				set: vi.fn().mockReturnThis(),
 				execute: vi.fn().mockResolvedValue({ count: 1 })
@@ -136,14 +136,14 @@ describe('AdminAccountService', () => {
 
 			expect(mockCentralDb.update).toHaveBeenCalled();
 			expect(mockUpdateBuilder.set).toHaveBeenCalledWith({
-				token: 'test-uuid-123',
+				token: "test-uuid-123",
 				tokenValidUntil: expect.any(Date)
 			});
 		});
 
-		it('should throw NotFoundError for non-existent admin', async () => {
-			const email = 'nonexistent@example.com';
-			
+		it("should throw NotFoundError for non-existent admin", async () => {
+			const email = "nonexistent@example.com";
+
 			const mockUpdateBuilder = {
 				set: vi.fn().mockReturnThis(),
 				execute: vi.fn().mockResolvedValue({ count: 0 })
@@ -151,14 +151,16 @@ describe('AdminAccountService', () => {
 
 			mockCentralDb.update.mockReturnValue(mockUpdateBuilder);
 
-			await expect(AdminAccountService.resendConfirmationEmail(email)).rejects.toThrow(NotFoundError);
+			await expect(AdminAccountService.resendConfirmationEmail(email)).rejects.toThrow(
+				NotFoundError
+			);
 		});
 	});
 
-	describe('confirm', () => {
-		it('should confirm admin with valid token', async () => {
-			const token = 'valid-token-123';
-			
+	describe("confirm", () => {
+		it("should confirm admin with valid token", async () => {
+			const token = "valid-token-123";
+
 			const mockUpdateBuilder = {
 				set: vi.fn().mockReturnThis(),
 				where: vi.fn().mockReturnThis(),
@@ -176,9 +178,9 @@ describe('AdminAccountService', () => {
 			});
 		});
 
-		it('should throw NotFoundError for invalid token', async () => {
-			const token = 'invalid-token';
-			
+		it("should throw NotFoundError for invalid token", async () => {
+			const token = "invalid-token";
+
 			const mockUpdateBuilder = {
 				set: vi.fn().mockReturnThis(),
 				where: vi.fn().mockReturnThis(),
@@ -191,13 +193,13 @@ describe('AdminAccountService', () => {
 		});
 	});
 
-	describe('getAdminByEmail', () => {
-		it('should return admin for existing email', async () => {
-			const email = 'test@example.com';
+	describe("getAdminByEmail", () => {
+		it("should return admin for existing email", async () => {
+			const email = "test@example.com";
 			const mockAdmin = {
-				id: 'admin-123',
-				name: 'Test Admin',
-				email: 'test@example.com',
+				id: "admin-123",
+				name: "Test Admin",
+				email: "test@example.com",
 				confirmed: true,
 				isActive: true
 			};
@@ -219,8 +221,8 @@ describe('AdminAccountService', () => {
 			expect(result).toEqual(mockAdmin);
 		});
 
-		it('should throw NotFoundError for non-existent email', async () => {
-			const email = 'nonexistent@example.com';
+		it("should throw NotFoundError for non-existent email", async () => {
+			const email = "nonexistent@example.com";
 
 			const mockSelectBuilder = {
 				from: vi.fn().mockReturnThis(),
@@ -234,14 +236,14 @@ describe('AdminAccountService', () => {
 		});
 	});
 
-	describe('updateAdmin', () => {
-		it('should update admin successfully', async () => {
-			const adminId = 'admin-123';
-			const updateData = { name: 'Updated Admin' };
+	describe("updateAdmin", () => {
+		it("should update admin successfully", async () => {
+			const adminId = "admin-123";
+			const updateData = { name: "Updated Admin" };
 			const mockUpdatedAdmin = {
 				id: adminId,
-				name: 'Updated Admin',
-				email: 'test@example.com',
+				name: "Updated Admin",
+				email: "test@example.com",
 				updatedAt: new Date()
 			};
 
@@ -264,13 +266,13 @@ describe('AdminAccountService', () => {
 		});
 	});
 
-	describe('deleteAdmin', () => {
-		it('should delete admin and associated passkeys', async () => {
-			const adminId = 'admin-123';
+	describe("deleteAdmin", () => {
+		it("should delete admin and associated passkeys", async () => {
+			const adminId = "admin-123";
 			const mockDeletedAdmin = {
 				id: adminId,
-				name: 'Deleted Admin',
-				email: 'deleted@example.com'
+				name: "Deleted Admin",
+				email: "deleted@example.com"
 			};
 
 			const mockDeleteBuilder = {
@@ -287,14 +289,14 @@ describe('AdminAccountService', () => {
 		});
 	});
 
-	describe('addPasskey', () => {
-		it('should add passkey for admin', async () => {
-			const adminId = 'admin-123';
+	describe("addPasskey", () => {
+		it("should add passkey for admin", async () => {
+			const adminId = "admin-123";
 			const passkeyData = {
-				id: 'passkey-123',
-				publicKey: 'public-key-data',
+				id: "passkey-123",
+				publicKey: "public-key-data",
 				counter: 0,
-				deviceName: 'Test Device'
+				deviceName: "Test Device"
 			};
 
 			const mockCreatedPasskey = {

@@ -17,7 +17,12 @@ registerOpenAPIRoute("/admin/resend-confirmation", "POST", {
 				schema: {
 					type: "object",
 					properties: {
-						email: { type: "string", format: "email", description: "Admin's email address", example: "admin@example.com" }
+						email: {
+							type: "string",
+							format: "email",
+							description: "Admin's email address",
+							example: "admin@example.com"
+						}
 					},
 					required: ["email"]
 				}
