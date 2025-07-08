@@ -1,18 +1,9 @@
 import { logger } from "$lib/logger";
-
-export async function handle({ event, resolve }) {
-	const start = Date.now();
-	const requestLogger = logger.setContext("REQUEST");
-
-	requestLogger.info(`Incoming ${event.request.method} ${event.url.pathname}`);
-
-	const response = await resolve(event);
-	const responseTime = Date.now() - start;
-
-	requestLogger.logRequest(event.request, responseTime, response.status);
-
-	return response;
-}
+import { sequence } from "@sveltejs/kit/hooks";
+import { corsHandle } from "./server-hooks/corsHandle";
+import { loggingHandle } from "./server-hooks/loggingHandle";
+import { rateLimitHandle } from "./server-hooks/rateLimitHandle";
+import { secHeaderHandle } from "./server-hooks/secHeaderHandle";
 
 type Error = {
 	message?: string;
@@ -37,3 +28,5 @@ export async function handleError({ error, event, status, message }) {
 		message: "Internal server error occurred"
 	};
 }
+
+export const handle = sequence(loggingHandle, rateLimitHandle, corsHandle, secHeaderHandle);
