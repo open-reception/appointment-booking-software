@@ -23,9 +23,20 @@ registerOpenAPIRoute("/admin/register", "POST", {
 							format: "email",
 							description: "Admin's email address",
 							example: "admin@example.com"
+						},
+						passkey: {
+							type: "object",
+							description: "WebAuthn passkey data",
+							properties: {
+								id: { type: "string", description: "Credential ID from WebAuthn" },
+								publicKey: { type: "string", description: "Base64 encoded public key" },
+								counter: { type: "integer", description: "Signature counter", default: 0 },
+								deviceName: { type: "string", description: "Device name for identification", example: "MacBook Pro" }
+							},
+							required: ["id", "publicKey"]
 						}
 					},
-					required: ["name", "email"]
+					required: ["name", "email", "passkey"]
 				}
 			}
 		}
@@ -84,12 +95,35 @@ registerOpenAPIRoute("/admin/register", "POST", {
 });
 
 export const POST: RequestHandler = async ({ request }) => {
+	const log = logger.setContext("API");
+	
 	try {
 		const body = await request.json();
 
+		log.debug("Creating admin account with passkey", { 
+			email: body.email, 
+			passkeyId: body.passkey?.id,
+			deviceName: body.passkey?.deviceName 
+		});
+
+		// Create admin account
 		const admin = await AdminAccountService.createAdmin({
 			name: body.name,
 			email: body.email
+		});
+
+		// Add the passkey to the admin account
+		await AdminAccountService.addPasskey(admin.id, {
+			id: body.passkey.id,
+			publicKey: body.passkey.publicKey,
+			counter: body.passkey.counter || 0,
+			deviceName: body.passkey.deviceName || "Unknown Device"
+		});
+
+		log.debug("Admin account and passkey created successfully", {
+			adminId: admin.id,
+			email: admin.email,
+			passkeyId: body.passkey.id
 		});
 
 		return json(
@@ -101,7 +135,6 @@ export const POST: RequestHandler = async ({ request }) => {
 			{ status: 201 }
 		);
 	} catch (error) {
-		const log = logger.setContext("API");
 		log.error("Admin registration error:", JSON.stringify(error || "?"));
 
 		if (error instanceof ValidationError) {

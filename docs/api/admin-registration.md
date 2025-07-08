@@ -16,7 +16,13 @@ Content-Type: application/json
 
 {
   "name": "Admin Name",
-  "email": "admin@example.com"
+  "email": "admin@example.com",
+  "passkey": {
+    "id": "credential-id-from-webauthn",
+    "publicKey": "base64-encoded-public-key",
+    "counter": 0,
+    "deviceName": "MacBook Pro"
+  }
 }
 ```
 
@@ -108,3 +114,8 @@ Content-Type: application/json
 - Confirmation tokens expire after 10 minutes
 - Email sending is marked as TODO in the service layer
 - After confirmation, admin becomes `isActive: true` and `confirmed: true`
+- Passkey is stored during registration and linked to the admin account
+- The passkey `id` field is the credential ID from WebAuthn registration
+- The passkey `publicKey` field must be base64 encoded
+- The passkey `counter` field defaults to 0 if not provided
+- The passkey `deviceName` field defaults to "Unknown Device" if not provided
