@@ -51,6 +51,12 @@ jobs:
       - name: Run E2E tests
         run: npm run test:e2e
 
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
       - name: Build and push Docker images
         run: npm run docker:build-and-push
 

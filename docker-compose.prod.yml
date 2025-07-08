@@ -44,7 +44,7 @@ services:
     read_only: true
 
   app:
-    image: open-reception:${VERSION:-latest}
+    image: openreception/open-reception:${VERSION:-latest}
     container_name: open-reception-app
     restart: unless-stopped
     user: "1001:1001"

@@ -40,3 +40,5 @@ jobs:
 
       - name: Run E2E tests
         run: npm run test:e2e
+        env:
+          DATABASE_URL: "postgresql://test:test@localhost:5432/test"
