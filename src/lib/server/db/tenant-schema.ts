@@ -3,25 +3,12 @@ import {
 	pgTable,
 	uuid,
 	text,
-	boolean,
-	integer,
-	customType,
 	date,
 	pgEnum
 } from "drizzle-orm/pg-core";
 
 /**
- * Custom PostgreSQL bytea type for binary data storage
- * Used for storing encrypted data, images, and other binary content
- */
-const bytea = customType<{ data: Buffer; driverData: Buffer }>({
-	dataType() {
-		return "bytea";
-	}
-});
-
-/**
- * Database enums
+ * Database enums for tenant-specific entities
  */
 
 /** Channel type enumeration - defines what kind of resource a channel represents */
@@ -37,38 +24,9 @@ export const appointmentStatusEnum = pgEnum("appointment_status", [
 ]);
 
 /**
- * Tenant table - represents a single organization/company using the system
- * Each tenant gets their own isolated data and subdomain
- * @table tenant
- */
-export const tenant = pgTable("tenant", {
-	/** Primary key - unique identifier */
-	id: uuid("id").primaryKey().defaultRandom(),
-	/** Short name used as subdomain (e.g., 'acme' for acme.example.com) */
-	shortName: text("short_name").notNull().unique(),
-	/** Full organization name displayed to users */
-	longName: text("long_name").notNull(),
-	/** Optional description of the organization */
-	description: text("description"),
-	/** Organization logo as binary data (PNG, JPEG, GIF, or WEBP) */
-	logo: bytea("logo"),
-	/** Background color for email templates and UI theming */
-	backgroundColor: text("background_color"),
-	/** Primary brand color for buttons, links, and highlights */
-	primaryColor: text("primary_color"),
-	/** Secondary brand color for accents and success messages */
-	secondaryColor: text("secondary_color"),
-	/** Default language for the tenant (de/en) */
-	defaultLanguage: text("default_language").default("de"),
-	/** Days after appointment completion before auto-deletion */
-	autoDeleteDays: integer("auto_delete_days").default(365),
-	/** Whether appointments require explicit confirmation */
-	requireConfirmation: boolean("require_confirmation").default(false)
-});
-
-/**
  * Client table - represents end users who book appointments
  * Uses end-to-end encryption for privacy protection
+ * Stored in tenant-specific database
  * @table client
  */
 export const client = pgTable("client", {
@@ -89,6 +47,7 @@ export const client = pgTable("client", {
 /**
  * Staff table - represents employees/staff members who manage appointments
  * Staff members have administrative access and can view/manage appointments
+ * Stored in tenant-specific database
  * @table staff
  */
 export const staff = pgTable("staff", {
@@ -111,6 +70,7 @@ export const staff = pgTable("staff", {
 /**
  * Channel table - represents bookable resources (rooms, machines, personnel)
  * Channels define what can be booked and when
+ * Stored in tenant-specific database
  * @table channel
  */
 export const channel = pgTable("channel", {
@@ -127,6 +87,7 @@ export const channel = pgTable("channel", {
 /**
  * Appointment table - represents scheduled appointments between clients and channels
  * Contains encrypted appointment data for privacy protection
+ * Stored in tenant-specific database
  * @table appointment
  */
 export const appointment = pgTable("appointment", {
@@ -156,9 +117,6 @@ export const appointment = pgTable("appointment", {
  * TypeScript type exports for use in application code
  * These types represent the shape of data when queried from the database
  */
-
-/** Tenant record type for database queries */
-export type SelectTenant = InferSelectModel<typeof tenant>;
 
 /** Client record type for database queries */
 export type SelectClient = InferSelectModel<typeof client>;

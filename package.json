@@ -44,9 +44,9 @@
 		"@tailwindcss/vite": "^4.1.10",
 		"@testing-library/jest-dom": "^6.6.3",
 		"@testing-library/svelte": "^5.2.8",
-		"@types/nodemailer": "^6.4.17",
 		"@types/dotenv": "^6.1.1",
 		"@types/node": "^24",
+		"@types/nodemailer": "^6.4.17",
 		"clsx": "^2.1.1",
 		"drizzle-kit": "^0.31.1",
 		"eslint": "^9.29.0",
@@ -74,6 +74,7 @@
 		"@sveltejs/adapter-node": "^5.2.12",
 		"argon2": "^0.43.0",
 		"argon2-browser": "^1.18.0",
+		"date-fns": "^4.1.0",
 		"dotenv": "^16.5.0",
 		"dotenv-expand": "^12.0.2",
 		"drizzle-orm": "^0.44.2",
@@ -81,7 +82,9 @@
 		"nodemailer": "^7.0.3",
 		"postgres": "^3.4.7",
 		"secrets.js-34r7h": "^2.0.2",
-		"winston": "^3.17.0"
+		"uuidv7": "^1.0.2",
+		"winston": "^3.17.0",
+		"zod": "^3.25.76"
 	},
 	"engines": {
 		"node": ">=24.0.0"

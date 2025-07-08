@@ -16,5 +16,6 @@
 	"[json]": {
 		"editor.defaultFormatter": "esbenp.prettier-vscode"
 	},
-	"prettier.requireConfig": true
+	"prettier.requireConfig": true,
+	"cSpell.words": ["postgres"]
 }
