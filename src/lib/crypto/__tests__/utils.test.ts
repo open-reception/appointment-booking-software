@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { BufferUtils, KyberCrypto, AESCrypto, ShamirSecretSharing } from "./utils";
-import type { CryptoBuffer, KyberKeyPair, ShamirShare } from "./utils";
+import { BufferUtils, KyberCrypto, AESCrypto, ShamirSecretSharing } from "../utils";
+import type { CryptoBuffer, KyberKeyPair, ShamirShare } from "../utils";
 
 describe("BufferUtils", () => {
 	describe("from()", () => {

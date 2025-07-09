@@ -5,6 +5,7 @@ export type JsonSchema = {
 	required?: string[];
 	format?: string;
 	description?: string;
+	default?: unknown;
 	example?: unknown;
 	enum?: unknown[];
 	$ref?: string;

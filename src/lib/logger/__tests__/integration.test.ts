@@ -61,7 +61,7 @@ describe("UniversalLogger Integration - Client Error Forwarding", () => {
 			});
 
 			// Import logger after mocks are set up
-			const { createLogger } = await import("./index");
+			const { createLogger } = await import("../index");
 			const logger = createLogger("IntegrationTest");
 
 			// Trigger client error
@@ -103,7 +103,7 @@ describe("UniversalLogger Integration - Client Error Forwarding", () => {
 			// Mock server error response
 			mockFetch.mockRejectedValueOnce(new Error("Network error"));
 
-			const { createLogger } = await import("./index");
+			const { createLogger } = await import("../index");
 			const logger = createLogger("ErrorHandling");
 
 			logger.error("Test error");
@@ -129,7 +129,7 @@ describe("UniversalLogger Integration - Client Error Forwarding", () => {
 				statusText: "Internal Server Error"
 			});
 
-			const { createLogger } = await import("./index");
+			const { createLogger } = await import("../index");
 			const logger = createLogger("ServerError");
 
 			logger.error("Server unavailable");
@@ -189,7 +189,7 @@ describe("UniversalLogger Integration - Client Error Forwarding", () => {
 				json: async () => ({ success: true })
 			});
 
-			const { createLogger } = await import("./index");
+			const { createLogger } = await import("../index");
 			const logger = createLogger("NoForwarding");
 
 			// Log different levels
@@ -214,7 +214,7 @@ describe("UniversalLogger Integration - Client Error Forwarding", () => {
 				json: async () => ({ success: true })
 			});
 
-			const { createLogger } = await import("./index");
+			const { createLogger } = await import("../index");
 			const logger1 = createLogger("Concurrent1");
 			const logger2 = createLogger("Concurrent2");
 
@@ -248,7 +248,7 @@ describe("UniversalLogger Integration - Client Error Forwarding", () => {
 				json: async () => ({ success: true })
 			});
 
-			const { createLogger } = await import("./index");
+			const { createLogger } = await import("../index");
 			const logger = createLogger("DataIntegrity");
 
 			const complexMeta = {
@@ -285,7 +285,7 @@ describe("UniversalLogger Integration - Client Error Forwarding", () => {
 				json: async () => ({ success: true })
 			});
 
-			const { createLogger } = await import("./index");
+			const { createLogger } = await import("../index");
 			const logger = createLogger("MessageIntegrity");
 
 			const originalMessage = "Original error message with special chars: áéíóú 中文 🚀";

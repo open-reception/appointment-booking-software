@@ -13,7 +13,7 @@ export type InsertAdminPasskey = InferInsertModel<typeof centralSchema.adminPass
 
 const adminCreationSchema = z.object({
 	name: z.string().min(5),
-	email: z.string().email(),
+	email: z.email(),
 	token: z.uuidv7().optional(),
 	tokenValidUntil: z.date().optional()
 });
@@ -32,7 +32,7 @@ export class AdminAccountService {
 		if (!validated.success) {
 			log.warn("Admin creation failed: Invalid data", {
 				email: adminData.email,
-				errors: validated.error.errors
+				errors: validated.error
 			});
 			throw new ValidationError("Invalid admin data");
 		}

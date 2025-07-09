@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // Mock the database module
-vi.mock("../db", () => ({
+vi.mock("../../db", () => ({
 	centralDb: {
 		insert: vi.fn(),
 		select: vi.fn(),
@@ -12,7 +12,7 @@ vi.mock("../db", () => ({
 }));
 
 // Mock TenantConfig
-vi.mock("../db/tenant-config", () => ({
+vi.mock("../../db/tenant-config", () => ({
 	TenantConfig: {
 		create: vi.fn()
 	}
@@ -25,8 +25,10 @@ vi.mock("$env/dynamic/private", () => ({
 	}
 }));
 
+// Import the service after mocks are set up
+import { TenantAdminService } from "../tenant-admin-service";
+
 describe("TenantAdminService", () => {
-	let TenantAdminService: any;
 	let mockCentralDb: any;
 	let mockGetTenantDb: any;
 	let mockTenantConfig: any;
@@ -34,15 +36,12 @@ describe("TenantAdminService", () => {
 	beforeEach(async () => {
 		vi.clearAllMocks();
 
-		// Import the service after mocks are set up
-		TenantAdminService = (await import("./tenant-admin-service")).TenantAdminService;
-
 		// Get mocked modules
-		const dbModule = await vi.importMock("../db");
+		const dbModule = await vi.importMock("../../db");
 		mockCentralDb = dbModule.centralDb;
 		mockGetTenantDb = dbModule.getTenantDb;
 
-		const configModule = await vi.importMock("../db/tenant-config");
+		const configModule = await vi.importMock("../../db/tenant-config");
 		mockTenantConfig = configModule.TenantConfig;
 	});
 
@@ -54,7 +53,7 @@ describe("TenantAdminService", () => {
 		it("should create a new tenant with default configuration", async () => {
 			const newTenant = {
 				shortName: "test-clinic",
-				longName: "Test Medical Clinic",
+				longName: "",
 				description: "A test clinic"
 			};
 

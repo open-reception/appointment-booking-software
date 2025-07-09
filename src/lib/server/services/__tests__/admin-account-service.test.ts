@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { NotFoundError } from "../utils/errors";
+import { NotFoundError } from "../../utils/errors";
 
 // Mock the database module
-vi.mock("../db", () => ({
+vi.mock("../../db", () => ({
 	centralDb: {
 		insert: vi.fn(),
 		select: vi.fn(),
@@ -11,16 +11,6 @@ vi.mock("../db", () => ({
 	}
 }));
 
-// Mock the logger
-vi.mock("$lib/logger", () => ({
-	default: {
-		setContext: vi.fn().mockReturnValue({
-			debug: vi.fn(),
-			warn: vi.fn(),
-			error: vi.fn()
-		})
-	}
-}));
 
 // Mock uuid generation
 vi.mock("uuidv7", () => ({
@@ -32,27 +22,11 @@ vi.mock("date-fns", () => ({
 	addMinutes: vi.fn()
 }));
 
-// Mock zod
-vi.mock("zod/v4", () => ({
-	default: {
-		object: vi.fn().mockReturnValue({
-			safeParse: vi.fn().mockReturnValue({ success: true })
-		}),
-		string: vi.fn().mockReturnValue({
-			min: vi.fn().mockReturnThis(),
-			email: vi.fn().mockReturnThis()
-		}),
-		uuidv7: vi.fn().mockReturnValue({
-			optional: vi.fn().mockReturnThis()
-		}),
-		date: vi.fn().mockReturnValue({
-			optional: vi.fn().mockReturnThis()
-		})
-	}
-}));
+
+// Import the service after mocks are set up
+import { AdminAccountService } from "../admin-account-service";
 
 describe("AdminAccountService", () => {
-	let AdminAccountService: any;
 	let mockCentralDb: any;
 	let mockUuidv7: any;
 	let mockAddMinutes: any;
@@ -60,11 +34,8 @@ describe("AdminAccountService", () => {
 	beforeEach(async () => {
 		vi.clearAllMocks();
 
-		// Import the service after mocks are set up
-		AdminAccountService = (await import("./admin-account-service")).AdminAccountService;
-
 		// Get mocked modules
-		const dbModule = await vi.importMock("../db");
+		const dbModule = await vi.importMock("../../db");
 		mockCentralDb = dbModule.centralDb;
 
 		const uuidModule = await vi.importMock("uuidv7");

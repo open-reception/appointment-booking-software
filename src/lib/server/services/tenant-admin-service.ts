@@ -1,12 +1,22 @@
 import { centralDb, getTenantDb } from "../db";
 import * as centralSchema from "../db/central-schema";
+import { type InsertTenant } from "../db/central-schema";
 import { TenantConfig } from "../db/tenant-config";
 
 import { env } from "$env/dynamic/private";
 import { eq } from "drizzle-orm";
 import logger from "$lib/logger";
+import z from "zod/v4";
+import { ValidationError } from "../utils/errors";
 
 if (!env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
+
+const tentantCreationSchema = z.object({
+	shortName: z.string().min(4).max(15),
+	inviteAdmin: z.email().optional()
+});
+
+export type TenantCreationRequest = z.infer<typeof tentantCreationSchema>;
 
 export class TenantAdminService {
 	#config!: TenantConfig;
@@ -14,11 +24,15 @@ export class TenantAdminService {
 
 	private constructor(public readonly tenantId: string) {}
 
-	static async createTenant(newTenant: centralSchema.InsertTenant) {
+	static async createTenant(request: TenantCreationRequest) {
 		const log = logger.setContext("TenantAdminService");
+
+		const validation = tentantCreationSchema.safeParse(request);
+
+		if (!validation.success) throw new ValidationError("Invalid tenant creation request");
+
 		log.debug("Creating new tenant", {
-			shortName: newTenant.shortName,
-			longName: newTenant.longName
+			shortName: request.shortName
 		});
 
 		const configuration: Record<string, boolean | number | string> = {
@@ -33,6 +47,8 @@ export class TenantAdminService {
 
 		const urlParts = env.DATABASE_URL.split("/");
 		urlParts.pop();
+
+		const newTenant: InsertTenant = { ...request, longName: "", databaseUrl: "" };
 		newTenant.databaseUrl = urlParts.join("/") + "/" + newTenant.shortName;
 
 		try {
@@ -60,6 +76,9 @@ export class TenantAdminService {
 			tenantService.#config = config;
 
 			log.debug("Tenant service created successfully", { tenantId: tenant[0].id });
+
+			// TODO sent tenant admin invitation mail
+
 			return tenantService;
 		} catch (error) {
 			log.error("Failed to create tenant", {

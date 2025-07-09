@@ -92,6 +92,7 @@ erDiagram
     CHANNEL {
         uuid id PK
         string name
+        string color
         string description "Optional"
         boolean public "A channel may be only bookable with Code or internally"
         boolean require_confirmation "Must appointments be explicitly confirmed"
