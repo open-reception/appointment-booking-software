@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // Mock the database module
@@ -106,32 +107,6 @@ describe("TenantAdminService", () => {
 		});
 	});
 
-	describe("update", () => {
-		it("should update tenant data", async () => {
-			const tenantId = "tenant-123";
-			const updateData = {
-				longName: "Updated Clinic Name",
-				description: "Updated description"
-			};
-
-			const mockConfig = { setConfig: vi.fn() };
-			const mockUpdateBuilder = {
-				set: vi.fn().mockReturnThis(),
-				where: vi.fn().mockReturnThis()
-			};
-
-			mockTenantConfig.create.mockResolvedValue(mockConfig);
-			mockCentralDb.update.mockReturnValue(mockUpdateBuilder);
-
-			const service = await TenantAdminService.getTenantById(tenantId);
-			await service.update(updateData);
-
-			expect(mockCentralDb.update).toHaveBeenCalled();
-			expect(mockUpdateBuilder.set).toHaveBeenCalledWith(updateData);
-			expect(mockUpdateBuilder.where).toHaveBeenCalled();
-		});
-	});
-
 	describe("getDb", () => {
 		it("should return database connection", async () => {
 			const tenantId = "tenant-123";
@@ -185,6 +160,129 @@ describe("TenantAdminService", () => {
 			const config = service.configuration;
 
 			expect(config).toBe(mockConfig);
+		});
+	});
+
+	describe("updateTenantData", () => {
+		it("should update tenant data successfully", async () => {
+			const tenantId = "tenant-123";
+			const updateData = {
+				longName: "Updated Clinic Name",
+				description: "Updated description",
+				logo: Buffer.from("logo data")
+			};
+
+			const mockUpdatedTenant = {
+				id: tenantId,
+				shortName: "test-clinic",
+				...updateData,
+				updatedAt: new Date()
+			};
+
+			const mockConfig = { setConfig: vi.fn() };
+			const mockUpdateBuilder = {
+				set: vi.fn().mockReturnThis(),
+				where: vi.fn().mockReturnThis(),
+				returning: vi.fn().mockResolvedValue([mockUpdatedTenant])
+			};
+
+			mockTenantConfig.create.mockResolvedValue(mockConfig);
+			mockCentralDb.update.mockReturnValue(mockUpdateBuilder);
+
+			const service = await TenantAdminService.getTenantById(tenantId);
+			const result = await service.updateTenantData(updateData);
+
+			expect(mockCentralDb.update).toHaveBeenCalled();
+			expect(mockUpdateBuilder.set).toHaveBeenCalledWith({
+				...updateData,
+				updatedAt: expect.any(Date)
+			});
+			expect(mockUpdateBuilder.where).toHaveBeenCalled();
+			expect(result).toEqual(mockUpdatedTenant);
+		});
+
+		it("should throw NotFoundError when tenant not found", async () => {
+			const tenantId = "tenant-123";
+			const updateData = { longName: "Updated Name" };
+
+			const mockConfig = { setConfig: vi.fn() };
+			const mockUpdateBuilder = {
+				set: vi.fn().mockReturnThis(),
+				where: vi.fn().mockReturnThis(),
+				returning: vi.fn().mockResolvedValue([])
+			};
+
+			mockTenantConfig.create.mockResolvedValue(mockConfig);
+			mockCentralDb.update.mockReturnValue(mockUpdateBuilder);
+
+			const service = await TenantAdminService.getTenantById(tenantId);
+
+			await expect(service.updateTenantData(updateData)).rejects.toThrow(
+				"Tenant with ID tenant-123 not found"
+			);
+		});
+	});
+
+	describe("updateTenantConfig", () => {
+		it("should update tenant configuration successfully", async () => {
+			const tenantId = "tenant-123";
+			const configUpdates = {
+				brandColor: "#FF0000",
+				maxChannels: 10,
+				requireEmail: false
+			};
+
+			const mockConfig = {
+				setConfig: vi.fn().mockResolvedValue(undefined)
+			};
+
+			mockTenantConfig.create.mockResolvedValue(mockConfig);
+
+			const service = await TenantAdminService.getTenantById(tenantId);
+			const result = await service.updateTenantConfig(configUpdates);
+
+			expect(mockConfig.setConfig).toHaveBeenCalledTimes(3);
+			expect(mockConfig.setConfig).toHaveBeenCalledWith("brandColor", "#FF0000");
+			expect(mockConfig.setConfig).toHaveBeenCalledWith("maxChannels", 10);
+			expect(mockConfig.setConfig).toHaveBeenCalledWith("requireEmail", false);
+
+			expect(result).toEqual([
+				{ key: "brandColor", value: "#FF0000" },
+				{ key: "maxChannels", value: 10 },
+				{ key: "requireEmail", value: false }
+			]);
+		});
+
+		it("should handle empty config updates", async () => {
+			const tenantId = "tenant-123";
+			const configUpdates = {};
+
+			const mockConfig = {
+				setConfig: vi.fn().mockResolvedValue(undefined)
+			};
+
+			mockTenantConfig.create.mockResolvedValue(mockConfig);
+
+			const service = await TenantAdminService.getTenantById(tenantId);
+			const result = await service.updateTenantConfig(configUpdates);
+
+			expect(mockConfig.setConfig).not.toHaveBeenCalled();
+			expect(result).toEqual([]);
+		});
+
+		it("should propagate config errors", async () => {
+			const tenantId = "tenant-123";
+			const configUpdates = { brandColor: "#FF0000" };
+
+			const mockConfig = {
+				setConfig: vi.fn().mockRejectedValue(new Error("Config error"))
+			};
+
+			mockTenantConfig.create.mockResolvedValue(mockConfig);
+
+			const service = await TenantAdminService.getTenantById(tenantId);
+
+			await expect(service.updateTenantConfig(configUpdates)).rejects.toThrow("Config error");
 		});
 	});
 });

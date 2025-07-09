@@ -7,7 +7,7 @@ import { env } from "$env/dynamic/private";
 import { eq } from "drizzle-orm";
 import logger from "$lib/logger";
 import z from "zod/v4";
-import { ValidationError } from "../utils/errors";
+import { ValidationError, NotFoundError } from "../utils/errors";
 
 if (!env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
 
@@ -89,6 +89,11 @@ export class TenantAdminService {
 		}
 	}
 
+	/**
+	 * Create a tenant admin service by its ID
+	 * @param id
+	 * @returns new TenantAdminService
+	 */
 	static async getTenantById(id: string) {
 		const log = logger.setContext("TenantAdminService");
 		log.debug("Getting tenant by ID", { tenantId: id });
@@ -105,31 +110,89 @@ export class TenantAdminService {
 		}
 	}
 
-	async update(updateData: Partial<Omit<centralSchema.InsertTenant, "id">>) {
+	/**
+	 * Access the tenants configuration
+	 */
+	get configuration() {
+		return this.#config;
+	}
+
+	/**
+	 * Update tenant data (longName, shortName, description, logo)
+	 */
+	async updateTenantData(
+		updateData: Partial<Pick<InsertTenant, "longName" | "shortName" | "description" | "logo">>
+	) {
 		const log = logger.setContext("TenantAdminService");
-		log.debug("Updating tenant", {
+		log.debug("Updating tenant data", {
 			tenantId: this.tenantId,
 			updateFields: Object.keys(updateData)
 		});
 
 		try {
-			await centralDb
+			const result = await centralDb
 				.update(centralSchema.tenant)
-				.set(updateData)
-				.where(eq(centralSchema.tenant.id, this.tenantId));
+				.set({
+					...updateData,
+					updatedAt: new Date()
+				})
+				.where(eq(centralSchema.tenant.id, this.tenantId))
+				.returning();
 
-			log.debug("Tenant updated successfully", {
+			if (!result[0]) {
+				log.warn("Tenant update failed: Tenant not found", { tenantId: this.tenantId });
+				throw new NotFoundError(`Tenant with ID ${this.tenantId} not found`);
+			}
+
+			log.debug("Tenant data updated successfully", {
 				tenantId: this.tenantId,
 				updateFields: Object.keys(updateData)
 			});
+
+			return result[0];
 		} catch (error) {
-			log.error("Failed to update tenant", { tenantId: this.tenantId, error: String(error) });
+			if (error instanceof NotFoundError) throw error;
+			log.error("Failed to update tenant data", {
+				tenantId: this.tenantId,
+				error: String(error)
+			});
 			throw error;
 		}
 	}
 
-	get configuration() {
-		return this.#config;
+	/**
+	 * Update tenant configuration entries using TenantConfig
+	 */
+	async updateTenantConfig(configUpdates: Record<string, boolean | number | string>) {
+		const log = logger.setContext("TenantAdminService");
+		log.debug("Updating tenant configuration", {
+			tenantId: this.tenantId,
+			configKeys: Object.keys(configUpdates)
+		});
+
+		try {
+			const results = [];
+
+			for (const [key, value] of Object.entries(configUpdates)) {
+				await this.#config.setConfig(key, value);
+				results.push({ key, value });
+			}
+
+			log.debug("Tenant configuration updated successfully", {
+				tenantId: this.tenantId,
+				configKeys: Object.keys(configUpdates),
+				updatedCount: results.length
+			});
+
+			return results;
+		} catch (error) {
+			log.error("Failed to update tenant configuration", {
+				tenantId: this.tenantId,
+				configKeys: Object.keys(configUpdates),
+				error: String(error)
+			});
+			throw error;
+		}
 	}
 
 	/**
