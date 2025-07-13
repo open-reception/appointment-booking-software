@@ -18,11 +18,33 @@ const tentantCreationSchema = z.object({
 
 export type TenantCreationRequest = z.infer<typeof tentantCreationSchema>;
 
+export interface TenantConfiguration extends Record<string, string | number | boolean> {
+	brandColor: string;
+	defaultLanguage: string;
+	maxChannels: number;
+	maxTeamMembers: number;
+	autoDeleteDays: number;
+	requireEmail: boolean;
+	requirePhone: boolean;
+}
+
 export class TenantAdminService {
 	#config!: TenantConfig;
 	#db: Awaited<ReturnType<typeof getTenantDb>> | null = null;
 
 	private constructor(public readonly tenantId: string) {}
+
+	static getConfigDefaults(): TenantConfiguration {
+		return {
+			brandColor: "#E11E15",
+			defaultLanguage: "DE",
+			maxChannels: -1,
+			maxTeamMembers: -1,
+			autoDeleteDays: 30,
+			requireEmail: true,
+			requirePhone: false
+		};
+	}
 
 	static async createTenant(request: TenantCreationRequest) {
 		const log = logger.setContext("TenantAdminService");
@@ -35,15 +57,7 @@ export class TenantAdminService {
 			shortName: request.shortName
 		});
 
-		const configuration: Record<string, boolean | number | string> = {
-			brandColor: "#E11E15",
-			defaultLanguage: "DE",
-			maxChannels: -1,
-			maxTeamMembers: -1,
-			autoDeleteDays: 30,
-			requireEmail: true,
-			requirePhone: false
-		};
+		const configuration = TenantAdminService.getConfigDefaults();
 
 		const urlParts = env.DATABASE_URL.split("/");
 		urlParts.pop();
