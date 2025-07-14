@@ -7,7 +7,8 @@ import logger from "$lib/logger";
 // Register OpenAPI documentation
 registerOpenAPIRoute("/admin/exists", "GET", {
 	summary: "Check if global admin exists",
-	description: "Checks whether any global administrator account exists in the system. Used by frontend to determine available authentication routes.",
+	description:
+		"Checks whether any global administrator account exists in the system. Used by frontend to determine available authentication routes.",
 	tags: ["Admin"],
 	responses: {
 		"200": {
@@ -17,32 +18,16 @@ registerOpenAPIRoute("/admin/exists", "GET", {
 					schema: {
 						type: "object",
 						properties: {
-							exists: { 
-								type: "boolean", 
-								description: "Whether at least one global admin exists" 
+							exists: {
+								type: "boolean",
+								description: "Whether at least one global admin exists"
 							},
-							count: { 
-								type: "integer", 
-								description: "Total number of global admins" 
+							count: {
+								type: "integer",
+								description: "Total number of global admins"
 							}
 						},
 						required: ["exists", "count"]
-					},
-					examples: {
-						"admin-exists": {
-							summary: "Admin exists",
-							value: {
-								exists: true,
-								count: 2
-							}
-						},
-						"no-admin": {
-							summary: "No admin exists",
-							value: {
-								exists: false,
-								count: 0
-							}
-						}
 					}
 				}
 			}
@@ -61,16 +46,16 @@ registerOpenAPIRoute("/admin/exists", "GET", {
 
 export const GET: RequestHandler = async () => {
 	const log = logger.setContext("API");
-	
+
 	try {
 		log.debug("Checking if global admin exists");
 
 		const adminExists = await AdminAccountService.adminExists();
 		const adminCount = await AdminAccountService.getAdminCount();
 
-		log.debug("Admin existence check completed", { 
-			exists: adminExists, 
-			count: adminCount 
+		log.debug("Admin existence check completed", {
+			exists: adminExists,
+			count: adminCount
 		});
 
 		return json({
