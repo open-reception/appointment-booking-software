@@ -354,4 +354,47 @@ export class AdminAccountService {
 			lastUsedAt: new Date()
 		});
 	}
+
+	/**
+	 * Check if any admin exists in the system
+	 */
+	static async adminExists(): Promise<boolean> {
+		const log = logger.setContext("AdminAccountService");
+		log.debug("Checking if any admin exists");
+
+		try {
+			const result = await centralDb
+				.select({ id: centralSchema.admin.id })
+				.from(centralSchema.admin)
+				.limit(1);
+
+			const exists = result.length > 0;
+			log.debug("Admin existence check completed", { exists });
+			return exists;
+		} catch (error) {
+			log.error("Failed to check admin existence", { error: String(error) });
+			throw error;
+		}
+	}
+
+	/**
+	 * Get total count of admins in the system
+	 */
+	static async getAdminCount(): Promise<number> {
+		const log = logger.setContext("AdminAccountService");
+		log.debug("Getting admin count");
+
+		try {
+			const result = await centralDb
+				.select()
+				.from(centralSchema.admin);
+
+			const count = result.length;
+			log.debug("Admin count retrieved", { count });
+			return count;
+		} catch (error) {
+			log.error("Failed to get admin count", { error: String(error) });
+			throw error;
+		}
+	}
 }
