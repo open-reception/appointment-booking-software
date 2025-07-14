@@ -63,6 +63,32 @@ erDiagram
 ```mermaid
 erDiagram
 
+    AGENT {
+        uuid id PK
+        string name
+        string description "Optional"
+        blob image "PNG, JPEG, GIF, or WEBP"
+    }
+
+    CHANNEL {
+        uuid id PK
+        string name
+        string color
+        string description "Optional"
+        string language
+        boolean public "A channel may be only bookable with Code or internally if this is false"
+        boolean require_confirmation "Must appointments be explicitly confirmed"
+    }
+
+    SLOT_TEMPLATE {
+        uuid id PK
+        string name "Slot template name"
+        from time "Start time"
+        to time "End time"
+        duration integer "Slot length in minutes"
+        weekdays integer "7-bit representation of the selected weekdays"
+    }
+
     CLIENT {
         uuid id PK
         string hash_key "Generated from email"
@@ -80,23 +106,6 @@ erDiagram
         string name "Optional"
         string email
         string language
-    }
-
-    TEAM {
-        uuid id PK
-        string name
-        string description "Optional"
-        blob image "PNG, JPEG, GIF, or WEBP"
-    }
-
-    CHANNEL {
-        uuid id PK
-        string name
-        string color
-        string description "Optional"
-        boolean public "A channel may be only bookable with Code or internally"
-        boolean require_confirmation "Must appointments be explicitly confirmed"
-        any slot_creation "am Wochentag XY von bis, länge; davon mehrere"
     }
 
     SLOT {
@@ -171,7 +180,7 @@ erDiagram
     CLIENT ||--o{ APPOINTMENT : "has"
     CHANNEL ||--o{ APPOINTMENT : "assigned_to"
     CHANNEL ||--o{ QUESTIONNAIRE : "has"
-    CHANNEL }o--o{ TEAM : "associated"
+    CHANNEL }o--o{ AGENT : "associated"
     APPOINTMENT ||--o{ NOTE : "contains"
     APPOINTMENT ||--o{ ATTACHMENT : "contains"
     QUESTIONNAIRE ||--o{ QUESTIONNAIRE_QUESTION : "contains"

@@ -3,7 +3,6 @@ import {
 	pgTable,
 	uuid,
 	text,
-	customType,
 	pgEnum,
 	uniqueIndex,
 	boolean,
@@ -11,16 +10,7 @@ import {
 	integer,
 	index
 } from "drizzle-orm/pg-core";
-
-/**
- * Custom PostgreSQL bytea type for binary data storage
- * Used for storing encrypted data, images, and other binary content
- */
-const bytea = customType<{ data: Buffer; driverData: Buffer }>({
-	dataType() {
-		return "bytea";
-	}
-});
+import { bytea } from "./base";
 
 /**
  * Config value type enumeration - defines the data type of configuration values

@@ -1,5 +1,6 @@
 import type { InferSelectModel } from "drizzle-orm";
-import { pgTable, uuid, text, date, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, boolean, uuid, text, date, pgEnum, time, integer } from "drizzle-orm/pg-core";
+import { bytea } from "./base";
 
 /**
  * Database enums for tenant-specific entities
@@ -16,6 +17,103 @@ export const appointmentStatusEnum = pgEnum("appointment_status", [
 	"REJECTED",
 	"NO_SHOW"
 ]);
+
+/**
+ * Agent table - represents personnel or staff members who can be assigned to channels
+ * Agents are the people who provide services and can be associated with multiple channels
+ * Stored in tenant-specific database
+ * @table agent
+ */
+export const agent = pgTable("agent", {
+	/** Primary key - unique identifier */
+	id: uuid("id").primaryKey().defaultRandom(),
+	/** Agent's display name */
+	name: text("name").notNull(),
+	/** Optional description of the agent's role or specialties */
+	description: text("description"),
+	/** Optional logo/profile image for the agent (PNG, JPEG, GIF, or WEBP) */
+	logo: bytea("logo")
+});
+
+/**
+ * Channel table - represents bookable resources (rooms, machines, personnel)
+ * Channels define what can be booked and under what conditions
+ * Can be associated with multiple agents and slot templates
+ * Stored in tenant-specific database
+ * @table channel
+ */
+export const channel = pgTable("channel", {
+	/** Primary key - unique identifier */
+	id: uuid("id").primaryKey().defaultRandom(),
+	/** Channel display name */
+	name: text("name").notNull(),
+	/** Optional color for UI display (hex code) */
+	color: text("color"),
+	/** Optional description of the channel */
+	description: text("description"),
+	/** Language for this channel's interface */
+	language: text("language"),
+	/** Whether channel is publicly bookable or requires internal access */
+	isPublic: boolean("is_public"),
+	/** Whether appointments must be explicitly confirmed by staff */
+	requiresConfirmation: boolean("requires_confirmation")
+});
+
+/**
+ * Slot Template table - defines recurring time slots for appointment booking
+ * Templates specify when appointments can be scheduled on specific weekdays
+ * Can be associated with multiple channels to define their availability
+ * Stored in tenant-specific database
+ * @table slotTemplate
+ */
+export const slotTemplate = pgTable("slotTemplate", {
+	/** Primary key - unique identifier */
+	id: uuid("id").primaryKey().defaultRandom(),
+	/** Template name for identification */
+	name: text("name").notNull(),
+	/** Bitmask for weekdays (1=Monday, 2=Tuesday, 4=Wednesday, etc.) */
+	weekdays: integer("weekdays"),
+	/** Start time for the slot template */
+	from: time("from").notNull(),
+	/** End time for the slot template */
+	to: time("to").notNull(),
+	/** Duration of individual appointment slots in minutes */
+	duration: integer("duration").notNull()
+});
+
+/**
+ * Channel-Agent junction table - establishes many-to-many relationship
+ * Links channels with the agents who can provide services for that channel
+ * Stored in tenant-specific database
+ * @table channelAgent
+ */
+export const channelAgent = pgTable("channel_agent", {
+	/** Foreign key to channel */
+	channelId: uuid("channel_id")
+		.notNull()
+		.references(() => channel.id),
+	/** Foreign key to agent */
+	agentId: uuid("agent_id")
+		.notNull()
+		.references(() => agent.id)
+});
+
+/**
+ * Channel-SlotTemplate junction table - establishes many-to-many relationship
+ * Links channels with the slot templates that define their availability
+ * Stored in tenant-specific database
+ * @table channelSlotTemplate
+ */
+export const channelSlotTemplate = pgTable("channel_slot_template", {
+	/** Foreign key to channel */
+	channelId: uuid("channel_id")
+		.notNull()
+		.references(() => channel.id),
+	/** Foreign key to slot template */
+	slotTemplateId: uuid("slot_template_id")
+		.notNull()
+		.references(() => slotTemplate.id)
+});
 
 /**
  * Client table - represents end users who book appointments
@@ -59,23 +157,6 @@ export const staff = pgTable("staff", {
 	email: text("email").notNull(),
 	/** Preferred language for communications (de/en) */
 	language: text("language")
-});
-
-/**
- * Channel table - represents bookable resources (rooms, machines, personnel)
- * Channels define what can be booked and when
- * Stored in tenant-specific database
- * @table channel
- */
-export const channel = pgTable("channel", {
-	/** Primary key - unique identifier */
-	id: uuid("id").primaryKey().defaultRandom(),
-	/** Type of channel (ROOM, MACHINE, or PERSONNEL) */
-	type: channelTypeEnum("type").notNull(),
-	/** Display name of the channel */
-	name: text("name").notNull(),
-	/** Optional description of the channel and its capabilities */
-	description: text("description")
 });
 
 /**
@@ -123,3 +204,15 @@ export type SelectChannel = InferSelectModel<typeof channel>;
 
 /** Appointment record type for database queries */
 export type SelectAppointment = InferSelectModel<typeof appointment>;
+
+/** Agent record type for database queries */
+export type SelectAgent = InferSelectModel<typeof agent>;
+
+/** Slot template record type for database queries */
+export type SelectSlotTemplate = InferSelectModel<typeof slotTemplate>;
+
+/** Channel-Agent junction record type for database queries */
+export type SelectChannelAgent = InferSelectModel<typeof channelAgent>;
+
+/** Channel-SlotTemplate junction record type for database queries */
+export type SelectChannelSlotTemplate = InferSelectModel<typeof channelSlotTemplate>;
