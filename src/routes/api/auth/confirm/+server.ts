@@ -1,15 +1,15 @@
 import { json } from "@sveltejs/kit";
-import { AdminAccountService } from "$lib/server/services/admin-account-service";
+import { UserService } from "$lib/server/services/user-service";
 import { NotFoundError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 
 // Register OpenAPI documentation
-registerOpenAPIRoute("/admin/confirm", "POST", {
-	summary: "Confirm admin account",
-	description: "Confirms an admin account using the email confirmation token",
-	tags: ["Admin"],
+registerOpenAPIRoute("/auth/confirm", "POST", {
+	summary: "Confirm user account",
+	description: "Confirms a user account using the email confirmation token",
+	tags: ["Authentication"],
 	requestBody: {
 		description: "Confirmation token",
 		content: {
@@ -30,7 +30,7 @@ registerOpenAPIRoute("/admin/confirm", "POST", {
 	},
 	responses: {
 		"200": {
-			description: "Admin account confirmed successfully",
+			description: "User account confirmed successfully",
 			content: {
 				"application/json": {
 					schema: {
@@ -41,7 +41,7 @@ registerOpenAPIRoute("/admin/confirm", "POST", {
 						required: ["message"]
 					},
 					example: {
-						message: "Admin account confirmed successfully. You can now log in."
+						message: "User account confirmed successfully. You can now log in."
 					}
 				}
 			}
@@ -71,17 +71,23 @@ export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const body = await request.json();
 
-		await AdminAccountService.confirm(body.token);
+		const confirmationResult = await UserService.confirm(body.token);
 
-		return json(
-			{
-				message: "Admin account confirmed successfully. You can now log in."
-			},
-			{ status: 200 }
-		);
+		const response: Record<string, string> = {
+			message: "User account confirmed successfully. You can now log in."
+		};
+
+		// Include recovery passphrase if it exists (for WebAuthn-only users)
+		if (confirmationResult.recoveryPassphrase) {
+			response.recoveryPassphrase = confirmationResult.recoveryPassphrase;
+			response.recoveryMessage =
+				"Please save this recovery passphrase in a secure location. It will not be shown again.";
+		}
+
+		return json(response, { status: 200 });
 	} catch (error) {
 		const log = logger.setContext("API");
-		log.error("Admin confirmation error:", JSON.stringify(error || "?"));
+		log.error("User confirmation error:", JSON.stringify(error || "?"));
 
 		if (error instanceof NotFoundError) {
 			return json({ error: "Invalid or expired confirmation token" }, { status: 404 });

@@ -1,17 +1,17 @@
 import { json } from "@sveltejs/kit";
-import { AdminAccountService } from "$lib/server/services/admin-account-service";
+import { UserService } from "$lib/server/services/user-service";
 import { NotFoundError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 
 // Register OpenAPI documentation
-registerOpenAPIRoute("/admin/resend-confirmation", "POST", {
+registerOpenAPIRoute("/auth/resend-confirmation", "POST", {
 	summary: "Resend confirmation email",
-	description: "Resends the confirmation email to an admin account",
-	tags: ["Admin"],
+	description: "Resends the confirmation email to a user account",
+	tags: ["Authentication"],
 	requestBody: {
-		description: "Admin email address",
+		description: "User email address",
 		content: {
 			"application/json": {
 				schema: {
@@ -20,8 +20,8 @@ registerOpenAPIRoute("/admin/resend-confirmation", "POST", {
 						email: {
 							type: "string",
 							format: "email",
-							description: "Admin's email address",
-							example: "admin@example.com"
+							description: "User's email address",
+							example: "user@example.com"
 						}
 					},
 					required: ["email"]
@@ -48,11 +48,11 @@ registerOpenAPIRoute("/admin/resend-confirmation", "POST", {
 			}
 		},
 		"404": {
-			description: "No admin found with this email address",
+			description: "No user found with this email address",
 			content: {
 				"application/json": {
 					schema: { $ref: "#/components/schemas/Error" },
-					example: { error: "No admin found with this email address" }
+					example: { error: "No user found with this email address" }
 				}
 			}
 		},
@@ -73,7 +73,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		const body = await request.json();
 
 		// Resend confirmation email
-		await AdminAccountService.resendConfirmationEmail(body.email);
+		await UserService.resendConfirmationEmail(body.email);
 
 		return json(
 			{
@@ -86,7 +86,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		log.error("Resend confirmation error:", JSON.stringify(error || "?"));
 
 		if (error instanceof NotFoundError) {
-			return json({ error: "No admin found with this email address" }, { status: 404 });
+			return json({ error: "No user found with this email address" }, { status: 404 });
 		}
 
 		return json({ error: "Internal server error" }, { status: 500 });
