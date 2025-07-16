@@ -8,17 +8,31 @@ import { AuthorizationService } from "$lib/server/auth/authorization-service";
 const logger = new UniversalLogger().setContext("AuthHandle");
 
 const SESSION_COOKIE_NAME = "session";
-const PROTECTED_PATHS = ["/api/admin", "/api/tenant-admin"];
+const PROTECTED_PATHS = ["/api/admin", "/api/tenant-admin", "/api/tenants", "/api/auth/register"];
 const PUBLIC_PATHS = [
-	"/api/auth",
+	"/api/auth/challenge",
+	"/api/auth/login",
+
+	"/api/auth/confirm",
+	"/api/auth/resend-confirmation",
 	"/api/health",
 	"/api/docs",
+	"/api/openapi.json",
+	"/api/env",
+	"/api/log",
 	"/api/admin/init",
-	"/api/admin/confirm",
 	"/api/admin/exists"
 ];
-const GLOBAL_ADMIN_PATHS = ["/api/admin"];
+const GLOBAL_ADMIN_PATHS = ["/api/admin", "/api/tenants"];
 const ADMIN_PATHS = ["/api/tenant-admin"];
+
+const PROTECTED_AUTH_PATHS = [
+	"/api/auth/logout",
+	"/api/auth/refresh",
+	"/api/auth/session",
+	"/api/auth/sessions",
+	"/api/auth/passkeys"
+];
 
 export const authHandle: Handle = async ({ event, resolve }) => {
 	const { url, request } = event;
@@ -26,11 +40,24 @@ export const authHandle: Handle = async ({ event, resolve }) => {
 
 	const isProtectedPath = PROTECTED_PATHS.some((protectedPath) => path.startsWith(protectedPath));
 	const isPublicPath = PUBLIC_PATHS.some((publicPath) => path.startsWith(publicPath));
+	const isProtectedAuthPath = PROTECTED_AUTH_PATHS.some((authPath) => path.startsWith(authPath));
 	const isGlobalAdminPath = GLOBAL_ADMIN_PATHS.some((gadPath) => path.startsWith(gadPath));
 	const isAdminPath = ADMIN_PATHS.some((gadPath) => path.startsWith(gadPath));
 
-	if (!isProtectedPath || isPublicPath) {
+	// Allow public paths
+	if (isPublicPath) {
 		return resolve(event);
+	}
+
+	// Require authentication for protected paths and protected auth paths
+	if (!isProtectedPath && !isProtectedAuthPath) {
+		return new Response(
+			JSON.stringify({ error: `Path ${path} not handled by auth. This is an error` }),
+			{
+				status: 400,
+				headers: { "Content-Type": "application/json" }
+			}
+		);
 	}
 
 	let sessionToken: string | null = null;
@@ -87,9 +114,10 @@ export const authHandle: Handle = async ({ event, resolve }) => {
 
 	event.locals.user = user;
 	event.locals.sessionToken = sessionToken || undefined;
+
 	if (isGlobalAdminPath && !AuthorizationService.hasRole(user, "GLOBAL_ADMIN")) {
 		return new Response(JSON.stringify({ error: "Authentication failed" }), {
-			status: 401,
+			status: 403,
 			headers: { "Content-Type": "application/json" }
 		});
 	} else if (
@@ -97,10 +125,12 @@ export const authHandle: Handle = async ({ event, resolve }) => {
 		!AuthorizationService.hasAnyRole(user, ["GLOBAL_ADMIN", "TENANT_ADMIN"])
 	) {
 		return new Response(JSON.stringify({ error: "Authentication failed" }), {
-			status: 401,
+			status: 403,
 			headers: { "Content-Type": "application/json" }
 		});
 	}
+	// Protected auth paths require any authenticated user (no specific role required)
+	// The authentication check above is sufficient
 
 	logger.debug(`User authenticated: ${user.email} for ${path}`);
 
