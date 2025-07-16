@@ -23,9 +23,9 @@ vi.mock("date-fns", () => ({
 }));
 
 // Import the service after mocks are set up
-import { AdminAccountService } from "../admin-account-service";
+import { UserService } from "../user-service";
 
-describe("AdminAccountService", () => {
+describe("UserService", () => {
 	let mockCentralDb: any;
 	let mockUuidv7: any;
 	let mockAddMinutes: any;
@@ -53,7 +53,7 @@ describe("AdminAccountService", () => {
 		vi.restoreAllMocks();
 	});
 
-	describe("createAdmin", () => {
+	describe("createUser", () => {
 		it("should create a new admin with valid data", async () => {
 			const adminData = {
 				name: "Test Admin",
@@ -77,7 +77,7 @@ describe("AdminAccountService", () => {
 
 			mockCentralDb.insert.mockReturnValue(mockInsertBuilder);
 
-			const result = await AdminAccountService.createAdmin(adminData);
+			const result = await UserService.createUser(adminData);
 
 			expect(mockCentralDb.insert).toHaveBeenCalled();
 			expect(mockInsertBuilder.values).toHaveBeenCalledWith({
@@ -102,7 +102,7 @@ describe("AdminAccountService", () => {
 
 			mockCentralDb.update.mockReturnValue(mockUpdateBuilder);
 
-			await AdminAccountService.resendConfirmationEmail(email);
+			await UserService.resendConfirmationEmail(email);
 
 			expect(mockCentralDb.update).toHaveBeenCalled();
 			expect(mockUpdateBuilder.set).toHaveBeenCalledWith({
@@ -121,9 +121,7 @@ describe("AdminAccountService", () => {
 
 			mockCentralDb.update.mockReturnValue(mockUpdateBuilder);
 
-			await expect(AdminAccountService.resendConfirmationEmail(email)).rejects.toThrow(
-				NotFoundError
-			);
+			await expect(UserService.resendConfirmationEmail(email)).rejects.toThrow(NotFoundError);
 		});
 	});
 
@@ -131,39 +129,51 @@ describe("AdminAccountService", () => {
 		it("should confirm admin with valid token", async () => {
 			const token = "018f-a1b2-c3d4-e5f6-789abcdef012";
 
+			const mockSelectBuilder = {
+				select: vi.fn().mockReturnThis(),
+				from: vi.fn().mockReturnThis(),
+				where: vi.fn().mockReturnThis(),
+				limit: vi.fn().mockResolvedValue([{ id: "user-123", recoveryPassphrase: "recovery-123" }])
+			};
+
 			const mockUpdateBuilder = {
 				set: vi.fn().mockReturnThis(),
 				where: vi.fn().mockReturnThis(),
 				execute: vi.fn().mockResolvedValue({ count: 1 })
 			};
 
+			mockCentralDb.select.mockReturnValue(mockSelectBuilder);
 			mockCentralDb.update.mockReturnValue(mockUpdateBuilder);
 
-			await AdminAccountService.confirm(token);
+			const result = await UserService.confirm(token);
 
+			expect(mockCentralDb.select).toHaveBeenCalled();
 			expect(mockCentralDb.update).toHaveBeenCalled();
 			expect(mockUpdateBuilder.set).toHaveBeenCalledWith({
 				confirmed: true,
-				isActive: true
+				isActive: true,
+				recoveryPassphrase: null
 			});
+			expect(result.recoveryPassphrase).toBe("recovery-123");
 		});
 
 		it("should throw NotFoundError for invalid token", async () => {
 			const token = "018f-0000-0000-0000-000000000000";
 
-			const mockUpdateBuilder = {
-				set: vi.fn().mockReturnThis(),
+			const mockSelectBuilder = {
+				select: vi.fn().mockReturnThis(),
+				from: vi.fn().mockReturnThis(),
 				where: vi.fn().mockReturnThis(),
-				execute: vi.fn().mockResolvedValue({ count: 0 })
+				limit: vi.fn().mockResolvedValue([]) // Empty array for no user found
 			};
 
-			mockCentralDb.update.mockReturnValue(mockUpdateBuilder);
+			mockCentralDb.select.mockReturnValue(mockSelectBuilder);
 
-			await expect(AdminAccountService.confirm(token)).rejects.toThrow(NotFoundError);
+			await expect(UserService.confirm(token)).rejects.toThrow(NotFoundError);
 		});
 	});
 
-	describe("getAdminByEmail", () => {
+	describe("getUserByEmail", () => {
 		it("should return admin for existing email", async () => {
 			const email = "test@example.com";
 			const mockAdmin = {
@@ -182,7 +192,7 @@ describe("AdminAccountService", () => {
 
 			mockCentralDb.select.mockReturnValue(mockSelectBuilder);
 
-			const result = await AdminAccountService.getAdminByEmail(email);
+			const result = await UserService.getUserByEmail(email);
 
 			expect(mockCentralDb.select).toHaveBeenCalled();
 			expect(mockSelectBuilder.from).toHaveBeenCalled();
@@ -202,11 +212,11 @@ describe("AdminAccountService", () => {
 
 			mockCentralDb.select.mockReturnValue(mockSelectBuilder);
 
-			await expect(AdminAccountService.getAdminByEmail(email)).rejects.toThrow(NotFoundError);
+			await expect(UserService.getUserByEmail(email)).rejects.toThrow(NotFoundError);
 		});
 	});
 
-	describe("updateAdmin", () => {
+	describe("updateUser", () => {
 		it("should update admin successfully", async () => {
 			const adminId = "018f-a1b2-c3d4-e5f6-789abcdef012";
 			const updateData = { name: "Updated Admin" };
@@ -225,7 +235,7 @@ describe("AdminAccountService", () => {
 
 			mockCentralDb.update.mockReturnValue(mockUpdateBuilder);
 
-			const result = await AdminAccountService.updateAdmin(adminId, updateData);
+			const result = await UserService.updateUser(adminId, updateData);
 
 			expect(mockCentralDb.update).toHaveBeenCalled();
 			expect(mockUpdateBuilder.set).toHaveBeenCalledWith({
@@ -236,7 +246,7 @@ describe("AdminAccountService", () => {
 		});
 	});
 
-	describe("deleteAdmin", () => {
+	describe("deleteUser", () => {
 		it("should delete admin and associated passkeys", async () => {
 			const adminId = "018f-a1b2-c3d4-e5f6-789abcdef012";
 			const mockDeletedAdmin = {
@@ -252,7 +262,7 @@ describe("AdminAccountService", () => {
 
 			mockCentralDb.delete.mockReturnValue(mockDeleteBuilder);
 
-			const result = await AdminAccountService.deleteAdmin(adminId);
+			const result = await UserService.deleteUser(adminId);
 
 			expect(mockCentralDb.delete).toHaveBeenCalledTimes(2);
 			expect(result).toEqual(mockDeletedAdmin);
@@ -283,7 +293,7 @@ describe("AdminAccountService", () => {
 
 			mockCentralDb.insert.mockReturnValue(mockInsertBuilder);
 
-			const result = await AdminAccountService.addPasskey(adminId, passkeyData);
+			const result = await UserService.addPasskey(adminId, passkeyData);
 
 			expect(mockCentralDb.insert).toHaveBeenCalled();
 			expect(mockInsertBuilder.values).toHaveBeenCalledWith({

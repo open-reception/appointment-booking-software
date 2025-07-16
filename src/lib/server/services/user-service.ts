@@ -511,16 +511,19 @@ export class UserService {
 	 */
 	static async getAdminCount(): Promise<number> {
 		const log = logger.setContext("UserService");
-		log.debug("Getting user count");
+		log.debug("Getting admin count");
 
 		try {
-			const result = await centralDb.select().from(centralSchema.user);
+			const result = await centralDb
+				.select()
+				.from(centralSchema.user)
+				.where(eq(centralSchema.user.role, "GLOBAL_ADMIN"));
 
 			const count = result.length;
-			log.debug("User count retrieved", { count });
+			log.debug("Admin count retrieved", { count });
 			return count;
 		} catch (error) {
-			log.error("Failed to get user count", { error: String(error) });
+			log.error("Failed to get admin count", { error: String(error) });
 			throw error;
 		}
 	}

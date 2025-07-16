@@ -1,5 +1,5 @@
 import { json } from "@sveltejs/kit";
-import { AdminAccountService } from "$lib/server/services/admin-account-service";
+import { UserService } from "$lib/server/services/user-service";
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
@@ -50,8 +50,8 @@ export const GET: RequestHandler = async () => {
 	try {
 		log.debug("Checking if global admin exists");
 
-		const adminExists = await AdminAccountService.adminExists();
-		const adminCount = await AdminAccountService.getAdminCount();
+		const adminExists = await UserService.adminExists();
+		const adminCount = await UserService.getAdminCount();
 
 		log.debug("Admin existence check completed", {
 			exists: adminExists,

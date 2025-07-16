@@ -19,6 +19,13 @@ vi.mock("../../db/tenant-config", () => ({
 	}
 }));
 
+// Mock TenantMigrationService
+vi.mock("../tenant-migration-service", () => ({
+	TenantMigrationService: {
+		createAndInitializeTenantDatabase: vi.fn()
+	}
+}));
+
 // Mock environment variables
 vi.mock("$env/dynamic/private", () => ({
 	env: {
@@ -33,6 +40,7 @@ describe("TenantAdminService", () => {
 	let mockCentralDb: any;
 	let mockGetTenantDb: any;
 	let mockTenantConfig: any;
+	let mockTenantMigrationService: any;
 
 	beforeEach(async () => {
 		vi.clearAllMocks();
@@ -44,6 +52,9 @@ describe("TenantAdminService", () => {
 
 		const configModule = await vi.importMock("../../db/tenant-config");
 		mockTenantConfig = configModule.TenantConfig;
+
+		const migrationModule = await vi.importMock("../tenant-migration-service");
+		mockTenantMigrationService = migrationModule.TenantMigrationService;
 	});
 
 	afterEach(() => {
@@ -73,8 +84,14 @@ describe("TenantAdminService", () => {
 				returning: vi.fn().mockResolvedValue([mockCreatedTenant])
 			};
 
+			const mockDeleteBuilder = {
+				where: vi.fn().mockResolvedValue({ count: 1 })
+			};
+
 			mockCentralDb.insert.mockReturnValue(mockInsertBuilder);
+			mockCentralDb.delete.mockReturnValue(mockDeleteBuilder);
 			mockTenantConfig.create.mockResolvedValue(mockConfig);
+			mockTenantMigrationService.createAndInitializeTenantDatabase.mockResolvedValue();
 
 			const result = await TenantAdminService.createTenant(newTenant);
 
@@ -83,9 +100,48 @@ describe("TenantAdminService", () => {
 				...newTenant,
 				databaseUrl: "postgresql://user:pass@localhost:5432/test-clinic"
 			});
+			expect(mockTenantMigrationService.createAndInitializeTenantDatabase).toHaveBeenCalledWith(
+				"postgresql://user:pass@localhost:5432/test-clinic"
+			);
 			expect(mockTenantConfig.create).toHaveBeenCalledWith("tenant-123");
 			expect(mockConfig.setConfig).toHaveBeenCalledWith("brandColor", "#E11E15");
 			expect(result).toBeInstanceOf(TenantAdminService);
+		});
+
+		it("should rollback tenant creation if database initialization fails", async () => {
+			const newTenant = {
+				shortName: "test-clinic",
+				longName: "",
+				description: "A test clinic"
+			};
+
+			const mockCreatedTenant = {
+				id: "tenant-123",
+				...newTenant,
+				databaseUrl: "postgresql://user:pass@localhost:5432/test-clinic"
+			};
+
+			const mockInsertBuilder = {
+				values: vi.fn().mockReturnThis(),
+				returning: vi.fn().mockResolvedValue([mockCreatedTenant])
+			};
+
+			const mockDeleteBuilder = {
+				where: vi.fn().mockResolvedValue({ count: 1 })
+			};
+
+			mockCentralDb.insert.mockReturnValue(mockInsertBuilder);
+			mockCentralDb.delete.mockReturnValue(mockDeleteBuilder);
+			mockTenantMigrationService.createAndInitializeTenantDatabase.mockRejectedValue(
+				new Error("Database initialization failed")
+			);
+
+			await expect(TenantAdminService.createTenant(newTenant)).rejects.toThrow(
+				"Failed to initialize tenant database"
+			);
+
+			expect(mockCentralDb.delete).toHaveBeenCalled();
+			expect(mockDeleteBuilder.where).toHaveBeenCalled();
 		});
 	});
 

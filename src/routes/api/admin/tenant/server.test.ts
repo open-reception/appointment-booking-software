@@ -28,6 +28,14 @@ vi.mock("$lib/server/auth/auth-service", () => ({
 	}
 }));
 
+// Mock the session service
+vi.mock("$lib/server/auth/session-service", () => ({
+	SessionService: {
+		validateSession: vi.fn(),
+		refreshSession: vi.fn()
+	}
+}));
+
 // Mock the database
 vi.mock("$lib/server/db", () => ({
 	centralDb: {
@@ -155,7 +163,8 @@ describe("POST /api/admin/tenant", () => {
 		mockCookies.get.mockReturnValue("session-123");
 
 		// Mock session validation
-		vi.mocked(SessionService.validateSession).mockResolvedValue(mockSessionData as any);
+		const mockValidateSession = vi.mocked(SessionService.validateSession);
+		mockValidateSession.mockResolvedValue(mockSessionData as any);
 
 		// Mock session ID lookup
 		mockSelectQuery.limit.mockResolvedValueOnce([{ id: "session-id-123" }]);
