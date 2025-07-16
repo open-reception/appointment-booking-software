@@ -143,6 +143,10 @@ export function generateOpenApiSpec() {
 		},
 		tags: [
 			{ name: "Health", description: "Health check and monitoring endpoints" },
+			{
+				name: "Authentication",
+				description: "User authentication and session management endpoints"
+			},
 			{ name: "Admin", description: "Admin account management endpoints" },
 			{ name: "Appointments", description: "Appointment management endpoints" },
 			{ name: "Clients", description: "Client management endpoints" },

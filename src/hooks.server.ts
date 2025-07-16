@@ -1,9 +1,11 @@
 import { logger } from "$lib/logger";
 import { sequence } from "@sveltejs/kit/hooks";
+import { startupHandle } from "./server-hooks/startupHandle";
 import { corsHandle } from "./server-hooks/corsHandle";
 import { loggingHandle } from "./server-hooks/loggingHandle";
 import { rateLimitHandle } from "./server-hooks/rateLimitHandle";
 import { secHeaderHandle } from "./server-hooks/secHeaderHandle";
+import { authHandle } from "./server-hooks/authHandle";
 
 type Error = {
 	message?: string;
@@ -29,4 +31,11 @@ export async function handleError({ error, event, status, message }) {
 	};
 }
 
-export const handle = sequence(loggingHandle, rateLimitHandle, corsHandle, secHeaderHandle);
+export const handle = sequence(
+	startupHandle,
+	loggingHandle,
+	rateLimitHandle,
+	corsHandle,
+	secHeaderHandle,
+	authHandle
+);

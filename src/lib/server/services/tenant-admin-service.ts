@@ -2,6 +2,7 @@ import { centralDb, getTenantDb } from "../db";
 import * as centralSchema from "../db/central-schema";
 import { type InsertTenant } from "../db/central-schema";
 import { TenantConfig } from "../db/tenant-config";
+import { TenantMigrationService } from "./tenant-migration-service";
 
 import { env } from "$env/dynamic/private";
 import { eq } from "drizzle-orm";
@@ -75,6 +76,25 @@ export class TenantAdminService {
 				tenantId: tenant[0].id,
 				shortName: newTenant.shortName
 			});
+
+			// Initialize tenant database with schema
+			try {
+				await TenantMigrationService.createAndInitializeTenantDatabase(newTenant.databaseUrl);
+				log.debug("Tenant database initialized successfully", {
+					tenantId: tenant[0].id,
+					databaseUrl: newTenant.databaseUrl
+				});
+			} catch (dbError) {
+				log.error("Failed to initialize tenant database", {
+					tenantId: tenant[0].id,
+					databaseUrl: newTenant.databaseUrl,
+					error: String(dbError)
+				});
+				
+				// Clean up the tenant record if database initialization fails
+				await centralDb.delete(centralSchema.tenant).where(eq(centralSchema.tenant.id, tenant[0].id));
+				throw new Error(`Failed to initialize tenant database: ${String(dbError)}`);
+			}
 
 			const config = await TenantConfig.create(tenant[0].id);
 			for (const [key, value] of Object.entries(configuration)) {

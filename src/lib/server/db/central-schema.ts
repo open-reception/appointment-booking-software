@@ -18,6 +18,11 @@ import { bytea } from "./base";
 export const configTypeEnum = pgEnum("config_type", ["BOOLEAN", "NUMBER", "STRING"]);
 
 /**
+ * User role enumeration - defines the different user roles in the system
+ */
+export const userRoleEnum = pgEnum("user_role", ["GLOBAL_ADMIN", "TENANT_ADMIN", "STAFF"]);
+
+/**
  * Central Tenant table - stored in the main database
  * Contains tenant metadata and database connection information
  * Each tenant gets their own isolated database for all other entities
@@ -74,32 +79,38 @@ export const tenantConfig = pgTable(
 	})
 );
 
-export const admin = pgTable(
-	"admin",
+export const user = pgTable(
+	"user",
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		email: text("email").notNull().unique(),
 		name: text("name").notNull(),
+		role: userRoleEnum("role").notNull().default("GLOBAL_ADMIN"),
+		tenantId: uuid("tenant_id").references(() => tenant.id),
 		createdAt: timestamp("created_at").defaultNow(),
 		updatedAt: timestamp("updated_at").defaultNow(),
 		lastLoginAt: timestamp("last_login_at"),
 		isActive: boolean("is_active").default(true),
 		confirmed: boolean("confirmed").default(false),
 		token: text("token"),
-		tokenValidUntil: timestamp("token_valid_until")
+		tokenValidUntil: timestamp("token_valid_until"),
+		/** Hashed passphrase for password authentication (optional, alternative to WebAuthn) */
+		passphraseHash: text("passphrase_hash"),
+		/** Recovery passphrase for WebAuthn-only users (stored in plain text, shown only once) */
+		recoveryPassphrase: text("recovery_passphrase")
 	},
 	(table) => ({
-		emailUnique: uniqueIndex("admin_email_idx").on(table.email)
+		emailUnique: uniqueIndex("user_email_idx").on(table.email)
 	})
 );
 
-export const adminPasskey = pgTable(
-	"admin_passkey",
+export const userPasskey = pgTable(
+	"user_passkey",
 	{
 		id: text("id").primaryKey(), // Credential ID as provided by WebAuthn
-		adminId: uuid("admin_id")
+		userId: uuid("user_id")
 			.notNull()
-			.references(() => admin.id, { onDelete: "cascade" }),
+			.references(() => user.id, { onDelete: "cascade" }),
 		publicKey: text("public_key").notNull(), // Base64 encoded
 		counter: integer("counter").notNull().default(0),
 		deviceName: text("device_name"), // "MacBook Pro", "YubiKey 5", etc.
@@ -108,7 +119,36 @@ export const adminPasskey = pgTable(
 		lastUsedAt: timestamp("last_used_at")
 	},
 	(table) => ({
-		adminPasskeyIdx: index("admin_passkey_admin_idx").on(table.adminId)
+		userPasskeyIdx: index("user_passkey_user_idx").on(table.userId)
+	})
+);
+
+/**
+ * User Session table - stores active user sessions
+ * Sessions are identified by secure HTTP-only cookies
+ * Contains JWT tokens for API authentication
+ * @table user_session
+ */
+export const userSession = pgTable(
+	"user_session",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		userId: uuid("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		sessionToken: text("session_token").notNull().unique(),
+		accessToken: text("access_token").notNull(),
+		refreshToken: text("refresh_token").notNull(),
+		ipAddress: text("ip_address"),
+		userAgent: text("user_agent"),
+		createdAt: timestamp("created_at").defaultNow(),
+		updatedAt: timestamp("updated_at").defaultNow(),
+		expiresAt: timestamp("expires_at").notNull(),
+		lastUsedAt: timestamp("last_used_at").defaultNow()
+	},
+	(table) => ({
+		userSessionIdx: index("user_session_user_idx").on(table.userId),
+		sessionTokenIdx: uniqueIndex("user_session_token_idx").on(table.sessionToken)
 	})
 );
 
@@ -122,3 +162,15 @@ export type SelectTenant = InferSelectModel<typeof tenant>;
 
 /** Tenant config record type for database queries */
 export type SelectTenantConfig = InferSelectModel<typeof tenantConfig>;
+
+/** User record types for database queries */
+export type InsertUser = InferInsertModel<typeof user>;
+export type SelectUser = InferSelectModel<typeof user>;
+
+/** User passkey record types for database queries */
+export type InsertUserPasskey = InferInsertModel<typeof userPasskey>;
+export type SelectUserPasskey = InferSelectModel<typeof userPasskey>;
+
+/** User session record types for database queries */
+export type InsertUserSession = InferInsertModel<typeof userSession>;
+export type SelectUserSession = InferSelectModel<typeof userSession>;
