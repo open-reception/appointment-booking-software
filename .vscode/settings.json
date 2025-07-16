@@ -17,5 +17,5 @@
 		"editor.defaultFormatter": "esbenp.prettier-vscode"
 	},
 	"prettier.requireConfig": true,
-	"cSpell.words": ["postgres"]
+	"cSpell.words": ["jose", "postgres", "uuidv"]
 }
