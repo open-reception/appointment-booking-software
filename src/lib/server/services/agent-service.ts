@@ -39,7 +39,7 @@ export class AgentService {
 		try {
 			const service = new AgentService(tenantId);
 			service.#db = await getTenantDb(tenantId);
-			
+
 			log.debug("Agent service created successfully", { tenantId });
 			return service;
 		} catch (error) {
@@ -138,10 +138,7 @@ export class AgentService {
 
 		try {
 			const db = await this.getDb();
-			const result = await db
-				.select()
-				.from(tenantSchema.agent)
-				.orderBy(tenantSchema.agent.name);
+			const result = await db.select().from(tenantSchema.agent).orderBy(tenantSchema.agent.name);
 
 			log.debug("Retrieved all agents", {
 				tenantId: this.tenantId,
@@ -223,7 +220,7 @@ export class AgentService {
 
 		try {
 			const db = await this.getDb();
-			
+
 			// First, remove all channel-agent associations
 			await db
 				.delete(tenantSchema.channelAgent)
@@ -360,7 +357,7 @@ export class AgentService {
 				.delete(tenantSchema.channelAgent)
 				.where(
 					eq(tenantSchema.channelAgent.agentId, agentId) &&
-					eq(tenantSchema.channelAgent.channelId, channelId)
+						eq(tenantSchema.channelAgent.channelId, channelId)
 				);
 
 			log.debug("Agent removed from channel successfully", {

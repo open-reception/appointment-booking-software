@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NotFoundError } from "../../utils/errors";
 
@@ -11,7 +12,6 @@ vi.mock("../../db", () => ({
 	}
 }));
 
-
 // Mock uuid generation
 vi.mock("uuidv7", () => ({
 	uuidv7: vi.fn()
@@ -21,7 +21,6 @@ vi.mock("uuidv7", () => ({
 vi.mock("date-fns", () => ({
 	addMinutes: vi.fn()
 }));
-
 
 // Import the service after mocks are set up
 import { AdminAccountService } from "../admin-account-service";
@@ -45,7 +44,7 @@ describe("AdminAccountService", () => {
 		mockAddMinutes = dateFnsModule.addMinutes;
 
 		// Setup default mock returns
-		mockUuidv7.mockReturnValue("test-uuid-123");
+		mockUuidv7.mockReturnValue("018f-a1b2-c3d4-e5f6-789abcdef012");
 		const futureDate = new Date("2024-01-01T12:10:00Z");
 		mockAddMinutes.mockReturnValue(futureDate);
 	});
@@ -62,10 +61,10 @@ describe("AdminAccountService", () => {
 			};
 
 			const mockCreatedAdmin = {
-				id: "admin-123",
+				id: "018f-a1b2-c3d4-e5f6-789abcdef012",
 				name: "Test Admin",
 				email: "test@example.com",
-				token: "test-uuid-123",
+				token: "018f-a1b2-c3d4-e5f6-789abcdef012",
 				tokenValidUntil: new Date("2024-01-01T12:10:00Z"),
 				confirmed: false,
 				isActive: false
@@ -83,7 +82,7 @@ describe("AdminAccountService", () => {
 			expect(mockCentralDb.insert).toHaveBeenCalled();
 			expect(mockInsertBuilder.values).toHaveBeenCalledWith({
 				...adminData,
-				token: "test-uuid-123",
+				token: "018f-a1b2-c3d4-e5f6-789abcdef012",
 				tokenValidUntil: expect.any(Date),
 				confirmed: false,
 				isActive: false
@@ -107,7 +106,7 @@ describe("AdminAccountService", () => {
 
 			expect(mockCentralDb.update).toHaveBeenCalled();
 			expect(mockUpdateBuilder.set).toHaveBeenCalledWith({
-				token: "test-uuid-123",
+				token: "018f-a1b2-c3d4-e5f6-789abcdef012",
 				tokenValidUntil: expect.any(Date)
 			});
 		});
@@ -130,7 +129,7 @@ describe("AdminAccountService", () => {
 
 	describe("confirm", () => {
 		it("should confirm admin with valid token", async () => {
-			const token = "valid-token-123";
+			const token = "018f-a1b2-c3d4-e5f6-789abcdef012";
 
 			const mockUpdateBuilder = {
 				set: vi.fn().mockReturnThis(),
@@ -150,7 +149,7 @@ describe("AdminAccountService", () => {
 		});
 
 		it("should throw NotFoundError for invalid token", async () => {
-			const token = "invalid-token";
+			const token = "018f-0000-0000-0000-000000000000";
 
 			const mockUpdateBuilder = {
 				set: vi.fn().mockReturnThis(),
@@ -168,7 +167,7 @@ describe("AdminAccountService", () => {
 		it("should return admin for existing email", async () => {
 			const email = "test@example.com";
 			const mockAdmin = {
-				id: "admin-123",
+				id: "018f-a1b2-c3d4-e5f6-789abcdef012",
 				name: "Test Admin",
 				email: "test@example.com",
 				confirmed: true,
@@ -209,7 +208,7 @@ describe("AdminAccountService", () => {
 
 	describe("updateAdmin", () => {
 		it("should update admin successfully", async () => {
-			const adminId = "admin-123";
+			const adminId = "018f-a1b2-c3d4-e5f6-789abcdef012";
 			const updateData = { name: "Updated Admin" };
 			const mockUpdatedAdmin = {
 				id: adminId,
@@ -239,7 +238,7 @@ describe("AdminAccountService", () => {
 
 	describe("deleteAdmin", () => {
 		it("should delete admin and associated passkeys", async () => {
-			const adminId = "admin-123";
+			const adminId = "018f-a1b2-c3d4-e5f6-789abcdef012";
 			const mockDeletedAdmin = {
 				id: adminId,
 				name: "Deleted Admin",
@@ -262,9 +261,9 @@ describe("AdminAccountService", () => {
 
 	describe("addPasskey", () => {
 		it("should add passkey for admin", async () => {
-			const adminId = "admin-123";
+			const adminId = "018f-a1b2-c3d4-e5f6-789abcdef012";
 			const passkeyData = {
-				id: "passkey-123",
+				id: "018f-b2c3-d4e5-f6a7-89abcdef0123",
 				publicKey: "public-key-data",
 				counter: 0,
 				deviceName: "Test Device"
@@ -272,7 +271,7 @@ describe("AdminAccountService", () => {
 
 			const mockCreatedPasskey = {
 				...passkeyData,
-				adminId,
+				userId: adminId,
 				createdAt: new Date(),
 				updatedAt: new Date()
 			};
@@ -289,7 +288,7 @@ describe("AdminAccountService", () => {
 			expect(mockCentralDb.insert).toHaveBeenCalled();
 			expect(mockInsertBuilder.values).toHaveBeenCalledWith({
 				...passkeyData,
-				adminId
+				userId: adminId
 			});
 			expect(result).toEqual(mockCreatedPasskey);
 		});

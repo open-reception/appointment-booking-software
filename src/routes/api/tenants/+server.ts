@@ -17,12 +17,12 @@ registerOpenAPIRoute("/tenants", "POST", {
 				schema: {
 					type: "object",
 					properties: {
-						shortName: { 
-							type: "string", 
+						shortName: {
+							type: "string",
 							minLength: 4,
 							maxLength: 15,
-							description: "Short name for the tenant (4-15 characters)", 
-							example: "acme-corp" 
+							description: "Short name for the tenant (4-15 characters)",
+							example: "acme-corp"
 						},
 						inviteAdmin: {
 							type: "string",
@@ -81,11 +81,11 @@ registerOpenAPIRoute("/tenants", "POST", {
 
 export const POST: RequestHandler = async ({ request }) => {
 	const log = logger.setContext("API");
-	
+
 	try {
 		const body = await request.json();
 
-		log.debug("Creating tenant", { 
+		log.debug("Creating tenant", {
 			shortName: body.shortName,
 			hasInviteAdmin: !!body.inviteAdmin
 		});

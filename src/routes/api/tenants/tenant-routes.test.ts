@@ -56,7 +56,7 @@ describe("Tenant API Routes", () => {
 			// Dynamic import to avoid module loading issues
 			const { PUT } = await import("./[id]/+server.js");
 			const { TenantAdminService } = await import("$lib/server/services/tenant-admin-service");
-			
+
 			const mockTenantService = {
 				updateTenantData: vi.fn().mockResolvedValue({
 					id: "123",
@@ -66,19 +66,20 @@ describe("Tenant API Routes", () => {
 					updatedAt: new Date()
 				})
 			};
-			
+
 			vi.mocked(TenantAdminService.getTenantById).mockResolvedValue(mockTenantService as any);
 
 			const mockRequest = {
-				json: () => Promise.resolve({
-					longName: "Updated Tenant Corp",
-					description: "Updated description"
-				})
+				json: () =>
+					Promise.resolve({
+						longName: "Updated Tenant Corp",
+						description: "Updated description"
+					})
 			};
 
-			const response = await PUT({ 
-				params: { id: "123" }, 
-				request: mockRequest as any 
+			const response = await PUT({
+				params: { id: "123" },
+				request: mockRequest as any
 			} as any);
 			const data = await response.json();
 
@@ -96,14 +97,15 @@ describe("Tenant API Routes", () => {
 			const { PUT } = await import("./[id]/+server.js");
 
 			const mockRequest = {
-				json: () => Promise.resolve({
-					longName: "Updated Name"
-				})
+				json: () =>
+					Promise.resolve({
+						longName: "Updated Name"
+					})
 			};
 
-			const response = await PUT({ 
-				params: { id: "" }, 
-				request: mockRequest as any 
+			const response = await PUT({
+				params: { id: "" },
+				request: mockRequest as any
 			} as any);
 			const data = await response.json();
 
@@ -118,7 +120,7 @@ describe("Tenant API Routes", () => {
 		it("should get tenant configuration successfully", async () => {
 			const { GET } = await import("./[id]/config/+server.js");
 			const { TenantAdminService } = await import("$lib/server/services/tenant-admin-service");
-			
+
 			const mockConfig = {
 				brandColor: "#E11E15",
 				defaultLanguage: "DE",
@@ -129,7 +131,7 @@ describe("Tenant API Routes", () => {
 			const mockTenantService = {
 				configuration: mockConfig
 			};
-			
+
 			vi.mocked(TenantAdminService.getTenantById).mockResolvedValue(mockTenantService as any);
 
 			const response = await GET({ params: { id: "123" } } as any);
@@ -156,26 +158,27 @@ describe("Tenant API Routes", () => {
 		it("should update tenant configuration successfully", async () => {
 			const { PUT } = await import("./[id]/config/+server.js");
 			const { TenantAdminService } = await import("$lib/server/services/tenant-admin-service");
-			
+
 			const mockTenantService = {
 				updateTenantConfig: vi.fn().mockResolvedValue([
 					{ key: "brandColor", value: "#FF0000" },
 					{ key: "maxChannels", value: 10 }
 				])
 			};
-			
+
 			vi.mocked(TenantAdminService.getTenantById).mockResolvedValue(mockTenantService as any);
 
 			const mockRequest = {
-				json: () => Promise.resolve({
-					brandColor: "#FF0000",
-					maxChannels: 10
-				})
+				json: () =>
+					Promise.resolve({
+						brandColor: "#FF0000",
+						maxChannels: 10
+					})
 			};
 
-			const response = await PUT({ 
-				params: { id: "123" }, 
-				request: mockRequest as any 
+			const response = await PUT({
+				params: { id: "123" },
+				request: mockRequest as any
 			} as any);
 			const data = await response.json();
 
@@ -193,24 +196,25 @@ describe("Tenant API Routes", () => {
 			const { PUT } = await import("./[id]/config/+server.js");
 			const { TenantAdminService } = await import("$lib/server/services/tenant-admin-service");
 			const { ValidationError } = await import("$lib/server/utils/errors");
-			
+
 			const mockTenantService = {
-				updateTenantConfig: vi.fn().mockRejectedValue(
-					new ValidationError("Invalid configuration data")
-				)
+				updateTenantConfig: vi
+					.fn()
+					.mockRejectedValue(new ValidationError("Invalid configuration data"))
 			};
-			
+
 			vi.mocked(TenantAdminService.getTenantById).mockResolvedValue(mockTenantService as any);
 
 			const mockRequest = {
-				json: () => Promise.resolve({
-					maxChannels: "invalid" // Should be number
-				})
+				json: () =>
+					Promise.resolve({
+						maxChannels: "invalid" // Should be number
+					})
 			};
 
-			const response = await PUT({ 
-				params: { id: "123" }, 
-				request: mockRequest as any 
+			const response = await PUT({
+				params: { id: "123" },
+				request: mockRequest as any
 			} as any);
 			const data = await response.json();
 
@@ -224,20 +228,21 @@ describe("Tenant API Routes", () => {
 			const { PUT } = await import("./[id]/config/+server.js");
 			const { TenantAdminService } = await import("$lib/server/services/tenant-admin-service");
 			const { NotFoundError } = await import("$lib/server/utils/errors");
-			
+
 			vi.mocked(TenantAdminService.getTenantById).mockRejectedValue(
 				new NotFoundError("Tenant not found")
 			);
 
 			const mockRequest = {
-				json: () => Promise.resolve({
-					brandColor: "#FF0000"
-				})
+				json: () =>
+					Promise.resolve({
+						brandColor: "#FF0000"
+					})
 			};
 
-			const response = await PUT({ 
-				params: { id: "non-existent-id" }, 
-				request: mockRequest as any 
+			const response = await PUT({
+				params: { id: "non-existent-id" },
+				request: mockRequest as any
 			} as any);
 			const data = await response.json();
 

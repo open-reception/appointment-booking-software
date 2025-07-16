@@ -17,15 +17,51 @@ registerOpenAPIRoute("/tenants/config/defaults", "GET", {
 					schema: {
 						type: "object",
 						properties: {
-							brandColor: { type: "string", description: "Default brand color", example: "#E11E15" },
-							defaultLanguage: { type: "string", description: "Default language code", example: "DE" },
-							maxChannels: { type: "number", description: "Maximum channels (-1 for unlimited)", example: -1 },
-							maxTeamMembers: { type: "number", description: "Maximum team members (-1 for unlimited)", example: -1 },
-							autoDeleteDays: { type: "number", description: "Auto-delete data after days", example: 30 },
-							requireEmail: { type: "boolean", description: "Require email for bookings", example: true },
-							requirePhone: { type: "boolean", description: "Require phone for bookings", example: false }
+							brandColor: {
+								type: "string",
+								description: "Default brand color",
+								example: "#E11E15"
+							},
+							defaultLanguage: {
+								type: "string",
+								description: "Default language code",
+								example: "DE"
+							},
+							maxChannels: {
+								type: "number",
+								description: "Maximum channels (-1 for unlimited)",
+								example: -1
+							},
+							maxTeamMembers: {
+								type: "number",
+								description: "Maximum team members (-1 for unlimited)",
+								example: -1
+							},
+							autoDeleteDays: {
+								type: "number",
+								description: "Auto-delete data after days",
+								example: 30
+							},
+							requireEmail: {
+								type: "boolean",
+								description: "Require email for bookings",
+								example: true
+							},
+							requirePhone: {
+								type: "boolean",
+								description: "Require phone for bookings",
+								example: false
+							}
 						},
-						required: ["brandColor", "defaultLanguage", "maxChannels", "maxTeamMembers", "autoDeleteDays", "requireEmail", "requirePhone"]
+						required: [
+							"brandColor",
+							"defaultLanguage",
+							"maxChannels",
+							"maxTeamMembers",
+							"autoDeleteDays",
+							"requireEmail",
+							"requirePhone"
+						]
 					}
 				}
 			}
@@ -44,7 +80,7 @@ registerOpenAPIRoute("/tenants/config/defaults", "GET", {
 
 export const GET: RequestHandler = async () => {
 	const log = logger.setContext("API");
-	
+
 	try {
 		log.debug("Getting default tenant configuration");
 

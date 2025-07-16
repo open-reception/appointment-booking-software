@@ -1,0 +1,253 @@
+import { error, json, type RequestHandler } from "@sveltejs/kit";
+import { z } from "zod";
+import { SessionService } from "$lib/server/auth/session-service";
+import { centralDb } from "$lib/server/db";
+import { tenant, user, userSession } from "$lib/server/db/central-schema";
+import { eq } from "drizzle-orm";
+import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
+import { UserService } from "$lib/server/services/user-service";
+import { generateTokens } from "$lib/server/auth/jwt-utils";
+import { UniversalLogger } from "$lib/logger";
+import { registerOpenAPIRoute } from "$lib/server/openapi";
+
+const logger = new UniversalLogger().setContext("AdminTenantSwitch");
+
+const tenantSwitchSchema = z.object({
+	tenantId: z.string().uuid()
+});
+
+/**
+ * POST /api/admin/tenant
+ * Switch active tenant for global admin
+ */
+export const POST: RequestHandler = async ({ request, locals, cookies }) => {
+	try {
+		// Verify user is authenticated and is global admin
+		if (!locals.user) {
+			throw error(401, "Authentication required");
+		}
+
+		if (locals.user.role !== "GLOBAL_ADMIN") {
+			throw error(403, "Only global admins can switch tenants");
+		}
+
+		const body = await request.json();
+		const validation = tenantSwitchSchema.safeParse(body);
+
+		if (!validation.success) {
+			logger.warn("Invalid tenant switch request", {
+				userId: locals.user.id,
+				errors: validation.error.errors
+			});
+			throw error(400, "Invalid request body");
+		}
+
+		const { tenantId } = validation.data;
+
+		// If tenantId is provided, verify the tenant exists
+		const tenantExists = await centralDb
+			.select({ id: tenant.id })
+			.from(tenant)
+			.where(eq(tenant.id, tenantId))
+			.limit(1);
+
+		if (tenantExists.length === 0) {
+			logger.warn("Tenant not found for switching", {
+				userId: locals.user.id,
+				tenantId
+			});
+			throw error(404, "Tenant not found");
+		}
+
+		// Get current session token from cookie
+		const sessionToken = cookies.get("session");
+		if (!sessionToken) {
+			logger.error("No session token found in cookies", { userId: locals.user.id });
+			throw error(401, "No valid session found");
+		}
+
+		// Get current session data
+		const sessionData = await SessionService.validateSession(sessionToken);
+		if (!sessionData) {
+			logger.error("Invalid session token", { userId: locals.user.id });
+			throw error(401, "Invalid session");
+		}
+
+		// Update user's active tenant in the database
+		const updatedUser = await UserService.updateUser(locals.user.id, {
+			tenantId: tenantId || null
+		});
+
+		if (!updatedUser) {
+			logger.error("Failed to update user tenant", {
+				userId: locals.user.id,
+				tenantId
+			});
+			throw error(500, "Failed to update user data");
+		}
+
+		// Get the session ID from the database
+		const sessionInfo = await centralDb
+			.select({ id: userSession.id })
+			.from(userSession)
+			.where(eq(userSession.sessionToken, sessionData.sessionToken))
+			.limit(1);
+
+		if (sessionInfo.length === 0) {
+			logger.error("Session not found in database", { userId: locals.user.id });
+			throw error(500, "Session not found");
+		}
+
+		// Generate new tokens with updated tenant context
+		const newTokens = await generateTokens(updatedUser, sessionInfo[0].id);
+
+		// Update session tokens in the database
+		await centralDb
+			.update(user)
+			.set({
+				tenantId: tenantId || null,
+				updatedAt: new Date()
+			})
+			.where(eq(user.id, locals.user.id));
+
+		// Update the user session with new tokens
+		await centralDb
+			.update(userSession)
+			.set({
+				accessToken: newTokens.accessToken,
+				refreshToken: newTokens.refreshToken,
+				lastUsedAt: new Date(),
+				updatedAt: new Date()
+			})
+			.where(eq(userSession.sessionToken, sessionData.sessionToken));
+
+		// Set new cookies with updated tokens
+		cookies.set("session", sessionData.sessionToken, {
+			httpOnly: true,
+			secure: true,
+			sameSite: "strict",
+			path: "/",
+			maxAge: 60 * 60 * 24 * 7 // 7 days
+		});
+
+		cookies.set("accessToken", newTokens.accessToken, {
+			httpOnly: true,
+			secure: true,
+			sameSite: "strict",
+			path: "/",
+			maxAge: 60 * 15 // 15 minutes
+		});
+
+		cookies.set("refreshToken", newTokens.refreshToken, {
+			httpOnly: true,
+			secure: true,
+			sameSite: "strict",
+			path: "/",
+			maxAge: 60 * 60 * 24 * 7 // 7 days
+		});
+
+		logger.info("Tenant switched successfully", {
+			userId: locals.user.id,
+			fromTenant: locals.user.tenantId,
+			toTenant: tenantId
+		});
+
+		return json({
+			success: true,
+			message: tenantId ? "Tenant switched successfully" : "Switched to global admin mode",
+			tenantId,
+			user: {
+				id: updatedUser.id,
+				email: updatedUser.email,
+				name: updatedUser.name,
+				role: updatedUser.role,
+				tenantId: updatedUser.tenantId
+			}
+		});
+	} catch (err) {
+		if (err instanceof ValidationError) {
+			logger.warn("Validation error in tenant switch", { error: err.message });
+			throw error(400, err.message);
+		}
+
+		if (err instanceof NotFoundError) {
+			logger.warn("Not found error in tenant switch", { error: err.message });
+			throw error(404, err.message);
+		}
+
+		logger.error("Unexpected error in tenant switch", { error: String(err) });
+		throw error(500, "Internal server error");
+	}
+};
+
+// Register OpenAPI documentation
+registerOpenAPIRoute("/admin/tenant", "POST", {
+	summary: "Switch active tenant for global admin",
+	description:
+		"Allows a global admin to switch their active tenant context or return to global admin mode",
+	tags: ["Admin"],
+	requestBody: {
+		content: {
+			"application/json": {
+				schema: {
+					type: "object",
+					properties: {
+						tenantId: {
+							type: "string",
+							format: "uuid",
+							description: "Target tenant ID"
+						}
+					},
+					example: {
+						tenantId: "123e4567-e89b-12d3-a456-426614174000"
+					}
+				}
+			}
+		}
+	},
+	responses: {
+		200: {
+			description: "Tenant switched successfully",
+			content: {
+				"application/json": {
+					schema: {
+						type: "object",
+						properties: {
+							success: { type: "boolean" },
+							message: { type: "string" },
+							tenantId: {
+								type: "string",
+								format: "uuid"
+							},
+							user: {
+								type: "object",
+								properties: {
+									id: { type: "string", format: "uuid" },
+									email: { type: "string", format: "email" },
+									name: { type: "string" },
+									role: { type: "string", enum: ["GLOBAL_ADMIN", "TENANT_ADMIN", "STAFF"] },
+									tenantId: { type: "string", format: "uuid" }
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		400: {
+			description: "Invalid request body"
+		},
+		401: {
+			description: "Authentication required"
+		},
+		403: {
+			description: "Only global admins can switch tenants"
+		},
+		404: {
+			description: "Tenant not found"
+		},
+		500: {
+			description: "Internal server error"
+		}
+	}
+});

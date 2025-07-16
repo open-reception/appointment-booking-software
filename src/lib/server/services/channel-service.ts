@@ -34,9 +34,13 @@ const channelUpdateSchema = z.object({
 	isPublic: z.boolean().optional(),
 	requiresConfirmation: z.boolean().optional(),
 	agentIds: z.array(z.string().uuid()).optional(),
-	slotTemplates: z.array(slotTemplateSchema.extend({
-		id: z.string().uuid().optional()
-	})).optional()
+	slotTemplates: z
+		.array(
+			slotTemplateSchema.extend({
+				id: z.string().uuid().optional()
+			})
+		)
+		.optional()
 });
 
 export type ChannelCreationRequest = z.infer<typeof channelCreationSchema>;
@@ -65,7 +69,7 @@ export class ChannelService {
 		try {
 			const service = new ChannelService(tenantId);
 			service.#db = await getTenantDb(tenantId);
-			
+
 			log.debug("Channel service created successfully", { tenantId });
 			return service;
 		} catch (error) {
@@ -133,12 +137,10 @@ export class ChannelService {
 						slotTemplates.push(slotTemplate);
 
 						// Link slot template to channel
-						await tx
-							.insert(tenantSchema.channelSlotTemplate)
-							.values({
-								channelId: channel.id,
-								slotTemplateId: slotTemplate.id
-							});
+						await tx.insert(tenantSchema.channelSlotTemplate).values({
+							channelId: channel.id,
+							slotTemplateId: slotTemplate.id
+						});
 					}
 				}
 
@@ -157,12 +159,10 @@ export class ChannelService {
 
 					// Link agents to channel
 					for (const agentId of request.agentIds) {
-						await tx
-							.insert(tenantSchema.channelAgent)
-							.values({
-								channelId: channel.id,
-								agentId: agentId
-							});
+						await tx.insert(tenantSchema.channelAgent).values({
+							channelId: channel.id,
+							agentId: agentId
+						});
 					}
 
 					agents.push(...existingAgents);
@@ -200,7 +200,10 @@ export class ChannelService {
 	 * @param updateData Channel update data
 	 * @returns Updated channel with relations
 	 */
-	async updateChannel(channelId: string, updateData: ChannelUpdateRequest): Promise<ChannelWithRelations> {
+	async updateChannel(
+		channelId: string,
+		updateData: ChannelUpdateRequest
+	): Promise<ChannelWithRelations> {
 		const log = logger.setContext("ChannelService");
 
 		const validation = channelUpdateSchema.safeParse(updateData);
@@ -281,12 +284,10 @@ export class ChannelService {
 
 						// Link agents to channel
 						for (const agentId of updateData.agentIds) {
-							await tx
-								.insert(tenantSchema.channelAgent)
-								.values({
-									channelId: channelId,
-									agentId: agentId
-								});
+							await tx.insert(tenantSchema.channelAgent).values({
+								channelId: channelId,
+								agentId: agentId
+							});
 						}
 
 						agents = existingAgents;
@@ -317,7 +318,9 @@ export class ChannelService {
 						.from(tenantSchema.channelSlotTemplate)
 						.where(eq(tenantSchema.channelSlotTemplate.channelId, channelId));
 
-					const existingSlotTemplateIds = existingSlotTemplateLinks.map(link => link.slotTemplateId);
+					const existingSlotTemplateIds = existingSlotTemplateLinks.map(
+						(link) => link.slotTemplateId
+					);
 
 					// Process new/updated slot templates
 					const newSlotTemplateIds: string[] = [];
@@ -360,12 +363,10 @@ export class ChannelService {
 							newSlotTemplateIds.push(slotTemplate.id);
 
 							// Link new slot template to channel
-							await tx
-								.insert(tenantSchema.channelSlotTemplate)
-								.values({
-									channelId: channelId,
-									slotTemplateId: slotTemplate.id
-								});
+							await tx.insert(tenantSchema.channelSlotTemplate).values({
+								channelId: channelId,
+								slotTemplateId: slotTemplate.id
+							});
 						}
 
 						slotTemplates.push(slotTemplate);
@@ -373,7 +374,7 @@ export class ChannelService {
 
 					// Remove slot templates that are no longer linked
 					const slotTemplatesToRemove = existingSlotTemplateIds.filter(
-						id => !newSlotTemplateIds.includes(id)
+						(id) => !newSlotTemplateIds.includes(id)
 					);
 
 					if (slotTemplatesToRemove.length > 0) {
@@ -382,7 +383,7 @@ export class ChannelService {
 							.delete(tenantSchema.channelSlotTemplate)
 							.where(
 								eq(tenantSchema.channelSlotTemplate.channelId, channelId) &&
-								inArray(tenantSchema.channelSlotTemplate.slotTemplateId, slotTemplatesToRemove)
+									inArray(tenantSchema.channelSlotTemplate.slotTemplateId, slotTemplatesToRemove)
 							);
 
 						// Check if any of these slot templates are used by other channels
@@ -588,7 +589,7 @@ export class ChannelService {
 					.from(tenantSchema.channelSlotTemplate)
 					.where(eq(tenantSchema.channelSlotTemplate.channelId, channelId));
 
-				const slotTemplateIds = slotTemplateLinks.map(link => link.slotTemplateId);
+				const slotTemplateIds = slotTemplateLinks.map((link) => link.slotTemplateId);
 
 				// Remove channel-agent relationships
 				await tx

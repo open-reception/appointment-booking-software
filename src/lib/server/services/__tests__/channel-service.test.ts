@@ -116,12 +116,14 @@ describe("ChannelService", () => {
 			const request = {
 				name: "Test Channel",
 				agentIds: ["550e8400-e29b-41d4-a716-446655440001"],
-				slotTemplates: [{
-					name: "Test Slot",
-					from: "09:00",
-					to: "17:00",
-					duration: 30
-				}]
+				slotTemplates: [
+					{
+						name: "Test Slot",
+						from: "09:00",
+						to: "17:00",
+						duration: 30
+					}
+				]
 			};
 
 			const result = await service.createChannel(request);
@@ -144,12 +146,14 @@ describe("ChannelService", () => {
 			const request = {
 				name: "Test Channel",
 				agentIds: [],
-				slotTemplates: [{
-					name: "Test Slot",
-					from: "invalid-time",
-					to: "17:00",
-					duration: 30
-				}]
+				slotTemplates: [
+					{
+						name: "Test Slot",
+						from: "invalid-time",
+						to: "17:00",
+						duration: 30
+					}
+				]
 			};
 
 			await expect(service.createChannel(request)).rejects.toThrow(ValidationError);
@@ -189,7 +193,10 @@ describe("ChannelService", () => {
 				name: "Updated Channel"
 			};
 
-			const result = await service.updateChannel("550e8400-e29b-41d4-a716-446655440000", updateData);
+			const result = await service.updateChannel(
+				"550e8400-e29b-41d4-a716-446655440000",
+				updateData
+			);
 
 			expect(result).toEqual(expectedResult);
 			expect(mockDb.transaction).toHaveBeenCalled();
@@ -198,7 +205,9 @@ describe("ChannelService", () => {
 		it("should handle validation error for invalid name", async () => {
 			const updateData = { name: "" };
 
-			await expect(service.updateChannel("550e8400-e29b-41d4-a716-446655440000", updateData)).rejects.toThrow(ValidationError);
+			await expect(
+				service.updateChannel("550e8400-e29b-41d4-a716-446655440000", updateData)
+			).rejects.toThrow(ValidationError);
 		});
 
 		it("should handle transaction error", async () => {
@@ -206,7 +215,9 @@ describe("ChannelService", () => {
 
 			const updateData = { name: "Updated Channel" };
 
-			await expect(service.updateChannel("550e8400-e29b-41d4-a716-446655440000", updateData)).rejects.toThrow("Transaction failed");
+			await expect(
+				service.updateChannel("550e8400-e29b-41d4-a716-446655440000", updateData)
+			).rejects.toThrow("Transaction failed");
 		});
 	});
 
@@ -218,7 +229,7 @@ describe("ChannelService", () => {
 		});
 
 		it("should return channel when found", async () => {
-			vi.spyOn(service, 'getChannelById').mockResolvedValue({
+			vi.spyOn(service, "getChannelById").mockResolvedValue({
 				...mockChannel,
 				agents: [mockAgent],
 				slotTemplates: [mockSlotTemplate]
@@ -235,7 +246,7 @@ describe("ChannelService", () => {
 		});
 
 		it("should return null when channel not found", async () => {
-			vi.spyOn(service, 'getChannelById').mockResolvedValue(null);
+			vi.spyOn(service, "getChannelById").mockResolvedValue(null);
 
 			const result = await service.getChannelById("nonexistent-channel");
 
@@ -243,9 +254,11 @@ describe("ChannelService", () => {
 		});
 
 		it("should handle database error", async () => {
-			vi.spyOn(service, 'getChannelById').mockRejectedValue(new Error("DB error"));
+			vi.spyOn(service, "getChannelById").mockRejectedValue(new Error("DB error"));
 
-			await expect(service.getChannelById("550e8400-e29b-41d4-a716-446655440000")).rejects.toThrow("DB error");
+			await expect(service.getChannelById("550e8400-e29b-41d4-a716-446655440000")).rejects.toThrow(
+				"DB error"
+			);
 		});
 	});
 
@@ -257,13 +270,15 @@ describe("ChannelService", () => {
 		});
 
 		it("should return all channels", async () => {
-			const expectedChannels = [{
-				...mockChannel,
-				agents: [mockAgent],
-				slotTemplates: [mockSlotTemplate]
-			}];
-			
-			vi.spyOn(service, 'getAllChannels').mockResolvedValue(expectedChannels);
+			const expectedChannels = [
+				{
+					...mockChannel,
+					agents: [mockAgent],
+					slotTemplates: [mockSlotTemplate]
+				}
+			];
+
+			vi.spyOn(service, "getAllChannels").mockResolvedValue(expectedChannels);
 
 			const result = await service.getAllChannels();
 
@@ -275,7 +290,7 @@ describe("ChannelService", () => {
 		});
 
 		it("should return empty array when no channels exist", async () => {
-			vi.spyOn(service, 'getAllChannels').mockResolvedValue([]);
+			vi.spyOn(service, "getAllChannels").mockResolvedValue([]);
 
 			const result = await service.getAllChannels();
 
@@ -283,7 +298,7 @@ describe("ChannelService", () => {
 		});
 
 		it("should handle database error", async () => {
-			vi.spyOn(service, 'getAllChannels').mockRejectedValue(new Error("DB error"));
+			vi.spyOn(service, "getAllChannels").mockRejectedValue(new Error("DB error"));
 
 			await expect(service.getAllChannels()).rejects.toThrow("DB error");
 		});
@@ -316,7 +331,9 @@ describe("ChannelService", () => {
 		it("should handle database error", async () => {
 			mockDb.transaction.mockRejectedValue(new Error("DB error"));
 
-			await expect(service.deleteChannel("550e8400-e29b-41d4-a716-446655440000")).rejects.toThrow("DB error");
+			await expect(service.deleteChannel("550e8400-e29b-41d4-a716-446655440000")).rejects.toThrow(
+				"DB error"
+			);
 		});
 	});
 });

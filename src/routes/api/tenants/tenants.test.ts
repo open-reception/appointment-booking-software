@@ -53,18 +53,19 @@ describe("/api/tenants", () => {
 	describe("POST /api/tenants", () => {
 		it("should create a tenant successfully", async () => {
 			const { TenantAdminService } = await import("$lib/server/services/tenant-admin-service");
-			
+
 			const mockTenantService = {
 				tenantId: "test-tenant-id"
 			};
-			
+
 			vi.mocked(TenantAdminService.createTenant).mockResolvedValue(mockTenantService as any);
 
 			const mockRequest = {
-				json: () => Promise.resolve({
-					shortName: "test-tenant",
-					inviteAdmin: "admin@test.com"
-				})
+				json: () =>
+					Promise.resolve({
+						shortName: "test-tenant",
+						inviteAdmin: "admin@test.com"
+					})
 			};
 
 			const response = await POST({ request: mockRequest as any });
@@ -85,17 +86,18 @@ describe("/api/tenants", () => {
 
 		it("should create a tenant without invite admin", async () => {
 			const { TenantAdminService } = await import("$lib/server/services/tenant-admin-service");
-			
+
 			const mockTenantService = {
 				tenantId: "test-tenant-id-2"
 			};
-			
+
 			vi.mocked(TenantAdminService.createTenant).mockResolvedValue(mockTenantService as any);
 
 			const mockRequest = {
-				json: () => Promise.resolve({
-					shortName: "test-tenant-2"
-				})
+				json: () =>
+					Promise.resolve({
+						shortName: "test-tenant-2"
+					})
 			};
 
 			const response = await POST({ request: mockRequest as any });
@@ -116,15 +118,16 @@ describe("/api/tenants", () => {
 		it("should handle validation errors", async () => {
 			const { TenantAdminService } = await import("$lib/server/services/tenant-admin-service");
 			const { ValidationError } = await import("$lib/server/utils/errors");
-			
+
 			vi.mocked(TenantAdminService.createTenant).mockRejectedValue(
 				new ValidationError("Invalid tenant creation request")
 			);
 
 			const mockRequest = {
-				json: () => Promise.resolve({
-					shortName: "ab" // Too short
-				})
+				json: () =>
+					Promise.resolve({
+						shortName: "ab" // Too short
+					})
 			};
 
 			const response = await POST({ request: mockRequest as any });
@@ -138,15 +141,16 @@ describe("/api/tenants", () => {
 
 		it("should handle unique constraint violations", async () => {
 			const { TenantAdminService } = await import("$lib/server/services/tenant-admin-service");
-			
+
 			vi.mocked(TenantAdminService.createTenant).mockRejectedValue(
 				new Error("unique constraint violation")
 			);
 
 			const mockRequest = {
-				json: () => Promise.resolve({
-					shortName: "existing-tenant"
-				})
+				json: () =>
+					Promise.resolve({
+						shortName: "existing-tenant"
+					})
 			};
 
 			const response = await POST({ request: mockRequest as any });
@@ -160,15 +164,16 @@ describe("/api/tenants", () => {
 
 		it("should handle internal server errors", async () => {
 			const { TenantAdminService } = await import("$lib/server/services/tenant-admin-service");
-			
+
 			vi.mocked(TenantAdminService.createTenant).mockRejectedValue(
 				new Error("Database connection failed")
 			);
 
 			const mockRequest = {
-				json: () => Promise.resolve({
-					shortName: "test-tenant"
-				})
+				json: () =>
+					Promise.resolve({
+						shortName: "test-tenant"
+					})
 			};
 
 			const response = await POST({ request: mockRequest as any });
@@ -184,7 +189,7 @@ describe("/api/tenants", () => {
 	describe("GET /api/tenants/config/defaults", () => {
 		it("should return default configuration", async () => {
 			const { TenantAdminService } = await import("$lib/server/services/tenant-admin-service");
-			
+
 			const mockDefaults = {
 				brandColor: "#E11E15",
 				defaultLanguage: "DE",
@@ -194,7 +199,7 @@ describe("/api/tenants", () => {
 				requireEmail: true,
 				requirePhone: false
 			};
-			
+
 			vi.mocked(TenantAdminService.getConfigDefaults).mockReturnValue(mockDefaults);
 
 			const response = await GET();
@@ -207,7 +212,7 @@ describe("/api/tenants", () => {
 
 		it("should handle errors when getting defaults", async () => {
 			const { TenantAdminService } = await import("$lib/server/services/tenant-admin-service");
-			
+
 			vi.mocked(TenantAdminService.getConfigDefaults).mockImplementation(() => {
 				throw new Error("Configuration error");
 			});

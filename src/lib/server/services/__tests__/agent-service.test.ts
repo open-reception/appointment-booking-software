@@ -276,7 +276,9 @@ describe("AgentService", () => {
 
 			const updateData = { name: "Updated Agent" };
 
-			await expect(service.updateAgent("nonexistent-agent", updateData)).rejects.toThrow(NotFoundError);
+			await expect(service.updateAgent("nonexistent-agent", updateData)).rejects.toThrow(
+				NotFoundError
+			);
 		});
 
 		it("should handle validation error", async () => {
@@ -448,7 +450,9 @@ describe("AgentService", () => {
 			};
 			mockDb.insert.mockReturnValue(insertChain);
 
-			await expect(service.assignAgentToChannel("agent-123", "channel-123")).rejects.toThrow("DB error");
+			await expect(service.assignAgentToChannel("agent-123", "channel-123")).rejects.toThrow(
+				"DB error"
+			);
 		});
 	});
 
@@ -476,7 +480,9 @@ describe("AgentService", () => {
 			};
 			mockDb.delete.mockReturnValue(deleteChain);
 
-			await expect(service.removeAgentFromChannel("agent-123", "channel-123")).rejects.toThrow("DB error");
+			await expect(service.removeAgentFromChannel("agent-123", "channel-123")).rejects.toThrow(
+				"DB error"
+			);
 		});
 	});
 });
