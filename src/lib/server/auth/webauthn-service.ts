@@ -63,7 +63,7 @@ export class WebAuthnService {
 			// Verify the challenge (convert base64url to base64 for comparison)
 			const expectedChallenge = challengeFromSession.replace(/-/g, "+").replace(/_/g, "/");
 			const receivedChallenge = clientDataJSON.challenge.replace(/-/g, "+").replace(/_/g, "/");
-			
+
 			if (expectedChallenge !== receivedChallenge) {
 				logger.warn("Challenge mismatch", {
 					credentialId: credential.id,
@@ -81,7 +81,7 @@ export class WebAuthnService {
 
 			// Parse authenticator data
 			const authenticatorDataBuffer = Buffer.from(credential.response.authenticatorData, "base64");
-			
+
 			// Extract counter from authenticator data (bytes 33-36)
 			const newCounter = authenticatorDataBuffer.readUInt32BE(33);
 
@@ -150,32 +150,32 @@ export class WebAuthnService {
 	): Promise<boolean> {
 		try {
 			const crypto = await import("node:crypto");
-			
+
 			// This is a simplified implementation
 			// In production, you should use a proper WebAuthn library that handles:
 			// - Different key formats (COSE, etc.)
 			// - Different signature algorithms
 			// - Proper ASN.1 parsing
 			// - Certificate chain validation
-			
+
 			// For now, we'll assume ES256 (ECDSA P-256 with SHA-256)
 			// and that the public key is in the correct format
-			
+
 			const verify = crypto.createVerify("SHA256");
 			verify.update(signedData);
 			verify.end();
-			
+
 			// This is a placeholder - proper implementation would:
 			// 1. Parse the COSE key format
 			// 2. Convert to the correct format for Node.js crypto
 			// 3. Handle different algorithms properly
-			
+
 			logger.debug("Signature verification (simplified implementation)", {
 				publicKeyLength: publicKey.length,
 				signatureLength: signature.length,
 				signedDataLength: signedData.length
 			});
-			
+
 			// For development, we'll return true if all data is present
 			// TODO: Replace with proper signature verification
 			return publicKey.length > 0 && signature.length > 0 && signedData.length > 0;
@@ -214,9 +214,6 @@ export class WebAuthnService {
 	 * Get all passkeys for a user
 	 */
 	static async getUserPasskeys(userId: string) {
-		return await centralDb
-			.select()
-			.from(userPasskey)
-			.where(eq(userPasskey.userId, userId));
+		return await centralDb.select().from(userPasskey).where(eq(userPasskey.userId, userId));
 	}
 }

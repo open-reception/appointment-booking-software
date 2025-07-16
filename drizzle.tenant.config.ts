@@ -5,7 +5,7 @@ import { defineConfig } from "drizzle-kit";
 export default defineConfig({
 	schema: "./src/lib/server/db/tenant-schema.ts",
 	dialect: "postgresql",
-	dbCredentials: { 
+	dbCredentials: {
 		url: "postgresql://placeholder:placeholder@localhost:5432/placeholder"
 	},
 	out: "./tenant-migrations",

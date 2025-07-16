@@ -40,11 +40,13 @@ export class StartupService {
 
 		try {
 			// Get all tenants from central database
-			const tenants = await centralDb.select({
-				id: tenant.id,
-				shortName: tenant.shortName,
-				databaseUrl: tenant.databaseUrl
-			}).from(tenant);
+			const tenants = await centralDb
+				.select({
+					id: tenant.id,
+					shortName: tenant.shortName,
+					databaseUrl: tenant.databaseUrl
+				})
+				.from(tenant);
 
 			if (tenants.length === 0) {
 				logger.info("No tenants found, skipping tenant database migrations");
@@ -74,7 +76,7 @@ export class StartupService {
 						databaseUrl: tenantData.databaseUrl,
 						error: String(error)
 					});
-					
+
 					// Don't throw here - we want to continue with other tenants
 					// In production, you might want to implement retry logic or alerts
 				}

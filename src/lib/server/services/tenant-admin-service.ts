@@ -90,9 +90,11 @@ export class TenantAdminService {
 					databaseUrl: newTenant.databaseUrl,
 					error: String(dbError)
 				});
-				
+
 				// Clean up the tenant record if database initialization fails
-				await centralDb.delete(centralSchema.tenant).where(eq(centralSchema.tenant.id, tenant[0].id));
+				await centralDb
+					.delete(centralSchema.tenant)
+					.where(eq(centralSchema.tenant.id, tenant[0].id));
 				throw new Error(`Failed to initialize tenant database: ${String(dbError)}`);
 			}
 
