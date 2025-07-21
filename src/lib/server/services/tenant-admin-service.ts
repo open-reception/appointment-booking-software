@@ -28,6 +28,9 @@ export interface TenantConfiguration extends Record<string, string | number | bo
 	requireEmail: boolean;
 	requirePhone: boolean;
 	nextChannelColor: number;
+	website: string;
+	imprint: string;
+	privacyStatement: string;
 }
 
 export class TenantAdminService {
@@ -46,7 +49,10 @@ export class TenantAdminService {
 			autoDeleteDays: 30,
 			requireEmail: true,
 			requirePhone: false,
-			nextChannelColor: 0
+			nextChannelColor: 0,
+			website: "",
+			imprint: "",
+			privacyStatement: ""
 		};
 	}
 
@@ -247,7 +253,9 @@ export class TenantAdminService {
 	/**
 	 * Set the setup state of the tenant
 	 */
-	async setSetupState(setupState: "NEW" | "SETTINGS_CREATED" | "AGENTS_SET_UP" | "FIRST_CHANNEL_CREATED") {
+	async setSetupState(
+		setupState: "NEW" | "SETTINGS_CREATED" | "AGENTS_SET_UP" | "FIRST_CHANNEL_CREATED"
+	) {
 		const log = logger.setContext("TenantAdminService");
 		log.debug("Setting tenant setup state", {
 			tenantId: this.tenantId,
