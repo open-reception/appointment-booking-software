@@ -1,5 +1,15 @@
 import type { InferSelectModel } from "drizzle-orm";
-import { pgTable, boolean, uuid, text, date, pgEnum, time, integer } from "drizzle-orm/pg-core";
+import {
+	pgTable,
+	boolean,
+	uuid,
+	text,
+	date,
+	pgEnum,
+	time,
+	integer,
+	json
+} from "drizzle-orm/pg-core";
 import { bytea } from "./base";
 
 /**
@@ -45,14 +55,16 @@ export const agent = pgTable("agent", {
 export const channel = pgTable("channel", {
 	/** Primary key - unique identifier */
 	id: uuid("id").primaryKey().defaultRandom(),
-	/** Channel display name */
-	name: text("name").notNull(),
+	/** Channel display names in multiple languages (array of strings in same order as languages) */
+	names: json("names").$type<string[]>().notNull(),
 	/** Optional color for UI display (hex code) */
 	color: text("color"),
-	/** Optional description of the channel */
-	description: text("description"),
-	/** Language for this channel's interface */
-	language: text("language"),
+	/** Whether the channel is paused and does not offer nor accept new appointments */
+	pause: boolean("paused").notNull().default(false),
+	/** Optional descriptions in multiple languages (array of strings in same order as languages) */
+	descriptions: json("descriptions").$type<string[]>(),
+	/** Active languages for this channel (array of language codes) */
+	languages: json("languages").$type<string[]>().notNull(),
 	/** Whether channel is publicly bookable or requires internal access */
 	isPublic: boolean("is_public"),
 	/** Whether appointments must be explicitly confirmed by staff */
@@ -69,8 +81,6 @@ export const channel = pgTable("channel", {
 export const slotTemplate = pgTable("slotTemplate", {
 	/** Primary key - unique identifier */
 	id: uuid("id").primaryKey().defaultRandom(),
-	/** Template name for identification */
-	name: text("name").notNull(),
 	/** Bitmask for weekdays (1=Monday, 2=Tuesday, 4=Wednesday, etc.) */
 	weekdays: integer("weekdays"),
 	/** Start time for the slot template */

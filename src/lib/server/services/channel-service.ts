@@ -6,6 +6,10 @@ import { eq, inArray } from "drizzle-orm";
 import logger from "$lib/logger";
 import z from "zod/v4";
 import { ValidationError, NotFoundError } from "../utils/errors";
+import { TenantConfig } from "../db/tenant-config";
+
+const CHANNEL_COLORS = ["#FF0000", "#00FF00", "#0000FF"] as const;
+const NEXT_COLOR_KEY = "nextChannelColor";
 
 const slotTemplateSchema = z.object({
 	name: z.string().min(1).max(100),
@@ -15,33 +19,56 @@ const slotTemplateSchema = z.object({
 	duration: z.number().int().min(1).max(1440)
 });
 
-const channelCreationSchema = z.object({
-	name: z.string().min(1).max(100),
-	color: z.string().optional(),
-	description: z.string().optional(),
-	language: z.string().optional(),
-	isPublic: z.boolean().optional(),
-	requiresConfirmation: z.boolean().optional(),
-	agentIds: z.array(z.string().uuid()).optional().default([]),
-	slotTemplates: z.array(slotTemplateSchema).optional().default([])
-});
+const channelCreationSchema = z
+	.object({
+		names: z.array(z.string().min(1).max(100)).min(1),
+		color: z.string().optional(),
+		descriptions: z.array(z.string()).optional(),
+		languages: z.array(z.string().min(2).max(5)).min(1),
+		isPublic: z.boolean().optional(),
+		requiresConfirmation: z.boolean().optional(),
+		agentIds: z.array(z.string().uuid()).optional().default([]),
+		slotTemplates: z.array(slotTemplateSchema).optional().default([])
+	})
+	.refine(
+		(data) =>
+			!data.descriptions ||
+			data.descriptions.length === 0 ||
+			data.descriptions.length === data.languages.length,
+		{ message: "descriptions array must have same length as languages array" }
+	)
+	.refine((data) => data.names.length === data.languages.length, {
+		message: "names array must have same length as languages array"
+	});
 
-const channelUpdateSchema = z.object({
-	name: z.string().min(1).max(100).optional(),
-	color: z.string().optional(),
-	description: z.string().optional(),
-	language: z.string().optional(),
-	isPublic: z.boolean().optional(),
-	requiresConfirmation: z.boolean().optional(),
-	agentIds: z.array(z.string().uuid()).optional(),
-	slotTemplates: z
-		.array(
-			slotTemplateSchema.extend({
-				id: z.string().uuid().optional()
-			})
-		)
-		.optional()
-});
+const channelUpdateSchema = z
+	.object({
+		names: z.array(z.string().min(1).max(100)).optional(),
+		color: z.string().optional(),
+		descriptions: z.array(z.string()).optional(),
+		languages: z.array(z.string().min(2).max(5)).optional(),
+		isPublic: z.boolean().optional(),
+		requiresConfirmation: z.boolean().optional(),
+		agentIds: z.array(z.string().uuid()).optional(),
+		slotTemplates: z
+			.array(
+				slotTemplateSchema.extend({
+					id: z.string().uuid().optional()
+				})
+			)
+			.optional()
+	})
+	.refine(
+		(data) =>
+			!data.descriptions ||
+			!data.languages ||
+			data.descriptions.length === 0 ||
+			data.descriptions.length === data.languages.length,
+		{ message: "descriptions array must have same length as languages array" }
+	)
+	.refine((data) => !data.names || !data.languages || data.names.length === data.languages.length, {
+		message: "names array must have same length as languages array"
+	});
 
 export type ChannelCreationRequest = z.infer<typeof channelCreationSchema>;
 export type ChannelUpdateRequest = z.infer<typeof channelUpdateSchema>;
@@ -91,9 +118,22 @@ export class ChannelService {
 			throw new ValidationError("Invalid channel creation request");
 		}
 
+		if (!request.color) {
+			// Automatically set the channel color if none is given
+			const configService = await TenantConfig.create(this.tenantId);
+			const config = configService.configuration;
+			const nextIndex = config[NEXT_COLOR_KEY] as number;
+			request.color = CHANNEL_COLORS[nextIndex];
+			await configService.setConfig(
+				NEXT_COLOR_KEY,
+				nextIndex + 1 === CHANNEL_COLORS.length ? 0 : nextIndex + 1
+			);
+		}
+
 		log.debug("Creating new channel", {
 			tenantId: this.tenantId,
-			name: request.name,
+			names: request.names,
+			languages: request.languages,
 			agentCount: request.agentIds?.length || 0,
 			slotTemplateCount: request.slotTemplates?.length || 0
 		});
@@ -107,10 +147,10 @@ export class ChannelService {
 				const channelResult = await tx
 					.insert(tenantSchema.channel)
 					.values({
-						name: request.name,
+						names: request.names,
 						color: request.color,
-						description: request.description,
-						language: request.language,
+						descriptions: request.descriptions || [],
+						languages: request.languages,
 						isPublic: request.isPublic,
 						requiresConfirmation: request.requiresConfirmation
 					})
@@ -125,7 +165,6 @@ export class ChannelService {
 						const slotTemplateResult = await tx
 							.insert(tenantSchema.slotTemplate)
 							.values({
-								name: slotTemplateData.name,
 								weekdays: slotTemplateData.weekdays,
 								from: slotTemplateData.from,
 								to: slotTemplateData.to,
@@ -178,7 +217,8 @@ export class ChannelService {
 			log.debug("Channel created successfully", {
 				tenantId: this.tenantId,
 				channelId: result.id,
-				name: result.name,
+				names: result.names,
+				languages: result.languages,
 				agentCount: result.agents.length,
 				slotTemplateCount: result.slotTemplates.length
 			});
@@ -187,7 +227,7 @@ export class ChannelService {
 		} catch (error) {
 			log.error("Failed to create channel", {
 				tenantId: this.tenantId,
-				name: request.name,
+				names: request.names,
 				error: String(error)
 			});
 			throw error;
@@ -223,10 +263,10 @@ export class ChannelService {
 			const result = await db.transaction(async (tx) => {
 				// 1. Update channel basic data
 				const channelData = {
-					name: updateData.name,
+					names: updateData.names,
 					color: updateData.color,
-					description: updateData.description,
-					language: updateData.language,
+					descriptions: updateData.descriptions,
+					languages: updateData.languages,
 					isPublic: updateData.isPublic,
 					requiresConfirmation: updateData.requiresConfirmation
 				};
@@ -332,7 +372,6 @@ export class ChannelService {
 							const updateResult = await tx
 								.update(tenantSchema.slotTemplate)
 								.set({
-									name: slotTemplateData.name,
 									weekdays: slotTemplateData.weekdays,
 									from: slotTemplateData.from,
 									to: slotTemplateData.to,
@@ -351,7 +390,6 @@ export class ChannelService {
 							const createResult = await tx
 								.insert(tenantSchema.slotTemplate)
 								.values({
-									name: slotTemplateData.name,
 									weekdays: slotTemplateData.weekdays,
 									from: slotTemplateData.from,
 									to: slotTemplateData.to,
@@ -407,7 +445,6 @@ export class ChannelService {
 					slotTemplates = await tx
 						.select({
 							id: tenantSchema.slotTemplate.id,
-							name: tenantSchema.slotTemplate.name,
 							weekdays: tenantSchema.slotTemplate.weekdays,
 							from: tenantSchema.slotTemplate.from,
 							to: tenantSchema.slotTemplate.to,
@@ -492,7 +529,6 @@ export class ChannelService {
 			const slotTemplates = await db
 				.select({
 					id: tenantSchema.slotTemplate.id,
-					name: tenantSchema.slotTemplate.name,
 					weekdays: tenantSchema.slotTemplate.weekdays,
 					from: tenantSchema.slotTemplate.from,
 					to: tenantSchema.slotTemplate.to,
@@ -544,7 +580,7 @@ export class ChannelService {
 			const channels = await db
 				.select()
 				.from(tenantSchema.channel)
-				.orderBy(tenantSchema.channel.name);
+				.orderBy(tenantSchema.channel.names);
 
 			// Get relations for each channel
 			const result: ChannelWithRelations[] = [];

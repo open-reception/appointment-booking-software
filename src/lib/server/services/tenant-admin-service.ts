@@ -27,10 +27,12 @@ export interface TenantConfiguration extends Record<string, string | number | bo
 	autoDeleteDays: number;
 	requireEmail: boolean;
 	requirePhone: boolean;
+	nextChannelColor: number;
 }
 
 export class TenantAdminService {
 	#config!: TenantConfig;
+	#tenant: Awaited<centralSchema.SelectTenant> | null = null;
 	#db: Awaited<ReturnType<typeof getTenantDb>> | null = null;
 
 	private constructor(public readonly tenantId: string) {}
@@ -43,7 +45,8 @@ export class TenantAdminService {
 			maxTeamMembers: -1,
 			autoDeleteDays: 30,
 			requireEmail: true,
-			requirePhone: false
+			requirePhone: false,
+			nextChannelColor: 0
 		};
 	}
 
@@ -67,10 +70,7 @@ export class TenantAdminService {
 		newTenant.databaseUrl = urlParts.join("/") + "/" + newTenant.shortName;
 
 		try {
-			const tenant = await centralDb
-				.insert(centralSchema.tenant)
-				.values(newTenant)
-				.returning({ id: centralSchema.tenant.id });
+			const tenant = await centralDb.insert(centralSchema.tenant).values(newTenant).returning();
 
 			log.debug("Tenant created in database", {
 				tenantId: tenant[0].id,
@@ -110,6 +110,7 @@ export class TenantAdminService {
 
 			const tenantService = new TenantAdminService(tenant[0].id);
 			tenantService.#config = config;
+			tenantService.#tenant = tenant[0];
 
 			log.debug("Tenant service created successfully", { tenantId: tenant[0].id });
 
@@ -137,6 +138,14 @@ export class TenantAdminService {
 		try {
 			const tenant = new TenantAdminService(id);
 			tenant.#config = await TenantConfig.create(id);
+			const data = await tenant.#db
+				?.select()
+				.from(centralSchema.tenant)
+				.where(eq(centralSchema.tenant.id, id))
+				.limit(1);
+			if (data) {
+				tenant.#tenant = data[0];
+			}
 
 			log.debug("Tenant service loaded successfully", { tenantId: id });
 			return tenant;
@@ -151,6 +160,10 @@ export class TenantAdminService {
 	 */
 	get configuration() {
 		return this.#config;
+	}
+
+	get tenantData() {
+		return this.#tenant;
 	}
 
 	/**
@@ -225,6 +238,50 @@ export class TenantAdminService {
 			log.error("Failed to update tenant configuration", {
 				tenantId: this.tenantId,
 				configKeys: Object.keys(configUpdates),
+				error: String(error)
+			});
+			throw error;
+		}
+	}
+
+	/**
+	 * Set the setup state of the tenant
+	 */
+	async setSetupState(setupState: "NEW" | "SETTINGS_CREATED" | "AGENTS_SET_UP" | "FIRST_CHANNEL_CREATED") {
+		const log = logger.setContext("TenantAdminService");
+		log.debug("Setting tenant setup state", {
+			tenantId: this.tenantId,
+			setupState
+		});
+
+		try {
+			const result = await centralDb
+				.update(centralSchema.tenant)
+				.set({
+					setupState,
+					updatedAt: new Date()
+				})
+				.where(eq(centralSchema.tenant.id, this.tenantId))
+				.returning();
+
+			if (!result[0]) {
+				log.warn("Tenant setup state update failed: Tenant not found", { tenantId: this.tenantId });
+				throw new NotFoundError(`Tenant with ID ${this.tenantId} not found`);
+			}
+
+			this.#tenant = result[0];
+
+			log.debug("Tenant setup state updated successfully", {
+				tenantId: this.tenantId,
+				setupState
+			});
+
+			return result[0];
+		} catch (error) {
+			if (error instanceof NotFoundError) throw error;
+			log.error("Failed to set tenant setup state", {
+				tenantId: this.tenantId,
+				setupState,
 				error: String(error)
 			});
 			throw error;
