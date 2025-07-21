@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { HTMLAttributes } from "svelte/elements";
-	import { cn, type WithElementRef } from "$lib/utils.js";
+	import { cn, type WithElementRef } from "$lib/utils";
 	import HorizontalPagePadding from "./horizontal-page-padding.svelte";
 	import { Text } from "../typography";
 	import { m } from "$i18n/messages";
