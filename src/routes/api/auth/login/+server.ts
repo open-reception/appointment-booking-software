@@ -7,6 +7,8 @@ import { verifyPassphrase } from "$lib/server/utils/passphrase";
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { UniversalLogger } from "$lib/logger";
+import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
+import { env } from "$env/dynamic/private";
 
 const logger = new UniversalLogger().setContext("AuthLoginAPI");
 
@@ -123,7 +125,7 @@ registerOpenAPIRoute("/auth/login", "POST", {
 	}
 });
 
-export const POST: RequestHandler = async ({ request, cookies, getClientAddress }) => {
+export const POST: RequestHandler = async ({ request, cookies, getClientAddress, url }) => {
 	try {
 		const body = await request.json();
 		const ipAddress = getClientAddress();
@@ -152,6 +154,61 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress 
 				return json({ error: "Invalid email or authentication method" }, { status: 401 });
 			}
 			throw error;
+		}
+
+		// Production-only: Validate subdomain for non-global admins
+		if (env.NODE_ENV === "production") {
+			const hostname = url.hostname;
+			const hostParts = hostname.split(".");
+			const hasSubdomain = hostParts.length > 2;
+			const subdomain = hasSubdomain ? hostParts[0] : null;
+
+			// Global admins can login from anywhere
+			if (user.role !== "GLOBAL_ADMIN") {
+				if (!hasSubdomain || !subdomain) {
+					logger.warn("Login attempt from non-subdomain by non-global admin", {
+						userId: user.id,
+						email: user.email,
+						hostname,
+						role: user.role
+					});
+					return json({ error: "Unknown user does for tenant" }, { status: 401 });
+				}
+
+				if (user.tenantId) {
+					try {
+						const tenantService = await TenantAdminService.getTenantById(user.tenantId);
+						const tenant = tenantService.tenantData;
+
+						if (!tenant || tenant.shortName !== subdomain) {
+							logger.warn("Login attempt from wrong subdomain", {
+								userId: user.id,
+								email: user.email,
+								expectedSubdomain: tenant?.shortName,
+								actualSubdomain: subdomain,
+								tenantId: user.tenantId
+							});
+							return json({ error: "Unknown user does for tenant" }, { status: 401 });
+						}
+					} catch (error) {
+						logger.error("Failed to validate tenant for subdomain login", {
+							userId: user.id,
+							tenantId: user.tenantId,
+							subdomain,
+							error: String(error)
+						});
+						return json({ error: "Unknown user does for tenant" }, { status: 401 });
+					}
+				} else {
+					logger.warn("Login attempt from subdomain by user without matching tenant", {
+						userId: user.id,
+						email: user.email,
+						subdomain,
+						role: user.role
+					});
+					return json({ error: "Unknown user does for tenant" }, { status: 401 });
+				}
+			}
 		}
 
 		// Handle passphrase authentication
