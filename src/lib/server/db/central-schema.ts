@@ -22,6 +22,13 @@ export const configTypeEnum = pgEnum("config_type", ["BOOLEAN", "NUMBER", "STRIN
  */
 export const userRoleEnum = pgEnum("user_role", ["GLOBAL_ADMIN", "TENANT_ADMIN", "STAFF"]);
 
+export const tenantSetupState = pgEnum("setup_state", [
+	"NEW", // newly created
+	"SETTINGS_CREATED", // settings were reviewed
+	"AGENTS_SET_UP", // agents set up was triggered or skipped
+	"FIRST_CHANNEL_CREATED" // the first channel was set up
+]);
+
 /**
  * Central Tenant table - stored in the main database
  * Contains tenant metadata and database connection information
@@ -43,6 +50,8 @@ export const tenant = pgTable(
 		logo: bytea("logo"),
 		/** Database connection string for this tenant's isolated database */
 		databaseUrl: text("database_url").notNull(),
+		/** STate of tenant setup */
+		setupState: tenantSetupState("setup_state").notNull().default("NEW"),
 		createdAt: timestamp("created_at").defaultNow(),
 		updatedAt: timestamp("updated_at").defaultNow()
 	},
