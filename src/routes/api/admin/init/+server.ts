@@ -47,11 +47,7 @@ registerOpenAPIRoute("/admin/init", "POST", {
 							example: "MySecurePassphrase123"
 						}
 					},
-					required: ["name", "email"],
-					oneOf: [
-						{ required: ["passkey"] },
-						{ required: ["passphrase"] }
-					]
+					required: ["name", "email"]
 				}
 			}
 		}
@@ -122,11 +118,11 @@ export const POST: RequestHandler = async ({ request }) => {
 		// Validate that either passkey or passphrase is provided (but not both)
 		const hasPasskey = !!body.passkey;
 		const hasPassphrase = !!body.passphrase;
-		
+
 		if (!hasPasskey && !hasPassphrase) {
 			return json({ error: "Either passkey or passphrase must be provided" }, { status: 400 });
 		}
-		
+
 		if (hasPasskey && hasPassphrase) {
 			return json({ error: "Cannot provide both passkey and passphrase" }, { status: 400 });
 		}

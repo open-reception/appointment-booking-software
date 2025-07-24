@@ -5,11 +5,7 @@ import {
 	type TemplateData,
 	type Language
 } from "./template-engine";
-import type {
-	SelectClient,
-	SelectStaff,
-	SelectAppointment
-} from "$lib/server/db/schema";
+import type { SelectClient, SelectStaff, SelectAppointment } from "$lib/server/db/tenant-schema";
 import type { SelectTenant } from "$lib/server/db/central-schema";
 
 /**

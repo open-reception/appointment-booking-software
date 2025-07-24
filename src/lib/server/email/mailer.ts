@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import { env } from "$env/dynamic/private";
-import type { SelectClient, SelectStaff } from "$lib/server/db/schema";
+import type { SelectClient, SelectStaff } from "$lib/server/db/tenant-schema";
 import type Mail from "nodemailer/lib/mailer";
 
 /**
@@ -48,16 +48,16 @@ function createTransporter() {
 	if (!env.SMTP_HOST || !env.SMTP_PORT || !env.SMTP_USER || !env.SMTP_PASS) {
 		throw new Error("SMTP configuration is incomplete. Please check your environment variables.");
 	}
-
-	return nodemailer.createTransport({
+	const config = {
 		host: env.SMTP_HOST,
 		port: parseInt(env.SMTP_PORT),
-		secure: env.SMTP_SECURE === "true", // true for 465, false for other ports
+		secure: env.SMTP_SECURE === "true",
 		auth: {
 			user: env.SMTP_USER,
 			pass: env.SMTP_PASS
 		}
-	});
+	};
+	return nodemailer.createTransport(config);
 }
 
 /**
