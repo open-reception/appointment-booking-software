@@ -53,7 +53,7 @@ vi.mock("$lib/server/services/user-service", () => ({
 
 // Mock JWT utils
 vi.mock("$lib/server/auth/jwt-utils", () => ({
-	generateTokens: vi.fn()
+	generateAccessToken: vi.fn()
 }));
 
 // Mock universal logger
@@ -92,7 +92,7 @@ vi.mock("$lib/server/utils/errors", () => ({
 import { SessionService } from "$lib/server/auth/session-service";
 import { centralDb } from "$lib/server/db";
 import { UserService } from "$lib/server/services/user-service";
-import { generateTokens } from "$lib/server/auth/jwt-utils";
+import { generateAccessToken } from "$lib/server/auth/jwt-utils";
 
 describe("POST /api/admin/tenant", () => {
 	const mockUser = {
@@ -107,7 +107,9 @@ describe("POST /api/admin/tenant", () => {
 		updatedAt: new Date(),
 		lastLoginAt: null,
 		token: null,
-		tokenValidUntil: null
+		tokenValidUntil: null,
+		passphraseHash: null,
+		recoveryPassphrase: null
 	};
 
 	const mockSessionData = {
@@ -130,7 +132,7 @@ describe("POST /api/admin/tenant", () => {
 		request: {
 			json: () => Promise.resolve(body)
 		} as Request,
-		locals: { user },
+		locals: { user: { ...user, sessionId: "session-123" } },
 		cookies: mockCookies,
 		params: {},
 		url: new URL("http://localhost/api/admin/tenant"),
@@ -159,25 +161,14 @@ describe("POST /api/admin/tenant", () => {
 		};
 		vi.mocked(centralDb.select).mockReturnValue(mockSelectQuery as any);
 
-		// Mock session cookie
-		mockCookies.get.mockReturnValue("session-123");
-
-		// Mock session validation
-		const mockValidateSession = vi.mocked(SessionService.validateSession);
-		mockValidateSession.mockResolvedValue(mockSessionData as any);
-
-		// Mock session ID lookup
-		mockSelectQuery.limit.mockResolvedValueOnce([{ id: "session-id-123" }]);
+		// No session handling needed anymore
 
 		// Mock user update
 		const updatedUser = { ...mockUser, tenantId };
 		vi.mocked(UserService.updateUser).mockResolvedValue(updatedUser as any);
 
 		// Mock token generation
-		vi.mocked(generateTokens).mockResolvedValue({
-			accessToken: "new-access-123",
-			refreshToken: "new-refresh-123"
-		});
+		vi.mocked(generateAccessToken).mockResolvedValue("new-access-123");
 
 		// Mock database update queries
 		const mockUpdateQuery = {
@@ -193,15 +184,9 @@ describe("POST /api/admin/tenant", () => {
 		expect(result.success).toBe(true);
 		expect(result.tenantId).toBe(tenantId);
 		expect(result.user.tenantId).toBe(tenantId);
-		expect(mockCookies.set).toHaveBeenCalledWith("session", "session-123", expect.any(Object));
 		expect(mockCookies.set).toHaveBeenCalledWith(
-			"accessToken",
+			"access_token",
 			"new-access-123",
-			expect.any(Object)
-		);
-		expect(mockCookies.set).toHaveBeenCalledWith(
-			"refreshToken",
-			"new-refresh-123",
 			expect.any(Object)
 		);
 	});

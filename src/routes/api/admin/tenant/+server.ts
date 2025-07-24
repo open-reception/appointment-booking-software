@@ -1,12 +1,11 @@
 import { error, json, type RequestHandler } from "@sveltejs/kit";
 import { z } from "zod";
-import { SessionService } from "$lib/server/auth/session-service";
 import { centralDb } from "$lib/server/db";
-import { tenant, user, userSession } from "$lib/server/db/central-schema";
+import { tenant, user } from "$lib/server/db/central-schema";
 import { eq } from "drizzle-orm";
 import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
 import { UserService } from "$lib/server/services/user-service";
-import { generateTokens } from "$lib/server/auth/jwt-utils";
+import { generateAccessToken } from "$lib/server/auth/jwt-utils";
 import { UniversalLogger } from "$lib/logger";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 
@@ -59,86 +58,26 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 			throw error(404, "Tenant not found");
 		}
 
-		// Get current session token from cookie
-		const sessionToken = cookies.get("session");
-		if (!sessionToken) {
-			logger.error("No session token found in cookies", { userId: locals.user.id });
-			throw error(401, "No valid session found");
-		}
-
-		// Get current session data
-		const sessionData = await SessionService.validateSession(sessionToken);
-		if (!sessionData) {
-			logger.error("Invalid session token", { userId: locals.user.id });
-			throw error(401, "Invalid session");
-		}
+		// Current user is already authenticated via authHandle
 
 		// Update user's active tenant in the database
-		const updatedUser = await UserService.updateUser(locals.user.id, {
+		const updatedUser = await UserService.updateUser(locals.user.userId as string, {
 			tenantId: tenantId || null
 		});
 
 		if (!updatedUser) {
 			logger.error("Failed to update user tenant", {
-				userId: locals.user.id,
+				userId: locals.user.userId,
 				tenantId
 			});
 			throw error(500, "Failed to update user data");
 		}
 
-		// Get the session ID from the database
-		const sessionInfo = await centralDb
-			.select({ id: userSession.id })
-			.from(userSession)
-			.where(eq(userSession.sessionToken, sessionData.sessionToken))
-			.limit(1);
+		// Generate new access token with updated tenant context
+		const newAccessToken = await generateAccessToken(updatedUser, (locals.user.sessionId as string) || "temp-session");
 
-		if (sessionInfo.length === 0) {
-			logger.error("Session not found in database", { userId: locals.user.id });
-			throw error(500, "Session not found");
-		}
-
-		// Generate new tokens with updated tenant context
-		const newTokens = await generateTokens(updatedUser, sessionInfo[0].id);
-
-		// Update session tokens in the database
-		await centralDb
-			.update(user)
-			.set({
-				tenantId: tenantId || null,
-				updatedAt: new Date()
-			})
-			.where(eq(user.id, locals.user.id));
-
-		// Update the user session with new tokens
-		await centralDb
-			.update(userSession)
-			.set({
-				accessToken: newTokens.accessToken,
-				refreshToken: newTokens.refreshToken,
-				lastUsedAt: new Date(),
-				updatedAt: new Date()
-			})
-			.where(eq(userSession.sessionToken, sessionData.sessionToken));
-
-		// Set new cookies with updated tokens
-		cookies.set("session", sessionData.sessionToken, {
-			httpOnly: true,
-			secure: true,
-			sameSite: "strict",
-			path: "/",
-			maxAge: 60 * 60 * 24 * 7 // 7 days
-		});
-
-		cookies.set("accessToken", newTokens.accessToken, {
-			httpOnly: true,
-			secure: true,
-			sameSite: "strict",
-			path: "/",
-			maxAge: 60 * 15 // 15 minutes
-		});
-
-		cookies.set("refreshToken", newTokens.refreshToken, {
+		// Set new access token cookie
+		cookies.set("access_token", newAccessToken, {
 			httpOnly: true,
 			secure: true,
 			sameSite: "strict",
@@ -147,7 +86,7 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 		});
 
 		logger.info("Tenant switched successfully", {
-			userId: locals.user.id,
+			userId: locals.user.userId,
 			fromTenant: locals.user.tenantId,
 			toTenant: tenantId
 		});

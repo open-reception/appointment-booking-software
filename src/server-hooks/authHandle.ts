@@ -1,13 +1,11 @@
 import type { Handle } from "@sveltejs/kit";
-import { SessionService } from "$lib/server/auth/session-service";
 import { verifyAccessToken } from "$lib/server/auth/jwt-utils";
 import { UniversalLogger } from "$lib/logger";
-import type { JWTPayload } from "jose";
 import { AuthorizationService } from "$lib/server/auth/authorization-service";
 
 const logger = new UniversalLogger().setContext("AuthHandle");
 
-const SESSION_COOKIE_NAME = "session";
+const ACCESS_TOKEN_COOKIE_NAME = "access_token";
 const PROTECTED_PATHS = ["/api/admin", "/api/tenant-admin", "/api/tenants", "/api/auth/register"];
 const PUBLIC_PATHS = [
 	"/api/auth/challenge",
@@ -60,20 +58,23 @@ export const authHandle: Handle = async ({ event, resolve }) => {
 		);
 	}
 
-	let sessionToken: string | null = null;
 	let accessToken: string | null = null;
 
-	const sessionCookie = event.cookies.get(SESSION_COOKIE_NAME);
-	if (sessionCookie) {
-		sessionToken = sessionCookie;
+	// Get access token from cookie
+	const accessTokenCookie = event.cookies.get(ACCESS_TOKEN_COOKIE_NAME);
+	if (accessTokenCookie) {
+		accessToken = accessTokenCookie;
 	}
 
-	const authHeader = request.headers.get("authorization");
-	if (authHeader?.startsWith("Bearer ")) {
-		accessToken = authHeader.substring(7);
+	// Fallback: check Authorization header
+	if (!accessToken) {
+		const authHeader = request.headers.get("authorization");
+		if (authHeader?.startsWith("Bearer ")) {
+			accessToken = authHeader.substring(7);
+		}
 	}
 
-	if (!sessionToken && !accessToken) {
+	if (!accessToken) {
 		logger.warn(`Authentication required for ${path}`);
 		return new Response(JSON.stringify({ error: "Authentication required" }), {
 			status: 401,
@@ -81,39 +82,17 @@ export const authHandle: Handle = async ({ event, resolve }) => {
 		});
 	}
 
-	let user: JWTPayload | null = null;
-
-	if (accessToken) {
-		user = await verifyAccessToken(accessToken);
-		if (!user) {
-			logger.warn(`Invalid access token for ${path}`);
-			return new Response(JSON.stringify({ error: "Invalid access token" }), {
-				status: 401,
-				headers: { "Content-Type": "application/json" }
-			});
-		}
-	} else if (sessionToken) {
-		const sessionData = await SessionService.validateSession(sessionToken);
-		if (!sessionData) {
-			logger.warn(`Invalid session for ${path}`);
-			return new Response(JSON.stringify({ error: "Invalid session" }), {
-				status: 401,
-				headers: { "Content-Type": "application/json" }
-			});
-		}
-		user = await verifyAccessToken(sessionData.accessToken);
-	}
-
+	// Verify access token
+	const user = await verifyAccessToken(accessToken);
 	if (!user) {
-		logger.warn(`Authentication failed for ${path}`);
-		return new Response(JSON.stringify({ error: "Authentication failed" }), {
+		logger.warn(`Invalid access token for ${path}`);
+		return new Response(JSON.stringify({ error: "Invalid access token" }), {
 			status: 401,
 			headers: { "Content-Type": "application/json" }
 		});
 	}
 
 	event.locals.user = user;
-	event.locals.sessionToken = sessionToken || undefined;
 
 	if (isGlobalAdminPath && !AuthorizationService.hasRole(user, "GLOBAL_ADMIN")) {
 		return new Response(JSON.stringify({ error: "Authentication failed" }), {

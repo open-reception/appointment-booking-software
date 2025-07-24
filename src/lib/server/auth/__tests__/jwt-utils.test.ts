@@ -21,7 +21,9 @@ const mockUser: SelectUser = {
 	isActive: true,
 	confirmed: true,
 	token: null,
-	tokenValidUntil: null
+	tokenValidUntil: null,
+	passphraseHash: null,
+	recoveryPassphrase: null
 };
 
 describe("JWT Utils", () => {

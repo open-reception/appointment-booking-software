@@ -1,5 +1,4 @@
 import { json } from "@sveltejs/kit";
-import { SessionService } from "$lib/server/auth/session-service";
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { UniversalLogger } from "$lib/logger";
@@ -67,41 +66,28 @@ registerOpenAPIRoute("/auth/session", "GET", {
 	}
 });
 
-export const GET: RequestHandler = async ({ cookies }) => {
+export const GET: RequestHandler = async ({ locals }) => {
 	try {
-		const sessionToken = cookies.get("session");
-
-		if (!sessionToken) {
-			return json({ authenticated: false, message: "No session found" }, { status: 401 });
+		// User is already authenticated via authHandle
+		if (!locals.user) {
+			return json({ authenticated: false, message: "Not authenticated" }, { status: 401 });
 		}
 
-		const sessionData = await SessionService.validateSession(sessionToken);
-
-		if (!sessionData) {
-			cookies.delete("session", {
-				path: "/",
-				httpOnly: true,
-				secure: true,
-				sameSite: "strict"
-			});
-			return json({ authenticated: false, message: "Invalid or expired session" }, { status: 401 });
-		}
-
-		logger.debug("Session validated", { userId: sessionData.user.id });
+		logger.debug("Session check", { userId: locals.user.userId });
 
 		return json({
 			authenticated: true,
 			user: {
-				id: sessionData.user.id,
-				email: sessionData.user.email,
-				name: sessionData.user.name,
-				role: sessionData.user.role,
-				tenantId: sessionData.user.tenantId
+				id: locals.user.userId,
+				email: locals.user.email,
+				name: locals.user.name,
+				role: locals.user.role,
+				tenantId: locals.user.tenantId
 			},
-			expiresAt: sessionData.expiresAt.toISOString()
+			expiresAt: new Date(locals.user.exp! * 1000).toISOString()
 		});
 	} catch (error) {
-		logger.error("Session validation error:", { error: String(error) });
+		logger.error("Session check error:", { error: String(error) });
 		return json({ error: "Internal server error" }, { status: 500 });
 	}
 };

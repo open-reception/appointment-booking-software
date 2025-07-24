@@ -1,5 +1,4 @@
 import { json } from "@sveltejs/kit";
-import { SessionService } from "$lib/server/auth/session-service";
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { UniversalLogger } from "$lib/logger";
@@ -69,46 +68,32 @@ registerOpenAPIRoute("/auth/sessions/{sessionId}", "DELETE", {
 	}
 });
 
-export const DELETE: RequestHandler = async ({ params, cookies }) => {
+export const DELETE: RequestHandler = async ({ params, locals, cookies }) => {
 	try {
-		const sessionToken = cookies.get("session");
 		const sessionIdToRevoke = params.sessionId;
 
-		if (!sessionToken) {
+		if (!locals.user) {
 			return json({ error: "Not authenticated" }, { status: 401 });
 		}
 
-		const sessionData = await SessionService.validateSession(sessionToken);
-
-		if (!sessionData) {
-			return json({ error: "Invalid session" }, { status: 401 });
+		// With access token-only approach, we can only revoke the current token
+		const currentSessionId = locals.user.sessionId || "current";
+		
+		if (sessionIdToRevoke !== currentSessionId) {
+			return json({ error: "Can only revoke current session" }, { status: 404 });
 		}
 
-		// Get all user sessions to verify ownership
-		const userSessions = await SessionService.getActiveSessions(sessionData.user.id);
-		const targetSession = userSessions.find((session) => session.id === sessionIdToRevoke);
+		// Clear access token cookie
+		cookies.delete("access_token", {
+			path: "/",
+			httpOnly: true,
+			secure: true,
+			sameSite: "strict"
+		});
 
-		if (!targetSession) {
-			return json({ error: "Session not found" }, { status: 404 });
-		}
-
-		// Check if trying to revoke current session
-		if (targetSession.sessionToken === sessionToken) {
-			// Clear current session cookie
-			cookies.delete("session", {
-				path: "/",
-				httpOnly: true,
-				secure: true,
-				sameSite: "strict"
-			});
-		}
-
-		await SessionService.revokeSession(sessionIdToRevoke);
-
-		logger.info("Session revoked", {
-			userId: sessionData.user.id,
-			revokedSessionId: sessionIdToRevoke,
-			currentSession: targetSession.sessionToken === sessionToken
+		logger.info("Access token revoked", {
+			userId: locals.user.userId,
+			revokedSessionId: sessionIdToRevoke
 		});
 
 		return json({ message: "Session revoked successfully" });

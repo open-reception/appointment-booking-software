@@ -86,14 +86,13 @@ registerOpenAPIRoute("/auth/login", "POST", {
 								},
 								required: ["id", "email", "name", "role"]
 							},
-							accessToken: { type: "string", description: "JWT access token" },
 							expiresAt: {
 								type: "string",
 								format: "date-time",
 								description: "Session expiration time"
 							}
 						},
-						required: ["message", "user", "accessToken", "expiresAt"]
+						required: ["message", "user", "expiresAt"]
 					}
 				}
 			}
@@ -273,8 +272,8 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
 			userAgent || undefined
 		);
 
-		// Set HTTP-only cookie for session
-		cookies.set("session", sessionData.sessionToken, {
+		// Set HTTP-only cookie for access token
+		cookies.set("access_token", sessionData.accessToken, {
 			httpOnly: true,
 			secure: true,
 			sameSite: "strict",
@@ -298,7 +297,6 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
 				role: sessionData.user.role,
 				tenantId: sessionData.user.tenantId
 			},
-			accessToken: sessionData.accessToken,
 			expiresAt: sessionData.expiresAt.toISOString()
 		});
 	} catch (error) {

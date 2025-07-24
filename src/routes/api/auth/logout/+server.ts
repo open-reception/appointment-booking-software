@@ -1,5 +1,4 @@
 import { json } from "@sveltejs/kit";
-import { SessionService } from "$lib/server/auth/session-service";
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { UniversalLogger } from "$lib/logger";
@@ -8,7 +7,7 @@ const logger = new UniversalLogger().setContext("AuthLogoutAPI");
 
 registerOpenAPIRoute("/auth/logout", "POST", {
 	summary: "Logout user session",
-	description: "Invalidate current user session and clear session cookie",
+	description: "Invalidate current user session and clear access token cookie",
 	tags: ["Authentication"],
 	responses: {
 		"200": {
@@ -26,7 +25,7 @@ registerOpenAPIRoute("/auth/logout", "POST", {
 			}
 		},
 		"400": {
-			description: "No active session found",
+			description: "No access token found",
 			content: {
 				"application/json": {
 					schema: { $ref: "#/components/schemas/Error" }
@@ -46,15 +45,14 @@ registerOpenAPIRoute("/auth/logout", "POST", {
 
 export const POST: RequestHandler = async ({ cookies }) => {
 	try {
-		const sessionToken = cookies.get("session");
+		const accessToken = cookies.get("access_token");
 
-		if (!sessionToken) {
-			return json({ error: "No active session found" }, { status: 400 });
+		if (!accessToken) {
+			return json({ error: "No access token found" }, { status: 400 });
 		}
 
-		await SessionService.logout(sessionToken);
-
-		cookies.delete("session", {
+		// Simply clear the access token cookie - no need to invalidate sessions
+		cookies.delete("access_token", {
 			path: "/",
 			httpOnly: true,
 			secure: true,
