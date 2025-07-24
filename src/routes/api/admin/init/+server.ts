@@ -9,7 +9,7 @@ import logger from "$lib/logger";
 registerOpenAPIRoute("/admin/init", "POST", {
 	summary: "Register an initial admin account",
 	description:
-		"Creates an initial admin account that requires email confirmation. Only works if no global admin account exists yet.",
+		"Creates an initial admin account that requires email confirmation. Authentication can be set up using either a WebAuthn passkey or a passphrase. Only works if no global admin account exists yet.",
 	tags: ["Admin"],
 	requestBody: {
 		description: "Admin registration data",
@@ -27,7 +27,7 @@ registerOpenAPIRoute("/admin/init", "POST", {
 						},
 						passkey: {
 							type: "object",
-							description: "WebAuthn passkey data",
+							description: "WebAuthn passkey data (alternative to passphrase)",
 							properties: {
 								id: { type: "string", description: "Credential ID from WebAuthn" },
 								publicKey: { type: "string", description: "Base64 encoded public key" },
@@ -39,9 +39,19 @@ registerOpenAPIRoute("/admin/init", "POST", {
 								}
 							},
 							required: ["id", "publicKey"]
+						},
+						passphrase: {
+							type: "string",
+							minLength: 12,
+							description: "User passphrase (alternative to passkey, minimum 12 characters)",
+							example: "MySecurePassphrase123"
 						}
 					},
-					required: ["name", "email", "passkey"]
+					required: ["name", "email"],
+					oneOf: [
+						{ required: ["passkey"] },
+						{ required: ["passphrase"] }
+					]
 				}
 			}
 		}
@@ -109,8 +119,21 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ error: "System was already initialized" }, { status: 409 });
 		}
 
-		log.debug("Creating admin account with passkey", {
+		// Validate that either passkey or passphrase is provided (but not both)
+		const hasPasskey = !!body.passkey;
+		const hasPassphrase = !!body.passphrase;
+		
+		if (!hasPasskey && !hasPassphrase) {
+			return json({ error: "Either passkey or passphrase must be provided" }, { status: 400 });
+		}
+		
+		if (hasPasskey && hasPassphrase) {
+			return json({ error: "Cannot provide both passkey and passphrase" }, { status: 400 });
+		}
+
+		log.debug("Creating admin account", {
 			email: body.email,
+			authMethod: hasPasskey ? "passkey" : "passphrase",
 			passkeyId: body.passkey?.id,
 			deviceName: body.passkey?.deviceName
 		});
@@ -118,21 +141,25 @@ export const POST: RequestHandler = async ({ request }) => {
 		// Create admin account
 		const admin = await UserService.createUser({
 			name: body.name,
-			email: body.email
+			email: body.email,
+			passphrase: body.passphrase // Will be undefined if passkey is used
 		});
 
-		// Add the passkey to the admin account
-		await UserService.addPasskey(admin.id, {
-			id: body.passkey.id,
-			publicKey: body.passkey.publicKey,
-			counter: body.passkey.counter || 0,
-			deviceName: body.passkey.deviceName || "Unknown Device"
-		});
+		// Add the passkey to the admin account if provided
+		if (hasPasskey) {
+			await UserService.addPasskey(admin.id, {
+				id: body.passkey.id,
+				publicKey: body.passkey.publicKey,
+				counter: body.passkey.counter || 0,
+				deviceName: body.passkey.deviceName || "Unknown Device"
+			});
+		}
 
-		log.debug("Admin account and passkey created successfully", {
+		log.debug("Admin account created successfully", {
 			adminId: admin.id,
 			email: admin.email,
-			passkeyId: body.passkey.id
+			authMethod: hasPasskey ? "passkey" : "passphrase",
+			passkeyId: hasPasskey ? body.passkey.id : undefined
 		});
 
 		return json(
