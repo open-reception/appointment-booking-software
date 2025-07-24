@@ -12,6 +12,18 @@ vi.mock("../../db", () => ({
 	}
 }));
 
+// Mock the email service
+vi.mock("../../email/email-service", () => ({
+	sendConfirmationEmail: vi.fn()
+}));
+
+// Mock the tenant admin service
+vi.mock("../tenant-admin-service", () => ({
+	TenantAdminService: {
+		getTenantById: vi.fn()
+	}
+}));
+
 // Mock uuid generation
 vi.mock("uuidv7", () => ({
 	uuidv7: vi.fn()
@@ -29,6 +41,8 @@ describe("UserService", () => {
 	let mockCentralDb: any;
 	let mockUuidv7: any;
 	let mockAddMinutes: any;
+	let mockSendConfirmationEmail: any;
+	let mockTenantAdminService: any;
 
 	beforeEach(async () => {
 		vi.clearAllMocks();
@@ -43,10 +57,24 @@ describe("UserService", () => {
 		const dateFnsModule = await vi.importMock("date-fns");
 		mockAddMinutes = dateFnsModule.addMinutes;
 
+		const emailModule = await vi.importMock("../../email/email-service");
+		mockSendConfirmationEmail = emailModule.sendConfirmationEmail;
+
+		const tenantModule = await vi.importMock("../tenant-admin-service");
+		mockTenantAdminService = tenantModule.TenantAdminService;
+
 		// Setup default mock returns
 		mockUuidv7.mockReturnValue("018f-a1b2-c3d4-e5f6-789abcdef012");
 		const futureDate = new Date("2024-01-01T12:10:00Z");
 		mockAddMinutes.mockReturnValue(futureDate);
+		mockSendConfirmationEmail.mockResolvedValue(undefined);
+		mockTenantAdminService.getTenantById.mockResolvedValue({
+			tenantData: {
+				id: "tenant-123",
+				shortName: "test",
+				longName: "Test Tenant"
+			}
+		});
 	});
 
 	afterEach(() => {
@@ -95,9 +123,17 @@ describe("UserService", () => {
 		it("should resend confirmation email for existing admin", async () => {
 			const email = "test@example.com";
 
+			const mockUser = {
+				id: "user-123",
+				email: "test@example.com",
+				name: "Test User",
+				tenantId: null
+			};
+
 			const mockUpdateBuilder = {
 				set: vi.fn().mockReturnThis(),
-				execute: vi.fn().mockResolvedValue({ count: 1 })
+				where: vi.fn().mockReturnThis(),
+				returning: vi.fn().mockResolvedValue([mockUser])
 			};
 
 			mockCentralDb.update.mockReturnValue(mockUpdateBuilder);
@@ -109,6 +145,8 @@ describe("UserService", () => {
 				token: "018f-a1b2-c3d4-e5f6-789abcdef012",
 				tokenValidUntil: expect.any(Date)
 			});
+			expect(mockUpdateBuilder.where).toHaveBeenCalled();
+			expect(mockUpdateBuilder.returning).toHaveBeenCalled();
 		});
 
 		it("should throw NotFoundError for non-existent admin", async () => {
@@ -116,7 +154,8 @@ describe("UserService", () => {
 
 			const mockUpdateBuilder = {
 				set: vi.fn().mockReturnThis(),
-				execute: vi.fn().mockResolvedValue({ count: 0 })
+				where: vi.fn().mockReturnThis(),
+				returning: vi.fn().mockResolvedValue([])
 			};
 
 			mockCentralDb.update.mockReturnValue(mockUpdateBuilder);

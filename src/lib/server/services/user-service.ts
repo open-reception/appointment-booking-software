@@ -12,6 +12,9 @@ import {
 	hashPassphrase,
 	validatePassphraseStrength
 } from "../utils/passphrase";
+import { sendConfirmationEmail } from "../email/email-service";
+import type { SelectTenant } from "../db/central-schema";
+import { TenantAdminService } from "./tenant-admin-service";
 
 export type InsertUser = InferInsertModel<typeof centralSchema.user>;
 export type InsertUserPasskey = InferInsertModel<typeof centralSchema.userPasskey>;
@@ -27,6 +30,41 @@ const userCreationSchema = z.object({
 });
 
 type UserCreation = z.infer<typeof userCreationSchema>;
+
+/**
+ * Create a system tenant object for confirmation emails
+ * Since central users don't belong to a specific tenant, we use generic branding
+ */
+function createSystemTenant(): SelectTenant {
+	return {
+		id: "system",
+		shortName: "open-reception",
+		longName: "Open Reception",
+		description: "Secure appointment booking platform",
+		logo: null,
+		databaseUrl: "",
+		setupState: "FIRST_CHANNEL_CREATED",
+		createdAt: new Date(),
+		updatedAt: new Date()
+	};
+}
+
+/**
+ * Get tenant data for a user, fallback to system tenant if no tenant assigned
+ */
+async function getTenantForUser(user: { tenantId?: string | null }): Promise<SelectTenant> {
+	if (!user.tenantId) {
+		return createSystemTenant();
+	}
+
+	try {
+		const tenantService = await TenantAdminService.getTenantById(user.tenantId);
+		return tenantService.tenantData || createSystemTenant();
+	} catch {
+		// If tenant not found, use system tenant as fallback
+		return createSystemTenant();
+	}
+}
 
 export class UserService {
 	/**
@@ -90,7 +128,31 @@ export class UserService {
 				hasRecoveryPassphrase: !!result[0].recoveryPassphrase
 			});
 
-			// TODO: Send confirmation email to user (Link contains the above token)
+			// Send confirmation email to user (token is used as confirmation code)
+			try {
+				if (result[0].email && result[0].token) {
+					const tenant = await getTenantForUser(result[0]);
+					await sendConfirmationEmail(
+						result[0],
+						tenant,
+						result[0].token,
+						10 // 10 minutes expiration to match tokenValidUntil
+					);
+					log.debug("Confirmation email sent successfully", {
+						userId: result[0].id,
+						email: result[0].email,
+						tenantId: result[0].tenantId
+					});
+				}
+			} catch (emailError) {
+				log.warn("Failed to send confirmation email", {
+					userId: result[0].id,
+					email: result[0].email,
+					error: String(emailError)
+				});
+				// Don't throw - user creation succeeded, email is just a bonus
+			}
+
 			return result[0];
 		} catch (error) {
 			log.error("Failed to create user account", { email: userData.email, error: String(error) });
@@ -113,15 +175,39 @@ export class UserService {
 			const result = await centralDb
 				.update(centralSchema.user)
 				.set({ token, tokenValidUntil })
-				.execute();
+				.where(eq(centralSchema.user.email, email))
+				.returning();
 
-			if (result.count != 1) {
+			if (result.length !== 1) {
 				log.warn("Failed to resend confirmation email: User not found", { email });
 				throw new NotFoundError(`Could not resend confirmation mail for unknown user ${email}`);
 			}
 
+			const user = result[0];
 			log.debug("Confirmation email resent successfully", { email, tokenValidUntil });
-			// TODO: Send confirmation email
+
+			// Send confirmation email with new token - use tenant-specific branding if available
+			try {
+				const tenant = await getTenantForUser(user);
+				await sendConfirmationEmail(
+					user,
+					tenant,
+					token,
+					10 // 10 minutes expiration to match tokenValidUntil
+				);
+				log.debug("Confirmation email sent successfully", {
+					userId: user.id,
+					email: user.email,
+					tenantId: user.tenantId
+				});
+			} catch (emailError) {
+				log.error("Failed to send confirmation email", {
+					userId: user.id,
+					email: user.email,
+					error: String(emailError)
+				});
+				throw emailError; // In this case, we do want to propagate the error
+			}
 		} catch (error) {
 			if (error instanceof NotFoundError) throw error;
 			log.error("Failed to resend confirmation email", { email, error: String(error) });

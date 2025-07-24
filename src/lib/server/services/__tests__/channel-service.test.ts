@@ -3,7 +3,17 @@ import { ValidationError, NotFoundError } from "../../utils/errors";
 
 // Mock dependencies before imports
 vi.mock("../../db", () => ({
-	getTenantDb: vi.fn()
+	getTenantDb: vi.fn(),
+	centralDb: {
+		select: vi.fn(() => ({
+			from: vi.fn(() => ({
+				where: vi.fn(() => Promise.resolve([]))
+			}))
+		})),
+		insert: vi.fn(),
+		update: vi.fn(),
+		delete: vi.fn()
+	}
 }));
 
 vi.mock("$lib/logger", () => ({
@@ -16,6 +26,15 @@ vi.mock("$lib/logger", () => ({
 	}
 }));
 
+vi.mock("../../db/tenant-config", () => ({
+	TenantConfig: {
+		create: vi.fn(() => Promise.resolve({
+			configuration: { nextChannelColor: 0 },
+			setConfig: vi.fn()
+		}))
+	}
+}));
+
 // Import after mocking
 import { ChannelService } from "../channel-service";
 import { getTenantDb } from "../../db";
@@ -23,10 +42,10 @@ import { getTenantDb } from "../../db";
 // Mock data with valid UUIDs
 const mockChannel = {
 	id: "550e8400-e29b-41d4-a716-446655440000",
-	name: "Test Channel",
+	names: ["Test Channel"],
 	color: "#FF0000",
-	description: "Test description",
-	language: "de",
+	descriptions: ["Test description"],
+	languages: ["de"],
 	isPublic: true,
 	requiresConfirmation: false
 };
@@ -95,7 +114,8 @@ describe("ChannelService", () => {
 
 			// Use minimal valid request that matches schema exactly
 			const request = {
-				name: "Test Channel"
+				names: ["Test Channel"],
+				languages: ["de"]
 			};
 
 			const result = await service.createChannel(request);
@@ -114,7 +134,8 @@ describe("ChannelService", () => {
 			mockDb.transaction.mockResolvedValue(expectedResult);
 
 			const request = {
-				name: "Test Channel",
+				names: ["Test Channel"],
+				languages: ["de"],
 				agentIds: ["550e8400-e29b-41d4-a716-446655440001"],
 				slotTemplates: [
 					{
@@ -134,7 +155,8 @@ describe("ChannelService", () => {
 
 		it("should handle validation error for invalid name", async () => {
 			const request = {
-				name: "",
+				names: [""],
+				languages: ["de"],
 				agentIds: [],
 				slotTemplates: []
 			};
@@ -144,7 +166,8 @@ describe("ChannelService", () => {
 
 		it("should handle validation error for invalid time format", async () => {
 			const request = {
-				name: "Test Channel",
+				names: ["Test Channel"],
+				languages: ["de"],
 				agentIds: [],
 				slotTemplates: [
 					{
@@ -163,7 +186,8 @@ describe("ChannelService", () => {
 			mockDb.transaction.mockRejectedValue(new Error("Transaction failed"));
 
 			const request = {
-				name: "Test Channel",
+				names: ["Test Channel"],
+				languages: ["de"],
 				agentIds: [],
 				slotTemplates: []
 			};
@@ -182,7 +206,7 @@ describe("ChannelService", () => {
 		it("should update channel successfully", async () => {
 			const expectedResult = {
 				...mockChannel,
-				name: "Updated Channel",
+				names: ["Updated Channel"],
 				agents: [],
 				slotTemplates: []
 			};
@@ -190,7 +214,7 @@ describe("ChannelService", () => {
 			mockDb.transaction.mockResolvedValue(expectedResult);
 
 			const updateData = {
-				name: "Updated Channel"
+				names: ["Updated Channel"]
 			};
 
 			const result = await service.updateChannel(
@@ -203,7 +227,7 @@ describe("ChannelService", () => {
 		});
 
 		it("should handle validation error for invalid name", async () => {
-			const updateData = { name: "" };
+			const updateData = { names: [""], languages: ["de"] };
 
 			await expect(
 				service.updateChannel("550e8400-e29b-41d4-a716-446655440000", updateData)
@@ -213,7 +237,7 @@ describe("ChannelService", () => {
 		it("should handle transaction error", async () => {
 			mockDb.transaction.mockRejectedValue(new Error("Transaction failed"));
 
-			const updateData = { name: "Updated Channel" };
+			const updateData = { names: ["Updated Channel"], languages: ["de"] };
 
 			await expect(
 				service.updateChannel("550e8400-e29b-41d4-a716-446655440000", updateData)
@@ -240,7 +264,7 @@ describe("ChannelService", () => {
 			// Test basic properties without deep nesting
 			expect(result).not.toBeNull();
 			expect(result?.id).toBe(mockChannel.id);
-			expect(result?.name).toBe(mockChannel.name);
+			expect(result?.names).toEqual(mockChannel.names);
 			expect(result?.agents).toHaveLength(1);
 			expect(result?.slotTemplates).toHaveLength(1);
 		});
@@ -286,7 +310,7 @@ describe("ChannelService", () => {
 			expect(result).toHaveLength(1);
 			expect(result[0]).toBeDefined();
 			expect(result[0].id).toBe(mockChannel.id);
-			expect(result[0].name).toBe(mockChannel.name);
+			expect(result[0].names).toEqual(mockChannel.names);
 		});
 
 		it("should return empty array when no channels exist", async () => {

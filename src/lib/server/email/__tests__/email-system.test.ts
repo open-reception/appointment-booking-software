@@ -35,7 +35,7 @@ vi.mock("fs/promises", () => ({
 // Import modules after mocking
 import { sendEmail, testEmailConnection } from "../mailer";
 import { EmailTemplateEngine } from "../template-engine";
-import { sendUserCreatedEmail, sendTemplatedEmail } from "../email-service";
+import { sendUserCreatedEmail, sendTemplatedEmail, sendConfirmationEmail } from "../email-service";
 import { readFile } from "fs/promises";
 import nodemailer from "nodemailer";
 
@@ -391,6 +391,146 @@ describe("Email System", () => {
 			await expect(
 				sendUserCreatedEmail(clientUser, mockTenant, "https://example.com/login")
 			).rejects.toThrow("Failed to send email to test@example.com");
+		});
+
+		it("should send confirmation email in German", async () => {
+			const mockHtml = "<h1>Bestätigungscode: {{confirmationCode}}</h1><p>Gültig für {{expirationMinutes}} Minuten</p>";
+			const mockText = "Bestätigungscode: {{confirmationCode}} - Gültig für {{expirationMinutes}} Minuten";
+
+			mockReadFile.mockResolvedValueOnce(mockHtml).mockResolvedValueOnce(mockText);
+
+			const staffUser = {
+				id: "test-id",
+				hashKey: "test-hash",
+				publicKey: "test-key",
+				name: "Max Mustermann",
+				position: "Arzt",
+				email: "test@example.com",
+				language: "de"
+			};
+			const mockTenant = {
+				id: "tenant-1",
+				shortName: "test",
+				longName: "Test Organization",
+				description: null,
+				logo: null,
+				backgroundColor: "#f0f0f0",
+				primaryColor: "#007bff",
+				secondaryColor: "#28a745",
+				defaultLanguage: "de",
+				autoDeleteDays: 365,
+				requireConfirmation: false
+			};
+			const confirmationCode = "ABC123";
+			const expirationMinutes = 15;
+
+			await sendConfirmationEmail(staffUser, mockTenant, confirmationCode, expirationMinutes);
+
+			expect(mockReadFile).toHaveBeenCalledWith(
+				expect.stringContaining("confirmation.de.html"),
+				"utf-8"
+			);
+
+			expect(mockSendMail).toHaveBeenCalledWith({
+				from: {
+					name: "Test App",
+					address: "noreply@test.com"
+				},
+				to: {
+					name: "Max Mustermann",
+					address: "test@example.com"
+				},
+				subject: "Registrierung bestätigen",
+				html: "<h1>Bestätigungscode: ABC123</h1><p>Gültig für 15 Minuten</p>",
+				text: "Bestätigungscode: ABC123 - Gültig für 15 Minuten"
+			});
+		});
+
+		it("should send confirmation email in English", async () => {
+			const mockHtml = "<h1>Confirmation code: {{confirmationCode}}</h1><p>Valid for {{expirationMinutes}} minutes</p>";
+			const mockText = "Confirmation code: {{confirmationCode}} - Valid for {{expirationMinutes}} minutes";
+
+			mockReadFile.mockResolvedValueOnce(mockHtml).mockResolvedValueOnce(mockText);
+
+			const staffUser = {
+				id: "test-id",
+				hashKey: "test-hash",
+				publicKey: "test-key",
+				name: "John Doe",
+				position: "Doctor",
+				email: "test@example.com",
+				language: "en"
+			};
+			const mockTenant = {
+				id: "tenant-1",
+				shortName: "test",
+				longName: "Test Organization",
+				description: null,
+				logo: null,
+				backgroundColor: "#f0f0f0",
+				primaryColor: "#007bff",
+				secondaryColor: "#28a745",
+				defaultLanguage: "de",
+				autoDeleteDays: 365,
+				requireConfirmation: false
+			};
+			const confirmationCode = "XYZ789";
+			const expirationMinutes = 10;
+
+			await sendConfirmationEmail(staffUser, mockTenant, confirmationCode, expirationMinutes);
+
+			expect(mockReadFile).toHaveBeenCalledWith(
+				expect.stringContaining("confirmation.en.html"),
+				"utf-8"
+			);
+
+			expect(mockSendMail).toHaveBeenCalledWith({
+				from: {
+					name: "Test App",
+					address: "noreply@test.com"
+				},
+				to: {
+					name: "John Doe",
+					address: "test@example.com"
+				},
+				subject: "Confirm Your Registration",
+				html: "<h1>Confirmation code: XYZ789</h1><p>Valid for 10 minutes</p>",
+				text: "Confirmation code: XYZ789 - Valid for 10 minutes"
+			});
+		});
+
+		it("should handle confirmation template rendering", async () => {
+			const mockHtml = "Code: {{confirmationCode}}";
+			const mockText = "Code: {{confirmationCode}}";
+
+			mockReadFile.mockResolvedValueOnce(mockHtml).mockResolvedValueOnce(mockText);
+
+			const templateEngine = new EmailTemplateEngine("test/templates");
+			const mockTenant = {
+				id: "tenant-1",
+				shortName: "test",
+				longName: "Test Organization",
+				description: null,
+				logo: null,
+				backgroundColor: "#f0f0f0",
+				primaryColor: "#007bff",
+				secondaryColor: "#28a745",
+				defaultLanguage: "de",
+				autoDeleteDays: 365,
+				requireConfirmation: false
+			};
+
+			const result = await templateEngine.renderTemplate("confirmation", {
+				recipient: { email: "test@example.com", name: "Test User" },
+				subject: "Test Confirmation",
+				language: "de",
+				tenant: mockTenant,
+				confirmationCode: "TEST123",
+				expirationMinutes: 15
+			});
+
+			expect(result.html).toBe("Code: TEST123");
+			expect(result.text).toBe("Code: TEST123");
 		});
 	});
 });

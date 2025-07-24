@@ -8,9 +8,9 @@ import {
 import type {
 	SelectClient,
 	SelectStaff,
-	SelectAppointment,
-	SelectTenant
+	SelectAppointment
 } from "$lib/server/db/schema";
+import type { SelectTenant } from "$lib/server/db/central-schema";
 
 /**
  * Send a templated email using the template engine
@@ -188,5 +188,30 @@ export async function sendAppointmentUpdatedEmail(
 		title: appointment.title,
 		description: appointment.description,
 		cancelUrl
+	});
+}
+
+/**
+ * Send registration confirmation email with one-time code
+ * @param {SelectClient | SelectStaff} user - Database user object
+ * @param {SelectTenant} tenant - Tenant information for branding
+ * @param {string} confirmationCode - One-time confirmation code
+ * @param {number} [expirationMinutes=15] - Code expiration time in minutes
+ * @throws {Error} When email sending fails
+ * @returns {Promise<void>}
+ */
+export async function sendConfirmationEmail(
+	user: SelectClient | SelectStaff,
+	tenant: SelectTenant,
+	confirmationCode: string,
+	expirationMinutes: number = 15
+): Promise<void> {
+	const recipient = createEmailRecipient(user);
+	const language = (recipient.language as Language) || "de";
+	const subject = language === "en" ? "Confirm Your Registration" : "Registrierung bestätigen";
+
+	await sendTemplatedEmail("confirmation", recipient, subject, language, tenant, {
+		confirmationCode,
+		expirationMinutes
 	});
 }
