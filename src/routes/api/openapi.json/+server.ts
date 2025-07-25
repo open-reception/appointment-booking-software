@@ -14,7 +14,7 @@ import "../auth/confirm/+server.js";
 import "../auth/register/+server.js";
 import "../auth/resend-confirmation/+server.js";
 import "../auth/sessions/+server.js";
-import "../auth/sessions/[sessionId]/+server.js";
+import "../auth/sessions/[id]/+server.js";
 import "../auth/session/+server.js";
 import "../auth/logout/+server.js";
 import "../auth/refresh/+server.js";

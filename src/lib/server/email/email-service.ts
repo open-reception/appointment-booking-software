@@ -197,7 +197,7 @@ export async function sendAppointmentUpdatedEmail(
  * @returns {Promise<void>}
  */
 export async function sendConfirmationEmail(
-	user: { id: string; email: string | null; name: string | null; language?: string | null; },
+	user: { id: string; email: string | null; name: string | null; language?: string | null },
 	tenant: SelectTenant,
 	confirmationCode: string,
 	expirationMinutes: number = 15
@@ -234,10 +234,9 @@ export async function sendTenantAdminInviteEmail(
 		name: adminName,
 		language
 	};
-	
-	const subject = language === "en" 
-		? "Invitation as Tenant Administrator" 
-		: "Einladung als Tenant-Administrator";
+
+	const subject =
+		language === "en" ? "Invitation as Tenant Administrator" : "Einladung als Tenant-Administrator";
 
 	await sendTemplatedEmail("tenant-admin-invite", recipient, subject, language, tenant, {
 		registrationUrl
@@ -268,10 +267,11 @@ export async function sendUserInviteEmail(
 		name: userName,
 		language
 	};
-	
-	const subject = language === "en" 
-		? `Invitation to ${tenant.longName || tenant.shortName}` 
-		: `Einladung zu ${tenant.longName || tenant.shortName}`;
+
+	const subject =
+		language === "en"
+			? `Invitation to ${tenant.longName || tenant.shortName}`
+			: `Einladung zu ${tenant.longName || tenant.shortName}`;
 
 	await sendTemplatedEmail("user-invite", recipient, subject, language, tenant, {
 		registrationUrl

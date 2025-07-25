@@ -126,11 +126,11 @@ export class TenantAdminService {
 				try {
 					// For now, we'll use the email as name. In a real implementation,
 					// you might want to collect the name separately or parse it from the email
-					const adminName = request.inviteAdmin.split('@')[0];
-					
+					const adminName = request.inviteAdmin.split("@")[0];
+
 					// Generate registration URL for the tenant admin
 					// This should point to a registration page that pre-fills tenant info
-					const registrationUrl = `${env.PUBLIC_APP_URL || 'http://localhost:5173'}/register?tenant=${tenant[0].id}&email=${encodeURIComponent(request.inviteAdmin)}&role=TENANT_ADMIN`;
+					const registrationUrl = `${env.PUBLIC_APP_URL || "http://localhost:5173"}/register?tenant=${tenant[0].id}&email=${encodeURIComponent(request.inviteAdmin)}&role=TENANT_ADMIN`;
 
 					await sendTenantAdminInviteEmail(
 						request.inviteAdmin,
@@ -149,7 +149,7 @@ export class TenantAdminService {
 						adminEmail: request.inviteAdmin,
 						error: String(emailError)
 					});
-					
+
 					// Don't fail the tenant creation if email fails
 					// Just log the error and continue
 				}

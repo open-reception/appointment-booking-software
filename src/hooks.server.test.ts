@@ -57,7 +57,7 @@ describe("hooks.server", () => {
 					"x-forwarded-for": ip
 				}
 			});
-			
+
 			return {
 				url: new URL("http://localhost/api/health"),
 				request,

@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ValidationError, NotFoundError } from "../../utils/errors";
+import { ValidationError } from "../../utils/errors";
 
 // Mock dependencies before imports
 vi.mock("../../db", () => ({
@@ -28,10 +29,12 @@ vi.mock("$lib/logger", () => ({
 
 vi.mock("../../db/tenant-config", () => ({
 	TenantConfig: {
-		create: vi.fn(() => Promise.resolve({
-			configuration: { nextChannelColor: 0 },
-			setConfig: vi.fn()
-		}))
+		create: vi.fn(() =>
+			Promise.resolve({
+				configuration: { nextChannelColor: 0 },
+				setConfig: vi.fn()
+			})
+		)
 	}
 }));
 
@@ -116,12 +119,10 @@ describe("ChannelService", () => {
 			// Use minimal valid request that matches schema exactly
 			const request = {
 				names: ["Test Channel"],
-				languages: ["de"],
-				agentIds: ["agent-id"],
-				slotTemplates: [{ name: "slot", from: "09:00", to: "17:00", duration: 30 }]
+				languages: ["de"]
 			};
 
-			const result = await service.createChannel(request);
+			const result = await service.createChannel(request as any);
 
 			expect(result).toEqual(expectedResult);
 			expect(mockDb.transaction).toHaveBeenCalled();

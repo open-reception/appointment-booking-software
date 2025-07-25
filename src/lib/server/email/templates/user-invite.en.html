@@ -89,18 +89,24 @@
 				<h3>📧 Your registration details:</h3>
 				<p><strong>Email:</strong> {{recipient.email}}</p>
 				<p><strong>Organization:</strong> {{tenant.longName}}</p>
-				<p><em>Your role and permissions will be automatically assigned during registration.</em></p>
+				<p>
+					<em>Your role and permissions will be automatically assigned during registration.</em>
+				</p>
 			</div>
 
 			<p><strong>Register now to get started:</strong></p>
 
 			<p><a href="{{registrationUrl}}" class="button">Register Now</a></p>
 
-			<p>If the button doesn't work, copy this link into your browser:<br>
-			{{registrationUrl}}</p>
+			<p>
+				If the button doesn't work, copy this link into your browser:<br />
+				{{registrationUrl}}
+			</p>
 
 			<div class="footer">
-				<p>This invitation is valid for 7 days. If you didn't request this email, you can ignore it.</p>
+				<p>
+					This invitation is valid for 7 days. If you didn't request this email, you can ignore it.
+				</p>
 				<p>{{tenant.longName}} Team</p>
 			</div>
 		</div>

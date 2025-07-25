@@ -378,8 +378,10 @@ describe("Email System", () => {
 		});
 
 		it("should send confirmation email in German", async () => {
-			const mockHtml = "<h1>Bestätigungscode: {{confirmationCode}}</h1><p>Gültig für {{expirationMinutes}} Minuten</p>";
-			const mockText = "Bestätigungscode: {{confirmationCode}} - Gültig für {{expirationMinutes}} Minuten";
+			const mockHtml =
+				"<h1>Bestätigungscode: {{confirmationCode}}</h1><p>Gültig für {{expirationMinutes}} Minuten</p>";
+			const mockText =
+				"Bestätigungscode: {{confirmationCode}} - Gültig für {{expirationMinutes}} Minuten";
 
 			mockReadFile.mockResolvedValueOnce(mockHtml).mockResolvedValueOnce(mockText);
 
@@ -429,8 +431,10 @@ describe("Email System", () => {
 		});
 
 		it("should send confirmation email in English", async () => {
-			const mockHtml = "<h1>Confirmation code: {{confirmationCode}}</h1><p>Valid for {{expirationMinutes}} minutes</p>";
-			const mockText = "Confirmation code: {{confirmationCode}} - Valid for {{expirationMinutes}} minutes";
+			const mockHtml =
+				"<h1>Confirmation code: {{confirmationCode}}</h1><p>Valid for {{expirationMinutes}} minutes</p>";
+			const mockText =
+				"Confirmation code: {{confirmationCode}} - Valid for {{expirationMinutes}} minutes";
 
 			mockReadFile.mockResolvedValueOnce(mockHtml).mockResolvedValueOnce(mockText);
 

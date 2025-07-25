@@ -22,7 +22,12 @@ export interface EmailRecipient {
  * @returns {EmailRecipient} Email recipient object
  * @throws {Error} When user has no email address
  */
-export function createEmailRecipient(user: SelectClient | SelectStaff | { id: string; email: string | null; name: string | null; language?: string | null; }): EmailRecipient {
+export function createEmailRecipient(
+	user:
+		| SelectClient
+		| SelectStaff
+		| { id: string; email: string | null; name: string | null; language?: string | null }
+): EmailRecipient {
 	// Handle SelectUser type (from central schema)
 	if ("email" in user && !("publicKey" in user)) {
 		return {
@@ -38,7 +43,7 @@ export function createEmailRecipient(user: SelectClient | SelectStaff | { id: st
 			name: user.name || undefined,
 			language: user.language || "de"
 		};
-	} 
+	}
 	// Handle SelectClient type (no name property)
 	else {
 		return {

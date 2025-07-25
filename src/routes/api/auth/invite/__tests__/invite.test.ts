@@ -64,22 +64,23 @@ describe("POST /api/auth/invite", () => {
 		expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
 	};
 
-	const createRequestEvent = (body: any, user: any = null) => ({
-		request: {
-			json: () => Promise.resolve(body)
-		} as Request,
-		locals: { user },
-		url: new URL("http://localhost/api/auth/invite"),
-		params: {},
-		route: { id: "/api/auth/invite" } as any,
-		cookies: {} as any,
-		fetch: {} as any,
-		getClientAddress: () => "127.0.0.1",
-		isDataRequest: false,
-		isSubRequest: false,
-		platform: undefined,
-		setHeaders: {} as any
-	} as any);
+	const createRequestEvent = (body: any, user: any = null) =>
+		({
+			request: {
+				json: () => Promise.resolve(body)
+			} as Request,
+			locals: { user },
+			url: new URL("http://localhost/api/auth/invite"),
+			params: {},
+			route: { id: "/api/auth/invite" } as any,
+			cookies: {} as any,
+			fetch: {} as any,
+			getClientAddress: () => "127.0.0.1",
+			isDataRequest: false,
+			isSubRequest: false,
+			platform: undefined,
+			setHeaders: {} as any
+		}) as any;
 
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -111,12 +112,15 @@ describe("POST /api/auth/invite", () => {
 			tenantId: null
 		};
 
-		const requestEvent = createRequestEvent({
-			email: "user@example.com",
-			name: "Test User",
-			role: "STAFF",
-			tenantId: "12345678-1234-1234-1234-123456789012"
-		}, globalAdmin);
+		const requestEvent = createRequestEvent(
+			{
+				email: "user@example.com",
+				name: "Test User",
+				role: "STAFF",
+				tenantId: "12345678-1234-1234-1234-123456789012"
+			},
+			globalAdmin
+		);
 
 		const response = await POST(requestEvent);
 		const data = await response.json();
@@ -125,7 +129,10 @@ describe("POST /api/auth/invite", () => {
 		expect(data.message).toBe("Invitation sent successfully");
 		expect(data.email).toBe("user@example.com");
 		expect(data.inviteCode).toBe("invite-code-123");
-		expect(vi.mocked(InviteService.hasPendingInvite)).toHaveBeenCalledWith("user@example.com", "12345678-1234-1234-1234-123456789012");
+		expect(vi.mocked(InviteService.hasPendingInvite)).toHaveBeenCalledWith(
+			"user@example.com",
+			"12345678-1234-1234-1234-123456789012"
+		);
 		expect(vi.mocked(InviteService.createInvite)).toHaveBeenCalledWith(
 			"user@example.com",
 			"Test User",
@@ -144,12 +151,15 @@ describe("POST /api/auth/invite", () => {
 			tenantId: "12345678-1234-1234-1234-123456789012"
 		};
 
-		const requestEvent = createRequestEvent({
-			email: "user@example.com",
-			name: "Test User",
-			role: "STAFF",
-			tenantId: "12345678-1234-1234-1234-123456789012"
-		}, tenantAdmin);
+		const requestEvent = createRequestEvent(
+			{
+				email: "user@example.com",
+				name: "Test User",
+				role: "STAFF",
+				tenantId: "12345678-1234-1234-1234-123456789012"
+			},
+			tenantAdmin
+		);
 
 		const response = await POST(requestEvent);
 		const data = await response.json();
@@ -182,12 +192,15 @@ describe("POST /api/auth/invite", () => {
 			tenantId: "87654321-4321-4321-4321-210987654321"
 		};
 
-		const requestEvent = createRequestEvent({
-			email: "user@example.com",
-			name: "Test User",
-			role: "STAFF",
-			tenantId: "12345678-1234-1234-1234-123456789012"
-		}, tenantAdmin);
+		const requestEvent = createRequestEvent(
+			{
+				email: "user@example.com",
+				name: "Test User",
+				role: "STAFF",
+				tenantId: "12345678-1234-1234-1234-123456789012"
+			},
+			tenantAdmin
+		);
 
 		const response = await POST(requestEvent);
 		const data = await response.json();
@@ -205,12 +218,15 @@ describe("POST /api/auth/invite", () => {
 			tenantId: "12345678-1234-1234-1234-123456789012"
 		};
 
-		const requestEvent = createRequestEvent({
-			email: "user@example.com",
-			name: "Test User",
-			role: "STAFF",
-			tenantId: "12345678-1234-1234-1234-123456789012"
-		}, staff);
+		const requestEvent = createRequestEvent(
+			{
+				email: "user@example.com",
+				name: "Test User",
+				role: "STAFF",
+				tenantId: "12345678-1234-1234-1234-123456789012"
+			},
+			staff
+		);
 
 		const response = await POST(requestEvent);
 		const data = await response.json();
@@ -228,12 +244,15 @@ describe("POST /api/auth/invite", () => {
 			tenantId: null
 		};
 
-		const requestEvent = createRequestEvent({
-			email: "invalid-email",
-			name: "",
-			role: "INVALID_ROLE",
-			tenantId: "invalid-uuid"
-		}, globalAdmin);
+		const requestEvent = createRequestEvent(
+			{
+				email: "invalid-email",
+				name: "",
+				role: "INVALID_ROLE",
+				tenantId: "invalid-uuid"
+			},
+			globalAdmin
+		);
 
 		const response = await POST(requestEvent);
 		const data = await response.json();
@@ -254,19 +273,25 @@ describe("POST /api/auth/invite", () => {
 		// Mock that there's already a pending invitation
 		vi.mocked(InviteService.hasPendingInvite).mockResolvedValue(true);
 
-		const requestEvent = createRequestEvent({
-			email: "user@example.com",
-			name: "Test User",
-			role: "STAFF",
-			tenantId: "12345678-1234-1234-1234-123456789012"
-		}, globalAdmin);
+		const requestEvent = createRequestEvent(
+			{
+				email: "user@example.com",
+				name: "Test User",
+				role: "STAFF",
+				tenantId: "12345678-1234-1234-1234-123456789012"
+			},
+			globalAdmin
+		);
 
 		const response = await POST(requestEvent);
 		const data = await response.json();
 
 		expect(response.status).toBe(409);
 		expect(data.error).toBe("User already has a pending invitation for this tenant");
-		expect(vi.mocked(InviteService.hasPendingInvite)).toHaveBeenCalledWith("user@example.com", "12345678-1234-1234-1234-123456789012");
+		expect(vi.mocked(InviteService.hasPendingInvite)).toHaveBeenCalledWith(
+			"user@example.com",
+			"12345678-1234-1234-1234-123456789012"
+		);
 		expect(vi.mocked(InviteService.createInvite)).not.toHaveBeenCalled();
 		expect(vi.mocked(sendUserInviteEmail)).not.toHaveBeenCalled();
 	});

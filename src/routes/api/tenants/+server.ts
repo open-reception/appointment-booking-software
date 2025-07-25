@@ -102,10 +102,10 @@ registerOpenAPIRoute("/tenants", "GET", {
 										id: { type: "string", format: "uuid", description: "Tenant ID" },
 										shortName: { type: "string", description: "Tenant short name" },
 										longName: { type: "string", description: "Tenant long name" },
-										setupState: { 
-											type: "string", 
+										setupState: {
+											type: "string",
 											enum: ["NEW", "SETTINGS_CREATED", "AGENTS_SET_UP", "FIRST_CHANNEL_CREATED"],
-											description: "Current setup state" 
+											description: "Current setup state"
 										}
 									},
 									required: ["id", "shortName", "setupState"]
@@ -227,7 +227,6 @@ export const GET: RequestHandler = async ({ locals }) => {
 		return json({
 			tenants: tenants
 		});
-
 	} catch (error) {
 		log.error("Failed to get tenants:", JSON.stringify(error || "?"));
 		return json({ error: "Internal server error" }, { status: 500 });

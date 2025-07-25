@@ -40,7 +40,8 @@ registerOpenAPIRoute("/auth/register", "POST", {
 						tenantId: {
 							type: "string",
 							format: "uuid",
-							description: "Tenant ID for TENANT_ADMIN and STAFF roles (ignored if invite is provided)",
+							description:
+								"Tenant ID for TENANT_ADMIN and STAFF roles (ignored if invite is provided)",
 							example: "01234567-89ab-cdef-0123-456789abcdef"
 						},
 						passphrase: {
@@ -140,7 +141,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		// If invite code is provided, validate and use it
 		if (body.invite) {
 			const invitation = await InviteService.getInviteByCode(body.invite);
-			
+
 			if (!invitation) {
 				return json({ error: "Invalid or expired invitation code" }, { status: 400 });
 			}

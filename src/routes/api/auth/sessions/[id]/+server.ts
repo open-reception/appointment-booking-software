@@ -8,7 +8,8 @@ const logger = new UniversalLogger().setContext("AuthSessionAPI");
 
 registerOpenAPIRoute("/auth/sessions/{id}", "DELETE", {
 	summary: "Revoke specific session",
-	description: "Revoke a specific session by ID. Global admins can revoke any session, regular users can only revoke their own sessions.",
+	description:
+		"Revoke a specific session by ID. Global admins can revoke any session, regular users can only revoke their own sessions.",
 	tags: ["Authentication"],
 	parameters: [
 		{
@@ -81,8 +82,8 @@ export const DELETE: RequestHandler = async ({ params, locals, cookies }) => {
 			return json({ error: "Session ID is required" }, { status: 400 });
 		}
 
-		logger.debug("Revoking session", { 
-			sessionId, 
+		logger.debug("Revoking session", {
+			sessionId,
 			requestedBy: locals.user.userId,
 			userRole: locals.user.role
 		});
@@ -98,7 +99,7 @@ export const DELETE: RequestHandler = async ({ params, locals, cookies }) => {
 			// Regular users can only revoke their own sessions
 			// First, get all user's sessions to verify ownership
 			const userSessions = await SessionService.getActiveSessions(locals.user.userId);
-			const sessionToRevoke = userSessions.find(session => session.id === sessionId);
+			const sessionToRevoke = userSessions.find((session) => session.id === sessionId);
 
 			if (!sessionToRevoke) {
 				return json({ error: "Session not found or access denied" }, { status: 404 });
@@ -115,25 +116,24 @@ export const DELETE: RequestHandler = async ({ params, locals, cookies }) => {
 				secure: true,
 				sameSite: "strict"
 			});
-			logger.info("Current session revoked, cookie cleared", { 
-				sessionId, 
-				userId: locals.user.userId 
+			logger.info("Current session revoked, cookie cleared", {
+				sessionId,
+				userId: locals.user.userId
 			});
 		}
 
-		logger.info("Session revoked successfully", { 
-			sessionId, 
+		logger.info("Session revoked successfully", {
+			sessionId,
 			revokedBy: locals.user.userId,
 			wasCurrent: sessionId === currentSessionId
 		});
 
 		return json({ message: "Session revoked successfully" });
-
 	} catch (error) {
-		logger.error("Revoke session error:", { 
-			error: String(error), 
+		logger.error("Revoke session error:", {
+			error: String(error),
 			sessionId: params.id,
-			userId: locals.user?.userId 
+			userId: locals.user?.userId
 		});
 		return json({ error: "Internal server error" }, { status: 500 });
 	}
