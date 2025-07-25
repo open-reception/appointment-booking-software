@@ -8,7 +8,7 @@ declare global {
 		// interface Error {}
 		interface Locals {
 			user?: JWTPayload & { userId: string };
-			sessionToken?: string;
+			sessionId?: string;
 		}
 		// interface PageData {}
 		// interface PageState {}

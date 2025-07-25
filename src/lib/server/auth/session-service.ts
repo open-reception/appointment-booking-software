@@ -1,15 +1,14 @@
 import { eq, and, gt, lt } from "drizzle-orm";
-import { centralDb } from "$lib/server/db";
+import { db } from "$lib/server/db";
 import { user, userSession } from "$lib/server/db/central-schema";
 import type {
 	SelectUser,
 	InsertUserSession,
 	SelectUserSession
 } from "$lib/server/db/central-schema";
-import { generateTokens, verifyRefreshToken, isTokenExpired } from "./jwt-utils";
+import { generateTokens, verifyRefreshToken, verifyAccessToken } from "./jwt-utils";
 import { UniversalLogger } from "$lib/logger";
 import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
-import { uuidv7 } from "uuidv7";
 
 const logger = new UniversalLogger().setContext("AuthService");
 
@@ -45,7 +44,7 @@ export class SessionService {
 	): Promise<SessionData> {
 		logger.info(`Creating session for user: ${userId}`);
 
-		const existingUser = await centralDb.select().from(user).where(eq(user.id, userId)).limit(1);
+		const existingUser = await db.select().from(user).where(eq(user.id, userId)).limit(1);
 
 		if (existingUser.length === 0) {
 			throw new NotFoundError(`User with ID ${userId} not found`);
@@ -61,43 +60,116 @@ export class SessionService {
 			throw new ValidationError("User account is not confirmed");
 		}
 
-		const sessionId = uuidv7();
-		const sessionToken = uuidv7();
-		const expiresAt = new Date(Date.now() + this.SESSION_DURATION);
-
-		const tokens = await generateTokens(userData, sessionId);
-
+		// Create session entry first to get the ID
 		const sessionData: InsertUserSession = {
-			id: sessionId,
 			userId: userData.id,
-			sessionToken,
-			accessToken: tokens.accessToken,
-			refreshToken: tokens.refreshToken,
+			sessionToken: "", // Will be updated with actual token
+			accessToken: "", // Will be updated with actual token
+			refreshToken: "", // Will be updated with actual token
 			ipAddress,
 			userAgent,
-			expiresAt,
+			expiresAt: new Date(Date.now() + this.SESSION_DURATION),
 			lastUsedAt: new Date()
 		};
 
-		await centralDb.insert(userSession).values(sessionData);
+		const [createdSession] = await db.insert(userSession).values(sessionData).returning();
 
-		await centralDb.update(user).set({ lastLoginAt: new Date() }).where(eq(user.id, userId));
+		// Generate tokens with the actual session ID
+		const tokens = await generateTokens(userData, createdSession.id);
+
+		// Update session with actual tokens
+		const [updatedSession] = await db
+			.update(userSession)
+			.set({
+				sessionToken: tokens.accessToken, // Use access token as session token
+				accessToken: tokens.accessToken,
+				refreshToken: tokens.refreshToken
+			})
+			.where(eq(userSession.id, createdSession.id))
+			.returning();
+
+		await db.update(user).set({ lastLoginAt: new Date() }).where(eq(user.id, userId));
 
 		logger.info(`Session created successfully for user: ${userId}`);
 
 		return {
-			sessionToken,
-			accessToken: tokens.accessToken,
-			refreshToken: tokens.refreshToken,
+			sessionToken: updatedSession.sessionToken,
+			accessToken: updatedSession.accessToken,
+			refreshToken: updatedSession.refreshToken,
 			user: userData,
-			expiresAt
+			expiresAt: updatedSession.expiresAt
 		};
+	}
+
+	/**
+	 * Validates an access token by checking if it exists in the database and is not expired
+	 */
+	static async validateTokenWithDB(
+		accessToken: string
+	): Promise<{ user: SelectUser; sessionId: string } | null> {
+		logger.debug("Validating access token with database");
+
+		try {
+			// First verify the JWT token structure
+			const tokenData = await verifyAccessToken(accessToken);
+			if (!tokenData) {
+				logger.debug("Access token is invalid or expired");
+				return null;
+			}
+
+			// Check if session exists in database and is not expired
+			const sessions = await db
+				.select()
+				.from(userSession)
+				.innerJoin(user, eq(userSession.userId, user.id))
+				.where(
+					and(
+						eq(userSession.id, tokenData.sessionId),
+						eq(userSession.accessToken, accessToken),
+						gt(userSession.expiresAt, new Date())
+					)
+				)
+				.limit(1);
+
+			if (sessions.length === 0) {
+				logger.debug("Session not found in database or expired");
+				return null;
+			}
+
+			const session = sessions[0];
+
+			if (!session.user.isActive) {
+				logger.debug("User account is inactive");
+				return null;
+			}
+
+			if (!session.user.confirmed) {
+				logger.debug("User account is not confirmed");
+				return null;
+			}
+
+			// Update last used time
+			await db
+				.update(userSession)
+				.set({ lastUsedAt: new Date() })
+				.where(eq(userSession.id, session.user_session.id));
+
+			logger.debug("Access token validated successfully");
+
+			return {
+				user: session.user,
+				sessionId: session.user_session.id
+			};
+		} catch (error) {
+			logger.error("Error validating token with database:", { error: String(error) });
+			return null;
+		}
 	}
 
 	static async validateSession(sessionToken: string): Promise<SessionData | null> {
 		logger.debug(`Validating session: ${sessionToken}`);
 
-		const sessions = await centralDb
+		const sessions = await db
 			.select()
 			.from(userSession)
 			.innerJoin(user, eq(userSession.userId, user.id))
@@ -116,12 +188,7 @@ export class SessionService {
 			return null;
 		}
 
-		if (await isTokenExpired(session.user_session.accessToken)) {
-			logger.debug(`Access token expired for session: ${sessionToken}`);
-			return null;
-		}
-
-		await centralDb
+		await db
 			.update(userSession)
 			.set({ lastUsedAt: new Date() })
 			.where(eq(userSession.id, session.user_session.id));
@@ -146,7 +213,7 @@ export class SessionService {
 			return null;
 		}
 
-		const sessions = await centralDb
+		const sessions = await db
 			.select()
 			.from(userSession)
 			.innerJoin(user, eq(userSession.userId, user.id))
@@ -174,7 +241,7 @@ export class SessionService {
 		const newTokens = await generateTokens(session.user, session.user_session.id);
 		const newExpiresAt = new Date(Date.now() + this.SESSION_DURATION);
 
-		await centralDb
+		await db
 			.update(userSession)
 			.set({
 				accessToken: newTokens.accessToken,
@@ -196,7 +263,7 @@ export class SessionService {
 	static async logout(sessionToken: string): Promise<void> {
 		logger.info(`Logging out session: ${sessionToken}`);
 
-		await centralDb.delete(userSession).where(eq(userSession.sessionToken, sessionToken));
+		await db.delete(userSession).where(eq(userSession.sessionToken, sessionToken));
 
 		logger.info(`Session logged out successfully: ${sessionToken}`);
 	}
@@ -204,7 +271,7 @@ export class SessionService {
 	static async logoutAllSessions(userId: string): Promise<void> {
 		logger.info(`Logging out all sessions for user: ${userId}`);
 
-		await centralDb.delete(userSession).where(eq(userSession.userId, userId));
+		await db.delete(userSession).where(eq(userSession.userId, userId));
 
 		logger.info(`All sessions logged out for user: ${userId}`);
 	}
@@ -212,7 +279,7 @@ export class SessionService {
 	static async cleanupExpiredSessions(): Promise<void> {
 		logger.info("Cleaning up expired sessions");
 
-		await centralDb.delete(userSession).where(lt(userSession.expiresAt, new Date()));
+		await db.delete(userSession).where(lt(userSession.expiresAt, new Date()));
 
 		logger.info("Expired sessions cleaned up");
 	}
@@ -220,7 +287,7 @@ export class SessionService {
 	static async getActiveSessions(userId: string): Promise<SelectUserSession[]> {
 		logger.debug(`Getting active sessions for user: ${userId}`);
 
-		const sessions = await centralDb
+		const sessions = await db
 			.select()
 			.from(userSession)
 			.where(and(eq(userSession.userId, userId), gt(userSession.expiresAt, new Date())))
@@ -237,7 +304,7 @@ export class SessionService {
 	static async revokeSession(sessionId: string): Promise<void> {
 		logger.info(`Revoking session: ${sessionId}`);
 
-		await centralDb.delete(userSession).where(eq(userSession.id, sessionId));
+		await db.delete(userSession).where(eq(userSession.id, sessionId));
 
 		logger.info(`Session revoked: ${sessionId}`);
 	}

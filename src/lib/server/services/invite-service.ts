@@ -1,4 +1,4 @@
-import { db } from "$lib/server/db/index";
+import { db } from "$lib/server/db";
 import {
 	userInvite,
 	tenant,

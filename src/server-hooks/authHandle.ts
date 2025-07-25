@@ -1,5 +1,5 @@
 import type { Handle } from "@sveltejs/kit";
-import { verifyAccessToken } from "$lib/server/auth/jwt-utils";
+import { SessionService } from "$lib/server/auth/session-service";
 import { UniversalLogger } from "$lib/logger";
 import { AuthorizationService } from "$lib/server/auth/authorization-service";
 
@@ -83,26 +83,31 @@ export const authHandle: Handle = async ({ event, resolve }) => {
 		});
 	}
 
-	// Verify access token
-	const user = await verifyAccessToken(accessToken);
-	if (!user) {
-		logger.warn(`Invalid access token for ${path}`);
-		return new Response(JSON.stringify({ error: "Invalid access token" }), {
+	// Verify access token with database session check
+	const sessionData = await SessionService.validateTokenWithDB(accessToken);
+	if (!sessionData) {
+		logger.warn(`Invalid or revoked access token for ${path}`);
+		return new Response(JSON.stringify({ error: "Invalid or expired access token" }), {
 			status: 401,
 			headers: { "Content-Type": "application/json" }
 		});
 	}
 
-	event.locals.user = user;
+	// Add sessionId to the user object for easy access
+	event.locals.user = {
+		userId: sessionData.user.id,
+		...sessionData.user,
+		sessionId: sessionData.sessionId
+	};
 
-	if (isGlobalAdminPath && !AuthorizationService.hasRole(user, "GLOBAL_ADMIN")) {
+	if (isGlobalAdminPath && !AuthorizationService.hasRole(sessionData.user, "GLOBAL_ADMIN")) {
 		return new Response(JSON.stringify({ error: "Authentication failed" }), {
 			status: 403,
 			headers: { "Content-Type": "application/json" }
 		});
 	} else if (
 		isAdminPath &&
-		!AuthorizationService.hasAnyRole(user, ["GLOBAL_ADMIN", "TENANT_ADMIN"])
+		!AuthorizationService.hasAnyRole(sessionData.user, ["GLOBAL_ADMIN", "TENANT_ADMIN"])
 	) {
 		return new Response(JSON.stringify({ error: "Authentication failed" }), {
 			status: 403,
@@ -112,7 +117,7 @@ export const authHandle: Handle = async ({ event, resolve }) => {
 	// Protected auth paths require any authenticated user (no specific role required)
 	// The authentication check above is sufficient
 
-	logger.debug(`User authenticated: ${user.email} for ${path}`);
+	logger.debug(`User authenticated: ${sessionData.user.email} for ${path}`);
 
 	return resolve(event);
 };

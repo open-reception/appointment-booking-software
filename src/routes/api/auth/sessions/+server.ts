@@ -1,6 +1,7 @@
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
+import { SessionService } from "$lib/server/auth/session-service";
 import { UniversalLogger } from "$lib/logger";
 
 const logger = new UniversalLogger().setContext("AuthSessionsAPI");
@@ -110,27 +111,32 @@ registerOpenAPIRoute("/auth/sessions", "DELETE", {
 
 export const GET: RequestHandler = async ({ locals }) => {
 	try {
-		// With access token-only approach, we don't track active sessions
-		// Return current token info only
 		if (!locals.user) {
 			return json({ error: "Not authenticated" }, { status: 401 });
 		}
 
-		const currentSession = {
-			id: locals.user.sessionId || "current",
-			ipAddress: "unknown", // Would need to be tracked separately
-			userAgent: "unknown", // Would need to be tracked separately
-			createdAt: new Date(locals.user.iat! * 1000).toISOString(),
-			lastUsedAt: new Date().toISOString(),
-			expiresAt: new Date(locals.user.exp! * 1000).toISOString(),
-			current: true
-		};
+		// Get all active sessions for the user from database
+		const activeSessions = await SessionService.getActiveSessions(locals.user.userId);
 
-		logger.debug("Current session info retrieved", {
-			userId: locals.user.userId
+		// Get current session ID from access token
+		const currentSessionId = locals.user.sessionId;
+
+		const sessions = activeSessions.map((session) => ({
+			id: session.id,
+			ipAddress: session.ipAddress || "unknown",
+			userAgent: session.userAgent || "unknown",
+			createdAt: session.createdAt?.toISOString() || new Date().toISOString(),
+			lastUsedAt: session.lastUsedAt?.toISOString() || new Date().toISOString(),
+			expiresAt: session.expiresAt.toISOString(),
+			current: session.id === currentSessionId
+		}));
+
+		logger.debug("Active sessions retrieved from database", {
+			userId: locals.user.id,
+			sessionCount: sessions.length
 		});
 
-		return json({ sessions: [currentSession] });
+		return json({ sessions });
 	} catch (error) {
 		logger.error("Get sessions error:", { error: String(error) });
 		return json({ error: "Internal server error" }, { status: 500 });
@@ -139,11 +145,14 @@ export const GET: RequestHandler = async ({ locals }) => {
 
 export const DELETE: RequestHandler = async ({ locals, cookies }) => {
 	try {
-		// With access token-only approach, just clear the current token
 		if (!locals.user) {
 			return json({ error: "Not authenticated" }, { status: 401 });
 		}
 
+		// Logout all sessions for the user
+		await SessionService.logoutAllSessions(locals.user.userId);
+
+		// Clear the current access token cookie
 		cookies.delete("access_token", {
 			path: "/",
 			httpOnly: true,
@@ -151,11 +160,11 @@ export const DELETE: RequestHandler = async ({ locals, cookies }) => {
 			sameSite: "strict"
 		});
 
-		logger.info("Access token cleared", { userId: locals.user.userId });
+		logger.info("All sessions logged out", { userId: locals.user.id });
 
 		return json({ message: "Logged out successfully" });
 	} catch (error) {
-		logger.error("Logout error:", { error: String(error) });
+		logger.error("Logout all sessions error:", { error: String(error) });
 		return json({ error: "Internal server error" }, { status: 500 });
 	}
 };

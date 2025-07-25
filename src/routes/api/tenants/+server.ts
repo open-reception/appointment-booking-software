@@ -3,6 +3,8 @@ import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
 import { ValidationError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
+import { db } from "$lib/server/db";
+import { tenant } from "$lib/server/db/central-schema";
 import logger from "$lib/logger";
 
 // Register OpenAPI documentation
@@ -79,6 +81,71 @@ registerOpenAPIRoute("/tenants", "POST", {
 	}
 });
 
+// Register OpenAPI documentation for GET
+registerOpenAPIRoute("/tenants", "GET", {
+	summary: "Get all tenant IDs",
+	description: "Returns a list of all tenant IDs and basic information",
+	tags: ["Tenants"],
+	responses: {
+		"200": {
+			description: "List of all tenants",
+			content: {
+				"application/json": {
+					schema: {
+						type: "object",
+						properties: {
+							tenants: {
+								type: "array",
+								items: {
+									type: "object",
+									properties: {
+										id: { type: "string", format: "uuid", description: "Tenant ID" },
+										shortName: { type: "string", description: "Tenant short name" },
+										longName: { type: "string", description: "Tenant long name" },
+										setupState: { 
+											type: "string", 
+											enum: ["NEW", "SETTINGS_CREATED", "AGENTS_SET_UP", "FIRST_CHANNEL_CREATED"],
+											description: "Current setup state" 
+										}
+									},
+									required: ["id", "shortName", "setupState"]
+								}
+							}
+						},
+						required: ["tenants"]
+					},
+					example: {
+						tenants: [
+							{
+								id: "01234567-89ab-cdef-0123-456789abcdef",
+								shortName: "acme-corp",
+								longName: "ACME Corporation",
+								setupState: "FIRST_CHANNEL_CREATED"
+							}
+						]
+					}
+				}
+			}
+		},
+		"403": {
+			description: "Insufficient permissions (Global Admin required)",
+			content: {
+				"application/json": {
+					schema: { $ref: "#/components/schemas/Error" }
+				}
+			}
+		},
+		"500": {
+			description: "Internal server error",
+			content: {
+				"application/json": {
+					schema: { $ref: "#/components/schemas/Error" }
+				}
+			}
+		}
+	}
+});
+
 export const POST: RequestHandler = async ({ request }) => {
 	const log = logger.setContext("API");
 
@@ -120,6 +187,49 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ error: "A tenant with this short name already exists" }, { status: 409 });
 		}
 
+		return json({ error: "Internal server error" }, { status: 500 });
+	}
+};
+
+export const GET: RequestHandler = async ({ locals }) => {
+	const log = logger.setContext("API");
+
+	try {
+		// Check if user is authenticated and is a global admin
+		if (!locals.user) {
+			return json({ error: "Authentication required" }, { status: 401 });
+		}
+
+		if (locals.user.role !== "GLOBAL_ADMIN") {
+			return json({ error: "Global admin access required" }, { status: 403 });
+		}
+
+		log.debug("Getting all tenants", {
+			requestedBy: locals.user.userId
+		});
+
+		// Get all tenants from database
+		const tenants = await db
+			.select({
+				id: tenant.id,
+				shortName: tenant.shortName,
+				longName: tenant.longName,
+				setupState: tenant.setupState
+			})
+			.from(tenant)
+			.orderBy(tenant.shortName);
+
+		log.debug("Retrieved tenants successfully", {
+			tenantCount: tenants.length,
+			requestedBy: locals.user.userId
+		});
+
+		return json({
+			tenants: tenants
+		});
+
+	} catch (error) {
+		log.error("Failed to get tenants:", JSON.stringify(error || "?"));
 		return json({ error: "Internal server error" }, { status: 500 });
 	}
 };

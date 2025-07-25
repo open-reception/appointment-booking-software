@@ -1,6 +1,7 @@
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
+import { SessionService } from "$lib/server/auth/session-service";
 import { UniversalLogger } from "$lib/logger";
 
 const logger = new UniversalLogger().setContext("AuthLogoutAPI");
@@ -43,15 +44,18 @@ registerOpenAPIRoute("/auth/logout", "POST", {
 	}
 });
 
-export const POST: RequestHandler = async ({ cookies }) => {
+export const POST: RequestHandler = async ({ locals, cookies }) => {
 	try {
-		const accessToken = cookies.get("access_token");
-
-		if (!accessToken) {
-			return json({ error: "No access token found" }, { status: 400 });
+		if (!locals.user) {
+			return json({ error: "Not authenticated" }, { status: 401 });
 		}
 
-		// Simply clear the access token cookie - no need to invalidate sessions
+		// Delete the session from database
+		if (locals.sessionId) {
+			await SessionService.revokeSession(locals.sessionId);
+		}
+
+		// Clear the access token cookie
 		cookies.delete("access_token", {
 			path: "/",
 			httpOnly: true,
@@ -59,7 +63,7 @@ export const POST: RequestHandler = async ({ cookies }) => {
 			sameSite: "strict"
 		});
 
-		logger.info("Logout successful");
+		logger.info("Logout successful", { userId: locals.user.id });
 
 		return json({ message: "Logout successful" });
 	} catch (error) {
