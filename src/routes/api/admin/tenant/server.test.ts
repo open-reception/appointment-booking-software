@@ -89,7 +89,6 @@ vi.mock("$lib/server/utils/errors", () => ({
 	NotFoundError: class NotFoundError extends Error {}
 }));
 
-import { SessionService } from "$lib/server/auth/session-service";
 import { centralDb } from "$lib/server/db";
 import { UserService } from "$lib/server/services/user-service";
 import { generateAccessToken } from "$lib/server/auth/jwt-utils";
@@ -110,14 +109,6 @@ describe("POST /api/admin/tenant", () => {
 		tokenValidUntil: null,
 		passphraseHash: null,
 		recoveryPassphrase: null
-	};
-
-	const mockSessionData = {
-		sessionToken: "session-123",
-		accessToken: "access-123",
-		refreshToken: "refresh-123",
-		user: mockUser,
-		expiresAt: new Date(Date.now() + 86400000)
 	};
 
 	const mockCookies = {

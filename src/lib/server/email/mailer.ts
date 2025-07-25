@@ -33,7 +33,7 @@ export function createEmailRecipient(
 		return {
 			email: user.email || "",
 			name: user.name || undefined,
-			language: (user as any).language || "de" // Use user's language preference
+			language: user.language || "de" // Use user's language preference
 		};
 	}
 	// Handle SelectStaff type (has name property)

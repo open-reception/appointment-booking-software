@@ -1,6 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "../+server";
-import type { RequestEvent } from "@sveltejs/kit";
 
 // Mock dependencies
 vi.mock("$lib/server/services/tenant-admin-service", () => ({

@@ -3,7 +3,6 @@ import { userPasskey } from "$lib/server/db/central-schema";
 import { eq } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { UniversalLogger } from "$lib/logger";
-import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
 
 const logger = new UniversalLogger().setContext("WebAuthnService");
 
@@ -190,6 +189,7 @@ export class WebAuthnService {
 	 * This should be stored in the session and used for verification
 	 */
 	static generateChallenge(): string {
+		// eslint-disable-next-line @typescript-eslint/no-require-imports
 		const crypto = require("node:crypto");
 		return crypto.randomBytes(32).toString("base64url");
 	}
