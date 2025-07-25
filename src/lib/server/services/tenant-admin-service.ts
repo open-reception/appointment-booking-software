@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm";
 import logger from "$lib/logger";
 import z from "zod/v4";
 import { ValidationError, NotFoundError } from "../utils/errors";
+import { sendTenantAdminInviteEmail } from "../email/email-service";
 
 if (!env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
 
@@ -120,7 +121,39 @@ export class TenantAdminService {
 
 			log.debug("Tenant service created successfully", { tenantId: tenant[0].id });
 
-			// TODO sent tenant admin invitation mail
+			// Send tenant admin invitation email if email is provided
+			if (request.inviteAdmin) {
+				try {
+					// For now, we'll use the email as name. In a real implementation,
+					// you might want to collect the name separately or parse it from the email
+					const adminName = request.inviteAdmin.split('@')[0];
+					
+					// Generate registration URL for the tenant admin
+					// This should point to a registration page that pre-fills tenant info
+					const registrationUrl = `${env.PUBLIC_APP_URL || 'http://localhost:5173'}/register?tenant=${tenant[0].id}&email=${encodeURIComponent(request.inviteAdmin)}&role=TENANT_ADMIN`;
+
+					await sendTenantAdminInviteEmail(
+						request.inviteAdmin,
+						adminName,
+						tenant[0],
+						registrationUrl
+					);
+
+					log.info("Tenant admin invitation email sent successfully", {
+						tenantId: tenant[0].id,
+						adminEmail: request.inviteAdmin
+					});
+				} catch (emailError) {
+					log.error("Failed to send tenant admin invitation email", {
+						tenantId: tenant[0].id,
+						adminEmail: request.inviteAdmin,
+						error: String(emailError)
+					});
+					
+					// Don't fail the tenant creation if email fails
+					// Just log the error and continue
+				}
+			}
 
 			return tenantService;
 		} catch (error) {

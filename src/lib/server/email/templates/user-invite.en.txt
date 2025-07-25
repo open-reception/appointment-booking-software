@@ -1,0 +1,19 @@
+You've been invited to {{tenant.longName}}!
+
+Hello {{recipient.name}},
+
+You have been invited to join {{tenant.longName}}!
+
+📧 Your registration details:
+Email: {{recipient.email}}
+Organization: {{tenant.longName}}
+
+Your role and permissions will be automatically assigned during registration.
+
+Register now to get started:
+{{registrationUrl}}
+
+This invitation is valid for 7 days. If you didn't request this email, you can ignore it.
+
+--
+{{tenant.longName}} Team

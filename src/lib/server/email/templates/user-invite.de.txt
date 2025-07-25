@@ -1,0 +1,19 @@
+Sie wurden zu {{tenant.longName}} eingeladen!
+
+Hallo {{recipient.name}},
+
+Sie wurden eingeladen, sich {{tenant.longName}} anzuschließen!
+
+📧 Ihre Registrierungsdaten:
+E-Mail: {{recipient.email}}
+Organisation: {{tenant.longName}}
+
+Ihre Rolle und Berechtigungen werden bei der Registrierung automatisch zugewiesen.
+
+Registrieren Sie sich jetzt, um loszulegen:
+{{registrationUrl}}
+
+Diese Einladung ist 7 Tage gültig. Falls Sie diese E-Mail nicht angefordert haben, können Sie sie ignorieren.
+
+--
+{{tenant.longName}} Team

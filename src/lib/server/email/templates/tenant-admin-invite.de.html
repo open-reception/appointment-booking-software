@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="de">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Einladung als Tenant-Administrator</title>
+		<style>
+			body {
+			    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+			    line-height: 1.6;
+			    color: #333;
+			    max-width: 600px;
+			    margin: 0 auto;
+			    padding: 20px;
+			    background-color: #f3f4f6;
+			}
+			.email-container {
+			    background-color: white;
+			    padding: 30px;
+			    border-radius: 8px;
+			    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+			}
+			.header {
+			    text-align: center;
+			    border-bottom: 1px solid #eee;
+			    padding-bottom: 20px;
+			    margin-bottom: 30px;
+			}
+			.logo {
+			    font-size: 24px;
+			    font-weight: bold;
+			    color: #2563eb;
+			}
+			h1 {
+			    color: #1f2937;
+			    font-size: 24px;
+			    margin-bottom: 20px;
+			}
+			.button {
+			    display: inline-block;
+			    background-color: #2563eb;
+			    color: white !important;
+			    padding: 12px 24px;
+			    text-decoration: none;
+			    border-radius: 6px;
+			    font-weight: 500;
+			    margin: 10px 0;
+			}
+			.button:hover {
+			    background-color: #1d4ed8;
+			}
+			.tenant-info {
+			    background-color: #f9fafb;
+			    padding: 20px;
+			    border-radius: 6px;
+			    margin: 20px 0;
+			    border-left: 4px solid #2563eb;
+			}
+			.footer {
+			    margin-top: 30px;
+			    padding-top: 20px;
+			    border-top: 1px solid #eee;
+			    font-size: 14px;
+			    color: #6b7280;
+			    text-align: center;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="email-container">
+			<div class="header">
+				<div class="logo">Open Reception</div>
+			</div>
+
+			<h1>Einladung als Tenant-Administrator</h1>
+
+			<p>Hallo {{recipient.name}},</p>
+
+			<p>Sie wurden als Administrator für einen neuen Tenant in Open Reception eingeladen!</p>
+
+			<div class="tenant-info">
+				<h3>Tenant-Details:</h3>
+				<p><strong>Name:</strong> {{tenant.shortName}}</p>
+				<p><strong>Beschreibung:</strong> {{tenant.longName}}</p>
+			</div>
+
+			<p>Als Tenant-Administrator können Sie:</p>
+			<ul>
+				<li>Die Konfiguration Ihres Tenants verwalten</li>
+				<li>Mitarbeiter einladen und verwalten</li>
+				<li>Kanäle und Services einrichten</li>
+				<li>Termine und Buchungen überwachen</li>
+			</ul>
+
+			<p><strong>Registrieren Sie sich jetzt, um loszulegen:</strong></p>
+
+			<p><a href="{{registrationUrl}}" class="button">Jetzt registrieren</a></p>
+
+			<p>Wenn der Button nicht funktioniert, kopieren Sie diesen Link in Ihren Browser:<br>
+			{{registrationUrl}}</p>
+
+			<div class="footer">
+				<p>Diese Einladung ist 7 Tage gültig. Falls Sie diese E-Mail nicht angefordert haben, können Sie sie ignorieren.</p>
+				<p>Open Reception Team</p>
+			</div>
+		</div>
+	</body>
+</html>

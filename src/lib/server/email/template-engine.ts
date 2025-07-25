@@ -17,7 +17,9 @@ export type EmailTemplateType =
 	| "appointment-reminder"
 	| "appointment-created"
 	| "appointment-updated"
-	| "confirmation"; // Registration confirmation with one-time code
+	| "confirmation" // Registration confirmation with one-time code
+	| "tenant-admin-invite" // Invitation for tenant administrator
+	| "user-invite"; // Invitation for new users to existing tenant
 
 /**
  * Template data interface containing all variables available in templates

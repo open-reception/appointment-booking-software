@@ -10,7 +10,7 @@ const PROTECTED_PATHS = ["/api/admin", "/api/tenant-admin", "/api/tenants", "/ap
 const PUBLIC_PATHS = [
 	"/api/auth/challenge",
 	"/api/auth/login",
-
+	"/api/auth/register",
 	"/api/auth/confirm",
 	"/api/auth/resend-confirmation",
 	"/api/health",
@@ -29,7 +29,8 @@ const PROTECTED_AUTH_PATHS = [
 	"/api/auth/refresh",
 	"/api/auth/session",
 	"/api/auth/sessions",
-	"/api/auth/passkeys"
+	"/api/auth/passkeys",
+	"/api/auth/invite"
 ];
 
 export const authHandle: Handle = async ({ event, resolve }) => {

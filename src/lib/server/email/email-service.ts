@@ -211,3 +211,69 @@ export async function sendConfirmationEmail(
 		expirationMinutes
 	});
 }
+
+/**
+ * Send tenant administrator invitation email
+ * @param {string} adminEmail - Email address of the invited administrator
+ * @param {string} adminName - Name of the invited administrator
+ * @param {SelectTenant} tenant - Tenant information for branding
+ * @param {string} registrationUrl - URL for administrator to register
+ * @param {Language} [language="de"] - Email language
+ * @throws {Error} When email sending fails
+ * @returns {Promise<void>}
+ */
+export async function sendTenantAdminInviteEmail(
+	adminEmail: string,
+	adminName: string,
+	tenant: SelectTenant,
+	registrationUrl: string,
+	language: Language = "de"
+): Promise<void> {
+	const recipient: EmailRecipient = {
+		email: adminEmail,
+		name: adminName,
+		language
+	};
+	
+	const subject = language === "en" 
+		? "Invitation as Tenant Administrator" 
+		: "Einladung als Tenant-Administrator";
+
+	await sendTemplatedEmail("tenant-admin-invite", recipient, subject, language, tenant, {
+		registrationUrl
+	});
+}
+
+/**
+ * Send user invitation email for existing tenant
+ * @param {string} userEmail - Email address of the invited user
+ * @param {string} userName - Name of the invited user
+ * @param {SelectTenant} tenant - Tenant information for branding
+ * @param {string} role - Role to assign to the user (TENANT_ADMIN or STAFF) - for logging only
+ * @param {string} registrationUrl - URL for user to register (contains secure invite code)
+ * @param {Language} [language="de"] - Email language
+ * @throws {Error} When email sending fails
+ * @returns {Promise<void>}
+ */
+export async function sendUserInviteEmail(
+	userEmail: string,
+	userName: string,
+	tenant: SelectTenant,
+	role: "TENANT_ADMIN" | "STAFF",
+	registrationUrl: string,
+	language: Language = "de"
+): Promise<void> {
+	const recipient: EmailRecipient = {
+		email: userEmail,
+		name: userName,
+		language
+	};
+	
+	const subject = language === "en" 
+		? `Invitation to ${tenant.longName || tenant.shortName}` 
+		: `Einladung zu ${tenant.longName || tenant.shortName}`;
+
+	await sendTemplatedEmail("user-invite", recipient, subject, language, tenant, {
+		registrationUrl
+	});
+}

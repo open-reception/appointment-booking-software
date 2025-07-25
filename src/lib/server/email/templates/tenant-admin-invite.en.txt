@@ -1,0 +1,23 @@
+Invitation as Tenant Administrator
+
+Hello {{recipient.name}},
+
+You have been invited as an administrator for a new tenant in Open Reception!
+
+Tenant Details:
+- Name: {{tenant.shortName}}
+- Description: {{tenant.longName}}
+
+As a tenant administrator, you can:
+- Manage your tenant's configuration
+- Invite and manage staff members
+- Set up channels and services
+- Monitor appointments and bookings
+
+Register now to get started:
+{{registrationUrl}}
+
+This invitation is valid for 7 days. If you didn't request this email, you can ignore it.
+
+--
+Open Reception Team

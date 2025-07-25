@@ -1,7 +1,7 @@
 import { error, json, type RequestHandler } from "@sveltejs/kit";
 import { z } from "zod";
 import { centralDb } from "$lib/server/db";
-import { tenant, user } from "$lib/server/db/central-schema";
+import { tenant } from "$lib/server/db/central-schema";
 import { eq } from "drizzle-orm";
 import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
 import { UserService } from "$lib/server/services/user-service";
@@ -74,7 +74,10 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 		}
 
 		// Generate new access token with updated tenant context
-		const newAccessToken = await generateAccessToken(updatedUser, (locals.user.sessionId as string) || "temp-session");
+		const newAccessToken = await generateAccessToken(
+			updatedUser,
+			(locals.user.sessionId as string) || "temp-session"
+		);
 
 		// Set new access token cookie
 		cookies.set("access_token", newAccessToken, {

@@ -1,5 +1,6 @@
 import { json } from "@sveltejs/kit";
 import { UserService } from "$lib/server/services/user-service";
+import { InviteService } from "$lib/server/services/invite-service";
 import { ValidationError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
@@ -24,16 +25,22 @@ registerOpenAPIRoute("/auth/register", "POST", {
 							description: "User's email address",
 							example: "user@example.com"
 						},
+						invite: {
+							type: "string",
+							format: "uuid",
+							description: "Invitation code (optional - if provided, overrides role/tenantId)",
+							example: "01234567-89ab-cdef-0123-456789abcdef"
+						},
 						role: {
 							type: "string",
 							enum: ["GLOBAL_ADMIN", "TENANT_ADMIN", "STAFF"],
-							description: "User's role in the system",
+							description: "User's role in the system (ignored if invite is provided)",
 							example: "STAFF"
 						},
 						tenantId: {
 							type: "string",
 							format: "uuid",
-							description: "Tenant ID for TENANT_ADMIN and STAFF roles",
+							description: "Tenant ID for TENANT_ADMIN and STAFF roles (ignored if invite is provided)",
 							example: "01234567-89ab-cdef-0123-456789abcdef"
 						},
 						passphrase: {
@@ -58,7 +65,7 @@ registerOpenAPIRoute("/auth/register", "POST", {
 							required: ["id", "publicKey"]
 						}
 					},
-					required: ["name", "email", "role"]
+					required: ["name", "email"]
 				}
 			}
 		}
@@ -126,21 +133,57 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ error: "Either passphrase or passkey must be provided" }, { status: 400 });
 		}
 
+		let finalRole = body.role;
+		let finalTenantId = body.tenantId;
+		let inviteUsed = null;
+
+		// If invite code is provided, validate and use it
+		if (body.invite) {
+			const invitation = await InviteService.getInviteByCode(body.invite);
+			
+			if (!invitation) {
+				return json({ error: "Invalid or expired invitation code" }, { status: 400 });
+			}
+
+			// Verify email matches invitation
+			if (invitation.email !== body.email) {
+				return json({ error: "Email address does not match invitation" }, { status: 400 });
+			}
+
+			// Use invitation data instead of request body
+			finalRole = invitation.role;
+			finalTenantId = invitation.tenantId;
+			inviteUsed = invitation;
+
+			log.debug("Using invitation for registration", {
+				inviteCode: body.invite,
+				email: invitation.email,
+				role: invitation.role,
+				tenantId: invitation.tenantId
+			});
+		} else {
+			// Validate that role is provided if no invite
+			if (!body.role) {
+				return json({ error: "Role is required when not using an invitation" }, { status: 400 });
+			}
+		}
+
 		log.debug("Creating user account", {
 			email: body.email,
-			role: body.role,
-			tenantId: body.tenantId,
+			role: finalRole,
+			tenantId: finalTenantId,
 			hasPassphrase: !!body.passphrase,
 			passkeyId: body.passkey?.id,
-			deviceName: body.passkey?.deviceName
+			deviceName: body.passkey?.deviceName,
+			usingInvite: !!body.invite
 		});
 
 		// Create user account
 		const user = await UserService.createUser({
 			name: body.name,
 			email: body.email,
-			role: body.role,
-			tenantId: body.tenantId,
+			role: finalRole,
+			tenantId: finalTenantId,
 			passphrase: body.passphrase
 		});
 
@@ -154,12 +197,22 @@ export const POST: RequestHandler = async ({ request }) => {
 			});
 		}
 
+		// Mark invitation as used if one was provided
+		if (inviteUsed) {
+			await InviteService.markInviteAsUsed(body.invite, user.id);
+			log.debug("Invitation marked as used", {
+				inviteCode: body.invite,
+				userId: user.id
+			});
+		}
+
 		log.debug("User account and passkey created successfully", {
 			userId: user.id,
 			email: user.email,
 			role: user.role,
 			tenantId: user.tenantId,
-			passkeyId: body.passkey.id
+			passkeyId: body.passkey?.id,
+			usedInvitation: !!inviteUsed
 		});
 
 		return json(

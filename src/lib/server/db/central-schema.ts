@@ -162,6 +162,53 @@ export const userSession = pgTable(
 );
 
 /**
+ * User Invitation table - stores pending invitations with secure codes
+ * Invitations are created when users are invited to join a tenant
+ * Contains all necessary information without exposing it in URLs
+ * @table user_invite
+ */
+export const userInvite = pgTable(
+	"user_invite",
+	{
+		/** Primary key - unique identifier */
+		id: uuid("id").primaryKey().defaultRandom(),
+		/** Secure invite code sent to user (UUID v4) */
+		inviteCode: uuid("invite_code").notNull().unique().defaultRandom(),
+		/** Email address of invited user */
+		email: text("email").notNull(),
+		/** Name of invited user */
+		name: text("name").notNull(),
+		/** Role to assign to user when they register */
+		role: userRoleEnum("role").notNull(),
+		/** Tenant the user is being invited to */
+		tenantId: uuid("tenant_id")
+			.notNull()
+			.references(() => tenant.id, { onDelete: "cascade" }),
+		/** User who sent the invitation */
+		invitedBy: uuid("invited_by")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		/** Language preference for the invitation */
+		language: text("language").notNull().default("de"),
+		/** Whether the invitation has been used */
+		used: boolean("used").notNull().default(false),
+		/** When the invitation was used (if applicable) */
+		usedAt: timestamp("used_at"),
+		/** User ID that was created from this invitation (if used) */
+		createdUserId: uuid("created_user_id").references(() => user.id),
+		createdAt: timestamp("created_at").defaultNow(),
+		updatedAt: timestamp("updated_at").defaultNow(),
+		/** Invitation expires after 7 days */
+		expiresAt: timestamp("expires_at").notNull()
+	},
+	(table) => ({
+		inviteCodeIdx: uniqueIndex("user_invite_code_idx").on(table.inviteCode),
+		inviteEmailIdx: index("user_invite_email_idx").on(table.email),
+		inviteTenantIdx: index("user_invite_tenant_idx").on(table.tenantId)
+	})
+);
+
+/**
  * TypeScript type exports for use in application code
  */
 
@@ -183,3 +230,7 @@ export type SelectUserPasskey = InferSelectModel<typeof userPasskey>;
 /** User session record types for database queries */
 export type InsertUserSession = InferInsertModel<typeof userSession>;
 export type SelectUserSession = InferSelectModel<typeof userSession>;
+
+/** User invite record types for database queries */
+export type InsertUserInvite = InferInsertModel<typeof userInvite>;
+export type SelectUserInvite = InferSelectModel<typeof userInvite>;

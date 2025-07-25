@@ -55,12 +55,14 @@ export async function generateRefreshToken(userId: string, sessionId: string): P
 	return jwt;
 }
 
-export async function verifyAccessToken(token: string): Promise<JWTPayload | null> {
+export async function verifyAccessToken(
+	token: string
+): Promise<(JWTPayload & { userId: string }) | null> {
 	try {
 		const { payload } = await jwtVerify(token, JWT_SECRET);
 
 		return {
-			userId: payload.userId,
+			userId: payload.userId as string,
 			email: payload.email,
 			name: payload.name,
 			role: payload.role as "GLOBAL_ADMIN" | "TENANT_ADMIN" | "STAFF",
