@@ -70,7 +70,7 @@ export class TenantAdminService {
 
 		const configuration = TenantAdminService.getConfigDefaults();
 
-		const urlParts = env.DATABASE_URL.split("/");
+		const urlParts = env.DATABASE_URL?.split("/") ?? [];
 		urlParts.pop();
 
 		const newTenant: InsertTenant = { ...request, longName: "", databaseUrl: "" };
