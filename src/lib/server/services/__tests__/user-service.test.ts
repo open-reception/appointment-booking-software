@@ -85,7 +85,8 @@ describe("UserService", () => {
 		it("should create a new admin with valid data", async () => {
 			const adminData = {
 				name: "Test Admin",
-				email: "test@example.com"
+				email: "test@example.com",
+				language: "de" as const
 			};
 
 			const mockCreatedAdmin = {

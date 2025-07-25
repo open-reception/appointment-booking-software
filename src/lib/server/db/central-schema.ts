@@ -106,7 +106,9 @@ export const user = pgTable(
 		/** Hashed passphrase for password authentication (optional, alternative to WebAuthn) */
 		passphraseHash: text("passphrase_hash"),
 		/** Recovery passphrase for WebAuthn-only users (stored in plain text, shown only once) */
-		recoveryPassphrase: text("recovery_passphrase")
+		recoveryPassphrase: text("recovery_passphrase"),
+		/** User's preferred language for emails and interface */
+		language: text("language").notNull().default("de")
 	},
 	(table) => ({
 		emailUnique: uniqueIndex("user_email_idx").on(table.email)

@@ -30,7 +30,7 @@ describe("GET /api/admin/exists", () => {
 		vi.mocked(UserService.adminExists).mockResolvedValue(true);
 		vi.mocked(UserService.getAdminCount).mockResolvedValue(2);
 
-		const response = await GET();
+		const response = await GET({} as any);
 		const data = await response.json();
 
 		expect(response.status).toBe(200);
@@ -46,7 +46,7 @@ describe("GET /api/admin/exists", () => {
 		vi.mocked(UserService.adminExists).mockResolvedValue(false);
 		vi.mocked(UserService.getAdminCount).mockResolvedValue(0);
 
-		const response = await GET();
+		const response = await GET({} as any);
 		const data = await response.json();
 
 		expect(response.status).toBe(200);
@@ -61,7 +61,7 @@ describe("GET /api/admin/exists", () => {
 	it("should handle service errors", async () => {
 		vi.mocked(UserService.adminExists).mockRejectedValue(new Error("Database error"));
 
-		const response = await GET();
+		const response = await GET({} as any);
 		const data = await response.json();
 
 		expect(response.status).toBe(500);
@@ -76,7 +76,7 @@ describe("GET /api/admin/exists", () => {
 		vi.mocked(UserService.adminExists).mockResolvedValue(true);
 		vi.mocked(UserService.getAdminCount).mockRejectedValue(new Error("Count error"));
 
-		const response = await GET();
+		const response = await GET({} as any);
 		const data = await response.json();
 
 		expect(response.status).toBe(500);

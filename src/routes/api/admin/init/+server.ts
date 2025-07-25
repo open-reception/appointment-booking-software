@@ -138,7 +138,8 @@ export const POST: RequestHandler = async ({ request }) => {
 		const admin = await UserService.createUser({
 			name: body.name,
 			email: body.email,
-			passphrase: body.passphrase // Will be undefined if passkey is used
+			passphrase: body.passphrase, // Will be undefined if passkey is used
+			language: body.language || "de"
 		});
 
 		// Add the passkey to the admin account if provided

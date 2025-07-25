@@ -26,7 +26,8 @@ const userCreationSchema = z.object({
 	tenantId: z.string().uuid().optional(),
 	passphrase: z.string().min(12).optional(),
 	token: z.uuidv7().optional(),
-	tokenValidUntil: z.date().optional()
+	tokenValidUntil: z.date().optional(),
+	language: z.enum(["de", "en"]).optional().default("de")
 });
 
 type UserCreation = z.infer<typeof userCreationSchema>;
@@ -104,6 +105,7 @@ export class UserService {
 			tenantId: userData.tenantId,
 			token: userData.token,
 			tokenValidUntil: userData.tokenValidUntil,
+			language: userData.language || "de",
 			confirmed: false,
 			isActive: false
 		};

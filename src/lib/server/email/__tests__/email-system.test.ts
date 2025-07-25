@@ -109,12 +109,10 @@ describe("Email System", () => {
 				longName: "Test Organization",
 				description: null,
 				logo: null,
-				backgroundColor: "#f0f0f0",
-				primaryColor: "#007bff",
-				secondaryColor: "#28a745",
-				defaultLanguage: "de",
-				autoDeleteDays: 365,
-				requireConfirmation: false
+				databaseUrl: "postgresql://test",
+				setupState: "FIRST_CHANNEL_CREATED" as const,
+				createdAt: new Date(),
+				updatedAt: new Date()
 			};
 
 			const result = await templateEngine.renderTemplate("user-created", {
@@ -141,12 +139,10 @@ describe("Email System", () => {
 				longName: "Test Organization",
 				description: null,
 				logo: null,
-				backgroundColor: "#f0f0f0",
-				primaryColor: "#007bff",
-				secondaryColor: "#28a745",
-				defaultLanguage: "de",
-				autoDeleteDays: 365,
-				requireConfirmation: false
+				databaseUrl: "postgresql://test",
+				setupState: "FIRST_CHANNEL_CREATED" as const,
+				createdAt: new Date(),
+				updatedAt: new Date()
 			};
 
 			const result = await templateEngine.renderTemplate("user-created", {
@@ -173,12 +169,10 @@ describe("Email System", () => {
 				longName: "Test Organization",
 				description: null,
 				logo: null,
-				backgroundColor: "#f0f0f0",
-				primaryColor: "#007bff",
-				secondaryColor: "#28a745",
-				defaultLanguage: "de",
-				autoDeleteDays: 365,
-				requireConfirmation: false
+				databaseUrl: "postgresql://test",
+				setupState: "FIRST_CHANNEL_CREATED" as const,
+				createdAt: new Date(),
+				updatedAt: new Date()
 			};
 
 			const result = await templateEngine.renderTemplate("user-created", {
@@ -205,12 +199,10 @@ describe("Email System", () => {
 				longName: "Test Organization",
 				description: null,
 				logo: null,
-				backgroundColor: "#f0f0f0",
-				primaryColor: "#007bff",
-				secondaryColor: "#28a745",
-				defaultLanguage: "de",
-				autoDeleteDays: 365,
-				requireConfirmation: false
+				databaseUrl: "postgresql://test",
+				setupState: "FIRST_CHANNEL_CREATED" as const,
+				createdAt: new Date(),
+				updatedAt: new Date()
 			};
 
 			const result = await templateEngine.renderTemplate("user-created", {
@@ -251,12 +243,10 @@ describe("Email System", () => {
 				longName: "Test Organization",
 				description: null,
 				logo: null,
-				backgroundColor: "#f0f0f0",
-				primaryColor: "#007bff",
-				secondaryColor: "#28a745",
-				defaultLanguage: "de",
-				autoDeleteDays: 365,
-				requireConfirmation: false
+				databaseUrl: "postgresql://test",
+				setupState: "FIRST_CHANNEL_CREATED" as const,
+				createdAt: new Date(),
+				updatedAt: new Date()
 			};
 			const loginUrl = "https://app.example.com/login";
 
@@ -304,12 +294,10 @@ describe("Email System", () => {
 				longName: "Test Organization",
 				description: null,
 				logo: null,
-				backgroundColor: "#f0f0f0",
-				primaryColor: "#007bff",
-				secondaryColor: "#28a745",
-				defaultLanguage: "de",
-				autoDeleteDays: 365,
-				requireConfirmation: false
+				databaseUrl: "postgresql://test",
+				setupState: "FIRST_CHANNEL_CREATED" as const,
+				createdAt: new Date(),
+				updatedAt: new Date()
 			};
 			const loginUrl = "https://app.example.com/login";
 
@@ -345,12 +333,10 @@ describe("Email System", () => {
 				longName: "Test Organization",
 				description: null,
 				logo: null,
-				backgroundColor: "#f0f0f0",
-				primaryColor: "#007bff",
-				secondaryColor: "#28a745",
-				defaultLanguage: "de",
-				autoDeleteDays: 365,
-				requireConfirmation: false
+				databaseUrl: "postgresql://test",
+				setupState: "FIRST_CHANNEL_CREATED" as const,
+				createdAt: new Date(),
+				updatedAt: new Date()
 			};
 
 			await expect(
@@ -380,12 +366,10 @@ describe("Email System", () => {
 				longName: "Test Organization",
 				description: null,
 				logo: null,
-				backgroundColor: "#f0f0f0",
-				primaryColor: "#007bff",
-				secondaryColor: "#28a745",
-				defaultLanguage: "de",
-				autoDeleteDays: 365,
-				requireConfirmation: false
+				databaseUrl: "postgresql://test",
+				setupState: "FIRST_CHANNEL_CREATED" as const,
+				createdAt: new Date(),
+				updatedAt: new Date()
 			};
 
 			await expect(
@@ -414,12 +398,10 @@ describe("Email System", () => {
 				longName: "Test Organization",
 				description: null,
 				logo: null,
-				backgroundColor: "#f0f0f0",
-				primaryColor: "#007bff",
-				secondaryColor: "#28a745",
-				defaultLanguage: "de",
-				autoDeleteDays: 365,
-				requireConfirmation: false
+				databaseUrl: "postgresql://test",
+				setupState: "FIRST_CHANNEL_CREATED" as const,
+				createdAt: new Date(),
+				updatedAt: new Date()
 			};
 			const confirmationCode = "ABC123";
 			const expirationMinutes = 15;
@@ -467,12 +449,10 @@ describe("Email System", () => {
 				longName: "Test Organization",
 				description: null,
 				logo: null,
-				backgroundColor: "#f0f0f0",
-				primaryColor: "#007bff",
-				secondaryColor: "#28a745",
-				defaultLanguage: "de",
-				autoDeleteDays: 365,
-				requireConfirmation: false
+				databaseUrl: "postgresql://test",
+				setupState: "FIRST_CHANNEL_CREATED" as const,
+				createdAt: new Date(),
+				updatedAt: new Date()
 			};
 			const confirmationCode = "XYZ789";
 			const expirationMinutes = 10;
@@ -512,12 +492,10 @@ describe("Email System", () => {
 				longName: "Test Organization",
 				description: null,
 				logo: null,
-				backgroundColor: "#f0f0f0",
-				primaryColor: "#007bff",
-				secondaryColor: "#28a745",
-				defaultLanguage: "de",
-				autoDeleteDays: 365,
-				requireConfirmation: false
+				databaseUrl: "postgresql://test",
+				setupState: "FIRST_CHANNEL_CREATED" as const,
+				createdAt: new Date(),
+				updatedAt: new Date()
 			};
 
 			const result = await templateEngine.renderTemplate("confirmation", {

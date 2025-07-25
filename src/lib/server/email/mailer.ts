@@ -22,14 +22,25 @@ export interface EmailRecipient {
  * @returns {EmailRecipient} Email recipient object
  * @throws {Error} When user has no email address
  */
-export function createEmailRecipient(user: SelectClient | SelectStaff): EmailRecipient {
-	if ("name" in user) {
+export function createEmailRecipient(user: SelectClient | SelectStaff | { id: string; email: string | null; name: string | null; language?: string | null; }): EmailRecipient {
+	// Handle SelectUser type (from central schema)
+	if ("email" in user && !("publicKey" in user)) {
+		return {
+			email: user.email || "",
+			name: user.name || undefined,
+			language: (user as any).language || "de" // Use user's language preference
+		};
+	}
+	// Handle SelectStaff type (has name property)
+	else if ("name" in user) {
 		return {
 			email: user.email,
 			name: user.name || undefined,
 			language: user.language || "de"
 		};
-	} else {
+	} 
+	// Handle SelectClient type (no name property)
+	else {
 		return {
 			email: user.email || "", // Client email is optional
 			name: undefined, // Clients don't have names for privacy

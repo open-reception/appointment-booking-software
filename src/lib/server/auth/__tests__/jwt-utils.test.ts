@@ -23,7 +23,8 @@ const mockUser: SelectUser = {
 	token: null,
 	tokenValidUntil: null,
 	passphraseHash: null,
-	recoveryPassphrase: null
+	recoveryPassphrase: null,
+	language: "de"
 };
 
 describe("JWT Utils", () => {

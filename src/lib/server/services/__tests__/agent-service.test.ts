@@ -429,7 +429,8 @@ describe("AgentService", () => {
 		it("should assign agent to channel successfully", async () => {
 			const insertChain = {
 				values: vi.fn(() => ({
-					onConflictDoNothing: vi.fn().mockResolvedValue([])
+					onConflictDoNothing: vi.fn().mockResolvedValue([]),
+					returning: vi.fn().mockResolvedValue([])
 				}))
 			};
 			mockDb.insert.mockReturnValue(insertChain);
@@ -445,7 +446,8 @@ describe("AgentService", () => {
 		it("should handle database error", async () => {
 			const insertChain = {
 				values: vi.fn(() => ({
-					onConflictDoNothing: vi.fn().mockRejectedValue(new Error("DB error"))
+					onConflictDoNothing: vi.fn().mockRejectedValue(new Error("DB error")),
+					returning: vi.fn().mockResolvedValue([])
 				}))
 			};
 			mockDb.insert.mockReturnValue(insertChain);

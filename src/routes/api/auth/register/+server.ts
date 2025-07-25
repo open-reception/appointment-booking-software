@@ -184,7 +184,8 @@ export const POST: RequestHandler = async ({ request }) => {
 			email: body.email,
 			role: finalRole,
 			tenantId: finalTenantId,
-			passphrase: body.passphrase
+			passphrase: body.passphrase,
+			language: inviteUsed?.language || body.language || "de"
 		});
 
 		// Add the passkey to the user account if provided

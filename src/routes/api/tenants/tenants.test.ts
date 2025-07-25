@@ -68,7 +68,7 @@ describe("/api/tenants", () => {
 					})
 			};
 
-			const response = await POST({ request: mockRequest as any });
+			const response = await POST({ request: mockRequest, url: new URL("http://localhost"), params: {}, route: { id: "" }, cookies: {} as any, fetch: {} as any, getClientAddress: () => "", isDataRequest: false, isSubRequest: false, platform: undefined, setHeaders: {} as any, locals: {} } as any);
 			const data = await response.json();
 
 			expect(TenantAdminService.createTenant).toHaveBeenCalledWith({
@@ -100,7 +100,7 @@ describe("/api/tenants", () => {
 					})
 			};
 
-			const response = await POST({ request: mockRequest as any });
+			const response = await POST({ request: mockRequest, url: new URL("http://localhost"), params: {}, route: { id: "" }, cookies: {} as any, fetch: {} as any, getClientAddress: () => "", isDataRequest: false, isSubRequest: false, platform: undefined, setHeaders: {} as any, locals: {} } as any);
 			const data = await response.json();
 
 			expect(TenantAdminService.createTenant).toHaveBeenCalledWith({
@@ -130,7 +130,7 @@ describe("/api/tenants", () => {
 					})
 			};
 
-			const response = await POST({ request: mockRequest as any });
+			const response = await POST({ request: mockRequest, url: new URL("http://localhost"), params: {}, route: { id: "" }, cookies: {} as any, fetch: {} as any, getClientAddress: () => "", isDataRequest: false, isSubRequest: false, platform: undefined, setHeaders: {} as any, locals: {} } as any);
 			const data = await response.json();
 
 			expect(data).toEqual({
@@ -153,7 +153,7 @@ describe("/api/tenants", () => {
 					})
 			};
 
-			const response = await POST({ request: mockRequest as any });
+			const response = await POST({ request: mockRequest, url: new URL("http://localhost"), params: {}, route: { id: "" }, cookies: {} as any, fetch: {} as any, getClientAddress: () => "", isDataRequest: false, isSubRequest: false, platform: undefined, setHeaders: {} as any, locals: {} } as any);
 			const data = await response.json();
 
 			expect(data).toEqual({
@@ -176,7 +176,7 @@ describe("/api/tenants", () => {
 					})
 			};
 
-			const response = await POST({ request: mockRequest as any });
+			const response = await POST({ request: mockRequest, url: new URL("http://localhost"), params: {}, route: { id: "" }, cookies: {} as any, fetch: {} as any, getClientAddress: () => "", isDataRequest: false, isSubRequest: false, platform: undefined, setHeaders: {} as any, locals: {} } as any);
 			const data = await response.json();
 
 			expect(data).toEqual({
@@ -197,12 +197,16 @@ describe("/api/tenants", () => {
 				maxTeamMembers: -1,
 				autoDeleteDays: 30,
 				requireEmail: true,
-				requirePhone: false
+				requirePhone: false,
+				nextChannelColor: 0,
+				website: "",
+				imprint: "",
+				privacyStatement: ""
 			};
 
 			vi.mocked(TenantAdminService.getConfigDefaults).mockReturnValue(mockDefaults);
 
-			const response = await GET();
+			const response = await GET({ url: new URL("http://localhost"), params: {}, route: { id: "" }, cookies: {} as any, fetch: {} as any, getClientAddress: () => "", isDataRequest: false, isSubRequest: false, platform: undefined, setHeaders: {} as any, locals: {}, request: {} as any } as any);
 			const data = await response.json();
 
 			expect(TenantAdminService.getConfigDefaults).toHaveBeenCalled();
@@ -217,7 +221,7 @@ describe("/api/tenants", () => {
 				throw new Error("Configuration error");
 			});
 
-			const response = await GET();
+			const response = await GET({ url: new URL("http://localhost"), params: {}, route: { id: "" }, cookies: {} as any, fetch: {} as any, getClientAddress: () => "", isDataRequest: false, isSubRequest: false, platform: undefined, setHeaders: {} as any, locals: {}, request: {} as any } as any);
 			const data = await response.json();
 
 			expect(data).toEqual({

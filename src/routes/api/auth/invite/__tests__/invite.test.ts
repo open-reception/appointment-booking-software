@@ -64,12 +64,22 @@ describe("POST /api/auth/invite", () => {
 		expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
 	};
 
-	const createRequestEvent = (body: any, user: any = null): Partial<RequestEvent> => ({
+	const createRequestEvent = (body: any, user: any = null) => ({
 		request: {
 			json: () => Promise.resolve(body)
 		} as Request,
-		locals: { user }
-	});
+		locals: { user },
+		url: new URL("http://localhost/api/auth/invite"),
+		params: {},
+		route: { id: "/api/auth/invite" } as any,
+		cookies: {} as any,
+		fetch: {} as any,
+		getClientAddress: () => "127.0.0.1",
+		isDataRequest: false,
+		isSubRequest: false,
+		platform: undefined,
+		setHeaders: {} as any
+	} as any);
 
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -87,7 +97,7 @@ describe("POST /api/auth/invite", () => {
 			tenantId: "12345678-1234-1234-1234-123456789012"
 		});
 
-		const response = await POST(requestEvent as RequestEvent);
+		const response = await POST(requestEvent);
 		const data = await response.json();
 
 		expect(response.status).toBe(401);
@@ -108,7 +118,7 @@ describe("POST /api/auth/invite", () => {
 			tenantId: "12345678-1234-1234-1234-123456789012"
 		}, globalAdmin);
 
-		const response = await POST(requestEvent as RequestEvent);
+		const response = await POST(requestEvent);
 		const data = await response.json();
 
 		expect(response.status).toBe(200);
@@ -141,7 +151,7 @@ describe("POST /api/auth/invite", () => {
 			tenantId: "12345678-1234-1234-1234-123456789012"
 		}, tenantAdmin);
 
-		const response = await POST(requestEvent as RequestEvent);
+		const response = await POST(requestEvent);
 		const data = await response.json();
 
 		expect(response.status).toBe(200);
@@ -179,7 +189,7 @@ describe("POST /api/auth/invite", () => {
 			tenantId: "12345678-1234-1234-1234-123456789012"
 		}, tenantAdmin);
 
-		const response = await POST(requestEvent as RequestEvent);
+		const response = await POST(requestEvent);
 		const data = await response.json();
 
 		expect(response.status).toBe(403);
@@ -202,7 +212,7 @@ describe("POST /api/auth/invite", () => {
 			tenantId: "12345678-1234-1234-1234-123456789012"
 		}, staff);
 
-		const response = await POST(requestEvent as RequestEvent);
+		const response = await POST(requestEvent);
 		const data = await response.json();
 
 		expect(response.status).toBe(403);
@@ -225,7 +235,7 @@ describe("POST /api/auth/invite", () => {
 			tenantId: "invalid-uuid"
 		}, globalAdmin);
 
-		const response = await POST(requestEvent as RequestEvent);
+		const response = await POST(requestEvent);
 		const data = await response.json();
 
 		expect(response.status).toBe(400);
@@ -251,7 +261,7 @@ describe("POST /api/auth/invite", () => {
 			tenantId: "12345678-1234-1234-1234-123456789012"
 		}, globalAdmin);
 
-		const response = await POST(requestEvent as RequestEvent);
+		const response = await POST(requestEvent);
 		const data = await response.json();
 
 		expect(response.status).toBe(409);

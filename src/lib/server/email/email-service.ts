@@ -197,7 +197,7 @@ export async function sendAppointmentUpdatedEmail(
  * @returns {Promise<void>}
  */
 export async function sendConfirmationEmail(
-	user: SelectClient | SelectStaff,
+	user: { id: string; email: string | null; name: string | null; language?: string | null; },
 	tenant: SelectTenant,
 	confirmationCode: string,
 	expirationMinutes: number = 15

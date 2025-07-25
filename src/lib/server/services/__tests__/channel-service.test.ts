@@ -47,7 +47,8 @@ const mockChannel = {
 	descriptions: ["Test description"],
 	languages: ["de"],
 	isPublic: true,
-	requiresConfirmation: false
+	requiresConfirmation: false,
+	pause: false
 };
 
 const mockAgent = {
@@ -115,7 +116,9 @@ describe("ChannelService", () => {
 			// Use minimal valid request that matches schema exactly
 			const request = {
 				names: ["Test Channel"],
-				languages: ["de"]
+				languages: ["de"],
+				agentIds: ["agent-id"],
+				slotTemplates: [{ name: "slot", from: "09:00", to: "17:00", duration: 30 }]
 			};
 
 			const result = await service.createChannel(request);
