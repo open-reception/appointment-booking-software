@@ -3,6 +3,8 @@
 	import { Headline, Text } from "$lib/components/ui/typography";
 	import { toggleMode } from "mode-watcher";
 	import { m } from "$i18n/messages.js";
+	import { ComboBox } from "$lib/components/ui/combobox";
+	import { getLocale, setLocale } from "$i18n/runtime.js";
 
 	export let data;
 </script>
@@ -24,6 +26,21 @@
 				{/await}.
 			</Text>
 			<button onclick={toggleMode}>Toggle Mode</button>
+			<ComboBox
+				options={[
+					{ value: "de", label: "Deutsch" },
+					{ value: "en", label: "English" }
+				]}
+				value={getLocale()}
+				onChange={(value) => {
+					setLocale(value as "de" | "en");
+				}}
+				labels={{
+					placeholder: m["i18n.label"](),
+					search: m["i18n.search"](),
+					notFound: m["i18n.notFound"]()
+				}}
+			/>
 		</HorizontalPagePadding>
 	</main>
 </PageWithClaim>
