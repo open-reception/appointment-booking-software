@@ -8,7 +8,7 @@
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
-		"prepare": "svelte-kit sync || echo ''",
+		"prepare": "svelte-kit sync && npm run i18n:compile || echo ''",
 		"check": "npm run prepare && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "npm run prepare && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
@@ -30,7 +30,8 @@
 		"docker:prod:up": "docker compose -f docker-compose.prod.yml up -d",
 		"docker:prod:down": "docker compose -f docker-compose.prod.yml down",
 		"docker:prod:logs": "docker compose -f docker-compose.prod.yml logs -f",
-		"docker:prod:clean": "docker compose -f docker-compose.prod.yml down -v --remove-orphans"
+		"docker:prod:clean": "docker compose -f docker-compose.prod.yml down -v --remove-orphans",
+		"i18n:compile": "npx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/i18n"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.3.0",
