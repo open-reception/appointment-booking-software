@@ -37,7 +37,6 @@
 				}}
 				labels={{
 					placeholder: m["i18n.label"](),
-					search: m["i18n.search"](),
 					notFound: m["i18n.notFound"]()
 				}}
 			/>

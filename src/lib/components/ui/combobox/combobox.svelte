@@ -13,7 +13,10 @@
 		options = [],
 		onChange
 	}: {
-		labels: { placeholder: string; search: string; notFound: string };
+		labels: {
+			placeholder: string;
+			notFound: string;
+		};
 		value: string;
 		onChange: (value: string) => void;
 		options?: { label: string; value: string }[];
