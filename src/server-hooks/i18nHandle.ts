@@ -1,5 +1,5 @@
 import type { Handle } from "@sveltejs/kit";
-import { paraglideMiddleware } from "$i18n/server";
+import { paraglideMiddleware } from "$lib/i18n/server";
 
 /**
  * SvelteKit server hook that handles i18n localization

@@ -2,7 +2,7 @@
 	import { HorizontalPagePadding, PageWithClaim } from "$lib/components/ui/page";
 	import { Headline, Text } from "$lib/components/ui/typography";
 	import { toggleMode } from "mode-watcher";
-	import { m } from "$i18n/messages";
+	import { m } from "$lib/i18n/messages.js";
 
 	export let data;
 </script>
