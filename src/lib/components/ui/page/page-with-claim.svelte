@@ -3,7 +3,7 @@
 	import { cn, type WithElementRef } from "$lib/utils";
 	import HorizontalPagePadding from "./horizontal-page-padding.svelte";
 	import { Text } from "../typography";
-	import { m } from "$lib/i18n/messages";
+	import { m } from "$i18n/messages";
 
 	let {
 		ref = $bindable(null),
