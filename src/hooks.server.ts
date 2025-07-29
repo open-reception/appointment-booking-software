@@ -6,6 +6,8 @@ import { loggingHandle } from "./server-hooks/loggingHandle";
 import { rateLimitHandle } from "./server-hooks/rateLimitHandle";
 import { secHeaderHandle } from "./server-hooks/secHeaderHandle";
 import { authHandle } from "./server-hooks/authHandle";
+import { i18nHandle } from "./server-hooks/i18nHandle";
+import { building } from "$app/environment";
 
 type Error = {
 	message?: string;
@@ -23,7 +25,7 @@ export async function handleError({ error, event, status, message }) {
 		url: event.url.pathname,
 		method: event.request.method,
 		userAgent: event.request.headers.get("user-agent"),
-		ip: event.getClientAddress()
+		ip: !building ? event.getClientAddress() : "server"
 	});
 
 	return {
@@ -34,6 +36,7 @@ export async function handleError({ error, event, status, message }) {
 export const handle = sequence(
 	startupHandle,
 	loggingHandle,
+	i18nHandle,
 	rateLimitHandle,
 	corsHandle,
 	secHeaderHandle,
