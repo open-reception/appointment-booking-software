@@ -20,7 +20,7 @@
 		};
 		value: string;
 		onChange: (value: string) => void;
-		options?: { label: string; value: string }[];
+		options?: { label: string; value: string; keywords?: string[] }[];
 	} = $props();
 
 	let open = $state(false);
@@ -53,13 +53,14 @@
 	</Popover.Trigger>
 	<Popover.Content class="w-[200px] p-0">
 		<Command.Root>
-			<Command.Input placeholder={labels.search} />
+			<Command.Input autofocus placeholder={labels.search} />
 			<Command.List>
 				<Command.Empty>{labels.notFound}</Command.Empty>
 				<Command.Group>
 					{#each options as option (option.value)}
 						<Command.Item
 							value={option.value}
+							keywords={option.keywords}
 							onSelect={() => {
 								onChange(option.value);
 								closeAndFocusTrigger();

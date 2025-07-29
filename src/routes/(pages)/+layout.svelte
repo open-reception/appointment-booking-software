@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { browser } from "$app/environment";
-	import "../app.css";
+	import "../../app.css";
 	import { ModeWatcher, setMode } from "mode-watcher";
 
 	$effect(() => {
