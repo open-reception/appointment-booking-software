@@ -23,7 +23,7 @@ export async function sendTemplatedEmail(
 	templateType: EmailTemplateType,
 	recipient: EmailRecipient,
 	subject: string,
-	language: Language = "de",
+	language: Language = "en",
 	tenant: SelectTenant,
 	templateData: Record<string, unknown> = {}
 ): Promise<void> {
@@ -58,7 +58,7 @@ export async function sendUserCreatedEmail(
 	loginUrl: string
 ): Promise<void> {
 	const recipient = createEmailRecipient(user);
-	const language = (recipient.language as Language) || "de";
+	const language = (recipient.language as Language) || "en";
 	const subject = language === "en" ? "Welcome to Open Reception" : "Willkommen bei Open Reception";
 
 	await sendTemplatedEmail("user-created", recipient, subject, language, tenant, {
@@ -78,7 +78,7 @@ export async function sendPinResetEmail(
 	tenant: SelectTenant
 ): Promise<void> {
 	const recipient = createEmailRecipient(user);
-	const language = (recipient.language as Language) || "de";
+	const language = (recipient.language as Language) || "en";
 	const subject = language === "en" ? "PIN Reset Information" : "PIN zurückgesetzt";
 
 	await sendTemplatedEmail("pin-reset", recipient, subject, language, tenant, {});
@@ -96,7 +96,7 @@ export async function sendKeyResetEmail(
 	tenant: SelectTenant
 ): Promise<void> {
 	const recipient = createEmailRecipient(user);
-	const language = (recipient.language as Language) || "de";
+	const language = (recipient.language as Language) || "en";
 	const subject = language === "en" ? "Key Reset Information" : "Schlüssel zurückgesetzt";
 
 	await sendTemplatedEmail("key-reset", recipient, subject, language, tenant, {});
@@ -118,7 +118,7 @@ export async function sendAppointmentReminderEmail(
 	cancelUrl?: string
 ): Promise<void> {
 	const recipient = createEmailRecipient(user);
-	const language = (recipient.language as Language) || "de";
+	const language = (recipient.language as Language) || "en";
 	const subject = language === "en" ? "Appointment Reminder" : "Terminerinnerung";
 
 	await sendTemplatedEmail("appointment-reminder", recipient, subject, language, tenant, {
@@ -147,7 +147,7 @@ export async function sendAppointmentCreatedEmail(
 	cancelUrl?: string
 ): Promise<void> {
 	const recipient = createEmailRecipient(user);
-	const language = (recipient.language as Language) || "de";
+	const language = (recipient.language as Language) || "en";
 	const subject = language === "en" ? "Appointment Confirmed" : "Termin bestätigt";
 
 	await sendTemplatedEmail("appointment-created", recipient, subject, language, tenant, {
@@ -175,7 +175,7 @@ export async function sendAppointmentUpdatedEmail(
 	cancelUrl?: string
 ): Promise<void> {
 	const recipient = createEmailRecipient(user);
-	const language = (recipient.language as Language) || "de";
+	const language = (recipient.language as Language) || "en";
 	const subject = language === "en" ? "Appointment Updated" : "Termin aktualisiert";
 
 	await sendTemplatedEmail("appointment-updated", recipient, subject, language, tenant, {
@@ -203,7 +203,7 @@ export async function sendConfirmationEmail(
 	expirationMinutes: number = 15
 ): Promise<void> {
 	const recipient = createEmailRecipient(user);
-	const language = (recipient.language as Language) || "de";
+	const language = (recipient.language as Language) || "en";
 	const subject = language === "en" ? "Confirm Your Registration" : "Registrierung bestätigen";
 
 	await sendTemplatedEmail("confirmation", recipient, subject, language, tenant, {
@@ -218,7 +218,7 @@ export async function sendConfirmationEmail(
  * @param {string} adminName - Name of the invited administrator
  * @param {SelectTenant} tenant - Tenant information for branding
  * @param {string} registrationUrl - URL for administrator to register
- * @param {Language} [language="de"] - Email language
+ * @param {Language} [language="en"] - Email language
  * @throws {Error} When email sending fails
  * @returns {Promise<void>}
  */
@@ -227,7 +227,7 @@ export async function sendTenantAdminInviteEmail(
 	adminName: string,
 	tenant: SelectTenant,
 	registrationUrl: string,
-	language: Language = "de"
+	language: Language = "en"
 ): Promise<void> {
 	const recipient: EmailRecipient = {
 		email: adminEmail,
@@ -250,7 +250,7 @@ export async function sendTenantAdminInviteEmail(
  * @param {SelectTenant} tenant - Tenant information for branding
  * @param {string} role - Role to assign to the user (TENANT_ADMIN or STAFF) - for logging only
  * @param {string} registrationUrl - URL for user to register (contains secure invite code)
- * @param {Language} [language="de"] - Email language
+ * @param {Language} [language="en"] - Email language
  * @throws {Error} When email sending fails
  * @returns {Promise<void>}
  */
@@ -260,7 +260,7 @@ export async function sendUserInviteEmail(
 	tenant: SelectTenant,
 	role: "TENANT_ADMIN" | "STAFF",
 	registrationUrl: string,
-	language: Language = "de"
+	language: Language = "en"
 ): Promise<void> {
 	const recipient: EmailRecipient = {
 		email: userEmail,

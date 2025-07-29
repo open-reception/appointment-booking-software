@@ -10,9 +10,11 @@ export interface JWTTokens {
 	refreshToken: string;
 }
 
-const JWT_SECRET = new TextEncoder().encode(
-	env.JWT_SECRET || "dev-secret-key-change-in-production-must-be-32-chars-minimum"
-);
+if (!env.JWT_SECRET) {
+	throw Error("Mandatory ENV variable JWT_SECRET is missing!");
+}
+
+const JWT_SECRET = new TextEncoder().encode(env.JWT_SECRET);
 const ACCESS_TOKEN_EXPIRES = "15m"; // 15 minutes
 const REFRESH_TOKEN_EXPIRES = "7d"; // 7 days
 
