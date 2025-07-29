@@ -38,6 +38,7 @@ jobs:
           SMTP_PASS: "your-password"
           SMTP_FROM_NAME: "Open Reception"
           SMTP_FROM_EMAIL: "noreply@example.com"
+          JWT_SECRET: "test"
 
       - name: Build application
         run: npm run build
@@ -50,6 +51,7 @@ jobs:
           SMTP_PASS: "your-password"
           SMTP_FROM_NAME: "Open Reception"
           SMTP_FROM_EMAIL: "noreply@example.com"
+          JWT_SECRET: "test"
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
