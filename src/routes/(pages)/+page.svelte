@@ -1,9 +1,8 @@
 <script lang="ts">
+	import { m } from "$i18n/messages.js";
+	import LanguageSwitch from "$lib/components/templates/language-switch.svelte";
 	import { HorizontalPagePadding, PageWithClaim } from "$lib/components/ui/page";
 	import { Headline, Text } from "$lib/components/ui/typography";
-	import { m } from "$i18n/messages.js";
-	import { ComboBox } from "$lib/components/ui/combobox";
-	import { getLocale, setLocale } from "$i18n/runtime.js";
 
 	export let data;
 </script>
@@ -25,21 +24,7 @@
 				{/await}.
 			</Text>
 
-			<ComboBox
-				options={[
-					{ value: "de", label: "Deutsch" },
-					{ value: "en", label: "English" }
-				]}
-				value={getLocale()}
-				onChange={(value) => {
-					setLocale(value as "de" | "en");
-				}}
-				labels={{
-					placeholder: m["i18n.label"](),
-					search: m["i18n.search"](),
-					notFound: m["i18n.notFound"]()
-				}}
-			/>
+			<LanguageSwitch />
 		</HorizontalPagePadding>
 	</main>
 </PageWithClaim>
