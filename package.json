@@ -8,9 +8,9 @@
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
-		"prepare": "svelte-kit sync || echo ''",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"prepare": "svelte-kit sync && npm run i18n:compile || echo ''",
+		"check": "npm run prepare && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "npm run prepare && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint .",
 		"test:unit": "vitest",
@@ -30,12 +30,15 @@
 		"docker:prod:up": "docker compose -f docker-compose.prod.yml up -d",
 		"docker:prod:down": "docker compose -f docker-compose.prod.yml down",
 		"docker:prod:logs": "docker compose -f docker-compose.prod.yml logs -f",
-		"docker:prod:clean": "docker compose -f docker-compose.prod.yml down -v --remove-orphans"
+		"docker:prod:clean": "docker compose -f docker-compose.prod.yml down -v --remove-orphans",
+		"i18n:compile": "npx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/i18n"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.3.0",
 		"@eslint/js": "^9.29.0",
-		"@lucide/svelte": "^0.518.0",
+		"@inlang/paraglide-js": "2.2.0",
+		"@internationalized/date": "^3.8.2",
+		"@lucide/svelte": "^0.515.0",
 		"@playwright/test": "^1.53.1",
 		"@sveltejs/adapter-auto": "^6.0.1",
 		"@sveltejs/kit": "^2.22.0",
@@ -44,9 +47,10 @@
 		"@tailwindcss/vite": "^4.1.10",
 		"@testing-library/jest-dom": "^6.6.3",
 		"@testing-library/svelte": "^5.2.8",
-		"@types/nodemailer": "^6.4.17",
 		"@types/dotenv": "^6.1.1",
 		"@types/node": "^24",
+		"@types/nodemailer": "^6.4.17",
+		"bits-ui": "^2.8.13",
 		"clsx": "^2.1.1",
 		"drizzle-kit": "^0.31.1",
 		"eslint": "^9.29.0",
@@ -82,9 +86,6 @@
 		"postgres": "^3.4.7",
 		"secrets.js-34r7h": "^2.0.2",
 		"winston": "^3.17.0"
-	},
-	"engines": {
-		"node": ">=24.0.0"
 	},
 	"license": "AGPL-3.0"
 }
