@@ -40,18 +40,15 @@
 
 <Popover.Root bind:open>
 	<Popover.Trigger bind:ref={triggerRef}>
-		{#snippet child({ props })}
-			<Button
-				{...props}
-				variant="outline"
-				class="w-[200px] justify-between"
-				role="combobox"
-				aria-expanded={open}
-			>
-				{selectedValue || labels.placeholder}
-				<ChevronsUpDownIcon class="opacity-50" />
-			</Button>
-		{/snippet}
+		<Button
+			variant="outline"
+			class="w-[200px] justify-between"
+			role="combobox"
+			aria-expanded={open}
+		>
+			{selectedValue || labels.placeholder}
+			<ChevronsUpDownIcon class="opacity-50" />
+		</Button>
 	</Popover.Trigger>
 	<Popover.Content class="w-[200px] p-0">
 		<Command.Root>
