@@ -1,0 +1,24 @@
+{{tenant.longName}} - Confirm Registration
+
+Hello,
+
+Thank you for registering with {{tenant.longName}}. To complete your registration, please use the following confirmation code:
+
+========================================
+    YOUR CONFIRMATION CODE: {{confirmationCode}}
+========================================
+
+Enter this code in the confirmation field to complete your registration.
+
+IMPORTANT NOTICE: This code is valid for {{expirationMinutes}} minutes only and can be used only once.
+
+If you did not register with {{tenant.longName}}, you can safely ignore this email.
+
+If you have any questions, please contact our support team.
+
+Best regards
+The {{tenant.longName}} Team
+
+---
+This email was generated automatically. Please do not reply to this email.
+© {{tenant.longName}} - Secure, encrypted, trustworthy

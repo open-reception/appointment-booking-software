@@ -3,7 +3,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // Mock $app/environment for server environment
 vi.mock("$app/environment", () => ({
-	browser: false
+	browser: false,
+	dev: true
 }));
 
 // Mock winston logger
@@ -15,7 +16,7 @@ const mockWinstonLogger = {
 };
 
 // Mock winston module
-vi.mock("./winston", () => ({
+vi.mock("../winston", () => ({
 	default: mockWinstonLogger
 }));
 
@@ -28,7 +29,7 @@ describe("UniversalLogger - Server Side", () => {
 		vi.clearAllMocks();
 
 		// Dynamic import after mocks are set up
-		const loggerModule = await import("./index");
+		const loggerModule = await import("../index");
 		logger = loggerModule.logger;
 		createLogger = loggerModule.createLogger;
 	});
@@ -84,7 +85,7 @@ describe("UniversalLogger - Server Side", () => {
 
 		it("should format messages without context prefix when no context set", async () => {
 			// Create a fresh logger without context
-			const { UniversalLogger } = await import("./index");
+			const { UniversalLogger } = await import("../index");
 			const freshLogger = new UniversalLogger();
 			freshLogger.debug("Processing request", { requestId: "456" });
 
@@ -201,7 +202,7 @@ describe("UniversalLogger - Server Side", () => {
 
 		it("should handle empty meta objects", async () => {
 			// Create a fresh logger without context
-			const { UniversalLogger } = await import("./index");
+			const { UniversalLogger } = await import("../index");
 			const freshLogger = new UniversalLogger();
 			freshLogger.info("Message without meta");
 
@@ -222,7 +223,7 @@ describe("UniversalLogger - Server Side", () => {
 			};
 
 			// Create a fresh logger without context
-			const { UniversalLogger } = await import("./index");
+			const { UniversalLogger } = await import("../index");
 			const freshLogger = new UniversalLogger();
 			freshLogger.info("Test message", meta);
 
@@ -244,7 +245,7 @@ describe("UniversalLogger - Server Side", () => {
 			} as Request;
 
 			// Create a fresh logger without context
-			const { UniversalLogger } = await import("./index");
+			const { UniversalLogger } = await import("../index");
 			const freshLogger = new UniversalLogger();
 			freshLogger.logRequest(mockRequest, 150, 200);
 
@@ -267,7 +268,7 @@ describe("UniversalLogger - Server Side", () => {
 			} as Request;
 
 			// Create a fresh logger without context
-			const { UniversalLogger } = await import("./index");
+			const { UniversalLogger } = await import("../index");
 			const freshLogger = new UniversalLogger();
 			freshLogger.logRequest(mockRequest, 200, 404);
 
@@ -290,7 +291,7 @@ describe("UniversalLogger - Server Side", () => {
 			} as Request;
 
 			// Create a fresh logger without context
-			const { UniversalLogger } = await import("./index");
+			const { UniversalLogger } = await import("../index");
 			const freshLogger = new UniversalLogger();
 			freshLogger.logRequest(mockRequest, 5000, 500);
 
@@ -313,7 +314,7 @@ describe("UniversalLogger - Server Side", () => {
 			} as Request;
 
 			// Create fresh loggers without context
-			const { UniversalLogger } = await import("./index");
+			const { UniversalLogger } = await import("../index");
 			const freshLogger1 = new UniversalLogger();
 			const freshLogger2 = new UniversalLogger();
 

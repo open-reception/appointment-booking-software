@@ -29,11 +29,29 @@ jobs:
 
       - name: Run unit tests
         run: npm run test:unit -- --run
+        env:
+          DATABASE_URL: "postgresql://test:test@localhost:5432/test"
+          SMTP_HOST: "smtp.example.com"
+          SMTP_PORT: "587"
+          SMTP_SECURE: "false"
+          SMTP_USER: "your-email@example.com"
+          SMTP_PASS: "your-password"
+          SMTP_FROM_NAME: "Open Reception"
+          SMTP_FROM_EMAIL: "noreply@example.com"
+          JWT_SECRET: "test"
 
       - name: Build application
         run: npm run build
         env:
           DATABASE_URL: "postgresql://test:test@localhost:5432/test"
+          SMTP_HOST: "smtp.example.com"
+          SMTP_PORT: "587"
+          SMTP_SECURE: "false"
+          SMTP_USER: "your-email@example.com"
+          SMTP_PASS: "your-password"
+          SMTP_FROM_NAME: "Open Reception"
+          SMTP_FROM_EMAIL: "noreply@example.com"
+          JWT_SECRET: "test"
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps

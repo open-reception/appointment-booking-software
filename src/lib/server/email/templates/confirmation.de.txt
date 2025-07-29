@@ -1,0 +1,24 @@
+{{tenant.longName}} - Registrierung bestätigen
+
+Hallo,
+
+vielen Dank für Ihre Registrierung bei {{tenant.longName}}. Um Ihre Registrierung abzuschließen, verwenden Sie bitte den folgenden Bestätigungscode:
+
+========================================
+    IHR BESTÄTIGUNGSCODE: {{confirmationCode}}
+========================================
+
+Geben Sie diesen Code in das Bestätigungsfeld ein, um Ihre Registrierung zu vervollständigen.
+
+WICHTIGER HINWEIS: Dieser Code ist nur für {{expirationMinutes}} Minuten gültig und kann nur einmal verwendet werden.
+
+Falls Sie sich nicht bei {{tenant.longName}} registriert haben, können Sie diese E-Mail ignorieren.
+
+Bei Fragen wenden Sie sich gerne an unser Support-Team.
+
+Mit freundlichen Grüßen
+Das {{tenant.longName}} Team
+
+---
+Diese E-Mail wurde automatisch generiert. Bitte antworten Sie nicht auf diese E-Mail.
+© {{tenant.longName}} - Sicher, verschlüsselt, vertrauenswürdig

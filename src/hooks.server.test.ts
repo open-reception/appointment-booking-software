@@ -1,6 +1,31 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { handle } from "./hooks.server.js";
+import { handle } from "./hooks.server";
+
+// Mock the startup service
+vi.mock("$lib/server/services/startup-service", () => ({
+	StartupService: {
+		initialize: vi.fn(() => Promise.resolve())
+	}
+}));
+
+// Mock auth services
+vi.mock("$lib/server/auth/session-service", () => ({
+	SessionService: {
+		validateSession: vi.fn()
+	}
+}));
+
+vi.mock("$lib/server/auth/jwt-utils", () => ({
+	verifyAccessToken: vi.fn()
+}));
+
+vi.mock("$lib/server/auth/authorization-service", () => ({
+	AuthorizationService: {
+		hasRole: vi.fn(),
+		hasAnyRole: vi.fn()
+	}
+}));
 
 // Mock the Date.now function for rate limiting tests
 const mockDateNow = vi.fn();
@@ -25,41 +50,46 @@ describe("hooks.server", () => {
 
 	describe("rate limiting", () => {
 		const mockResolve = vi.fn();
-		const createEvent = (ip: string = "192.168.1.1", method: string = "GET") => ({
-			url: new URL("http://localhost/api/test"),
-			request: new Request("http://localhost/api/test", {
+		const createEvent = (ip: string = "192.168.1.1", method: string = "GET") => {
+			const request = new Request("http://localhost/api/health", {
 				method,
 				headers: {
 					"x-forwarded-for": ip
 				}
-			}),
-			cookies: {} as any,
-			fetch: {} as any,
-			getClientAddress: () => ip,
-			locals: {},
-			params: {},
-			route: { id: null },
-			setHeaders: vi.fn(),
-			isDataRequest: false,
-			isSubRequest: false,
-			platform: {} as any
-		});
+			});
+
+			return {
+				url: new URL("http://localhost/api/health"),
+				request,
+				cookies: {} as any,
+				fetch: {} as any,
+				getClientAddress: () => ip,
+				locals: {},
+				params: {},
+				route: { id: null },
+				setHeaders: vi.fn(),
+				isDataRequest: false,
+				isSubRequest: false,
+				platform: {} as any
+			};
+		};
 
 		beforeEach(() => {
 			mockResolve.mockResolvedValue(new Response("OK"));
 		});
 
 		it("should allow requests within rate limit", async () => {
-			const event = createEvent();
+			const event = createEvent("192.168.1.100"); // Unique IP for this test
 
 			const response = await handle({ event, resolve: mockResolve });
 
 			expect(response.status).not.toBe(429);
 			expect(mockResolve).toHaveBeenCalled();
+			expect(mockResolve.mock.calls[0][0]).toEqual(event);
 		});
 
 		it("should block requests when rate limit exceeded", async () => {
-			const event = createEvent();
+			const event = createEvent("192.168.1.101"); // Unique IP for this test
 
 			// Make multiple requests to exceed rate limit
 			for (let i = 0; i < 10; i++) {
@@ -74,7 +104,7 @@ describe("hooks.server", () => {
 		});
 
 		it("should reset rate limit after window expires", async () => {
-			const event = createEvent();
+			const event = createEvent("192.168.1.102"); // Unique IP for this test
 
 			// Exceed rate limit
 			for (let i = 0; i < 11; i++) {
@@ -93,7 +123,7 @@ describe("hooks.server", () => {
 	describe("CORS handling", () => {
 		const mockResolve = vi.fn();
 
-		const createCORSEvent = (method: string = "GET", path: string = "/api/test") => ({
+		const createCORSEvent = (method: string = "GET", path: string = "/api/health") => ({
 			url: new URL(`http://localhost${path}`),
 			request: new Request(`http://localhost${path}`, {
 				method,

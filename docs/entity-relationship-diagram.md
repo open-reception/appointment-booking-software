@@ -4,12 +4,32 @@
 
 Please note that this is currently the **unencrypted data model**. Appointments, Notes, Attachments and Answers of course have to be encrypted before being stored in the database.
 
+### Central database
+
 ```mermaid
 erDiagram
-    ADMINS {
+    ADMIN {
         uuid id PK
         string email
-        string password
+        string name
+        timestamp created_at
+        timestamp updated_at
+        timestamp last_login_at
+        boolean is_active
+        boolean confirmed
+        string token "Email confirmation token"
+        timestamp token_valid_until
+    }
+
+    ADMIN_PASSKEY {
+        string id PK "WebAuthn credential ID"
+        uuid admin_id FK
+        string public_key "Base64 encoded"
+        int counter
+        string device_name "MacBook Pro, YubiKey 5, etc."
+        timestamp created_at
+        timestamp updated_at
+        timestamp last_used_at
     }
 
     TENANT {
@@ -17,15 +37,56 @@ erDiagram
         string short_name "Used as subdomain"
         string long_name
         text description "Optional"
-        blob logo "PNG, JPEG, GIF, or WEBP"
-        string brand_color
-        string default_language
-        int max_channels
-        int max_team_members
-        int auto_delete_days "Days after appointment to auto-delete"
-        boolean require_email "Requires clients to enter their e-mail address"
-        boolean require_phone "Requires clients to enter a phone number"
-        boolean url "Requires clients to enter a phone number"
+        bytea logo "PNG, JPEG, GIF, or WEBP"
+        string database_url "Connection string for tenant DB"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    TENANT_CONFIG {
+        uuid id PK
+        uuid tenant_id FK
+        string name "Configuration key"
+        enum type "BOOLEAN, NUMBER, STRING"
+        string value "Configuration value as text"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+
+    ADMIN ||--o{ ADMIN_PASSKEY : "has"
+    TENANT ||--o{ TENANT_CONFIG : "has"
+```
+
+### Tenant-specific database
+
+```mermaid
+erDiagram
+
+    AGENT {
+        uuid id PK
+        string name
+        string description "Optional"
+        blob image "PNG, JPEG, GIF, or WEBP"
+    }
+
+    CHANNEL {
+        uuid id PK
+        string name
+        string color
+        string description "Optional"
+        string language
+        boolean public "A channel may be only bookable with Code or internally if this is false"
+        boolean require_confirmation "Must appointments be explicitly confirmed"
+    }
+
+    SLOT_TEMPLATE {
+        uuid id PK
+        string name "Slot template name"
+        from time "Start time"
+        to time "End time"
+        duration integer "Slot length in minutes"
+        weekdays integer "7-bit representation of the selected weekdays"
     }
 
     CLIENT {
@@ -45,22 +106,6 @@ erDiagram
         string name "Optional"
         string email
         string language
-    }
-
-    TEAM {
-        uuid id PK
-        string name
-        string description "Optional"
-        blob image "PNG, JPEG, GIF, or WEBP"
-    }
-
-    CHANNEL {
-        uuid id PK
-        string name
-        string description "Optional"
-        boolean public "A channel may be only bookable with Code or internally"
-        boolean require_confirmation "Must appointments be explicitly confirmed"
-        any slot_creation "am Wochentag XY von bis, länge; davon mehrere"
     }
 
     SLOT {
@@ -135,7 +180,7 @@ erDiagram
     CLIENT ||--o{ APPOINTMENT : "has"
     CHANNEL ||--o{ APPOINTMENT : "assigned_to"
     CHANNEL ||--o{ QUESTIONNAIRE : "has"
-    CHANNEL }o--o{ TEAM : "associated"
+    CHANNEL }o--o{ AGENT : "associated"
     APPOINTMENT ||--o{ NOTE : "contains"
     APPOINTMENT ||--o{ ATTACHMENT : "contains"
     QUESTIONNAIRE ||--o{ QUESTIONNAIRE_QUESTION : "contains"
@@ -148,53 +193,69 @@ erDiagram
 ## Database Architecture Notes
 
 - **Multi-tenancy**: Each tenant operates with a separate database instance
+- **Central vs. Tenant Databases**:
+  - Central database contains: `ADMIN`, `ADMIN_PASSKEY`, `TENANT`, `TENANT_CONFIG`
+  - Tenant-specific databases contain: `CLIENT`, `STAFF`, `CHANNEL`, `APPOINTMENT`, etc.
 - **No explicit tenant references**: Since each tenant has its own database, foreign key relationships don't need to reference the tenant
 - **Encryption**: The system uses end-to-end encryption with public/private key pairs for clients and staff
 - **Hash-based identification**: Both clients and staff are identified by hash keys derived from their credentials
+- **WebAuthn Authentication**: Admins use WebAuthn passkeys for secure authentication
 - **Flexible appointments**: Appointments support multiple notes and attachments for comprehensive record keeping
 
 ## Entity Descriptions
 
-### TENANT
+### ADMIN (Central Database)
 
-Central configuration entity (exists in a separate management database, not in tenant-specific databases)
+System administrators who manage the platform and tenants. Uses WebAuthn for secure authentication.
 
-### CLIENT
+### ADMIN_PASSKEY (Central Database)
+
+WebAuthn credentials for admin authentication. Each admin can have multiple passkeys (different devices).
+
+### TENANT (Central Database)
+
+Central configuration entity for each tenant organization. Contains database connection information for tenant isolation.
+
+### TENANT_CONFIG (Central Database)
+
+Flexible configuration system for tenant-specific settings. Each tenant can have multiple typed configuration entries.
+
+### CLIENT (Tenant Database)
 
 End-to-end encrypted client records with optional email for notifications
 
-### STAFF
+### STAFF (Tenant Database)
 
 Practice staff members with minimal required information for privacy
 
-### CHANNEL
+### CHANNEL (Tenant Database)
 
 Represents bookable resources such as rooms, machines, or personnel that appointments can be scheduled for
 
-### APPOINTMENT
+### APPOINTMENT (Tenant Database)
 
 Core booking entity with flexible status management and expiry handling, now linked to specific channels
 
-### NOTE
+### NOTE (Tenant Database)
 
 Text-based annotations attached to appointments
 
-### ATTACHMENT
+### ATTACHMENT (Tenant Database)
 
 File attachments (documents, images, etc.) associated with appointments
 
-### QUESTIONNAIRE
+### QUESTIONNAIRE (Tenant Database)
 
 Collection of questions associated with a specific channel, can be activated/deactivated
 
-### QUESTION
+### QUESTION (Tenant Database)
 
 Individual questions that can be reused across multiple questionnaires, supporting different answer types
 
-### QUESTIONNAIRE_QUESTION
+### QUESTIONNAIRE_QUESTION (Tenant Database)
 
 Junction table linking questionnaires to questions with ordering information
 
-### QUESTIONNAIRE_ANSWER
+### QUESTIONNAIRE_ANSWER (Tenant Database)
 
 Stores answers provided by clients for specific appointments and questionnaires

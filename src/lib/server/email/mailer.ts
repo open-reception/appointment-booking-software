@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import { env } from "$env/dynamic/private";
-import type { SelectClient, SelectStaff } from "$lib/server/db/schema";
+import type { SelectClient, SelectStaff } from "$lib/server/db/tenant-schema";
 import type Mail from "nodemailer/lib/mailer";
 
 /**
@@ -22,14 +22,30 @@ export interface EmailRecipient {
  * @returns {EmailRecipient} Email recipient object
  * @throws {Error} When user has no email address
  */
-export function createEmailRecipient(user: SelectClient | SelectStaff): EmailRecipient {
-	if ("name" in user) {
+export function createEmailRecipient(
+	user:
+		| SelectClient
+		| SelectStaff
+		| { id: string; email: string | null; name: string | null; language?: string | null }
+): EmailRecipient {
+	// Handle SelectUser type (from central schema)
+	if ("email" in user && !("publicKey" in user)) {
+		return {
+			email: user.email || "",
+			name: user.name || undefined,
+			language: user.language || "de" // Use user's language preference
+		};
+	}
+	// Handle SelectStaff type (has name property)
+	else if ("name" in user) {
 		return {
 			email: user.email,
 			name: user.name || undefined,
 			language: user.language || "de"
 		};
-	} else {
+	}
+	// Handle SelectClient type (no name property)
+	else {
 		return {
 			email: user.email || "", // Client email is optional
 			name: undefined, // Clients don't have names for privacy
@@ -48,16 +64,16 @@ function createTransporter() {
 	if (!env.SMTP_HOST || !env.SMTP_PORT || !env.SMTP_USER || !env.SMTP_PASS) {
 		throw new Error("SMTP configuration is incomplete. Please check your environment variables.");
 	}
-
-	return nodemailer.createTransport({
+	const config = {
 		host: env.SMTP_HOST,
 		port: parseInt(env.SMTP_PORT),
-		secure: env.SMTP_SECURE === "true", // true for 465, false for other ports
+		secure: env.SMTP_SECURE === "true",
 		auth: {
 			user: env.SMTP_USER,
 			pass: env.SMTP_PASS
 		}
-	});
+	};
+	return nodemailer.createTransport(config);
 }
 
 /**

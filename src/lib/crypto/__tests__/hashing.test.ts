@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { OptimizedArgon2 } from "./hashing";
-import type { Argon2Options } from "./hashing";
+import { OptimizedArgon2 } from "../hashing";
+import type { Argon2Options } from "../hashing";
 
 // Mock the logger
 vi.mock("$lib/logger", () => ({
