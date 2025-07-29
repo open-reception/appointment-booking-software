@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { HorizontalPagePadding, PageWithClaim } from "$lib/components/ui/page";
 	import { Headline, Text } from "$lib/components/ui/typography";
-	import { toggleMode } from "mode-watcher";
 	import { m } from "$i18n/messages.js";
 	import { ComboBox } from "$lib/components/ui/combobox";
 	import { getLocale, setLocale } from "$i18n/runtime.js";
@@ -25,7 +24,7 @@
 					{isEnvOk ? "OK" : "NOT OK"}
 				{/await}.
 			</Text>
-			<button onclick={toggleMode}>Toggle Mode</button>
+
 			<ComboBox
 				options={[
 					{ value: "de", label: "Deutsch" },
@@ -37,6 +36,7 @@
 				}}
 				labels={{
 					placeholder: m["i18n.label"](),
+					search: m["i18n.search"](),
 					notFound: m["i18n.notFound"]()
 				}}
 			/>

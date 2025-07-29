@@ -15,6 +15,7 @@
 	}: {
 		labels: {
 			placeholder: string;
+			search: string;
 			notFound: string;
 		};
 		value: string;
@@ -52,7 +53,7 @@
 	</Popover.Trigger>
 	<Popover.Content class="w-[200px] p-0">
 		<Command.Root>
-			<!-- <Command.Input placeholder={labels.search} /> -->
+			<Command.Input placeholder={labels.search} />
 			<Command.List>
 				<Command.Empty>{labels.notFound}</Command.Empty>
 				<Command.Group>
