@@ -6,5 +6,10 @@
 		"label": "Sprache wählen",
 		"search": "Sprache suchen",
 		"notFound": "Sprache nicht gefunden"
-	}
+	},
+	"setup": {
+		"start": "Konfiguration starten"
+	},
+	"slogan": "Ende zu Ende verschlüsselte Platform für Termine.",
+	"logo": "OpenReception Logo: Ein 3D-Pixel-Art mit Kalender, der auch ein Schloss ist"
 }

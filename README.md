@@ -2,6 +2,14 @@
 
 End-to-end encrypted appointment booking platform
 
+## Local development
+
+- `npm install`
+- `npm run docker:dev:up`
+- `npm run db:migrate`
+- `npm run db:push`
+- `npm run dev`
+
 ## Funding
 
 This project is funded by:
