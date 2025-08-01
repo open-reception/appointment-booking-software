@@ -6,5 +6,10 @@
 		"label": "Select Language",
 		"search": "Search Language",
 		"notFound": "Language not found"
-	}
+	},
+	"setup": {
+		"start": "Start configuration"
+	},
+	"slogan": "End-to-End encrypted appointment booking platform.",
+	"logo": "OpenReception Logo: A 3D pixel art with calendar that's also a lock"
 }

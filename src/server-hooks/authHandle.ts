@@ -37,6 +37,10 @@ export const authHandle: Handle = async ({ event, resolve }) => {
 	const { url, request } = event;
 	const path = url.pathname;
 
+	if (!path.startsWith("/api")) {
+		return resolve(event);
+	}
+
 	const isProtectedPath = PROTECTED_PATHS.some((protectedPath) => path.startsWith(protectedPath));
 	const isPublicPath = PUBLIC_PATHS.some((publicPath) => path.startsWith(publicPath));
 	const isProtectedAuthPath = PROTECTED_AUTH_PATHS.some((authPath) => path.startsWith(authPath));
