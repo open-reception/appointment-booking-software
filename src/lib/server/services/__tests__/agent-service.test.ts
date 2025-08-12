@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ValidationError, NotFoundError } from "../../utils/errors";
+import { ValidationError, NotFoundError, ConflictError } from "../../utils/errors";
 
 // Mock dependencies before imports
 vi.mock("../../db", () => ({
@@ -18,7 +18,7 @@ vi.mock("$lib/logger", () => ({
 }));
 
 // Import after mocking
-import { AgentService } from "../agent-service";
+import { AgentService, type AbsenceCreationRequest } from "../agent-service";
 import { getTenantDb } from "../../db";
 
 // Mock database operations
@@ -486,6 +486,356 @@ describe("AgentService", () => {
 			await expect(service.removeAgentFromChannel("agent-123", "channel-123")).rejects.toThrow(
 				"DB error"
 			);
+		});
+	});
+
+	describe("Absence Management", () => {
+		let service: AgentService;
+		const mockAbsence = {
+			id: "absence-123",
+			agentId: "agent-123",
+			startDate: "2024-01-01T08:00:00.000Z",
+			endDate: "2024-01-01T17:00:00.000Z",
+			absenceType: "Urlaub",
+			description: "Annual vacation",
+			isFullDay: true
+		};
+
+		beforeEach(async () => {
+			service = await AgentService.forTenant("tenant-123");
+		});
+
+		describe("createAbsence", () => {
+			it("should create absence successfully", async () => {
+				const request: AbsenceCreationRequest = {
+					agentId: "123e4567-e89b-12d3-a456-426614174001",
+					startDate: "2024-01-01T08:00:00.000Z",
+					endDate: "2024-01-01T17:00:00.000Z",
+					absenceType: "Urlaub",
+					description: "Annual vacation",
+					isFullDay: true
+				};
+
+				// Mock agent exists
+				const selectChainForAgent = {
+					from: vi.fn(() => ({
+						where: vi.fn(() => ({
+							limit: vi.fn().mockResolvedValue([mockAgent])
+						}))
+					}))
+				};
+
+				// Mock no overlapping absences
+				const selectChainForOverlap = {
+					from: vi.fn(() => ({
+						where: vi.fn().mockResolvedValue([])
+					}))
+				};
+
+				let selectCallCount = 0;
+				mockDb.select.mockImplementation(() => {
+					selectCallCount++;
+					return selectCallCount === 1 ? selectChainForAgent : selectChainForOverlap;
+				});
+
+				const insertChain = {
+					values: vi.fn(() => ({
+						returning: vi.fn().mockResolvedValue([mockAbsence])
+					}))
+				};
+				mockDb.insert.mockReturnValue(insertChain);
+
+				const result = await service.createAbsence(request);
+
+				expect(result).toEqual(mockAbsence);
+				expect(insertChain.values).toHaveBeenCalledWith({
+					agentId: request.agentId,
+					startDate: new Date(request.startDate),
+					endDate: new Date(request.endDate),
+					absenceType: request.absenceType,
+					description: request.description,
+					isFullDay: request.isFullDay
+				});
+			});
+
+			it("should validate absence creation request", async () => {
+				const invalidRequest = {
+					agentId: "invalid-uuid",
+					startDate: "invalid-date",
+					endDate: "2024-01-01T17:00:00.000Z",
+					absenceType: "",
+					isFullDay: true
+				};
+
+				await expect(service.createAbsence(invalidRequest as AbsenceCreationRequest)).rejects.toThrow(ValidationError);
+			});
+
+			it("should validate date range", async () => {
+				const request: AbsenceCreationRequest = {
+					agentId: "agent-123",
+					startDate: "2024-01-01T17:00:00.000Z", // End before start
+					endDate: "2024-01-01T08:00:00.000Z",
+					absenceType: "Urlaub",
+					isFullDay: true
+				};
+
+				await expect(service.createAbsence(request)).rejects.toThrow(ValidationError);
+			});
+
+			it("should throw NotFoundError if agent does not exist", async () => {
+				const request: AbsenceCreationRequest = {
+					agentId: "123e4567-e89b-12d3-a456-426614174099", // Valid UUID format
+					startDate: "2024-01-01T08:00:00.000Z",
+					endDate: "2024-01-01T17:00:00.000Z",
+					absenceType: "Urlaub",
+					isFullDay: true
+				};
+
+				const selectChain = {
+					from: vi.fn(() => ({
+						where: vi.fn(() => ({
+							limit: vi.fn().mockResolvedValue([])
+						}))
+					}))
+				};
+				mockDb.select.mockReturnValue(selectChain);
+
+				await expect(service.createAbsence(request)).rejects.toThrow(NotFoundError);
+			});
+
+			it("should throw ConflictError if absence period overlaps", async () => {
+				const request: AbsenceCreationRequest = {
+					agentId: "123e4567-e89b-12d3-a456-426614174001",
+					startDate: "2024-01-01T08:00:00.000Z",
+					endDate: "2024-01-01T17:00:00.000Z",
+					absenceType: "Urlaub",
+					isFullDay: true
+				};
+
+				// Mock agent exists
+				const selectChainForAgent = {
+					from: vi.fn(() => ({
+						where: vi.fn(() => ({
+							limit: vi.fn().mockResolvedValue([mockAgent])
+						}))
+					}))
+				};
+
+				// Mock overlapping absence exists
+				const selectChainForOverlap = {
+					from: vi.fn(() => ({
+						where: vi.fn().mockResolvedValue([mockAbsence])
+					}))
+				};
+
+				let selectCallCount = 0;
+				mockDb.select.mockImplementation(() => {
+					selectCallCount++;
+					return selectCallCount === 1 ? selectChainForAgent : selectChainForOverlap;
+				});
+
+				await expect(service.createAbsence(request)).rejects.toThrow(ConflictError);
+			});
+		});
+
+		describe("getAbsenceById", () => {
+			it("should return absence when found", async () => {
+				const selectChain = {
+					from: vi.fn(() => ({
+						where: vi.fn(() => ({
+							limit: vi.fn().mockResolvedValue([mockAbsence])
+						}))
+					}))
+				};
+				mockDb.select.mockReturnValue(selectChain);
+
+				const result = await service.getAbsenceById("absence-123");
+
+				expect(result).toEqual(mockAbsence);
+			});
+
+			it("should return null when absence not found", async () => {
+				const selectChain = {
+					from: vi.fn(() => ({
+						where: vi.fn(() => ({
+							limit: vi.fn().mockResolvedValue([])
+						}))
+					}))
+				};
+				mockDb.select.mockReturnValue(selectChain);
+
+				const result = await service.getAbsenceById("non-existent");
+
+				expect(result).toBeNull();
+			});
+		});
+
+		describe("getAgentAbsences", () => {
+			it("should return agent absences", async () => {
+				const selectChain = {
+					from: vi.fn(() => ({
+						where: vi.fn(() => ({
+							orderBy: vi.fn().mockResolvedValue([mockAbsence])
+						}))
+					}))
+				};
+				mockDb.select.mockReturnValue(selectChain);
+
+				const result = await service.getAgentAbsences("agent-123");
+
+				expect(result).toEqual([mockAbsence]);
+			});
+
+			it("should filter by date range when provided", async () => {
+				// Mock the queryAbsences method behavior
+				const selectChain = {
+					from: vi.fn(() => ({
+						where: vi.fn(() => ({
+							orderBy: vi.fn().mockResolvedValue([mockAbsence])
+						}))
+					}))
+				};
+				mockDb.select.mockReturnValue(selectChain);
+
+				const result = await service.getAgentAbsences("123e4567-e89b-12d3-a456-426614174001", "2024-01-01T00:00:00.000Z", "2024-01-31T23:59:59.999Z");
+
+				expect(result).toEqual([mockAbsence]);
+			});
+		});
+
+		describe("updateAbsence", () => {
+			it("should update absence successfully", async () => {
+				const updateData = {
+					absenceType: "Krankheit",
+					description: "Sick leave"
+				};
+
+				// Mock current absence exists
+				const selectChain = {
+					from: vi.fn(() => ({
+						where: vi.fn(() => ({
+							limit: vi.fn().mockResolvedValue([mockAbsence])
+						}))
+					}))
+				};
+				mockDb.select.mockReturnValue(selectChain);
+
+				const updateChain = {
+					set: vi.fn(() => ({
+						where: vi.fn(() => ({
+							returning: vi.fn().mockResolvedValue([{ ...mockAbsence, ...updateData }])
+						}))
+					}))
+				};
+				mockDb.update.mockReturnValue(updateChain);
+
+				const result = await service.updateAbsence("absence-123", updateData);
+
+				expect(result.absenceType).toBe(updateData.absenceType);
+				expect(result.description).toBe(updateData.description);
+			});
+
+			it("should validate update request", async () => {
+				const invalidUpdate = {
+					absenceType: "", // Invalid empty type
+					startDate: "invalid-date"
+				};
+
+				await expect(service.updateAbsence("absence-123", invalidUpdate)).rejects.toThrow(ValidationError);
+			});
+
+			it("should throw NotFoundError if absence does not exist", async () => {
+				const updateData = { absenceType: "Krankheit" };
+
+				const selectChain = {
+					from: vi.fn(() => ({
+						where: vi.fn(() => ({
+							limit: vi.fn().mockResolvedValue([])
+						}))
+					}))
+				};
+				mockDb.select.mockReturnValue(selectChain);
+
+				await expect(service.updateAbsence("non-existent", updateData)).rejects.toThrow(NotFoundError);
+			});
+
+			it("should validate new date range", async () => {
+				const updateData = {
+					startDate: "2024-01-01T17:00:00.000Z", // End before start
+					endDate: "2024-01-01T08:00:00.000Z"
+				};
+
+				const selectChain = {
+					from: vi.fn(() => ({
+						where: vi.fn(() => ({
+							limit: vi.fn().mockResolvedValue([mockAbsence])
+						}))
+					}))
+				};
+				mockDb.select.mockReturnValue(selectChain);
+
+				await expect(service.updateAbsence("absence-123", updateData)).rejects.toThrow(ValidationError);
+			});
+		});
+
+		describe("deleteAbsence", () => {
+			it("should delete absence successfully", async () => {
+				const deleteChain = {
+					where: vi.fn(() => ({
+						returning: vi.fn().mockResolvedValue([mockAbsence])
+					}))
+				};
+				mockDb.delete.mockReturnValue(deleteChain);
+
+				const result = await service.deleteAbsence("absence-123");
+
+				expect(result).toBe(true);
+			});
+
+			it("should return false if absence not found", async () => {
+				const deleteChain = {
+					where: vi.fn(() => ({
+						returning: vi.fn().mockResolvedValue([])
+					}))
+				};
+				mockDb.delete.mockReturnValue(deleteChain);
+
+				const result = await service.deleteAbsence("non-existent");
+
+				expect(result).toBe(false);
+			});
+		});
+
+		describe("queryAbsences", () => {
+			it("should validate query request", async () => {
+				const invalidQuery = {
+					startDate: "invalid-date",
+					endDate: "2024-01-31T23:59:59.999Z"
+				};
+
+				await expect(service.queryAbsences(invalidQuery as any)).rejects.toThrow(ValidationError);
+			});
+
+			it("should query absences with date range", async () => {
+				const validQuery = {
+					startDate: "2024-01-01T00:00:00.000Z",
+					endDate: "2024-01-31T23:59:59.999Z",
+					agentId: "123e4567-e89b-12d3-a456-426614174001"
+				};
+
+				const selectChain = {
+					from: vi.fn(() => ({
+						where: vi.fn(() => ({
+							orderBy: vi.fn().mockResolvedValue([mockAbsence])
+						}))
+					}))
+				};
+				mockDb.select.mockReturnValue(selectChain);
+
+				const result = await service.queryAbsences(validQuery);
+
+				expect(result).toEqual([mockAbsence]);
+			});
 		});
 	});
 });
