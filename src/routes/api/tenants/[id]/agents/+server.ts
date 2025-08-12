@@ -122,7 +122,7 @@ registerOpenAPIRoute("/tenants/{id}/agents", "POST", {
 registerOpenAPIRoute("/tenants/{id}/agents", "GET", {
 	summary: "List all agents",
 	description:
-		"Retrieves all agents for a specific tenant. Only global admins and tenant admins can view agents.",
+		"Retrieves all agents for a specific tenant. Global admins, tenant admins, and staff can view agents.",
 	tags: ["Agents"],
 	parameters: [
 		{
@@ -273,11 +273,14 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 			return json({ error: "No tenant id given" }, { status: 400 });
 		}
 
-		// Authorization check: Only global admins and tenant admins can view agents
+		// Authorization check: Global admins, tenant admins, and staff can view agents
 		if (locals.user.role === "GLOBAL_ADMIN") {
 			// Global admin can view agents for any tenant
-		} else if (locals.user.role === "TENANT_ADMIN" && locals.user.tenantId === tenantId) {
-			// Tenant admin can view agents for their own tenant
+		} else if (
+			(locals.user.role === "TENANT_ADMIN" || locals.user.role === "STAFF") &&
+			locals.user.tenantId === tenantId
+		) {
+			// Tenant admin and staff can view agents for their own tenant
 		} else {
 			return json({ error: "Insufficient permissions" }, { status: 403 });
 		}

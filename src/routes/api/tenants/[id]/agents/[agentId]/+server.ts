@@ -9,7 +9,7 @@ import logger from "$lib/logger";
 registerOpenAPIRoute("/tenants/{id}/agents/{agentId}", "GET", {
 	summary: "Get agent details",
 	description:
-		"Retrieves detailed information about a specific agent. Only global admins and tenant admins can view agent details.",
+		"Retrieves detailed information about a specific agent. Global admins, tenant admins, and staff can view agent details.",
 	tags: ["Agents"],
 	parameters: [
 		{
@@ -296,8 +296,11 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 		// Authorization check: Only global admins and tenant admins can view agent details
 		if (locals.user.role === "GLOBAL_ADMIN") {
 			// Global admin can view agents for any tenant
-		} else if (locals.user.role === "TENANT_ADMIN" && locals.user.tenantId === tenantId) {
-			// Tenant admin can view agents for their own tenant
+		} else if (
+			["TENANT_ADMIN", "STAFF"].includes(locals.user.role as string) &&
+			locals.user.tenantId === tenantId
+		) {
+			// Tenant admin and staff can view agents for their own tenant
 		} else {
 			return json({ error: "Insufficient permissions" }, { status: 403 });
 		}
