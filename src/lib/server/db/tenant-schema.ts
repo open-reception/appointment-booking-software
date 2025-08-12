@@ -8,7 +8,8 @@ import {
 	pgEnum,
 	time,
 	integer,
-	json
+	json,
+	timestamp
 } from "drizzle-orm/pg-core";
 import { bytea } from "./base";
 
@@ -199,6 +200,31 @@ export const appointment = pgTable("appointment", {
 });
 
 /**
+ * Agent Absence table - represents periods when agents are unavailable
+ * Used to block agent availability during vacation, training, meetings, etc.
+ * Stored in tenant-specific database
+ * @table agentAbsence
+ */
+export const agentAbsence = pgTable("agent_absence", {
+	/** Primary key - unique identifier */
+	id: uuid("id").primaryKey().defaultRandom(),
+	/** Foreign key to agent who is absent */
+	agentId: uuid("agent_id")
+		.notNull()
+		.references(() => agent.id),
+	/** Start date and time of absence */
+	startDate: timestamp("start_date").notNull(),
+	/** End date and time of absence */
+	endDate: timestamp("end_date").notNull(),
+	/** Type of absence (free text: Urlaub, Krankheit, Fortbildung, etc.) */
+	absenceType: text("absence_type").notNull(),
+	/** Optional description/reason for absence */
+	description: text("description"),
+	/** Whether this is a full day absence or specific time period */
+	isFullDay: boolean("is_full_day").notNull().default(true)
+});
+
+/**
  * TypeScript type exports for use in application code
  * These types represent the shape of data when queried from the database
  */
@@ -226,3 +252,6 @@ export type SelectChannelAgent = InferSelectModel<typeof channelAgent>;
 
 /** Channel-SlotTemplate junction record type for database queries */
 export type SelectChannelSlotTemplate = InferSelectModel<typeof channelSlotTemplate>;
+
+/** Agent absence record type for database queries */
+export type SelectAgentAbsence = InferSelectModel<typeof agentAbsence>;
