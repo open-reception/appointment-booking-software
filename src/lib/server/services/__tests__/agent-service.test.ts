@@ -567,7 +567,9 @@ describe("AgentService", () => {
 					isFullDay: true
 				};
 
-				await expect(service.createAbsence(invalidRequest as AbsenceCreationRequest)).rejects.toThrow(ValidationError);
+				await expect(
+					service.createAbsence(invalidRequest as AbsenceCreationRequest)
+				).rejects.toThrow(ValidationError);
 			});
 
 			it("should validate date range", async () => {
@@ -697,7 +699,11 @@ describe("AgentService", () => {
 				};
 				mockDb.select.mockReturnValue(selectChain);
 
-				const result = await service.getAgentAbsences("123e4567-e89b-12d3-a456-426614174001", "2024-01-01T00:00:00.000Z", "2024-01-31T23:59:59.999Z");
+				const result = await service.getAgentAbsences(
+					"123e4567-e89b-12d3-a456-426614174001",
+					"2024-01-01T00:00:00.000Z",
+					"2024-01-31T23:59:59.999Z"
+				);
 
 				expect(result).toEqual([mockAbsence]);
 			});
@@ -741,7 +747,9 @@ describe("AgentService", () => {
 					startDate: "invalid-date"
 				};
 
-				await expect(service.updateAbsence("absence-123", invalidUpdate)).rejects.toThrow(ValidationError);
+				await expect(service.updateAbsence("absence-123", invalidUpdate)).rejects.toThrow(
+					ValidationError
+				);
 			});
 
 			it("should throw NotFoundError if absence does not exist", async () => {
@@ -756,7 +764,9 @@ describe("AgentService", () => {
 				};
 				mockDb.select.mockReturnValue(selectChain);
 
-				await expect(service.updateAbsence("non-existent", updateData)).rejects.toThrow(NotFoundError);
+				await expect(service.updateAbsence("non-existent", updateData)).rejects.toThrow(
+					NotFoundError
+				);
 			});
 
 			it("should validate new date range", async () => {
@@ -774,7 +784,9 @@ describe("AgentService", () => {
 				};
 				mockDb.select.mockReturnValue(selectChain);
 
-				await expect(service.updateAbsence("absence-123", updateData)).rejects.toThrow(ValidationError);
+				await expect(service.updateAbsence("absence-123", updateData)).rejects.toThrow(
+					ValidationError
+				);
 			});
 		});
 

@@ -35,10 +35,10 @@ function setupDbMocks(responses: {
 	channelAgents: any[];
 }) {
 	let queryCallIndex = 0;
-	
+
 	(mockDb.select as any).mockImplementation(() => {
 		queryCallIndex++;
-		
+
 		// Query 1: Channels - simple select with where
 		if (queryCallIndex === 1) {
 			return {
@@ -47,7 +47,7 @@ function setupDbMocks(responses: {
 				}))
 			};
 		}
-		
+
 		// Query 2: Slot Templates - select with innerJoin
 		if (queryCallIndex === 2) {
 			return {
@@ -56,7 +56,7 @@ function setupDbMocks(responses: {
 				}))
 			};
 		}
-		
+
 		// Query 3: Appointments - select with where (complex conditions)
 		if (queryCallIndex === 3) {
 			return {
@@ -65,7 +65,7 @@ function setupDbMocks(responses: {
 				}))
 			};
 		}
-		
+
 		// Query 4: Absences - select with where (complex date conditions)
 		if (queryCallIndex === 4) {
 			return {
@@ -74,7 +74,7 @@ function setupDbMocks(responses: {
 				}))
 			};
 		}
-		
+
 		// Query 5: Channel Agents - select with innerJoin
 		if (queryCallIndex === 5) {
 			return {
@@ -83,7 +83,7 @@ function setupDbMocks(responses: {
 				}))
 			};
 		}
-		
+
 		// Default fallback
 		return {
 			from: vi.fn(() => ({
@@ -116,7 +116,9 @@ describe("ScheduleService", () => {
 		it("should throw error if database connection fails", async () => {
 			(getTenantDb as any).mockRejectedValue(new Error("Database connection failed"));
 
-			await expect(ScheduleService.forTenant(mockTenantId)).rejects.toThrow("Database connection failed");
+			await expect(ScheduleService.forTenant(mockTenantId)).rejects.toThrow(
+				"Database connection failed"
+			);
 		});
 	});
 
@@ -134,7 +136,9 @@ describe("ScheduleService", () => {
 				tenantId: "invalid-uuid"
 			};
 
-			await expect(service.getSchedule(invalidRequest as ScheduleRequest)).rejects.toThrow(ValidationError);
+			await expect(service.getSchedule(invalidRequest as ScheduleRequest)).rejects.toThrow(
+				ValidationError
+			);
 		});
 
 		it("should generate schedule for valid date range", async () => {
@@ -312,16 +316,18 @@ describe("ScheduleService", () => {
 				tenantId: mockTenantId
 			};
 
-			const mockChannels = [{
-				id: "channel1",
-				names: ["Test Channel"],
-				pause: false,
-				descriptions: ["Test Description"],
-				languages: ["de"],
-				isPublic: true,
-				requiresConfirmation: false,
-				color: "#ff0000"
-			}];
+			const mockChannels = [
+				{
+					id: "channel1",
+					names: ["Test Channel"],
+					pause: false,
+					descriptions: ["Test Description"],
+					languages: ["de"],
+					isPublic: true,
+					requiresConfirmation: false,
+					color: "#ff0000"
+				}
+			];
 
 			const mockSlotTemplates = [
 				{
@@ -346,15 +352,17 @@ describe("ScheduleService", () => {
 				}
 			];
 
-			const mockChannelAgents = [{
-				channelId: "channel1",
-				agent: {
-					id: "agent1",
-					name: "Test Agent",
-					description: null,
-					logo: null
+			const mockChannelAgents = [
+				{
+					channelId: "channel1",
+					agent: {
+						id: "agent1",
+						name: "Test Agent",
+						description: null,
+						logo: null
+					}
 				}
-			}];
+			];
 
 			// Setup mock database responses
 			setupDbMocks({
@@ -380,48 +388,56 @@ describe("ScheduleService", () => {
 				tenantId: mockTenantId
 			};
 
-			const mockChannels = [{
-				id: "channel1", 
-				names: ["Test"], 
-				pause: false, 
-				descriptions: ["Test"], 
-				languages: ["de"], 
-				isPublic: true, 
-				requiresConfirmation: false, 
-				color: null
-			}];
+			const mockChannels = [
+				{
+					id: "channel1",
+					names: ["Test"],
+					pause: false,
+					descriptions: ["Test"],
+					languages: ["de"],
+					isPublic: true,
+					requiresConfirmation: false,
+					color: null
+				}
+			];
 
-			const mockSlotTemplates = [{ 
-				slotTemplate: { 
-					id: "template1", 
-					weekdays: 1, // Monday (2^(1-1) = 1)
-					from: "09:00", 
-					to: "11:00", 
-					duration: 60 
-				}, 
-				channelId: "channel1" 
-			}];
+			const mockSlotTemplates = [
+				{
+					slotTemplate: {
+						id: "template1",
+						weekdays: 1, // Monday (2^(1-1) = 1)
+						from: "09:00",
+						to: "11:00",
+						duration: 60
+					},
+					channelId: "channel1"
+				}
+			];
 
-			const mockAppointments = [{
-				id: "appointment1",
-				clientId: "client1",
-				channelId: "channel1",
-				appointmentDate: "2024-01-01T08:00:00.000Z", // UTC time for 09:00 local time (Berlin UTC+1)
-				expiryDate: "2024-01-01",
-				title: "Test Appointment",
-				description: null,
-				status: "NEW"
-			}];
+			const mockAppointments = [
+				{
+					id: "appointment1",
+					clientId: "client1",
+					channelId: "channel1",
+					appointmentDate: "2024-01-01T08:00:00.000Z", // UTC time for 09:00 local time (Berlin UTC+1)
+					expiryDate: "2024-01-01",
+					title: "Test Appointment",
+					description: null,
+					status: "NEW"
+				}
+			];
 
-			const mockChannelAgents = [{ 
-				channelId: "channel1", 
-				agent: { 
-					id: "agent1", 
-					name: "Agent", 
-					description: null, 
-					logo: null 
-				} 
-			}];
+			const mockChannelAgents = [
+				{
+					channelId: "channel1",
+					agent: {
+						id: "agent1",
+						name: "Agent",
+						description: null,
+						logo: null
+					}
+				}
+			];
 
 			// Setup mock database responses
 			setupDbMocks({
@@ -447,27 +463,31 @@ describe("ScheduleService", () => {
 				tenantId: mockTenantId
 			};
 
-			const mockChannels = [{
-				id: "channel1",
-				names: ["Test Channel"],
-				pause: false,
-				descriptions: ["Test Description"],
-				languages: ["de"],
-				isPublic: true,
-				requiresConfirmation: false,
-				color: "#ff0000"
-			}];
+			const mockChannels = [
+				{
+					id: "channel1",
+					names: ["Test Channel"],
+					pause: false,
+					descriptions: ["Test Description"],
+					languages: ["de"],
+					isPublic: true,
+					requiresConfirmation: false,
+					color: "#ff0000"
+				}
+			];
 
-			const mockSlotTemplates = [{
-				slotTemplate: {
-					id: "template1",
-					weekdays: 1, // Monday (2^(1-1) = 1)
-					from: "09:00",
-					to: "17:00",
-					duration: 60
-				},
-				channelId: "channel1"
-			}];
+			const mockSlotTemplates = [
+				{
+					slotTemplate: {
+						id: "template1",
+						weekdays: 1, // Monday (2^(1-1) = 1)
+						from: "09:00",
+						to: "17:00",
+						duration: 60
+					},
+					channelId: "channel1"
+				}
+			];
 
 			// Two existing appointments: 10:00-11:00 and 14:00-15:00
 			const mockAppointments = [
@@ -493,15 +513,17 @@ describe("ScheduleService", () => {
 				}
 			];
 
-			const mockChannelAgents = [{
-				channelId: "channel1",
-				agent: {
-					id: "agent1",
-					name: "Test Agent",
-					description: "Test Description",
-					logo: null
+			const mockChannelAgents = [
+				{
+					channelId: "channel1",
+					agent: {
+						id: "agent1",
+						name: "Test Agent",
+						description: "Test Description",
+						logo: null
+					}
 				}
-			}];
+			];
 
 			// Setup mock database responses
 			setupDbMocks({
@@ -550,47 +572,55 @@ describe("ScheduleService", () => {
 				tenantId: mockTenantId
 			};
 
-			const mockChannels = [{ 
-				id: "channel1", 
-				names: ["Test"], 
-				pause: false, 
-				descriptions: ["Test"], 
-				languages: ["de"], 
-				isPublic: true, 
-				requiresConfirmation: false, 
-				color: null 
-			}];
+			const mockChannels = [
+				{
+					id: "channel1",
+					names: ["Test"],
+					pause: false,
+					descriptions: ["Test"],
+					languages: ["de"],
+					isPublic: true,
+					requiresConfirmation: false,
+					color: null
+				}
+			];
 
-			const mockSlotTemplates = [{ 
-				slotTemplate: { 
-					id: "template1", 
-					weekdays: 1, // Monday (2^(1-1) = 1)
-					from: "09:00", 
-					to: "10:00", 
-					duration: 60 
-				}, 
-				channelId: "channel1" 
-			}];
+			const mockSlotTemplates = [
+				{
+					slotTemplate: {
+						id: "template1",
+						weekdays: 1, // Monday (2^(1-1) = 1)
+						from: "09:00",
+						to: "10:00",
+						duration: 60
+					},
+					channelId: "channel1"
+				}
+			];
 
-			const mockAbsences = [{
-				id: "absence1",
-				agentId: "agent1",
-				startDate: "2024-01-01T00:00:00.000Z",
-				endDate: "2024-01-01T23:59:59.999Z",
-				absenceType: "Urlaub",
-				description: null,
-				isFullDay: true
-			}];
+			const mockAbsences = [
+				{
+					id: "absence1",
+					agentId: "agent1",
+					startDate: "2024-01-01T00:00:00.000Z",
+					endDate: "2024-01-01T23:59:59.999Z",
+					absenceType: "Urlaub",
+					description: null,
+					isFullDay: true
+				}
+			];
 
-			const mockChannelAgents = [{ 
-				channelId: "channel1", 
-				agent: { 
-					id: "agent1", 
-					name: "Agent", 
-					description: null, 
-					logo: null 
-				} 
-			}];
+			const mockChannelAgents = [
+				{
+					channelId: "channel1",
+					agent: {
+						id: "agent1",
+						name: "Agent",
+						description: null,
+						logo: null
+					}
+				}
+			];
 
 			// Setup mock database responses
 			setupDbMocks({

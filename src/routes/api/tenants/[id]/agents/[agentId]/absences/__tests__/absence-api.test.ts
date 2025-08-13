@@ -212,7 +212,9 @@ describe("Agent Absence API Routes", () => {
 		});
 
 		it("should handle conflict errors for overlapping absences", async () => {
-			mockAgentService.createAbsence.mockRejectedValue(new ConflictError("Absence overlaps with existing absence"));
+			mockAgentService.createAbsence.mockRejectedValue(
+				new ConflictError("Absence overlaps with existing absence")
+			);
 
 			const event = createMockRequestEvent();
 			const response = await POST(event);
@@ -277,7 +279,11 @@ describe("Agent Absence API Routes", () => {
 
 			expect(response.status).toBe(200);
 			expect(data.absences).toEqual(mockAbsences);
-			expect(mockAgentService.getAgentAbsences).toHaveBeenCalledWith(mockAgentId, undefined, undefined);
+			expect(mockAgentService.getAgentAbsences).toHaveBeenCalledWith(
+				mockAgentId,
+				undefined,
+				undefined
+			);
 		});
 
 		it("should support date filtering with query parameters", async () => {
@@ -296,7 +302,9 @@ describe("Agent Absence API Routes", () => {
 			mockAgentService.getAgentAbsences.mockResolvedValue(mockAbsences);
 
 			const event = createMockRequestEvent({
-				url: new URL("http://localhost:3000/api/tenants/123/agents/agent-123/absences?startDate=2024-01-01T00:00:00.000Z&endDate=2024-01-31T23:59:59.999Z")
+				url: new URL(
+					"http://localhost:3000/api/tenants/123/agents/agent-123/absences?startDate=2024-01-01T00:00:00.000Z&endDate=2024-01-31T23:59:59.999Z"
+				)
 			});
 
 			const response = await GET(event);
@@ -406,7 +414,9 @@ describe("Agent Absence API Routes", () => {
 		});
 
 		it("should handle validation errors", async () => {
-			mockAgentService.getAgentAbsences.mockRejectedValue(new ValidationError("Invalid date format"));
+			mockAgentService.getAgentAbsences.mockRejectedValue(
+				new ValidationError("Invalid date format")
+			);
 
 			const event = createMockRequestEvent();
 			const response = await GET(event);

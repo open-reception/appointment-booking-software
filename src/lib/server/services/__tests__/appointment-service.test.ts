@@ -80,7 +80,9 @@ describe("AppointmentService", () => {
 		it("should throw error if database connection fails", async () => {
 			(getTenantDb as any).mockRejectedValue(new Error("Database connection failed"));
 
-			await expect(AppointmentService.forTenant(mockTenantId)).rejects.toThrow("Database connection failed");
+			await expect(AppointmentService.forTenant(mockTenantId)).rejects.toThrow(
+				"Database connection failed"
+			);
 		});
 	});
 
@@ -100,7 +102,9 @@ describe("AppointmentService", () => {
 				title: ""
 			};
 
-			await expect(service.createAppointment(invalidRequest as AppointmentCreationRequest)).rejects.toThrow(ValidationError);
+			await expect(
+				service.createAppointment(invalidRequest as AppointmentCreationRequest)
+			).rejects.toThrow(ValidationError);
 		});
 
 		it("should create appointment successfully", async () => {
@@ -115,8 +119,28 @@ describe("AppointmentService", () => {
 			};
 
 			// Mock database responses
-			const mockClient = [{ id: validRequest.clientId, hashKey: "test", publicKey: "test", privateKeyShare: "test", email: "test@test.com", language: "de" }];
-			const mockChannel = [{ id: validRequest.channelId, names: ["Test Channel"], pause: false, descriptions: ["Test"], languages: ["de"], isPublic: true, requiresConfirmation: false, color: null }];
+			const mockClient = [
+				{
+					id: validRequest.clientId,
+					hashKey: "test",
+					publicKey: "test",
+					privateKeyShare: "test",
+					email: "test@test.com",
+					language: "de"
+				}
+			];
+			const mockChannel = [
+				{
+					id: validRequest.channelId,
+					names: ["Test Channel"],
+					pause: false,
+					descriptions: ["Test"],
+					languages: ["de"],
+					isPublic: true,
+					requiresConfirmation: false,
+					color: null
+				}
+			];
 			const mockConflictingAppointments: any[] = [];
 			const mockCreatedAppointment = {
 				id: "appointment-id",
@@ -131,10 +155,14 @@ describe("AppointmentService", () => {
 						limit: () => {
 							selectCallCount++;
 							switch (selectCallCount) {
-								case 1: return mockClient;
-								case 2: return mockChannel;
-								case 3: return mockConflictingAppointments;
-								default: return [];
+								case 1:
+									return mockClient;
+								case 2:
+									return mockChannel;
+								case 3:
+									return mockConflictingAppointments;
+								default:
+									return [];
 							}
 						}
 					})
@@ -213,7 +241,9 @@ describe("AppointmentService", () => {
 
 			const mockClient = [{ id: validRequest.clientId }];
 			const mockChannel = [{ id: validRequest.channelId, pause: false }];
-			const mockConflictingAppointment = [{ id: "existing-appointment", appointmentDate: validRequest.appointmentDate }];
+			const mockConflictingAppointment = [
+				{ id: "existing-appointment", appointmentDate: validRequest.appointmentDate }
+			];
 
 			let selectCallCount = 0;
 			(mockDb.select as any).mockImplementation(() => ({
@@ -221,10 +251,14 @@ describe("AppointmentService", () => {
 					where: () => {
 						selectCallCount++;
 						switch (selectCallCount) {
-							case 1: return { limit: () => mockClient }; // client check
-							case 2: return { limit: () => mockChannel }; // channel check
-							case 3: return mockConflictingAppointment; // conflict check (no limit)
-							default: return { limit: () => [] };
+							case 1:
+								return { limit: () => mockClient }; // client check
+							case 2:
+								return { limit: () => mockChannel }; // channel check
+							case 3:
+								return mockConflictingAppointment; // conflict check (no limit)
+							default:
+								return { limit: () => [] };
 						}
 					}
 				})
@@ -243,20 +277,38 @@ describe("AppointmentService", () => {
 
 		it("should return appointment with details", async () => {
 			const appointmentId = "123e4567-e89b-12d3-a456-426614174003";
-			const mockResult = [{
-				appointment: {
-					id: appointmentId,
-					clientId: "client-id",
-					channelId: "channel-id",
-					appointmentDate: "2024-01-01T10:00:00.000Z",
-					expiryDate: "2024-01-31",
-					title: "Test Appointment",
-					description: null,
-					status: "NEW"
-				},
-				client: { id: "client-id", hashKey: "test", publicKey: "test", privateKeyShare: "test", email: "test@test.com", language: "de" },
-				channel: { id: "channel-id", names: ["Test Channel"], pause: false, descriptions: ["Test"], languages: ["de"], isPublic: true, requiresConfirmation: false, color: null }
-			}];
+			const mockResult = [
+				{
+					appointment: {
+						id: appointmentId,
+						clientId: "client-id",
+						channelId: "channel-id",
+						appointmentDate: "2024-01-01T10:00:00.000Z",
+						expiryDate: "2024-01-31",
+						title: "Test Appointment",
+						description: null,
+						status: "NEW"
+					},
+					client: {
+						id: "client-id",
+						hashKey: "test",
+						publicKey: "test",
+						privateKeyShare: "test",
+						email: "test@test.com",
+						language: "de"
+					},
+					channel: {
+						id: "channel-id",
+						names: ["Test Channel"],
+						pause: false,
+						descriptions: ["Test"],
+						languages: ["de"],
+						isPublic: true,
+						requiresConfirmation: false,
+						color: null
+					}
+				}
+			];
 
 			(mockDb.select as any).mockImplementation(() => ({
 				from: () => ({
@@ -313,7 +365,9 @@ describe("AppointmentService", () => {
 				status: "INVALID_STATUS" as any
 			};
 
-			await expect(service.updateAppointment(appointmentId, invalidUpdate)).rejects.toThrow(ValidationError);
+			await expect(service.updateAppointment(appointmentId, invalidUpdate)).rejects.toThrow(
+				ValidationError
+			);
 		});
 
 		it("should update appointment successfully", async () => {
@@ -358,7 +412,9 @@ describe("AppointmentService", () => {
 				})
 			}));
 
-			await expect(service.updateAppointment(appointmentId, updateData)).rejects.toThrow(NotFoundError);
+			await expect(service.updateAppointment(appointmentId, updateData)).rejects.toThrow(
+				NotFoundError
+			);
 		});
 	});
 
@@ -504,20 +560,22 @@ describe("AppointmentService", () => {
 				status: "NEW" as const
 			};
 
-			const mockResults = [{
-				appointment: {
-					id: "appointment-id",
-					clientId: "client-id",
-					channelId: validQuery.channelId,
-					appointmentDate: "2024-01-15T10:00:00.000Z",
-					expiryDate: "2024-01-31",
-					title: "Test Appointment",
-					description: null,
-					status: validQuery.status
-				},
-				client: { id: "client-id" },
-				channel: { id: validQuery.channelId }
-			}];
+			const mockResults = [
+				{
+					appointment: {
+						id: "appointment-id",
+						clientId: "client-id",
+						channelId: validQuery.channelId,
+						appointmentDate: "2024-01-15T10:00:00.000Z",
+						expiryDate: "2024-01-31",
+						title: "Test Appointment",
+						description: null,
+						status: validQuery.status
+					},
+					client: { id: "client-id" },
+					channel: { id: validQuery.channelId }
+				}
+			];
 
 			(mockDb.select as any).mockImplementation(() => ({
 				from: () => ({

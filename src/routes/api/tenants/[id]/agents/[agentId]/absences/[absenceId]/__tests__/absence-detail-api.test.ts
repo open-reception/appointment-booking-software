@@ -408,7 +408,9 @@ describe("Agent Absence Detail API Routes", () => {
 			};
 
 			mockAgentService.getAbsenceById.mockResolvedValue(mockExistingAbsence);
-			mockAgentService.updateAbsence.mockRejectedValue(new ConflictError("Absence overlaps with existing absence"));
+			mockAgentService.updateAbsence.mockRejectedValue(
+				new ConflictError("Absence overlaps with existing absence")
+			);
 
 			const event = createMockRequestEvent();
 			const response = await PUT(event);
