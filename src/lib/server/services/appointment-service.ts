@@ -189,8 +189,14 @@ export class AppointmentService {
 					channel: tenantSchema.channel
 				})
 				.from(tenantSchema.appointment)
-				.leftJoin(tenantSchema.client, eq(tenantSchema.appointment.clientId, tenantSchema.client.id))
-				.leftJoin(tenantSchema.channel, eq(tenantSchema.appointment.channelId, tenantSchema.channel.id))
+				.leftJoin(
+					tenantSchema.client,
+					eq(tenantSchema.appointment.clientId, tenantSchema.client.id)
+				)
+				.leftJoin(
+					tenantSchema.channel,
+					eq(tenantSchema.appointment.channelId, tenantSchema.channel.id)
+				)
 				.where(eq(tenantSchema.appointment.id, appointmentId))
 				.limit(1);
 
@@ -266,8 +272,14 @@ export class AppointmentService {
 					channel: tenantSchema.channel
 				})
 				.from(tenantSchema.appointment)
-				.leftJoin(tenantSchema.client, eq(tenantSchema.appointment.clientId, tenantSchema.client.id))
-				.leftJoin(tenantSchema.channel, eq(tenantSchema.appointment.channelId, tenantSchema.channel.id))
+				.leftJoin(
+					tenantSchema.client,
+					eq(tenantSchema.appointment.clientId, tenantSchema.client.id)
+				)
+				.leftJoin(
+					tenantSchema.channel,
+					eq(tenantSchema.appointment.channelId, tenantSchema.channel.id)
+				)
 				.where(and(...conditions))
 				.orderBy(tenantSchema.appointment.appointmentDate);
 
@@ -276,7 +288,7 @@ export class AppointmentService {
 				count: result.length
 			});
 
-			return result.map(row => ({
+			return result.map((row) => ({
 				...row.appointment,
 				client: row.client || undefined,
 				channel: row.channel || undefined
@@ -296,7 +308,10 @@ export class AppointmentService {
 	 * @param updateData Appointment update data
 	 * @returns Updated appointment
 	 */
-	async updateAppointment(appointmentId: string, updateData: AppointmentUpdateRequest): Promise<SelectAppointment> {
+	async updateAppointment(
+		appointmentId: string,
+		updateData: AppointmentUpdateRequest
+	): Promise<SelectAppointment> {
 		const log = logger.setContext("AppointmentService");
 
 		const validation = appointmentUpdateSchema.safeParse(updateData);
