@@ -454,11 +454,19 @@ export class AgentService {
 						or(
 							// New absence starts during existing absence
 							and(
-								between(tenantSchema.agentAbsence.startDate, new Date(request.startDate), new Date(request.endDate))
+								between(
+									tenantSchema.agentAbsence.startDate,
+									new Date(request.startDate),
+									new Date(request.endDate)
+								)
 							),
 							// New absence ends during existing absence
 							and(
-								between(tenantSchema.agentAbsence.endDate, new Date(request.startDate), new Date(request.endDate))
+								between(
+									tenantSchema.agentAbsence.endDate,
+									new Date(request.startDate),
+									new Date(request.endDate)
+								)
 							),
 							// New absence entirely contains existing absence
 							and(
@@ -564,9 +572,17 @@ export class AgentService {
 			const conditions = [
 				or(
 					// Absence starts within query period
-					between(tenantSchema.agentAbsence.startDate, new Date(query.startDate), new Date(query.endDate)),
+					between(
+						tenantSchema.agentAbsence.startDate,
+						new Date(query.startDate),
+						new Date(query.endDate)
+					),
 					// Absence ends within query period
-					between(tenantSchema.agentAbsence.endDate, new Date(query.startDate), new Date(query.endDate)),
+					between(
+						tenantSchema.agentAbsence.endDate,
+						new Date(query.startDate),
+						new Date(query.endDate)
+					),
 					// Absence spans entire query period (absence starts before query and ends after query)
 					and(
 						lte(tenantSchema.agentAbsence.startDate, new Date(query.startDate)),
@@ -607,13 +623,17 @@ export class AgentService {
 	 * @param endDate Optional end date filter
 	 * @returns Array of agent absences
 	 */
-	async getAgentAbsences(agentId: string, startDate?: string, endDate?: string): Promise<SelectAgentAbsence[]> {
+	async getAgentAbsences(
+		agentId: string,
+		startDate?: string,
+		endDate?: string
+	): Promise<SelectAgentAbsence[]> {
 		const log = logger.setContext("AgentService");
-		log.debug("Getting agent absences", { 
-			tenantId: this.tenantId, 
-			agentId, 
-			startDate, 
-			endDate 
+		log.debug("Getting agent absences", {
+			tenantId: this.tenantId,
+			agentId,
+			startDate,
+			endDate
 		});
 
 		try {
@@ -659,7 +679,10 @@ export class AgentService {
 	 * @param updateData Absence update data
 	 * @returns Updated absence
 	 */
-	async updateAbsence(absenceId: string, updateData: AbsenceUpdateRequest): Promise<SelectAgentAbsence> {
+	async updateAbsence(
+		absenceId: string,
+		updateData: AbsenceUpdateRequest
+	): Promise<SelectAgentAbsence> {
 		const log = logger.setContext("AgentService");
 
 		const validation = absenceUpdateSchema.safeParse(updateData);
@@ -706,8 +729,16 @@ export class AgentService {
 							// Exclude current absence from check
 							ne(tenantSchema.agentAbsence.id, absenceId),
 							or(
-								between(tenantSchema.agentAbsence.startDate, new Date(newStartDate), new Date(newEndDate)),
-								between(tenantSchema.agentAbsence.endDate, new Date(newStartDate), new Date(newEndDate)),
+								between(
+									tenantSchema.agentAbsence.startDate,
+									new Date(newStartDate),
+									new Date(newEndDate)
+								),
+								between(
+									tenantSchema.agentAbsence.endDate,
+									new Date(newStartDate),
+									new Date(newEndDate)
+								),
 								// New period entirely contains existing absence
 								and(
 									gte(tenantSchema.agentAbsence.startDate, new Date(newStartDate)),
@@ -723,7 +754,7 @@ export class AgentService {
 			}
 
 			// Convert string dates to Date objects for database
-			const dbUpdateData = { 
+			const dbUpdateData = {
 				...updateData,
 				startDate: updateData.startDate ? new Date(updateData.startDate) : undefined,
 				endDate: updateData.endDate ? new Date(updateData.endDate) : undefined

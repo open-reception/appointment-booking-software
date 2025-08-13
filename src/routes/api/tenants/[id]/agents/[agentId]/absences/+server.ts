@@ -268,14 +268,17 @@ export const POST: RequestHandler = async ({ params, request, locals, url }) => 
 		// Authorization check: Global admins, tenant admins, and staff can create absences
 		if (locals.user.role === "GLOBAL_ADMIN") {
 			// Global admin can create absences for any tenant
-		} else if ((locals.user.role === "TENANT_ADMIN" || locals.user.role === "STAFF") && locals.user.tenantId === tenantId) {
+		} else if (
+			(locals.user.role === "TENANT_ADMIN" || locals.user.role === "STAFF") &&
+			locals.user.tenantId === tenantId
+		) {
 			// Tenant admin and staff can create absences for their own tenant
 		} else {
 			return json({ error: "Insufficient permissions" }, { status: 403 });
 		}
 
 		const body = await request.json();
-		
+
 		// Add agentId to the request body
 		const absenceRequest = {
 			...body,
@@ -346,7 +349,10 @@ export const GET: RequestHandler = async ({ params, locals, url }) => {
 		// Authorization check: Global admins, tenant admins, and staff can view absences
 		if (locals.user.role === "GLOBAL_ADMIN") {
 			// Global admin can view absences for any tenant
-		} else if ((locals.user.role === "TENANT_ADMIN" || locals.user.role === "STAFF") && locals.user.tenantId === tenantId) {
+		} else if (
+			(locals.user.role === "TENANT_ADMIN" || locals.user.role === "STAFF") &&
+			locals.user.tenantId === tenantId
+		) {
 			// Tenant admin and staff can view absences for their own tenant
 		} else {
 			return json({ error: "Insufficient permissions" }, { status: 403 });
@@ -365,7 +371,11 @@ export const GET: RequestHandler = async ({ params, locals, url }) => {
 		});
 
 		const agentService = await AgentService.forTenant(tenantId);
-		const absences = await agentService.getAgentAbsences(agentId, startDate || undefined, endDate || undefined);
+		const absences = await agentService.getAgentAbsences(
+			agentId,
+			startDate || undefined,
+			endDate || undefined
+		);
 
 		log.debug("Agent absences retrieved successfully", {
 			tenantId,

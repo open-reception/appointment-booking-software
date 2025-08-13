@@ -1,6 +1,12 @@
 import { getTenantDb } from "../db";
 import * as tenantSchema from "../db/tenant-schema";
-import { type SelectAgent, type SelectChannel, type SelectSlotTemplate, type SelectAppointment, type SelectAgentAbsence } from "../db/tenant-schema";
+import {
+	type SelectAgent,
+	type SelectChannel,
+	type SelectSlotTemplate,
+	type SelectAppointment,
+	type SelectAgentAbsence
+} from "../db/tenant-schema";
 
 import { eq, and, between, sql, or } from "drizzle-orm";
 import logger from "$lib/logger";
@@ -9,7 +15,7 @@ import { ValidationError } from "../utils/errors";
 
 const scheduleRequestSchema = z.object({
 	startDate: z.string().datetime({ offset: true }), // ISO date string with timezone
-	endDate: z.string().datetime({ offset: true }),   // ISO date string with timezone
+	endDate: z.string().datetime({ offset: true }), // ISO date string with timezone
 	tenantId: z.string().uuid({ message: "Invalid tenant ID format" })
 });
 
@@ -17,7 +23,7 @@ export type ScheduleRequest = z.infer<typeof scheduleRequestSchema>;
 
 export interface TimeSlot {
 	from: string; // HH:MM format
-	to: string;   // HH:MM format
+	to: string; // HH:MM format
 	duration: number; // minutes
 	availableAgents: SelectAgent[];
 }
@@ -215,7 +221,7 @@ export class ScheduleService {
 		// Iterate through each day in the period
 		const currentDate = new Date(startDate);
 		while (currentDate <= endDate) {
-			const dateString = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD
+			const dateString = currentDate.toISOString().split("T")[0]; // YYYY-MM-DD
 			const weekday = currentDate.getDay(); // 0 = Sunday, 1 = Monday, ...
 			const weekdayBit = weekday === 0 ? 64 : Math.pow(2, weekday - 1); // Convert to bitmask
 
@@ -228,24 +234,25 @@ export class ScheduleService {
 			for (const channel of channels) {
 				// Get appointments for this channel on this day
 				const dayAppointments = appointments.filter(
-					appointment => 
+					(appointment) =>
 						appointment.channelId === channel.id &&
 						appointment.appointmentDate.startsWith(dateString)
 				);
 
 				// Get slot templates for this channel that apply to this weekday
 				const channelSlotTemplates = slotTemplates
-					.filter(st => 
-						st.channelId === channel.id && 
-						st.slotTemplate.weekdays !== null &&
-						(st.slotTemplate.weekdays & weekdayBit) !== 0
+					.filter(
+						(st) =>
+							st.channelId === channel.id &&
+							st.slotTemplate.weekdays !== null &&
+							(st.slotTemplate.weekdays & weekdayBit) !== 0
 					)
-					.map(st => st.slotTemplate);
+					.map((st) => st.slotTemplate);
 
 				// Get agents assigned to this channel
 				const channelAgentsList = channelAgents
-					.filter(ca => ca.channelId === channel.id)
-					.map(ca => ca.agent);
+					.filter((ca) => ca.channelId === channel.id)
+					.map((ca) => ca.agent);
 
 				// Generate available slots for this channel
 				const availableSlots = this.generateAvailableSlots({
@@ -292,8 +299,8 @@ export class ScheduleService {
 
 		for (const template of slotTemplates) {
 			// Parse template times
-			const [fromHour, fromMinute] = template.from.split(':').map(Number);
-			const [toHour, toMinute] = template.to.split(':').map(Number);
+			const [fromHour, fromMinute] = template.from.split(":").map(Number);
+			const [toHour, toMinute] = template.to.split(":").map(Number);
 
 			// Generate slots based on duration
 			const slotDuration = template.duration;
@@ -307,18 +314,18 @@ export class ScheduleService {
 				const slotEndHour = Math.floor(slotEndTime / 60);
 				const slotEndMinute = slotEndTime % 60;
 
-				const slotStart = `${slotStartHour.toString().padStart(2, '0')}:${slotStartMinute.toString().padStart(2, '0')}`;
-				const slotEnd = `${slotEndHour.toString().padStart(2, '0')}:${slotEndMinute.toString().padStart(2, '0')}`;
+				const slotStart = `${slotStartHour.toString().padStart(2, "0")}:${slotStartMinute.toString().padStart(2, "0")}`;
+				const slotEnd = `${slotEndHour.toString().padStart(2, "0")}:${slotEndMinute.toString().padStart(2, "0")}`;
 
 				// Check if this slot conflicts with any appointments
-				const hasAppointmentConflict = appointments.some(appointment => {
+				const hasAppointmentConflict = appointments.some((appointment) => {
 					const appointmentTime = new Date(appointment.appointmentDate).toTimeString().slice(0, 5);
 					return appointmentTime === slotStart;
 				});
 
 				if (!hasAppointmentConflict) {
 					// Get available agents for this slot (not absent)
-					const availableAgents = agents.filter(agent => {
+					const availableAgents = agents.filter((agent) => {
 						return !this.isAgentAbsent(agent.id, date, slotStart, slotEnd, absences);
 					});
 
@@ -350,11 +357,11 @@ export class ScheduleService {
 		slotEnd: string,
 		absences: SelectAgentAbsence[]
 	): boolean {
-		const dateString = date.toISOString().split('T')[0];
+		const dateString = date.toISOString().split("T")[0];
 		const slotStartDateTime = new Date(`${dateString}T${slotStart}:00.000Z`);
 		const slotEndDateTime = new Date(`${dateString}T${slotEnd}:00.000Z`);
 
-		return absences.some(absence => {
+		return absences.some((absence) => {
 			if (absence.agentId !== agentId) return false;
 
 			const absenceStart = new Date(absence.startDate);
@@ -362,8 +369,8 @@ export class ScheduleService {
 
 			// For full day absences, check if the date falls within the absence period
 			if (absence.isFullDay) {
-				const absenceStartDate = absenceStart.toISOString().split('T')[0];
-				const absenceEndDate = absenceEnd.toISOString().split('T')[0];
+				const absenceStartDate = absenceStart.toISOString().split("T")[0];
+				const absenceEndDate = absenceEnd.toISOString().split("T")[0];
 				return dateString >= absenceStartDate && dateString <= absenceEndDate;
 			}
 
