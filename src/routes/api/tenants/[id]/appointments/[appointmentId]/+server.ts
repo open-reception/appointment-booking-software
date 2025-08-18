@@ -4,6 +4,7 @@ import { NotFoundError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
+import { checkPermission } from "$lib/server/utils/permissions";
 
 // Register OpenAPI documentation for GET
 registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "GET", {
@@ -202,31 +203,19 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 		const tenantId = params.id;
 		const appointmentId = params.appointmentId;
 
-		// Check if user is authenticated
-		if (!locals.user) {
-			return json({ error: "Authentication required" }, { status: 401 });
-		}
-
 		if (!tenantId || !appointmentId) {
 			return json({ error: "Tenant ID and appointment ID are required" }, { status: 400 });
 		}
 
-		// Authorization check: Global admins, tenant admins, and staff can view appointments
-		if (locals.user.role === "GLOBAL_ADMIN") {
-			// Global admin can view appointments for any tenant
-		} else if (
-			(locals.user.role === "TENANT_ADMIN" || locals.user.role === "STAFF") &&
-			locals.user.tenantId === tenantId
-		) {
-			// Tenant admin and staff can view appointments for their own tenant
-		} else {
-			return json({ error: "Insufficient permissions" }, { status: 403 });
+		const error = checkPermission(locals, tenantId);
+		if (error) {
+			return error;
 		}
 
 		log.debug("Getting appointment by ID", {
 			tenantId,
 			appointmentId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		const appointmentService = await AppointmentService.forTenant(tenantId);
@@ -239,7 +228,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 		log.debug("Appointment retrieved successfully", {
 			tenantId,
 			appointmentId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		return json({
@@ -263,28 +252,19 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 		const tenantId = params.id;
 		const appointmentId = params.appointmentId;
 
-		// Check if user is authenticated
-		if (!locals.user) {
-			return json({ error: "Authentication required" }, { status: 401 });
-		}
-
 		if (!tenantId || !appointmentId) {
 			return json({ error: "Tenant ID and appointment ID are required" }, { status: 400 });
 		}
 
-		// Authorization check: Only global admins and tenant admins can delete appointments
-		if (locals.user.role === "GLOBAL_ADMIN") {
-			// Global admin can delete appointments for any tenant
-		} else if (locals.user.role === "TENANT_ADMIN" && locals.user.tenantId === tenantId) {
-			// Tenant admin can delete appointments for their own tenant
-		} else {
-			return json({ error: "Insufficient permissions" }, { status: 403 });
+		const error = checkPermission(locals, tenantId, true);
+		if (error) {
+			return error;
 		}
 
 		log.debug("Deleting appointment", {
 			tenantId,
 			appointmentId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		const appointmentService = await AppointmentService.forTenant(tenantId);
@@ -297,7 +277,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 		log.debug("Appointment deleted successfully", {
 			tenantId,
 			appointmentId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		return json({

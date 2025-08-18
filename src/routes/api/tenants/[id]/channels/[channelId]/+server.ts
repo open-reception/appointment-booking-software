@@ -4,6 +4,7 @@ import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
+import { checkPermission } from "$lib/server/utils/permissions";
 
 // Register OpenAPI documentation for GET
 registerOpenAPIRoute("/tenants/{id}/channels/{channelId}", "GET", {
@@ -403,28 +404,19 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 		const tenantId = params.id;
 		const channelId = params.channelId;
 
-		// Check if user is authenticated
-		if (!locals.user) {
-			return json({ error: "Authentication required" }, { status: 401 });
-		}
-
 		if (!tenantId || !channelId) {
 			return json({ error: "Missing tenant or channel ID" }, { status: 400 });
 		}
 
-		// Authorization check: Only global admins and tenant admins can view channel details
-		if (locals.user.role === "GLOBAL_ADMIN") {
-			// Global admin can view channels for any tenant
-		} else if (locals.user.role === "TENANT_ADMIN" && locals.user.tenantId === tenantId) {
-			// Tenant admin can view channels for their own tenant
-		} else {
-			return json({ error: "Insufficient permissions" }, { status: 403 });
+		const error = checkPermission(locals, tenantId, true);
+		if (error) {
+			return error;
 		}
 
 		log.debug("Getting channel details", {
 			tenantId,
 			channelId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		const channelService = await ChannelService.forTenant(tenantId);
@@ -437,7 +429,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 		log.debug("Channel details retrieved successfully", {
 			tenantId,
 			channelId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		return json({
@@ -461,22 +453,13 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 		const tenantId = params.id;
 		const channelId = params.channelId;
 
-		// Check if user is authenticated
-		if (!locals.user) {
-			return json({ error: "Authentication required" }, { status: 401 });
-		}
-
 		if (!tenantId || !channelId) {
 			return json({ error: "Missing tenant or channel ID" }, { status: 400 });
 		}
 
-		// Authorization check: Only global admins and tenant admins can update channels
-		if (locals.user.role === "GLOBAL_ADMIN") {
-			// Global admin can update channels for any tenant
-		} else if (locals.user.role === "TENANT_ADMIN" && locals.user.tenantId === tenantId) {
-			// Tenant admin can update channels for their own tenant
-		} else {
-			return json({ error: "Insufficient permissions" }, { status: 403 });
+		const error = checkPermission(locals, tenantId, true);
+		if (error) {
+			return error;
 		}
 
 		const body = await request.json();
@@ -484,7 +467,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 		log.debug("Updating channel", {
 			tenantId,
 			channelId,
-			requestedBy: locals.user.userId,
+			requestedBy: locals.user?.userId,
 			updateFields: Object.keys(body)
 		});
 
@@ -494,7 +477,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 		log.debug("Channel updated successfully", {
 			tenantId,
 			channelId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		return json({
@@ -523,28 +506,19 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 		const tenantId = params.id;
 		const channelId = params.channelId;
 
-		// Check if user is authenticated
-		if (!locals.user) {
-			return json({ error: "Authentication required" }, { status: 401 });
-		}
-
 		if (!tenantId || !channelId) {
 			return json({ error: "Missing tenant or channel ID" }, { status: 400 });
 		}
 
-		// Authorization check: Only global admins and tenant admins can delete channels
-		if (locals.user.role === "GLOBAL_ADMIN") {
-			// Global admin can delete channels for any tenant
-		} else if (locals.user.role === "TENANT_ADMIN" && locals.user.tenantId === tenantId) {
-			// Tenant admin can delete channels for their own tenant
-		} else {
-			return json({ error: "Insufficient permissions" }, { status: 403 });
+		const error = checkPermission(locals, tenantId, true);
+		if (error) {
+			return error;
 		}
 
 		log.debug("Deleting channel", {
 			tenantId,
 			channelId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		const channelService = await ChannelService.forTenant(tenantId);
@@ -557,7 +531,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 		log.debug("Channel deleted successfully", {
 			tenantId,
 			channelId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		return json({

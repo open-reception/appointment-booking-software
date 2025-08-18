@@ -4,6 +4,7 @@ import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
+import { checkPermission } from "$lib/server/utils/permissions";
 
 // Register OpenAPI documentation for POST
 registerOpenAPIRoute("/tenants/{id}/agents", "POST", {
@@ -202,28 +203,20 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 		const tenantId = params.id;
 
 		// Check if user is authenticated
-		if (!locals.user) {
-			return json({ error: "Authentication required" }, { status: 401 });
-		}
-
 		if (!tenantId) {
 			return json({ error: "No tenant id given" }, { status: 400 });
 		}
 
-		// Authorization check: Only global admins and tenant admins can create agents
-		if (locals.user.role === "GLOBAL_ADMIN") {
-			// Global admin can create agents for any tenant
-		} else if (locals.user.role === "TENANT_ADMIN" && locals.user.tenantId === tenantId) {
-			// Tenant admin can create agents for their own tenant
-		} else {
-			return json({ error: "Insufficient permissions" }, { status: 403 });
+		const error = checkPermission(locals, tenantId, true);
+		if (error) {
+			return error;
 		}
 
 		const body = await request.json();
 
 		log.debug("Creating new agent", {
 			tenantId,
-			requestedBy: locals.user.userId,
+			requestedBy: locals.user?.userId,
 			agentName: body.name
 		});
 
@@ -233,7 +226,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 		log.debug("Agent created successfully", {
 			tenantId,
 			agentId: newAgent.id,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		return json(
@@ -265,29 +258,18 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 		const tenantId = params.id;
 
 		// Check if user is authenticated
-		if (!locals.user) {
-			return json({ error: "Authentication required" }, { status: 401 });
-		}
-
 		if (!tenantId) {
 			return json({ error: "No tenant id given" }, { status: 400 });
 		}
 
-		// Authorization check: Global admins, tenant admins, and staff can view agents
-		if (locals.user.role === "GLOBAL_ADMIN") {
-			// Global admin can view agents for any tenant
-		} else if (
-			(locals.user.role === "TENANT_ADMIN" || locals.user.role === "STAFF") &&
-			locals.user.tenantId === tenantId
-		) {
-			// Tenant admin and staff can view agents for their own tenant
-		} else {
-			return json({ error: "Insufficient permissions" }, { status: 403 });
+		const error = checkPermission(locals, tenantId);
+		if (error) {
+			return error;
 		}
 
 		log.debug("Getting all agents", {
 			tenantId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		const agentService = await AgentService.forTenant(tenantId);
@@ -296,7 +278,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 		log.debug("Agents retrieved successfully", {
 			tenantId,
 			count: agents.length,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		return json({

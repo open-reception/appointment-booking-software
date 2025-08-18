@@ -4,6 +4,7 @@ import { ValidationError, NotFoundError, ConflictError } from "$lib/server/utils
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
+import { checkPermission } from "$lib/server/utils/permissions";
 
 // Register OpenAPI documentation for POST
 registerOpenAPIRoute("/tenants/{id}/agents/{agentId}/absences", "POST", {
@@ -249,32 +250,20 @@ registerOpenAPIRoute("/tenants/{id}/agents/{agentId}/absences", "GET", {
 	}
 });
 
-export const POST: RequestHandler = async ({ params, request, locals, url }) => {
+export const POST: RequestHandler = async ({ params, request, locals }) => {
 	const log = logger.setContext("API");
 
 	try {
 		const tenantId = params.id;
 		const agentId = params.agentId;
 
-		// Check if user is authenticated
-		if (!locals.user) {
-			return json({ error: "Authentication required" }, { status: 401 });
-		}
-
 		if (!tenantId || !agentId) {
 			return json({ error: "Missing tenant or agent ID" }, { status: 400 });
 		}
 
-		// Authorization check: Global admins, tenant admins, and staff can create absences
-		if (locals.user.role === "GLOBAL_ADMIN") {
-			// Global admin can create absences for any tenant
-		} else if (
-			(locals.user.role === "TENANT_ADMIN" || locals.user.role === "STAFF") &&
-			locals.user.tenantId === tenantId
-		) {
-			// Tenant admin and staff can create absences for their own tenant
-		} else {
-			return json({ error: "Insufficient permissions" }, { status: 403 });
+		const error = checkPermission(locals, tenantId);
+		if (error) {
+			return error;
 		}
 
 		const body = await request.json();
@@ -288,7 +277,7 @@ export const POST: RequestHandler = async ({ params, request, locals, url }) => 
 		log.debug("Creating agent absence", {
 			tenantId,
 			agentId,
-			requestedBy: locals.user.userId,
+			requestedBy: locals.user?.userId,
 			absenceType: body.absenceType,
 			startDate: body.startDate,
 			endDate: body.endDate
@@ -301,7 +290,7 @@ export const POST: RequestHandler = async ({ params, request, locals, url }) => 
 			tenantId,
 			agentId,
 			absenceId: newAbsence.id,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		return json(
@@ -337,25 +326,13 @@ export const GET: RequestHandler = async ({ params, locals, url }) => {
 		const tenantId = params.id;
 		const agentId = params.agentId;
 
-		// Check if user is authenticated
-		if (!locals.user) {
-			return json({ error: "Authentication required" }, { status: 401 });
-		}
-
 		if (!tenantId || !agentId) {
 			return json({ error: "Missing tenant or agent ID" }, { status: 400 });
 		}
 
-		// Authorization check: Global admins, tenant admins, and staff can view absences
-		if (locals.user.role === "GLOBAL_ADMIN") {
-			// Global admin can view absences for any tenant
-		} else if (
-			(locals.user.role === "TENANT_ADMIN" || locals.user.role === "STAFF") &&
-			locals.user.tenantId === tenantId
-		) {
-			// Tenant admin and staff can view absences for their own tenant
-		} else {
-			return json({ error: "Insufficient permissions" }, { status: 403 });
+		const error = checkPermission(locals, tenantId);
+		if (error) {
+			return error;
 		}
 
 		// Get optional query parameters for date filtering
@@ -365,7 +342,7 @@ export const GET: RequestHandler = async ({ params, locals, url }) => {
 		log.debug("Getting agent absences", {
 			tenantId,
 			agentId,
-			requestedBy: locals.user.userId,
+			requestedBy: locals.user?.userId,
 			startDate,
 			endDate
 		});
@@ -381,7 +358,7 @@ export const GET: RequestHandler = async ({ params, locals, url }) => {
 			tenantId,
 			agentId,
 			count: absences.length,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		return json({

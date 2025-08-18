@@ -4,6 +4,7 @@ import { NotFoundError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
+import { checkPermission } from "$lib/server/utils/permissions";
 
 // Register OpenAPI documentation for PUT
 registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}/cancel", "PUT", {
@@ -114,30 +115,19 @@ export const PUT: RequestHandler = async ({ params, locals }) => {
 		const appointmentId = params.appointmentId;
 
 		// Check if user is authenticated
-		if (!locals.user) {
-			return json({ error: "Authentication required" }, { status: 401 });
-		}
-
 		if (!tenantId || !appointmentId) {
 			return json({ error: "Tenant ID and appointment ID are required" }, { status: 400 });
 		}
 
-		// Authorization check: Global admins, tenant admins, and staff can cancel appointments
-		if (locals.user.role === "GLOBAL_ADMIN") {
-			// Global admin can cancel appointments for any tenant
-		} else if (
-			(locals.user.role === "TENANT_ADMIN" || locals.user.role === "STAFF") &&
-			locals.user.tenantId === tenantId
-		) {
-			// Tenant admin and staff can cancel appointments for their own tenant
-		} else {
-			return json({ error: "Insufficient permissions" }, { status: 403 });
+		const error = checkPermission(locals, tenantId);
+		if (error) {
+			return error;
 		}
 
 		log.debug("Cancelling appointment", {
 			tenantId,
 			appointmentId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		const appointmentService = await AppointmentService.forTenant(tenantId);
@@ -146,7 +136,7 @@ export const PUT: RequestHandler = async ({ params, locals }) => {
 		log.debug("Appointment cancelled successfully", {
 			tenantId,
 			appointmentId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		return json({

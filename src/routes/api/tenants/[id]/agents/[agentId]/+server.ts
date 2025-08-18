@@ -4,6 +4,7 @@ import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
+import { checkPermission } from "$lib/server/utils/permissions";
 
 // Register OpenAPI documentation for GET
 registerOpenAPIRoute("/tenants/{id}/agents/{agentId}", "GET", {
@@ -285,30 +286,19 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 		const agentId = params.agentId;
 
 		// Check if user is authenticated
-		if (!locals.user) {
-			return json({ error: "Authentication required" }, { status: 401 });
-		}
-
 		if (!tenantId || !agentId) {
 			return json({ error: "Missing tenant or agent ID" }, { status: 400 });
 		}
 
-		// Authorization check: Only global admins and tenant admins can view agent details
-		if (locals.user.role === "GLOBAL_ADMIN") {
-			// Global admin can view agents for any tenant
-		} else if (
-			["TENANT_ADMIN", "STAFF"].includes(locals.user.role as string) &&
-			locals.user.tenantId === tenantId
-		) {
-			// Tenant admin and staff can view agents for their own tenant
-		} else {
-			return json({ error: "Insufficient permissions" }, { status: 403 });
+		const error = checkPermission(locals, tenantId);
+		if (error) {
+			return error;
 		}
 
 		log.debug("Getting agent details", {
 			tenantId,
 			agentId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		const agentService = await AgentService.forTenant(tenantId);
@@ -321,7 +311,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 		log.debug("Agent details retrieved successfully", {
 			tenantId,
 			agentId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		return json({
@@ -346,21 +336,13 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 		const agentId = params.agentId;
 
 		// Check if user is authenticated
-		if (!locals.user) {
-			return json({ error: "Authentication required" }, { status: 401 });
-		}
-
 		if (!tenantId || !agentId) {
 			return json({ error: "Missing tenant or agent ID" }, { status: 400 });
 		}
 
-		// Authorization check: Only global admins and tenant admins can update agents
-		if (locals.user.role === "GLOBAL_ADMIN") {
-			// Global admin can update agents for any tenant
-		} else if (locals.user.role === "TENANT_ADMIN" && locals.user.tenantId === tenantId) {
-			// Tenant admin can update agents for their own tenant
-		} else {
-			return json({ error: "Insufficient permissions" }, { status: 403 });
+		const error = checkPermission(locals, tenantId, true);
+		if (error) {
+			return error;
 		}
 
 		const body = await request.json();
@@ -368,7 +350,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 		log.debug("Updating agent", {
 			tenantId,
 			agentId,
-			requestedBy: locals.user.userId,
+			requestedBy: locals.user?.userId,
 			updateFields: Object.keys(body)
 		});
 
@@ -378,7 +360,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 		log.debug("Agent updated successfully", {
 			tenantId,
 			agentId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		return json({
@@ -407,28 +389,19 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 		const tenantId = params.id;
 		const agentId = params.agentId;
 
-		// Check if user is authenticated
-		if (!locals.user) {
-			return json({ error: "Authentication required" }, { status: 401 });
-		}
-
 		if (!tenantId || !agentId) {
 			return json({ error: "Missing tenant or agent ID" }, { status: 400 });
 		}
 
-		// Authorization check: Only global admins and tenant admins can delete agents
-		if (locals.user.role === "GLOBAL_ADMIN") {
-			// Global admin can delete agents for any tenant
-		} else if (locals.user.role === "TENANT_ADMIN" && locals.user.tenantId === tenantId) {
-			// Tenant admin can delete agents for their own tenant
-		} else {
-			return json({ error: "Insufficient permissions" }, { status: 403 });
+		const error = checkPermission(locals, tenantId, true);
+		if (error) {
+			return error;
 		}
 
 		log.debug("Deleting agent", {
 			tenantId,
 			agentId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		const agentService = await AgentService.forTenant(tenantId);
@@ -441,7 +414,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 		log.debug("Agent deleted successfully", {
 			tenantId,
 			agentId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		return json({

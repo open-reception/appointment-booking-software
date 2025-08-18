@@ -4,6 +4,7 @@ import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
+import { checkPermission } from "$lib/server/utils/permissions";
 
 // Register OpenAPI documentation for POST
 registerOpenAPIRoute("/tenants/{id}/appointments", "POST", {
@@ -324,32 +325,20 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 	try {
 		const tenantId = params.id;
 
-		// Check if user is authenticated
-		if (!locals.user) {
-			return json({ error: "Authentication required" }, { status: 401 });
-		}
-
 		if (!tenantId) {
 			return json({ error: "No tenant id given" }, { status: 400 });
 		}
 
-		// Authorization check: Only global admins, tenant admins, and staff can create appointments
-		if (locals.user.role === "GLOBAL_ADMIN") {
-			// Global admin can create appointments for any tenant
-		} else if (
-			(locals.user.role === "TENANT_ADMIN" || locals.user.role === "STAFF") &&
-			locals.user.tenantId === tenantId
-		) {
-			// Tenant admin and staff can create appointments for their own tenant
-		} else {
-			return json({ error: "Insufficient permissions" }, { status: 403 });
+		const error = checkPermission(locals, tenantId);
+		if (error) {
+			return error;
 		}
 
 		const body = await request.json();
 
 		log.debug("Creating new appointment", {
 			tenantId,
-			requestedBy: locals.user.userId,
+			requestedBy: locals.user?.userId,
 			clientId: body.clientId,
 			channelId: body.channelId
 		});
@@ -360,7 +349,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 		log.debug("Appointment created successfully", {
 			tenantId,
 			appointmentId: newAppointment.id,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		return json(
@@ -399,25 +388,13 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 	try {
 		const tenantId = params.id;
 
-		// Check if user is authenticated
-		if (!locals.user) {
-			return json({ error: "Authentication required" }, { status: 401 });
-		}
-
 		if (!tenantId) {
 			return json({ error: "No tenant id given" }, { status: 400 });
 		}
 
-		// Authorization check: Global admins, tenant admins, and staff can view appointments
-		if (locals.user.role === "GLOBAL_ADMIN") {
-			// Global admin can view appointments for any tenant
-		} else if (
-			(locals.user.role === "TENANT_ADMIN" || locals.user.role === "STAFF") &&
-			locals.user.tenantId === tenantId
-		) {
-			// Tenant admin and staff can view appointments for their own tenant
-		} else {
-			return json({ error: "Insufficient permissions" }, { status: 403 });
+		const error = checkPermission(locals, tenantId);
+		if (error) {
+			return error;
 		}
 
 		// Extract query parameters
@@ -441,7 +418,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 
 		log.debug("Getting appointments", {
 			tenantId,
-			requestedBy: locals.user.userId,
+			requestedBy: locals.user?.userId,
 			query
 		});
 
@@ -451,7 +428,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 		log.debug("Appointments retrieved successfully", {
 			tenantId,
 			count: appointments.length,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		return json({

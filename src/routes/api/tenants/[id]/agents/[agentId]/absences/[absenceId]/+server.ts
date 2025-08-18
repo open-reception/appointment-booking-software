@@ -4,6 +4,7 @@ import { ValidationError, NotFoundError, ConflictError } from "$lib/server/utils
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
+import { checkPermission } from "$lib/server/utils/permissions";
 
 // Register OpenAPI documentation for GET
 registerOpenAPIRoute("/tenants/{id}/agents/{agentId}/absences/{absenceId}", "GET", {
@@ -332,31 +333,20 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 		const absenceId = params.absenceId;
 
 		// Check if user is authenticated
-		if (!locals.user) {
-			return json({ error: "Authentication required" }, { status: 401 });
-		}
-
 		if (!tenantId || !agentId || !absenceId) {
 			return json({ error: "Missing tenant, agent, or absence ID" }, { status: 400 });
 		}
 
-		// Authorization check: Global admins, tenant admins, and staff can view absences
-		if (locals.user.role === "GLOBAL_ADMIN") {
-			// Global admin can view absences for any tenant
-		} else if (
-			(locals.user.role === "TENANT_ADMIN" || locals.user.role === "STAFF") &&
-			locals.user.tenantId === tenantId
-		) {
-			// Tenant admin and staff can view absences for their own tenant
-		} else {
-			return json({ error: "Insufficient permissions" }, { status: 403 });
+		const error = checkPermission(locals, tenantId);
+		if (error) {
+			return error;
 		}
 
 		log.debug("Getting absence details", {
 			tenantId,
 			agentId,
 			absenceId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		const agentService = await AgentService.forTenant(tenantId);
@@ -375,7 +365,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 			tenantId,
 			agentId,
 			absenceId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		return json({
@@ -401,24 +391,13 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 		const absenceId = params.absenceId;
 
 		// Check if user is authenticated
-		if (!locals.user) {
-			return json({ error: "Authentication required" }, { status: 401 });
-		}
-
 		if (!tenantId || !agentId || !absenceId) {
 			return json({ error: "Missing tenant, agent, or absence ID" }, { status: 400 });
 		}
 
-		// Authorization check: Global admins, tenant admins, and staff can update absences
-		if (locals.user.role === "GLOBAL_ADMIN") {
-			// Global admin can update absences for any tenant
-		} else if (
-			(locals.user.role === "TENANT_ADMIN" || locals.user.role === "STAFF") &&
-			locals.user.tenantId === tenantId
-		) {
-			// Tenant admin and staff can update absences for their own tenant
-		} else {
-			return json({ error: "Insufficient permissions" }, { status: 403 });
+		const error = checkPermission(locals, tenantId);
+		if (error) {
+			return error;
 		}
 
 		const body = await request.json();
@@ -427,7 +406,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 			tenantId,
 			agentId,
 			absenceId,
-			requestedBy: locals.user.userId,
+			requestedBy: locals.user?.userId,
 			updateFields: Object.keys(body)
 		});
 
@@ -449,7 +428,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 			tenantId,
 			agentId,
 			absenceId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		return json({
@@ -483,32 +462,20 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 		const agentId = params.agentId;
 		const absenceId = params.absenceId;
 
-		// Check if user is authenticated
-		if (!locals.user) {
-			return json({ error: "Authentication required" }, { status: 401 });
-		}
-
 		if (!tenantId || !agentId || !absenceId) {
 			return json({ error: "Missing tenant, agent, or absence ID" }, { status: 400 });
 		}
 
-		// Authorization check: Global admins, tenant admins, and staff can delete absences
-		if (locals.user.role === "GLOBAL_ADMIN") {
-			// Global admin can delete absences for any tenant
-		} else if (
-			(locals.user.role === "TENANT_ADMIN" || locals.user.role === "STAFF") &&
-			locals.user.tenantId === tenantId
-		) {
-			// Tenant admin and staff can delete absences for their own tenant
-		} else {
-			return json({ error: "Insufficient permissions" }, { status: 403 });
+		const error = checkPermission(locals, tenantId);
+		if (error) {
+			return error;
 		}
 
 		log.debug("Deleting agent absence", {
 			tenantId,
 			agentId,
 			absenceId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		const agentService = await AgentService.forTenant(tenantId);
@@ -533,7 +500,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 			tenantId,
 			agentId,
 			absenceId,
-			requestedBy: locals.user.userId
+			requestedBy: locals.user?.userId
 		});
 
 		return json({

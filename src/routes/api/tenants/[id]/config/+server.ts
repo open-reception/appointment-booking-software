@@ -4,6 +4,7 @@ import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
+import { checkPermission } from "$lib/server/utils/permissions";
 
 // Register OpenAPI documentation for GET
 registerOpenAPIRoute("/tenants/{id}/config", "GET", {
@@ -175,7 +176,7 @@ registerOpenAPIRoute("/tenants/{id}/config", "PUT", {
 	}
 });
 
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async ({ locals, params }) => {
 	const log = logger.setContext("API");
 
 	try {
@@ -185,6 +186,11 @@ export const GET: RequestHandler = async ({ params }) => {
 
 		if (!tenantId) {
 			return json({ error: "No tenant id given" }, { status: 400 });
+		}
+
+		const error = checkPermission(locals, tenantId, true);
+		if (error) {
+			return error;
 		}
 
 		const tenantService = await TenantAdminService.getTenantById(tenantId);
@@ -207,7 +213,7 @@ export const GET: RequestHandler = async ({ params }) => {
 	}
 };
 
-export const PUT: RequestHandler = async ({ params, request }) => {
+export const PUT: RequestHandler = async ({ locals, params, request }) => {
 	const log = logger.setContext("API");
 
 	try {
@@ -221,6 +227,11 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
 		if (!tenantId) {
 			return json({ error: "No tenant id given" }, { status: 400 });
+		}
+
+		const error = checkPermission(locals, tenantId, true);
+		if (error) {
+			return error;
 		}
 
 		const tenantService = await TenantAdminService.getTenantById(tenantId);
