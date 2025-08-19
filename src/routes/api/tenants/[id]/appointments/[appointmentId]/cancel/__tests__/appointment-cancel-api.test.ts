@@ -93,7 +93,7 @@ describe("Appointment Cancel API", () => {
 						sessionId: "session456",
 						role: "CLIENT",
 						tenantId: "different-tenant"
-					}
+					} as any
 				}
 			});
 
@@ -119,7 +119,7 @@ describe("Appointment Cancel API", () => {
 						sessionId: "session789",
 						role: "GLOBAL_ADMIN",
 						tenantId: "different-tenant"
-					}
+					} as any
 				}
 			});
 
@@ -142,7 +142,7 @@ describe("Appointment Cancel API", () => {
 						sessionId: "session101",
 						role: "STAFF",
 						tenantId: mockTenantId
-					}
+					} as any
 				}
 			});
 

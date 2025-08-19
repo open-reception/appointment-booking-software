@@ -102,7 +102,7 @@ describe("Agent Absence Detail API Routes", () => {
 						userId: "user123",
 						role: "STAFF",
 						tenantId: mockTenantId
-					}
+					} as any
 				}
 			});
 
@@ -132,7 +132,7 @@ describe("Agent Absence Detail API Routes", () => {
 						userId: "user123",
 						role: "GLOBAL_ADMIN",
 						tenantId: "different-tenant"
-					}
+					} as any
 				}
 			});
 
@@ -177,7 +177,7 @@ describe("Agent Absence Detail API Routes", () => {
 
 		it("should reject unauthenticated requests", async () => {
 			const event = createMockRequestEvent({
-				locals: { user: null }
+				locals: { user: null } as any
 			});
 
 			const response = await GET(event);
@@ -194,7 +194,7 @@ describe("Agent Absence Detail API Routes", () => {
 						userId: "user123",
 						role: "STAFF",
 						tenantId: "different-tenant"
-					}
+					} as any
 				}
 			});
 
@@ -288,7 +288,7 @@ describe("Agent Absence Detail API Routes", () => {
 						userId: "user123",
 						role: "STAFF",
 						tenantId: mockTenantId
-					}
+					} as any
 				}
 			});
 
@@ -329,7 +329,7 @@ describe("Agent Absence Detail API Routes", () => {
 						userId: "user123",
 						role: "GLOBAL_ADMIN",
 						tenantId: "different-tenant"
-					}
+					} as any
 				}
 			});
 
@@ -465,7 +465,7 @@ describe("Agent Absence Detail API Routes", () => {
 						userId: "user123",
 						role: "STAFF",
 						tenantId: mockTenantId
-					}
+					} as any
 				}
 			});
 
@@ -496,7 +496,7 @@ describe("Agent Absence Detail API Routes", () => {
 						userId: "user123",
 						role: "GLOBAL_ADMIN",
 						tenantId: "different-tenant"
-					}
+					} as any
 				}
 			});
 

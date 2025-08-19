@@ -106,7 +106,7 @@ describe("Appointment Detail API Routes", () => {
 						sessionId: "session456",
 						role: "CLIENT",
 						tenantId: "different-tenant"
-					}
+					} as any
 				}
 			});
 
@@ -137,7 +137,7 @@ describe("Appointment Detail API Routes", () => {
 						sessionId: "session789",
 						role: "GLOBAL_ADMIN",
 						tenantId: "different-tenant"
-					}
+					} as any
 				}
 			});
 
@@ -165,7 +165,7 @@ describe("Appointment Detail API Routes", () => {
 						sessionId: "session101",
 						role: "STAFF",
 						tenantId: mockTenantId
-					}
+					} as any
 				}
 			});
 
@@ -218,7 +218,7 @@ describe("Appointment Detail API Routes", () => {
 						sessionId: "session102",
 						role: "STAFF",
 						tenantId: mockTenantId
-					}
+					} as any
 				}
 			});
 
@@ -239,7 +239,7 @@ describe("Appointment Detail API Routes", () => {
 						sessionId: "session103",
 						role: "GLOBAL_ADMIN",
 						tenantId: "different-tenant"
-					}
+					} as any
 				}
 			});
 
@@ -257,7 +257,7 @@ describe("Appointment Detail API Routes", () => {
 						sessionId: "session104",
 						role: "TENANT_ADMIN",
 						tenantId: mockTenantId
-					}
+					} as any
 				}
 			});
 

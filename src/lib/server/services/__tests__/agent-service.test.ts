@@ -681,7 +681,7 @@ describe("AgentService", () => {
 						}))
 					}))
 				};
-				mockDb.select.mockReturnValue(selectChain);
+				mockDb.select.mockReturnValue(selectChain as any);
 
 				const result = await service.getAgentAbsences("agent-123");
 
@@ -697,7 +697,7 @@ describe("AgentService", () => {
 						}))
 					}))
 				};
-				mockDb.select.mockReturnValue(selectChain);
+				mockDb.select.mockReturnValue(selectChain as any);
 
 				const result = await service.getAgentAbsences(
 					"123e4567-e89b-12d3-a456-426614174001",
@@ -842,7 +842,7 @@ describe("AgentService", () => {
 						}))
 					}))
 				};
-				mockDb.select.mockReturnValue(selectChain);
+				mockDb.select.mockReturnValue(selectChain as any);
 
 				const result = await service.queryAbsences(validQuery);
 

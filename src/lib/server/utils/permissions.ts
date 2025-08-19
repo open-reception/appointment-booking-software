@@ -17,10 +17,19 @@ export const checkPermission = (
 	if (locals.user.role === "GLOBAL_ADMIN") {
 		// Global admin can view absences for any tenant
 		return null;
-	} else if (locals.user.role === "TENANT_ADMIN" && locals.user.tenantId === tenantId) {
+	} else if (
+		locals.user.role === "TENANT_ADMIN" &&
+		tenantId != null &&
+		locals.user.tenantId === tenantId
+	) {
 		// Tenant admin and staff can view absences for their own tenant
 		return null;
-	} else if (!administrative && locals.user.role === "STAFF" && locals.user.tenantId === tenantId) {
+	} else if (
+		!administrative &&
+		locals.user.role === "STAFF" &&
+		tenantId != null &&
+		locals.user.tenantId === tenantId
+	) {
 		// Tenant admin and staff can view absences for their own tenant
 		return null;
 	} else {
