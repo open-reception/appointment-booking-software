@@ -6,6 +6,7 @@ import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { db } from "$lib/server/db";
 import { tenant } from "$lib/server/db/central-schema";
 import logger from "$lib/logger";
+import { checkPermission } from "$lib/server/utils/permissions";
 
 // Register OpenAPI documentation
 registerOpenAPIRoute("/tenants", "POST", {
@@ -146,7 +147,7 @@ registerOpenAPIRoute("/tenants", "GET", {
 	}
 });
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ locals, request }) => {
 	const log = logger.setContext("API");
 
 	try {
@@ -156,6 +157,11 @@ export const POST: RequestHandler = async ({ request }) => {
 			shortName: body.shortName,
 			hasInviteAdmin: !!body.inviteAdmin
 		});
+
+		const error = checkPermission(locals, null, true);
+		if (error) {
+			return error;
+		}
 
 		const tenantService = await TenantAdminService.createTenant({
 			shortName: body.shortName,

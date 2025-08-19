@@ -8,7 +8,7 @@ import { json } from "@sveltejs/kit";
  */
 export const checkPermission = (
 	locals: App.Locals,
-	tenantId: string,
+	tenantId: string | null,
 	administrative: boolean = false
 ): Response | null => {
 	if (!locals.user) {

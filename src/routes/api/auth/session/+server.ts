@@ -84,7 +84,7 @@ export const GET: RequestHandler = async ({ locals }) => {
 				role: locals.user.role,
 				tenantId: locals.user.tenantId
 			},
-			expiresAt: new Date(locals.user.exp! * 1000).toISOString()
+			expiresAt: new Date(locals.user.tokenValidUntil?.valueOf() ?? 0).toISOString()
 		});
 	} catch (error) {
 		logger.error("Session check error:", { error: String(error) });
