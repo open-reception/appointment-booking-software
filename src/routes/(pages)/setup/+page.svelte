@@ -4,15 +4,12 @@
 	import { Button } from "$lib/components/ui/button";
 	import { PageWithClaim } from "$lib/components/ui/page";
 	import { Headline, Text } from "$lib/components/ui/typography";
-
-	export let data;
+	import { ROUTES } from "$lib/const/routes.js";
 </script>
 
 <svelte:head>
 	<title>{m.welcome()} - OpenReception</title>
 </svelte:head>
-
-{#snippet action()}{/snippet}
 
 <PageWithClaim isWithLanguageSwitch>
 	<EmptyLayout.Root>
@@ -22,7 +19,9 @@
 			<Text style="lg" color="medium">{m.slogan()}</Text>
 		</EmptyLayout.Main>
 		<EmptyLayout.Action>
-			<Button size="lg" class="w-full">{m["setup.start"]()}</Button>
+			<Button size="lg" class="w-full" href={ROUTES.SETUP.CREATE_ADMIN_ACCOUNT}>
+				{m["setup.start"]()}
+			</Button>
 		</EmptyLayout.Action>
 	</EmptyLayout.Root>
 </PageWithClaim>

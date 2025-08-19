@@ -126,6 +126,9 @@
 	--color-medium: var(--medium);
 	--color-dark: var(--dark);
 	--color-darker: var(--darker);
+
+	--max-w-sm: 400px;
+	--max-w-md: 640px;
 }
 
 @layer base {
@@ -137,9 +140,5 @@
 	body {
 		background-color: var(--background);
 		color: var(--foreground);
-	}
-
-	.max-w-sm {
-		max-width: 42rem;
 	}
 }

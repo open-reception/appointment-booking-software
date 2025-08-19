@@ -7,7 +7,7 @@
 		variants: {
 			style: {
 				lg: "text-xl",
-				md: "leading-7 [&:not(:first-child)]:mt-6",
+				md: "leading-5",
 				sm: "text-sm font-medium leading-none",
 				xs: "text-xs"
 			},
