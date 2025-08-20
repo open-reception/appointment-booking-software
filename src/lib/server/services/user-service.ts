@@ -1,6 +1,6 @@
 import { centralDb } from "../db";
 import * as centralSchema from "../db/central-schema";
-import { eq, desc, gt, and } from "drizzle-orm";
+import { eq, desc, gt, and, count } from "drizzle-orm";
 import type { InferInsertModel } from "drizzle-orm";
 import z from "zod/v4";
 import { NotFoundError, ValidationError } from "../utils/errors";
@@ -221,7 +221,9 @@ export class UserService {
 	 * Confirm and activate user after confirmation link was clicked
 	 * @param linkToken - The token from the link
 	 */
-	static async confirm(linkToken: string): Promise<{ recoveryPassphrase?: string }> {
+	static async confirm(
+		linkToken: string
+	): Promise<{ recoveryPassphrase?: string; isSetup: boolean }> {
 		const log = logger.setContext("UserService");
 		log.debug("Confirming user account", { token: linkToken.substring(0, 8) + "..." });
 
@@ -265,6 +267,8 @@ export class UserService {
 				throw new NotFoundError("Failed to confirm user");
 			}
 
+			const countResult = await centralDb.select({ count: count() }).from(centralSchema.user);
+
 			log.debug("User account confirmed successfully", {
 				userId: user.id,
 				token: linkToken.substring(0, 8) + "...",
@@ -272,7 +276,8 @@ export class UserService {
 			});
 
 			return {
-				recoveryPassphrase: user.recoveryPassphrase || undefined
+				recoveryPassphrase: user.recoveryPassphrase || undefined,
+				isSetup: countResult[0].count === 1
 			};
 		} catch (error) {
 			if (error instanceof NotFoundError) throw error;
