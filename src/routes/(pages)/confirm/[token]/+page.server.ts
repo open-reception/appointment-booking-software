@@ -1,4 +1,7 @@
+import logger from "$lib/logger";
 import type { PageServerLoad } from "./$types";
+
+const log = logger.setContext("BFF");
 
 export const load: PageServerLoad = async (event) => {
 	const confirmation: Promise<{ success: boolean; isSetup: boolean }> = event
@@ -9,11 +12,17 @@ export const load: PageServerLoad = async (event) => {
 			},
 			body: JSON.stringify({ token: event.params.token })
 		})
-		.then((resp) => {
+		.then(async (resp) => {
 			const success = resp.status < 400;
-			// TODO: Check if this is the first account
-			const isSetup = true;
-			return { success, isSetup };
+			try {
+				const body = await resp.json();
+				// TODO: Check if this is the first account
+				const isSetup = body.isSetup ?? false;
+				return { success, isSetup };
+			} catch (error) {
+				log.error("Unable to parse JSON from API repsonse", { path: "/confirm/[token]", error });
+				return { success, isSetup: false };
+			}
 		});
 
 	return {

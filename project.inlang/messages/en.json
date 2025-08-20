@@ -62,6 +62,13 @@
 			"title": "Verification failed",
 			"description": "The magic link you’ve tried is incorrect or outdated",
 			"action": "Request new E-Mail"
+		},
+		"title": "E-Mail verification",
+		"resend": {
+			"title": "Resend Verification E-Mail",
+			"description": "Enter your e-mail address to get the verification link again.",
+			"action": "Resend E-Mail",
+			"success": "E-Mail sent"
 		}
 	}
 }

@@ -8,12 +8,13 @@
 	import Ban from "@lucide/svelte/icons/ban";
 	import Check from "@lucide/svelte/icons/check";
 	import type { PageData } from "./$types";
+	import { ROUTES } from "$lib/const/routes";
 
 	export let data: PageData;
 </script>
 
 <svelte:head>
-	<title>{m["setup.verify_email.title"]()} - OpenReception</title>
+	<title>{m["confirm.title"]()} - OpenReception</title>
 </svelte:head>
 
 <PageWithClaim isWithLanguageSwitch>
@@ -56,16 +57,16 @@
 						<CenteredCard.ActionHint>
 							{m["setup.confirm.success.hint"]()}
 						</CenteredCard.ActionHint>
-						<Button size="lg" class="w-full">
+						<Button size="lg" class="w-full" href={ROUTES.LOGIN}>
 							{m["setup.confirm.success.action"]()}
 						</Button>
 					{:else}
-						<Button size="lg" class="w-full">
+						<Button size="lg" class="w-full" href={ROUTES.LOGIN}>
 							{m["confirm.success.action"]()}
 						</Button>
 					{/if}
 				{:else}
-					<Button size="lg" class="w-full">
+					<Button size="lg" class="w-full" href={ROUTES.RESEND_CONFIRMATION}>
 						{m["confirm.error.action"]()}
 					</Button>
 				{/if}

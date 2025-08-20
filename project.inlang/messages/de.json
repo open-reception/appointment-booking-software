@@ -60,6 +60,13 @@
 			"title": "Bestätigung fehlgeschlagen",
 			"description": "Dein magischer Link war inkorrekt oder veraltet",
 			"action": "Neue E-Mail anfordern"
+		},
+		"title": "E-Mail wird verifiziert",
+		"resend": {
+			"title": "Bestätigungsmail erneut senden",
+			"description": "Gib' Deine E-Mail Adresse an, damit wir Dir einen neuen magischen Link senden können.",
+			"action": "E-Mail erneut senden",
+			"success": "E-Mail gesendet"
 		}
 	}
 }
