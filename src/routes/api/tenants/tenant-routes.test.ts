@@ -79,7 +79,14 @@ describe("Tenant API Routes", () => {
 
 			const response = await PUT({
 				params: { id: "123" },
-				request: mockRequest as any
+				request: mockRequest as any,
+				locals: {
+					user: {
+						userId: "test-user-id",
+						tenantId: "123",
+						role: "TENANT_ADMIN"
+					}
+				}
 			} as any);
 			const data = await response.json();
 
@@ -105,7 +112,14 @@ describe("Tenant API Routes", () => {
 
 			const response = await PUT({
 				params: { id: "" },
-				request: mockRequest as any
+				request: mockRequest as any,
+				locals: {
+					user: {
+						userId: "test-user-id",
+						tenantId: "123", 
+						role: "TENANT_ADMIN"
+					}
+				}
 			} as any);
 			const data = await response.json();
 
@@ -134,7 +148,16 @@ describe("Tenant API Routes", () => {
 
 			vi.mocked(TenantAdminService.getTenantById).mockResolvedValue(mockTenantService as any);
 
-			const response = await GET({ params: { id: "123" } } as any);
+			const response = await GET({ 
+				params: { id: "123" },
+				locals: {
+					user: {
+						userId: "test-user-id",
+						tenantId: "123",
+						role: "TENANT_ADMIN"
+					}
+				}
+			} as any);
 			const data = await response.json();
 
 			expect(TenantAdminService.getTenantById).toHaveBeenCalledWith("123");
@@ -144,7 +167,16 @@ describe("Tenant API Routes", () => {
 		it("should handle missing tenant ID in GET", async () => {
 			const { GET } = await import("./[id]/config/+server.js");
 
-			const response = await GET({ params: { id: "" } } as any);
+			const response = await GET({ 
+				params: { id: "" },
+				locals: {
+					user: {
+						userId: "test-user-id",
+						tenantId: "123",
+						role: "TENANT_ADMIN"
+					}
+				}
+			} as any);
 			const data = await response.json();
 
 			expect(data).toEqual({
@@ -178,7 +210,14 @@ describe("Tenant API Routes", () => {
 
 			const response = await PUT({
 				params: { id: "123" },
-				request: mockRequest as any
+				request: mockRequest as any,
+				locals: {
+					user: {
+						userId: "test-user-id",
+						tenantId: "123",
+						role: "TENANT_ADMIN"
+					}
+				}
 			} as any);
 			const data = await response.json();
 
@@ -214,7 +253,14 @@ describe("Tenant API Routes", () => {
 
 			const response = await PUT({
 				params: { id: "123" },
-				request: mockRequest as any
+				request: mockRequest as any,
+				locals: {
+					user: {
+						userId: "test-user-id",
+						tenantId: "123",
+						role: "TENANT_ADMIN"
+					}
+				}
 			} as any);
 			const data = await response.json();
 
@@ -242,7 +288,14 @@ describe("Tenant API Routes", () => {
 
 			const response = await PUT({
 				params: { id: "non-existent-id" },
-				request: mockRequest as any
+				request: mockRequest as any,
+				locals: {
+					user: {
+						userId: "test-user-id",
+						tenantId: "non-existent-id",
+						role: "TENANT_ADMIN"
+					}
+				}
 			} as any);
 			const data = await response.json();
 

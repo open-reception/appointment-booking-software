@@ -89,9 +89,15 @@ vi.mock("$lib/server/utils/errors", () => ({
 	NotFoundError: class NotFoundError extends Error {}
 }));
 
+// Mock permissions module  
+vi.mock("$lib/server/utils/permissions", () => ({
+	checkPermission: vi.fn()
+}));
+
 import { centralDb } from "$lib/server/db";
 import { UserService } from "$lib/server/services/user-service";
 import { generateAccessToken } from "$lib/server/auth/jwt-utils";
+import { checkPermission } from "$lib/server/utils/permissions";
 
 describe("POST /api/admin/tenant", () => {
 	const mockUser = {
@@ -123,7 +129,7 @@ describe("POST /api/admin/tenant", () => {
 		request: {
 			json: () => Promise.resolve(body)
 		} as Request,
-		locals: { user: { ...user, sessionId: "session-123" } },
+		locals: { user: user ? { ...user, sessionId: "session-123" } : null },
 		cookies: mockCookies,
 		params: {},
 		url: new URL("http://localhost/api/admin/tenant"),
@@ -143,6 +149,9 @@ describe("POST /api/admin/tenant", () => {
 	it("should successfully switch to a tenant", async () => {
 		const tenantId = "550e8400-e29b-41d4-a716-446655440000";
 		const requestEvent = createRequestEvent({ tenantId });
+
+		// Mock permission check to pass
+		vi.mocked(checkPermission).mockReturnValue(null);
 
 		// Mock tenant exists query
 		const mockSelectQuery = {
@@ -188,7 +197,14 @@ describe("POST /api/admin/tenant", () => {
 			null
 		);
 
-		await expect(POST(requestEvent)).rejects.toThrow();
+		// Mock permission check to return 401 error
+		const mockErrorResponse = new Response(JSON.stringify({ error: "Authentication required" }), { status: 401 });
+		vi.mocked(checkPermission).mockReturnValue(mockErrorResponse);
+
+		const response = await POST(requestEvent);
+		expect(response.status).toBe(401);
+		const result = await response.json();
+		expect(result.error).toBe("Authentication required");
 	});
 
 	it("should return 403 when user is not a global admin", async () => {
@@ -198,17 +214,30 @@ describe("POST /api/admin/tenant", () => {
 			tenantAdminUser
 		);
 
-		await expect(POST(requestEvent)).rejects.toThrow();
+		// Mock permission check to return 403 error
+		const mockErrorResponse = new Response(JSON.stringify({ error: "Insufficient permissions" }), { status: 403 });
+		vi.mocked(checkPermission).mockReturnValue(mockErrorResponse);
+
+		const response = await POST(requestEvent);
+		expect(response.status).toBe(403);
+		const result = await response.json();
+		expect(result.error).toBe("Insufficient permissions");
 	});
 
 	it("should return 400 when request body is invalid", async () => {
 		const requestEvent = createRequestEvent({ tenantId: "invalid-uuid" });
+
+		// Mock permission check to pass
+		vi.mocked(checkPermission).mockReturnValue(null);
 
 		await expect(POST(requestEvent)).rejects.toThrow();
 	});
 
 	it("should return 404 when tenant does not exist", async () => {
 		const requestEvent = createRequestEvent({ tenantId: "550e8400-e29b-41d4-a716-446655440000" });
+
+		// Mock permission check to pass
+		vi.mocked(checkPermission).mockReturnValue(null);
 
 		// Mock tenant doesn't exist
 		const mockSelectQuery = {
