@@ -105,7 +105,7 @@ registerOpenAPIRoute("/admin/init", "POST", {
 	}
 });
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, cookies }) => {
 	const log = logger.setContext("API");
 
 	try {
@@ -144,11 +144,26 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		// Add the passkey to the admin account if provided
 		if (hasPasskey) {
+			// Validate that this registration was preceded by a challenge request
+			const registrationEmail = cookies.get("webauthn-registration-email");
+			
+			if (!registrationEmail || registrationEmail !== body.email) {
+				return json({ error: "Invalid passkey registration. Please request a new challenge first." }, { status: 400 });
+			}
+			
+			// Clear the registration cookie after validation (challenge cookie is cleared by login route)
+			cookies.delete("webauthn-registration-email", { path: "/" });
+			
 			await UserService.addPasskey(admin.id, {
 				id: body.passkey.id,
 				publicKey: body.passkey.publicKey,
 				counter: body.passkey.counter || 0,
 				deviceName: body.passkey.deviceName || "Unknown Device"
+			});
+			
+			log.debug("Passkey added to admin account", {
+				adminId: admin.id,
+				passkeyId: body.passkey.id
 			});
 		}
 
