@@ -5,5 +5,9 @@ export const ROUTES = {
 		CHECK_EMAIL: "/setup/check-email"
 	},
 	RESEND_CONFIRMATION: "/confirm/resend",
-	LOGIN: "/login"
+	LOGIN: "/login",
+	LOGOUT: "/logout",
+	DASHBOARD: {
+		MAIN: "/dashboard"
+	}
 };

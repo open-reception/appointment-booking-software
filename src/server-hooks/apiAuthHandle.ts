@@ -2,12 +2,13 @@ import type { Handle } from "@sveltejs/kit";
 import { SessionService } from "$lib/server/auth/session-service";
 import { UniversalLogger } from "$lib/logger";
 import { AuthorizationService } from "$lib/server/auth/authorization-service";
+import { getAccessToken } from "./utils/accessToken";
 
 const logger = new UniversalLogger().setContext("AuthHandle");
 
-const ACCESS_TOKEN_COOKIE_NAME = "access_token";
 const PROTECTED_PATHS = ["/api/admin", "/api/tenant-admin", "/api/tenants", "/api/auth/register"];
 const PUBLIC_PATHS = [
+	"/",
 	"/api/auth/challenge",
 	"/api/auth/login",
 	"/api/auth/register",
@@ -33,8 +34,8 @@ const PROTECTED_AUTH_PATHS = [
 	"/api/auth/invite"
 ];
 
-export const authHandle: Handle = async ({ event, resolve }) => {
-	const { url, request } = event;
+export const apiAuthHandle: Handle = async ({ event, resolve }) => {
+	const { url } = event;
 	const path = url.pathname;
 
 	if (!path.startsWith("/api")) {
@@ -63,22 +64,7 @@ export const authHandle: Handle = async ({ event, resolve }) => {
 		);
 	}
 
-	let accessToken: string | null = null;
-
-	// Get access token from cookie
-	const accessTokenCookie = event.cookies.get(ACCESS_TOKEN_COOKIE_NAME);
-	if (accessTokenCookie) {
-		accessToken = accessTokenCookie;
-	}
-
-	// Fallback: check Authorization header
-	if (!accessToken) {
-		const authHeader = request.headers.get("authorization");
-		if (authHeader?.startsWith("Bearer ")) {
-			accessToken = authHeader.substring(7);
-		}
-	}
-
+	const accessToken: string | null = getAccessToken(event);
 	if (!accessToken) {
 		logger.warn(`Authentication required for ${path}`);
 		return new Response(JSON.stringify({ error: "Authentication required" }), {
@@ -103,8 +89,6 @@ export const authHandle: Handle = async ({ event, resolve }) => {
 		...sessionData.user,
 		sessionId: sessionData.sessionId
 	};
-
-	logger.debug(`Added user information for ${sessionData.user.id}`);
 
 	if (isGlobalAdminPath && !AuthorizationService.hasRole(sessionData.user, "GLOBAL_ADMIN")) {
 		return new Response(JSON.stringify({ error: "Authentication failed" }), {

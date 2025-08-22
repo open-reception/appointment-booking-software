@@ -25,19 +25,30 @@ export const actions: Actions = {
 		}
 
 		// Create admin account
-		const admin = await UserService.createUser({
-			name: "Admin",
-			email: form.data.email,
-			passphrase: form.data.passphrase,
-			language: form.data.language
-		}, event.url);
-		const hasPasskey = false;
+		const admin = await UserService.createUser(
+			{
+				name: "Admin",
+				email: form.data.email,
+				passphrase: form.data.passphrase, // Will be undefined if passkey is used
+				language: form.data.language
+			},
+			event.url
+		);
+
+		if (form.data.passkey) {
+			await UserService.addPasskey(admin.id, {
+				id: form.data.passkey.id,
+				publicKey: form.data.passkey.publicKey,
+				counter: form.data.passkey.counter || 0,
+				deviceName: form.data.passkey.deviceName || "Unknown Device"
+			});
+		}
 
 		log.debug("Admin account created successfully", {
 			adminId: admin.id,
 			email: admin.email,
-			authMethod: hasPasskey ? "passkey" : "passphrase"
-			// passkeyId: hasPasskey ? body.passkey.id : undefined
+			authMethod: form.data.passkey ? "passkey" : "passphrase",
+			passkeyId: form.data.passkey ? form.data.passkey.id : undefined
 		});
 
 		return { form };
