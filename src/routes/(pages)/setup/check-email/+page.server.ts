@@ -24,7 +24,7 @@ export const actions: Actions = {
 			});
 		}
 
-		await UserService.resendConfirmationEmail(form.data.email);
+		await UserService.resendConfirmationEmail(form.data.email, event.url);
 
 		log.debug("Resent confirmation e-mail", {
 			email: form.data.email

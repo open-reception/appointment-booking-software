@@ -105,7 +105,7 @@ registerOpenAPIRoute("/admin/init", "POST", {
 	}
 });
 
-export const POST: RequestHandler = async ({ request, cookies }) => {
+export const POST: RequestHandler = async ({ request, cookies, url }) => {
 	const log = logger.setContext("API");
 
 	try {
@@ -140,7 +140,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 			email: body.email,
 			passphrase: body.passphrase, // Will be undefined if passkey is used
 			language: body.language || "de"
-		});
+		}, url);
 
 		// Add the passkey to the admin account if provided
 		if (hasPasskey) {

@@ -30,7 +30,7 @@ export const actions: Actions = {
 			email: form.data.email,
 			passphrase: form.data.passphrase,
 			language: form.data.language
-		});
+		}, event.url);
 		const hasPasskey = false;
 
 		log.debug("Admin account created successfully", {

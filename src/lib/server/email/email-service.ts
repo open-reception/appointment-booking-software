@@ -188,11 +188,46 @@ export async function sendAppointmentUpdatedEmail(
 }
 
 /**
+ * Generate base URL for email templates based on request URL and tenant
+ * @param {URL} requestUrl - The request URL
+ * @param {SelectTenant | null} tenant - Tenant information (null for global admin)
+ * @returns {string} The appropriate base URL
+ */
+export function generateBaseUrl(requestUrl: URL, tenant: SelectTenant | null): string {
+	const protocol = requestUrl.protocol;
+	const port = requestUrl.port ? `:${requestUrl.port}` : '';
+	const hostname = requestUrl.hostname;
+	
+	// In development, always use the original hostname regardless of tenant
+	if (hostname === 'localhost' || hostname.startsWith('127.') || hostname.startsWith('192.168.')) {
+		return `${protocol}//${hostname}${port}`;
+	}
+	
+	// In production, handle tenant subdomains
+	if (tenant?.shortName) {
+		const parts = hostname.split('.');
+		
+		if (parts.length > 2) {
+			// Complex subdomain - use only the last two parts (domain.tld) and add tenant
+			const domain = parts.slice(-2).join('.');
+			return `${protocol}//${tenant.shortName}.${domain}${port}`;
+		} else {
+			// Main domain, prepend tenant subdomain
+			return `${protocol}//${tenant.shortName}.${hostname}${port}`;
+		}
+	}
+	
+	// For global admin or no tenant, use main domain
+	return `${protocol}//${hostname}${port}`;
+}
+
+/**
  * Send registration confirmation email with one-time code
  * @param {SelectClient | SelectStaff} user - Database user object
  * @param {SelectTenant} tenant - Tenant information for branding
  * @param {string} confirmationCode - One-time confirmation code
  * @param {number} [expirationMinutes=15] - Code expiration time in minutes
+ * @param {URL} [requestUrl] - Request URL for generating baseUrl
  * @throws {Error} When email sending fails
  * @returns {Promise<void>}
  */
@@ -200,13 +235,23 @@ export async function sendConfirmationEmail(
 	user: { id: string; email: string | null; name: string | null; language?: string | null },
 	tenant: SelectTenant,
 	confirmationCode: string,
-	expirationMinutes: number = 15
+	expirationMinutes: number = 15,
+	requestUrl?: URL
 ): Promise<void> {
 	const recipient = createEmailRecipient(user);
 	const language = (recipient.language as Language) || "en";
 	const subject = language === "en" ? "Confirm Your Registration" : "Registrierung bestätigen";
 
-	await sendTemplatedEmail("confirmation", recipient, subject, language, tenant, {
+	// Generate appropriate base URL if request URL is provided
+	const baseUrl = requestUrl ? generateBaseUrl(requestUrl, tenant) : 'http://localhost:5173';
+
+	// Create enhanced tenant object with baseUrl
+	const tenantWithBaseUrl = {
+		...tenant,
+		baseUrl
+	};
+
+	await sendTemplatedEmail("confirmation", recipient, subject, language, tenantWithBaseUrl, {
 		confirmationCode,
 		expirationMinutes
 	});

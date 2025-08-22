@@ -71,7 +71,7 @@ export class UserService {
 	/**
 	 * Create a new user
 	 */
-	static async createUser(userData: UserCreation) {
+	static async createUser(userData: UserCreation, requestUrl?: URL) {
 		const log = logger.setContext("UserService");
 		log.debug("Creating new user account", {
 			email: userData.email,
@@ -138,7 +138,8 @@ export class UserService {
 						result[0],
 						tenant,
 						result[0].token,
-						10 // 10 minutes expiration to match tokenValidUntil
+						10, // 10 minutes expiration to match tokenValidUntil
+						requestUrl
 					);
 					log.debug("Confirmation email sent successfully", {
 						userId: result[0].id,
@@ -165,8 +166,9 @@ export class UserService {
 	/**
 	 * Resend the confirmation email for a user
 	 * @param email - Email of the user to confirm
+	 * @param requestUrl - Optional request URL for generating correct baseUrl
 	 */
-	static async resendConfirmationEmail(email: string): Promise<void> {
+	static async resendConfirmationEmail(email: string, requestUrl?: URL): Promise<void> {
 		const log = logger.setContext("UserService");
 		log.debug("Resending confirmation email", { email });
 
@@ -195,7 +197,8 @@ export class UserService {
 					user,
 					tenant,
 					token,
-					10 // 10 minutes expiration to match tokenValidUntil
+					10, // 10 minutes expiration to match tokenValidUntil
+					requestUrl
 				);
 				log.debug("Confirmation email sent successfully", {
 					userId: user.id,

@@ -123,7 +123,7 @@ registerOpenAPIRoute("/auth/register", "POST", {
 	}
 });
 
-export const POST: RequestHandler = async ({ request, cookies }) => {
+export const POST: RequestHandler = async ({ request, cookies, url }) => {
 	const log = logger.setContext("API");
 
 	try {
@@ -187,7 +187,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 			tenantId: finalTenantId,
 			passphrase: body.passphrase,
 			language: inviteUsed?.language || body.language || "de"
-		});
+		}, url);
 
 		// Add the passkey to the user account if provided
 		if (body.passkey) {

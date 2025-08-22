@@ -104,6 +104,8 @@ export const authHandle: Handle = async ({ event, resolve }) => {
 		sessionId: sessionData.sessionId
 	};
 
+	logger.debug(`Added user information for ${sessionData.user.id}`);
+
 	if (isGlobalAdminPath && !AuthorizationService.hasRole(sessionData.user, "GLOBAL_ADMIN")) {
 		return new Response(JSON.stringify({ error: "Authentication failed" }), {
 			status: 403,
