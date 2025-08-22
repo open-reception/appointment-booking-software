@@ -47,7 +47,11 @@ export const generatePasskey = async ({
 	id: string;
 	challenge: string;
 	email: string;
-}): Promise<{ response: AuthenticatorAttestationResponse } | null> => {
+}): Promise<{
+	response: AuthenticatorAttestationResponse;
+	id: string;
+	getClientExtensionResults: () => { deviceName?: string };
+} | null> => {
 	const publicKey: PublicKeyCredentialCreationOptions = {
 		challenge: base64ToArrayBuffer(challenge),
 		rp: {
@@ -65,5 +69,7 @@ export const generatePasskey = async ({
 	};
 	return (await navigator.credentials.create({ publicKey })) as {
 		response: AuthenticatorAttestationResponse;
+		id: string;
+		getClientExtensionResults: () => { deviceName?: string };
 	} | null;
 };

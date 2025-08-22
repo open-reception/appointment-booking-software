@@ -9,7 +9,9 @@ export const formSchema = z
 			.object({
 				id: z.string().min(10),
 				publicKey: z.string().min(10),
-				counter: z.number().min(0),
+				response: z.object({
+					authenticatorData: z.string().min(10)
+				}),
 				deviceName: z.string().min(1).optional()
 			})
 			.optional(),

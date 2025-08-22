@@ -66,22 +66,26 @@
 								const authenticatorData = passkeyResp.response.getAuthenticatorData();
 								console.log("authenticatorData", authenticatorData);
 
-								try {
-									const publicKeyBase64 = arrayBufferToBase64(publicKey);
-									console.log("publicKeyBase64", publicKeyBase64);
-								} catch (error) {
-									console.log("error", error);
-									throw error;
-								}
+								const publicKeyBase64 = arrayBufferToBase64(publicKey);
+								const authenticatorDataBase64 = arrayBufferToBase64(authenticatorData);
+								console.log("publicKeyBase64", publicKeyBase64);
+								console.log("authenticatorDataBase64", authenticatorDataBase64);
 
-								// $formData.passkey = {
-								// 	id: passkeyResp.id,
-								// 	publicKey,
-								// 	counter: 0,
-								// 	deviceName: passkeyResp.response.getClientExtensionResults().deviceName || "Unknown Device"
-								// };
+								$formData.passkey = {
+									id: passkeyResp.id,
+									publicKey: publicKeyBase64,
+									response: {
+										authenticatorData: authenticatorDataBase64
+									},
+									deviceName: passkeyResp.getClientExtensionResults().deviceName || "Unknown Device"
+								};
+
+								// Auto-submit the form since we have all required data
+								$passkeyLoading = "success";
+								// The form will submit automatically via the enhance action
 							})
-							.catch(() => {
+							.catch((reason) => {
+								console.error(reason);
 								$passkeyLoading = "error";
 							});
 					}
