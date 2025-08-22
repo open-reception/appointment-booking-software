@@ -1,18 +1,23 @@
 <script lang="ts">
+	import { goto } from "$app/navigation";
 	import { m } from "$i18n/messages.js";
+	import { getLocale } from "$i18n/runtime.js";
+	import { Button } from "$lib/components/ui/button";
 	import * as Form from "$lib/components/ui/form";
+	import type { EventReporter } from "$lib/components/ui/form/form-root.svelte";
 	import { Input } from "$lib/components/ui/input";
+	import { Passkey } from "$lib/components/ui/passkey";
+	import { ROUTES } from "$lib/const/routes";
+	import { onMount } from "svelte";
+	import { toast } from "svelte-sonner";
+	import { writable, type Writable } from "svelte/store";
 	import { type Infer, superForm, type SuperValidated } from "sveltekit-superforms";
 	import { zodClient } from "sveltekit-superforms/adapters";
 	import { formSchema, type FormSchema } from "./schema";
-	import { Button } from "$lib/components/ui/button";
-	import { writable } from "svelte/store";
-	import type { EventReporter } from "$lib/components/ui/form/form-root.svelte";
-	import { toast } from "svelte-sonner";
-	import { goto } from "$app/navigation";
-	import { ROUTES } from "$lib/const/routes";
-	import { getLocale } from "$i18n/runtime.js";
-	import { onMount } from "svelte";
+	import { Text } from "$lib/components/ui/typography";
+	import { Label } from "$lib/components/ui/label";
+	import type { PasskeyState } from "$lib/components/ui/passkey/state.svelte";
+	import { arrayBufferToBase64, fetchChallenge, generatePasskey } from "$lib/utils/passkey";
 
 	let {
 		data,
@@ -33,15 +38,79 @@
 
 			onEvent({ isSubmitting: false });
 		},
-		onSubmit: () => onEvent({ isSubmitting: true })
+		onSubmit: () => {
+			onEvent({ isSubmitting: true });
+
+			if ($isUsingPasskey) {
+				$passkeyLoading = "user";
+				fetchChallenge($formData.email).then((challenge) => {
+					if (!challenge) {
+						$passkeyLoading = "error";
+					} else {
+						generatePasskey({ ...challenge, email: $formData.email })
+							.then(async (passkeyResp) => {
+								console.log("passkeyResp", passkeyResp);
+								if (!passkeyResp) {
+									throw "Unusable passkey response";
+								}
+
+								// Returns ArrayBuffer that has to be converted to base64 string
+								const publicKey = passkeyResp.response.getPublicKey();
+								console.log("publicKey", publicKey);
+
+								if (!publicKey) {
+									throw "Public key not found in passkey response";
+								}
+
+								// May include device name and counter
+								const authenticatorData = passkeyResp.response.getAuthenticatorData();
+								console.log("authenticatorData", authenticatorData);
+
+								try {
+									const publicKeyBase64 = arrayBufferToBase64(publicKey);
+									console.log("publicKeyBase64", publicKeyBase64);
+								} catch (error) {
+									console.log("error", error);
+									throw error;
+								}
+
+								// $formData.passkey = {
+								// 	id: passkeyResp.id,
+								// 	publicKey,
+								// 	counter: 0,
+								// 	deviceName: passkeyResp.response.getClientExtensionResults().deviceName || "Unknown Device"
+								// };
+							})
+							.catch(() => {
+								$passkeyLoading = "error";
+							});
+					}
+				});
+			}
+		}
 	});
 
-	const { form: formData, enhance } = form;
-	const isUsingPasskey = writable(false);
+	const { form: formData, enhance, ...rest } = form;
+	const isUsingPasskey = writable(true);
+	const passkeyLoading: Writable<PasskeyState> = writable("initial");
 
 	onMount(() => {
 		if (!$formData.language) {
 			$formData.language = getLocale() ?? "en";
+		}
+	});
+
+	$effect(() => {
+		if ($isUsingPasskey) {
+			formData.update((data) => ({
+				...data,
+				passphrase: ""
+			}));
+		} else {
+			formData.update((data) => ({
+				...data,
+				passkey: undefined
+			}));
 		}
 	});
 </script>
@@ -63,7 +132,7 @@
 		</Form.Control>
 		<Form.FieldErrors />
 	</Form.Field>
-	<Form.Field {form} name="passphrase">
+	<Form.Field {form} name="passphrase" hidden={$isUsingPasskey}>
 		<Form.Control>
 			{#snippet children({ props })}
 				<Form.Label>{m["form.passphrase"]()}</Form.Label>
@@ -80,25 +149,29 @@
 		<Form.Description>
 			{m["form.passphraseRequirements"]()}
 			{m["login.or"]()}
-			{#if $isUsingPasskey}
-				<Button
-					variant="link"
-					size="sm"
-					onclick={() => isUsingPasskey.set(false)}
-					class="text-inherit"
-				>
-					{m["login.usePassphrase"]()}
-				</Button>
-			{:else}
-				<Button
-					variant="link"
-					size="sm"
-					onclick={() => isUsingPasskey.set(true)}
-					class="text-inherit"
-				>
-					{m["login.usePasskey"]()}
-				</Button>
-			{/if}.
+			<Button
+				variant="link"
+				size="sm"
+				onclick={() => ($isUsingPasskey = true)}
+				class="text-inherit"
+			>
+				{m["login.usePasskey"]()}
+			</Button>.
 		</Form.Description>
 	</Form.Field>
+	<div class:hidden={!$isUsingPasskey}>
+		<Label class="mb-2">{m["form.passkey"]()}</Label>
+		<Passkey.State state={$passkeyLoading} />
+		<Text style="md" color="medium">
+			{m["login.or"]()}
+			<Button
+				variant="link"
+				size="sm"
+				onclick={() => ($isUsingPasskey = false)}
+				class="text-inherit"
+			>
+				{m["login.usePassphrase"]()}
+			</Button>.
+		</Text>
+	</div>
 </Form.Root>

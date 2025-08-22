@@ -189,7 +189,7 @@ export class WebAuthnService {
 	 * This should be stored in the session and used for verification
 	 */
 	static generateChallenge(): string {
-		return randomBytes(32).toString("base64url");
+		return randomBytes(32).toString("base64");
 	}
 
 	/**

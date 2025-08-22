@@ -42,13 +42,28 @@
 		"passphraseRequirements": "Mindestens 30 Zeichen.",
 		"errors": {
 			"email": "Ungültiges Format",
-			"passphrase": "Muss mindestens 30 Zeichen lang sein"
-		}
+			"passphrase": "Muss mindestens 30 Zeichen lang sein",
+			"noPassAtAll": "Either passphrase or passkey is required",
+			"bothPassSet": "Nur Passphrase oder Passkey darf gesetzt sein"
+		},
+		"passkey": "Passkey"
 	},
 	"login": {
 		"or": "Oder",
 		"usePasskey": "Passkey verwenden",
-		"usePassphrase": "Passphrase verwenden"
+		"usePassphrase": "Passphrase verwenden",
+		"title": "Anmelden",
+		"description_passphrase": "Gib Deine E-Mail-Adresse und Deinen Passphrase ein, um Dich anzumelden.",
+		"action": "Anmelden",
+		"error": "Anmeldung fehlgeschlagen. Bitte erneut versuchen",
+		"passkey": {
+			"initial": "Warte auf Absenden des Formulars",
+			"success": "Passkey bereit",
+			"error": "Passkey konnte nicht abgerufen werden",
+			"user": "Warte während Passkey erstellt wird",
+			"loading": "Teste Passkey",
+			"retry": "Erneut versuchen"
+		}
 	},
 	"confirm": {
 		"success": {
@@ -68,5 +83,11 @@
 			"action": "E-Mail erneut senden",
 			"success": "E-Mail gesendet"
 		}
+	},
+	"logout": {
+		"title": "Erfolgreich abgemeldet",
+		"description": "Du wurdest abgemeldet.",
+		"success": "Erfolgreich abgemeldet",
+		"action": "Zur Anmeldung"
 	}
 }

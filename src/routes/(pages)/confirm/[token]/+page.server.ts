@@ -16,7 +16,6 @@ export const load: PageServerLoad = async (event) => {
 			const success = resp.status < 400;
 			try {
 				const body = await resp.json();
-				// TODO: Check if this is the first account
 				const isSetup = body.isSetup ?? false;
 				return { success, isSetup };
 			} catch (error) {
