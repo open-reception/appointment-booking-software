@@ -17,7 +17,7 @@
 	import { Text } from "$lib/components/ui/typography";
 	import { Label } from "$lib/components/ui/label";
 	import type { PasskeyState } from "$lib/components/ui/passkey/state.svelte";
-	import { email, unknown } from "zod/v4";
+	import { arrayBufferToBase64, fetchChallenge, generatePasskey } from "$lib/utils/passkey";
 
 	let {
 		data,
@@ -43,7 +43,7 @@
 
 			if ($isUsingPasskey) {
 				$passkeyLoading = "user";
-				fetchChallenge().then((challenge) => {
+				fetchChallenge($formData.email).then((challenge) => {
 					if (!challenge) {
 						$passkeyLoading = "error";
 					} else {
@@ -99,80 +99,6 @@
 			$formData.language = getLocale() ?? "en";
 		}
 	});
-
-	function arrayBufferToBase64(buffer: ArrayBuffer): string {
-		const bytes = new Uint8Array(buffer);
-		let binary = "";
-
-		// Simple loop, no fancy operations
-		for (let i = 0; i < bytes.length; i++) {
-			binary += String.fromCharCode(bytes[i]);
-		}
-
-		return window.btoa(binary);
-	}
-
-	function base64ToArrayBuffer(base64: string) {
-		const binaryString = atob(base64);
-		const bytes = new Uint8Array(binaryString.length);
-		for (let i = 0; i < binaryString.length; i++) {
-			bytes[i] = binaryString.charCodeAt(i);
-		}
-		return bytes.buffer;
-	}
-
-	const fetchChallenge = async () => {
-		const resp = await fetch("/api/auth/challenge", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json"
-			},
-			body: JSON.stringify({ email: $formData.email })
-		});
-
-		try {
-			const data = await resp.json();
-			return {
-				id: data.rpId,
-				challenge: data.challenge
-			};
-		} catch (error) {
-			return null;
-		}
-	};
-
-	const generatePasskey = async ({
-		id,
-		challenge,
-		email
-	}: {
-		id: string;
-		challenge: string;
-		email: string;
-	}): Promise<{ response: AuthenticatorAttestationResponse } | null> => {
-		try {
-			const publicKey: PublicKeyCredentialCreationOptions = {
-				challenge: base64ToArrayBuffer(challenge),
-				rp: {
-					id,
-					name: "Open Reception"
-				},
-				user: {
-					id: new Uint8Array(16),
-					name: email,
-					displayName: email
-				},
-				pubKeyCredParams: [
-					{ alg: -7, type: "public-key" } // ES256
-				]
-			};
-			return (await navigator.credentials.create({ publicKey })) as {
-				response: AuthenticatorAttestationResponse;
-			} | null;
-		} catch (error) {
-			throw error;
-		}
-	};
 
 	$effect(() => {
 		if ($isUsingPasskey) {
