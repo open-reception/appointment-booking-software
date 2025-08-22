@@ -1,5 +1,6 @@
 import { json } from "@sveltejs/kit";
 import { UserService } from "$lib/server/services/user-service";
+import { WebAuthnService } from "$lib/server/auth/webauthn-service";
 import { NotFoundError, ValidationError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
@@ -115,12 +116,15 @@ export const POST: RequestHandler = async ({ request }) => {
 			deviceName: body.passkey.deviceName
 		});
 
+		// Extract counter from WebAuthn credential
+		const counter = WebAuthnService.extractCounterFromCredential(body.passkey);
+		
 		// Add the passkey using the UserService
 		await UserService.addAdditionalPasskey(body.userId, {
 			id: body.passkey.id,
 			userId: body.userId,
 			publicKey: body.passkey.publicKey,
-			counter: body.passkey.counter || 0,
+			counter,
 			deviceName: body.passkey.deviceName || "Unknown Device"
 		});
 

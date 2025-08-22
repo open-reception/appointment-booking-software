@@ -1,6 +1,7 @@
 import { json } from "@sveltejs/kit";
 import { UserService } from "$lib/server/services/user-service";
 import { InviteService } from "$lib/server/services/invite-service";
+import { WebAuthnService } from "$lib/server/auth/webauthn-service";
 import { ValidationError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
@@ -201,10 +202,13 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
 			// Clear the registration cookie after validation (challenge cookie is cleared by login route)
 			cookies.delete("webauthn-registration-email", { path: "/" });
 			
+			// Extract counter from WebAuthn credential
+			const counter = WebAuthnService.extractCounterFromCredential(body.passkey);
+			
 			await UserService.addPasskey(user.id, {
 				id: body.passkey.id,
 				publicKey: body.passkey.publicKey,
-				counter: body.passkey.counter || 0,
+				counter,
 				deviceName: body.passkey.deviceName || "Unknown Device"
 			});
 			

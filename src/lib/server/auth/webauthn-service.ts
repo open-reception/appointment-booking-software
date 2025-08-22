@@ -214,4 +214,28 @@ export class WebAuthnService {
 	static async getUserPasskeys(userId: string) {
 		return await centralDb.select().from(userPasskey).where(eq(userPasskey.userId, userId));
 	}
+
+	/**
+	 * Extract counter from WebAuthn credential response
+	 * Used during registration to get the initial counter value
+	 */
+	static extractCounterFromCredential(credential: {
+		response: {
+			authenticatorData: string;
+		};
+	}): number {
+		try {
+			// Parse authenticator data
+			const authenticatorDataBuffer = Buffer.from(credential.response.authenticatorData, "base64");
+			
+			// Extract counter from authenticator data (bytes 33-36)
+			const counter = authenticatorDataBuffer.readUInt32BE(33);
+			
+			logger.debug("Counter extracted from credential", { counter });
+			return counter;
+		} catch (error) {
+			logger.error("Failed to extract counter from credential", { error: String(error) });
+			return 0; // Fallback to 0 if extraction fails
+		}
+	}
 }
