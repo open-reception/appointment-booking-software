@@ -1,12 +1,13 @@
 <script lang="ts">
-	import type { HTMLAttributes } from "svelte/elements";
-	import { cn, type WithElementRef } from "$lib/utils.js";
-	import Loader2Icon from "@lucide/svelte/icons/loader-2";
-	import Check from "@lucide/svelte/icons/check-circle";
-	import Error from "@lucide/svelte/icons/ban";
-	import Pointer from "@lucide/svelte/icons/pointer";
-	import AtSign from "@lucide/svelte/icons/at-sign";
 	import { m } from "$i18n/messages";
+	import { type WithElementRef } from "$lib/utils.js";
+	import AtSign from "@lucide/svelte/icons/at-sign";
+	import Error from "@lucide/svelte/icons/ban";
+	import Check from "@lucide/svelte/icons/check-circle";
+	import Loader2Icon from "@lucide/svelte/icons/loader-2";
+	import Pointer from "@lucide/svelte/icons/pointer";
+	import type { HTMLAttributes } from "svelte/elements";
+	import { Button } from "../button";
 
 	export type PasskeyState = "initial" | "click" | "loading" | "user" | "success" | "error";
 	let {
@@ -28,17 +29,11 @@
 	};
 </script>
 
-<div
-	bind:this={ref}
-	class={cn(
-		"dark:bg-input/30 border-input ring-offset-background flex h-9 w-full min-w-0 items-center gap-2 rounded-md border bg-transparent px-3 text-sm font-medium shadow-xs transition-[color,box-shadow] outline-none select-none md:text-sm",
-		className
-	)}
-	class:opacity-50={disabledStates.includes(state)}
-	class:cursor-not-allowed={disabledStates.includes(state)}
-	class:cursor-pointer={!disabledStates.includes(state)}
+<Button
+	variant="outline"
 	onclick={onClick}
-	{...restProps}
+	class="flex w-full justify-start"
+	disabled={disabledStates.includes(state)}
 >
 	{#if state === "initial"}
 		<AtSign class="size-4" />
@@ -59,4 +54,4 @@
 		<Error class="size-4" />
 		{m["passkey.add.error"]()}
 	{/if}
-</div>
+</Button>
