@@ -171,7 +171,7 @@ export const staff = pgTable("staff", {
 
 /**
  * Appointment table - represents scheduled appointments between clients and channels
- * Contains encrypted appointment data for privacy protection
+ * Uses hybrid encryption: symmetric key for data, asymmetric for key sharing
  * Stored in tenant-specific database
  * @table appointment
  */
@@ -186,16 +186,36 @@ export const appointment = pgTable("appointment", {
 	channelId: uuid("channel_id")
 		.notNull()
 		.references(() => channel.id),
-	/** Date and time of the appointment */
+	/** Date and time of the appointment (unencrypted for scheduling) */
 	appointmentDate: date("appointment_date").notNull(),
 	/** When appointment data expires and can be auto-deleted */
 	expiryDate: date("expiry_date").notNull(),
-	/** Appointment title/subject */
-	title: text("title").notNull(),
-	/** Optional detailed description of the appointment */
-	description: text("description"),
+	/** Encrypted appointment data (title, description, client email) */
+	encryptedData: text("encrypted_data").notNull(),
+	/** Symmetric key encrypted for the client */
+	clientKeyShare: text("client_key_share").notNull(),
 	/** Current status of the appointment */
 	status: appointmentStatusEnum("status").notNull().default("NEW")
+});
+
+/**
+ * AppointmentKeyShare table - stores the symmetric key encrypted for each staff member
+ * Allows staff and admins to decrypt appointment data
+ * @table appointmentKeyShare
+ */
+export const appointmentKeyShare = pgTable("appointment_key_share", {
+	/** Primary key - unique identifier */
+	id: uuid("id").primaryKey().defaultRandom(),
+	/** Foreign key to appointment */
+	appointmentId: uuid("appointment_id")
+		.notNull()
+		.references(() => appointment.id),
+	/** Foreign key to staff member who can decrypt */
+	staffId: uuid("staff_id")
+		.notNull()
+		.references(() => staff.id),
+	/** Symmetric key encrypted with this staff member's public key */
+	encryptedKey: text("encrypted_key").notNull()
 });
 
 /**
@@ -226,3 +246,6 @@ export type SelectChannelAgent = InferSelectModel<typeof channelAgent>;
 
 /** Channel-SlotTemplate junction record type for database queries */
 export type SelectChannelSlotTemplate = InferSelectModel<typeof channelSlotTemplate>;
+
+/** Appointment key share record type for database queries */
+export type SelectAppointmentKeyShare = InferSelectModel<typeof appointmentKeyShare>;
