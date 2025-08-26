@@ -11,9 +11,10 @@
 	import { onMount } from "svelte";
 	import { toast } from "svelte-sonner";
 	import { writable, type Writable } from "svelte/store";
-	import { type Infer, superForm, type SuperValidated } from "sveltekit-superforms";
+	import { type Infer, type SuperValidated } from "sveltekit-superforms";
 	import { zodClient } from "sveltekit-superforms/adapters";
-	import { formSchema, type FormSchema } from "./schema";
+	import { superForm } from "sveltekit-superforms/client";
+	import { baseSchema, formSchema, type FormSchema } from "./schema";
 	import { Text } from "$lib/components/ui/typography";
 	import { Label } from "$lib/components/ui/label";
 	import type { PasskeyState } from "$lib/components/ui/passkey/state.svelte";
@@ -28,7 +29,13 @@
 
 	const form = superForm(data.form, {
 		validators: zodClient(formSchema),
+		onChange: (event) => {
+			if (event.paths.includes("email")) {
+				setProperPasskeyState();
+			}
+		},
 		onResult: async (event) => {
+			console.log("--- onResult()", event);
 			if (event.result.type === "success") {
 				toast.success(m["setup.create_admin_account.success"]());
 				await goto(ROUTES.SETUP.CHECK_EMAIL, {
@@ -38,92 +45,113 @@
 
 			onEvent({ isSubmitting: false });
 		},
-		onSubmit: () => {
-			onEvent({ isSubmitting: true });
-
-			if ($isUsingPasskey) {
-				$passkeyLoading = "user";
-				fetchChallenge($formData.email).then((challenge) => {
-					if (!challenge) {
-						$passkeyLoading = "error";
-					} else {
-						generatePasskey({ ...challenge, email: $formData.email })
-							.then(async (passkeyResp) => {
-								console.log("passkeyResp", passkeyResp);
-								if (!passkeyResp) {
-									throw "Unusable passkey response";
-								}
-
-								// Returns ArrayBuffer that has to be converted to base64 string
-								const publicKey = passkeyResp.response.getPublicKey();
-								console.log("publicKey", publicKey);
-
-								if (!publicKey) {
-									throw "Public key not found in passkey response";
-								}
-
-								// May include device name and counter
-								const authenticatorData = passkeyResp.response.getAuthenticatorData();
-								console.log("authenticatorData", authenticatorData);
-
-								const publicKeyBase64 = arrayBufferToBase64(publicKey);
-								const authenticatorDataBase64 = arrayBufferToBase64(authenticatorData);
-								console.log("publicKeyBase64", publicKeyBase64);
-								console.log("authenticatorDataBase64", authenticatorDataBase64);
-
-								$formData.passkey = {
-									id: passkeyResp.id,
-									publicKey: publicKeyBase64,
-									response: {
-										authenticatorData: authenticatorDataBase64
-									},
-									deviceName: passkeyResp.getClientExtensionResults().deviceName || "Unknown Device"
-								};
-
-								// Auto-submit the form since we have all required data
-								$passkeyLoading = "success";
-								// The form will submit automatically via the enhance action
-							})
-							.catch((reason) => {
-								console.error(reason);
-								$passkeyLoading = "error";
-							});
-					}
-				});
-			}
-		}
+		onSubmit: () => onEvent({ isSubmitting: true })
 	});
 
-	const { form: formData, enhance, ...rest } = form;
-	const isUsingPasskey = writable(true);
+	const { form: formData, enhance } = form;
 	const passkeyLoading: Writable<PasskeyState> = writable("initial");
 
 	onMount(() => {
+		$formData.type = "passkey";
 		if (!$formData.language) {
 			$formData.language = getLocale() ?? "en";
 		}
 	});
 
-	$effect(() => {
-		if ($isUsingPasskey) {
-			formData.update((data) => ({
-				...data,
-				passphrase: ""
-			}));
+	const setProperPasskeyState = () => {
+		const isOk = baseSchema.shape.email.safeParse($formData.email).success;
+		if (isOk) {
+			$passkeyLoading = "click";
 		} else {
-			formData.update((data) => ({
-				...data,
-				passkey: undefined
-			}));
+			$passkeyLoading = "initial";
 		}
-	});
+	};
+
+	const onToggle = () => {
+		if ($formData.type === "passkey") {
+			const { id, publicKeyBase64, authenticatorDataBase64, type, ...rest } = $formData;
+			$formData = {
+				...rest,
+				type: "passphrase",
+				passphrase: ""
+			};
+		} else {
+			const { passphrase, type, ...rest } = $formData;
+			$formData = {
+				...rest,
+				type: "passkey",
+				id: "",
+				publicKeyBase64: "",
+				authenticatorDataBase64: ""
+			};
+			setProperPasskeyState();
+		}
+	};
+
+	const onSetPasskey = async () => {
+		$passkeyLoading = "loading";
+		const challenge = await fetchChallenge($formData.email);
+
+		if (!challenge) {
+			$passkeyLoading = "error";
+		} else {
+			$passkeyLoading = "user";
+			const passkeyResp = await generatePasskey({ ...challenge, email: $formData.email }).catch(
+				(reason) => {
+					console.error(reason);
+					$passkeyLoading = "error";
+				}
+			);
+
+			if (!passkeyResp) {
+				$passkeyLoading = "error";
+				return;
+			}
+
+			// Returns ArrayBuffer that has to be converted to base64 string
+			const publicKey = passkeyResp.response.getPublicKey();
+			if (!publicKey) {
+				$passkeyLoading = "error";
+				return;
+			}
+
+			// May include device name and counter
+			const authenticatorData = passkeyResp.response.getAuthenticatorData();
+
+			// Update form data with passkey info
+			const publicKeyBase64 = arrayBufferToBase64(publicKey);
+			const authenticatorDataBase64 = arrayBufferToBase64(authenticatorData);
+
+			const { type, ...rest } = $formData;
+			$formData = {
+				...rest,
+				type: "passkey",
+				id: passkeyResp.id,
+				publicKeyBase64,
+				authenticatorDataBase64
+			};
+
+			// Update UI to show passkey is ready
+			$passkeyLoading = "success";
+
+			const validation = await form.validateForm();
+			console.log("final validation", validation);
+		}
+	};
 </script>
 
 <Form.Root {formId} {enhance}>
+	<Form.Field {form} name="type" class="block">
+		<Form.Control>
+			{#snippet children({ props })}
+				<Input {...props} bind:value={$formData.type} type="text" />
+			{/snippet}
+		</Form.Control>
+	</Form.Field>
 	<Form.Field {form} name="language" class="hidden">
 		<Form.Control>
 			{#snippet children({ props })}
-				<input {...props} bind:value={$formData.language} type="hidden" />
+				<Input {...props} bind:value={$formData.language} type="hidden" />
 			{/snippet}
 		</Form.Control>
 	</Form.Field>
@@ -136,46 +164,61 @@
 		</Form.Control>
 		<Form.FieldErrors />
 	</Form.Field>
-	<Form.Field {form} name="passphrase" hidden={$isUsingPasskey}>
-		<Form.Control>
-			{#snippet children({ props })}
-				<Form.Label>{m["form.passphrase"]()}</Form.Label>
-				<Input
-					{...props}
-					bind:value={$formData.passphrase}
-					type="password"
-					minlength={30}
-					maxlength={100}
-				/>
-			{/snippet}
-		</Form.Control>
-		<Form.FieldErrors />
-		<Form.Description>
-			{m["form.passphraseRequirements"]()}
-			{m["login.or"]()}
-			<Button
-				variant="link"
-				size="sm"
-				onclick={() => ($isUsingPasskey = true)}
-				class="text-inherit"
-			>
-				{m["login.usePasskey"]()}
-			</Button>.
-		</Form.Description>
-	</Form.Field>
-	<div class:hidden={!$isUsingPasskey}>
-		<Label class="mb-2">{m["form.passkey"]()}</Label>
-		<Passkey.State state={$passkeyLoading} />
-		<Text style="md" color="medium">
-			{m["login.or"]()}
-			<Button
-				variant="link"
-				size="sm"
-				onclick={() => ($isUsingPasskey = false)}
-				class="text-inherit"
-			>
-				{m["login.usePassphrase"]()}
-			</Button>.
-		</Text>
-	</div>
+	{#if $formData.type === "passphrase"}
+		<Form.Field {form} name="passphrase">
+			<Form.Control>
+				{#snippet children({ props })}
+					<Form.Label>{m["form.passphrase"]()}</Form.Label>
+
+					<Input
+						{...props}
+						bind:value={$formData.passphrase}
+						type="password"
+						minlength={30}
+						maxlength={100}
+					/>
+				{/snippet}
+			</Form.Control>
+			<Form.FieldErrors />
+			<Form.Description>
+				{m["form.passphraseRequirements"]()}
+				{m["login.or"]()}
+				<Button variant="link" size="sm" onclick={onToggle} class="text-inherit">
+					{m["login.usePasskey"]()}
+				</Button>.
+			</Form.Description>
+		</Form.Field>
+	{:else if $formData.type === "passkey"}
+		<div>
+			<Form.Field {form} name="id" class="block">
+				<Form.Control>
+					{#snippet children({ props })}
+						<Input {...props} bind:value={$formData.id} type="text" />
+					{/snippet}
+				</Form.Control>
+			</Form.Field>
+			<Form.Field {form} name="publicKeyBase64" class="block">
+				<Form.Control>
+					{#snippet children({ props })}
+						<Input {...props} bind:value={$formData.publicKeyBase64} type="text" />
+					{/snippet}
+				</Form.Control>
+			</Form.Field>
+			<Form.Field {form} name="authenticatorDataBase64" class="block">
+				<Form.Control>
+					{#snippet children({ props })}
+						<Input {...props} bind:value={$formData.authenticatorDataBase64} type="text" />
+					{/snippet}
+				</Form.Control>
+			</Form.Field>
+			<Label class="mb-2">{m["form.passkey"]()}</Label>
+			<Passkey.State state={$passkeyLoading} onclick={onSetPasskey} />
+			<Text style="md" color="medium">
+				{m["login.or"]()}
+				<Button variant="link" size="sm" onclick={onToggle} class="text-inherit">
+					{m["login.usePassphrase"]()}
+				</Button>.
+			</Text>
+		</div>
+	{/if}
 </Form.Root>

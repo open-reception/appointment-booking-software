@@ -1,29 +1,24 @@
 import { m } from "$i18n/messages";
 import { z } from "zod";
 
+export const baseSchema = z.object({
+	email: z.string().email(m["form.errors.email"]()),
+	language: z.enum(["de", "en"])
+});
+
+const passkeySchema = z.object({
+	type: z.literal("passkey"),
+	id: z.string().min(3),
+	publicKeyBase64: z.string().base64(),
+	authenticatorDataBase64: z.string().base64()
+});
+const passphraseSchema = z.object({
+	type: z.literal("passphrase"),
+	passphrase: z.string().min(30, m["form.errors.passphrase"]())
+});
+
 export const formSchema = z
-	.object({
-		email: z.string().email(m["form.errors.email"]()),
-		passphrase: z.string().min(30, m["form.errors.passphrase"]()).optional(),
-		passkey: z
-			.object({
-				id: z.string().min(10),
-				publicKey: z.string().min(10),
-				response: z.object({
-					authenticatorData: z.string().min(10)
-				}),
-				deviceName: z.string().min(1).optional()
-			})
-			.optional(),
-		language: z.enum(["de", "en"])
-	})
-	.refine((data) => !!data.passphrase || !!data.passkey, {
-		message: m["form.errors.noPassAtAll"](),
-		path: ["passphrase"]
-	})
-	.refine((data) => !(data.passphrase && data.passkey), {
-		message: m["form.errors.bothPassSet"](),
-		path: ["passphrase"]
-	});
+	.discriminatedUnion("type", [passkeySchema, passphraseSchema])
+	.and(baseSchema);
 
 export type FormSchema = typeof formSchema;

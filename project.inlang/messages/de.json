@@ -55,15 +55,7 @@
 		"title": "Anmelden",
 		"description_passphrase": "Gib Deine E-Mail-Adresse und Deinen Passphrase ein, um Dich anzumelden.",
 		"action": "Anmelden",
-		"error": "Anmeldung fehlgeschlagen. Bitte erneut versuchen",
-		"passkey": {
-			"initial": "Warte auf Absenden des Formulars",
-			"success": "Passkey bereit",
-			"error": "Passkey konnte nicht abgerufen werden",
-			"user": "Warte während Passkey erstellt wird",
-			"loading": "Teste Passkey",
-			"retry": "Erneut versuchen"
-		}
+		"error": "Anmeldung fehlgeschlagen. Bitte erneut versuchen"
 	},
 	"confirm": {
 		"success": {
@@ -89,5 +81,16 @@
 		"description": "Du wurdest abgemeldet.",
 		"success": "Erfolgreich abgemeldet",
 		"action": "Zur Anmeldung"
+	},
+	"passkey": {
+		"add": {
+			"initial": "Warten auf E-Mail Adresse",
+			"click": "Klicke/Tippe um einen Passkey hinzuzufügen",
+			"loading": "Lade Passkey-Challenge",
+			"user": "Warte auf Passkey-Erstellung",
+			"success": "Passkey hinzugefügt",
+			"error": "Passkey konnte nicht hinzugefügt werden",
+			"retry": "Erneut versuchen"
+		}
 	}
 }

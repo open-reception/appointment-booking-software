@@ -63,14 +63,6 @@
 			"initial": "Requesting passkey",
 			"success": "Passkey saved",
 			"error": "Passkey could not be retrieved"
-		},
-		"passkey": {
-			"initial": "Waiting for form to be sent",
-			"success": "Added Passkey successfully",
-			"error": "Passkey could not be added",
-			"user": "Waiting for passkey to be created",
-			"loading": "Completing challenge",
-			"retry": "Retry"
 		}
 	},
 	"confirm": {
@@ -97,5 +89,16 @@
 		"description": "You are logged-out.",
 		"success": "Logout successful",
 		"action": "Go to Login"
+	},
+	"passkey": {
+		"add": {
+			"initial": "Waiting for E-Mail Address",
+			"click": "Click/Tap to add passkey",
+			"loading": "Completing challenge",
+			"user": "Waiting for creation to complete",
+			"success": "Added Passkey successfully",
+			"error": "Passkey could not be added",
+			"retry": "Retry"
+		}
 	}
 }

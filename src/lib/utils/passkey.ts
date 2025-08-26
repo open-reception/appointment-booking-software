@@ -10,7 +10,7 @@ export const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
 	return window.btoa(binary);
 };
 
-function base64ToArrayBuffer(base64: string) {
+export function base64ToArrayBuffer(base64: string) {
 	const binaryString = atob(base64);
 	const bytes = new Uint8Array(binaryString.length);
 	for (let i = 0; i < binaryString.length; i++) {
@@ -39,6 +39,11 @@ export const fetchChallenge = async (email: string) => {
 	}
 };
 
+export type GeneratePasskeyResponse = {
+	response: AuthenticatorAttestationResponse;
+	id: string;
+	getClientExtensionResults: () => { deviceName?: string };
+} | null;
 export const generatePasskey = async ({
 	id,
 	challenge,
@@ -47,11 +52,7 @@ export const generatePasskey = async ({
 	id: string;
 	challenge: string;
 	email: string;
-}): Promise<{
-	response: AuthenticatorAttestationResponse;
-	id: string;
-	getClientExtensionResults: () => { deviceName?: string };
-} | null> => {
+}): Promise<GeneratePasskeyResponse> => {
 	const publicKey: PublicKeyCredentialCreationOptions = {
 		challenge: base64ToArrayBuffer(challenge),
 		rp: {
@@ -67,9 +68,11 @@ export const generatePasskey = async ({
 			{ alg: -7, type: "public-key" } // ES256
 		]
 	};
-	return (await navigator.credentials.create({ publicKey })) as {
-		response: AuthenticatorAttestationResponse;
-		id: string;
-		getClientExtensionResults: () => { deviceName?: string };
-	} | null;
+	return (await navigator.credentials.create({ publicKey })) as GeneratePasskeyResponse;
+};
+
+export const getCounterFromAuthenticatorData = (authenticatorData: ArrayBuffer) => {
+	const view = new DataView(authenticatorData);
+	// Counter is at offset 33, 4 bytes, big-endian
+	return view.getUint32(33, false); // false = big-endian
 };
