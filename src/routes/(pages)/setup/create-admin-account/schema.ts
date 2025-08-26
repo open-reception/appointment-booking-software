@@ -6,19 +6,17 @@ export const baseSchema = z.object({
 	language: z.enum(["de", "en"])
 });
 
-const passkeySchema = z.object({
+const passkeySchema = baseSchema.extend({
 	type: z.literal("passkey"),
 	id: z.string().min(3),
 	publicKeyBase64: z.string().base64(),
 	authenticatorDataBase64: z.string().base64()
 });
-const passphraseSchema = z.object({
+const passphraseSchema = baseSchema.extend({
 	type: z.literal("passphrase"),
 	passphrase: z.string().min(30, m["form.errors.passphrase"]())
 });
 
-export const formSchema = z
-	.discriminatedUnion("type", [passkeySchema, passphraseSchema])
-	.and(baseSchema);
+export const formSchema = z.discriminatedUnion("type", [passkeySchema, passphraseSchema]);
 
 export type FormSchema = typeof formSchema;
