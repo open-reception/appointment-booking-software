@@ -35,7 +35,6 @@
 			}
 		},
 		onResult: async (event) => {
-			console.log("--- onResult()", event);
 			if (event.result.type === "success") {
 				toast.success(m["setup.create_admin_account.success"]());
 				await goto(ROUTES.SETUP.CHECK_EMAIL, {
@@ -97,8 +96,7 @@
 		} else {
 			$passkeyLoading = "user";
 			const passkeyResp = await generatePasskey({ ...challenge, email: $formData.email }).catch(
-				(reason) => {
-					console.error(reason);
+				() => {
 					$passkeyLoading = "error";
 				}
 			);
@@ -133,9 +131,6 @@
 
 			// Update UI to show passkey is ready
 			$passkeyLoading = "success";
-
-			const validation = await form.validateForm();
-			console.log("final validation", validation);
 		}
 	};
 </script>

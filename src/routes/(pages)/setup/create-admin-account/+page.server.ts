@@ -17,20 +17,12 @@ export const load: PageServerLoad = async () => {
 
 export const actions: Actions = {
 	default: async (event) => {
-		console.log("--- actions/default()");
-		console.log("Body already used?", event.request.bodyUsed);
-
 		const form = await superValidate(event, zod(formSchema));
-		console.log("form", JSON.stringify(form.data, null, 2));
 		if (!form.valid) {
-			console.log("not valid", form.errors);
 			return fail(400, {
 				form: { ...form, data: { ...form.data, type: "passkey" } }
 			});
 		}
-
-		console.log("form is valid, proceeding");
-		return { form };
 
 		// Create admin account
 		const admin = await UserService.createUser(
@@ -50,7 +42,6 @@ export const actions: Actions = {
 			const publicKey = form.data.publicKeyBase64;
 			const authenticatorData = base64ToArrayBuffer(form.data.authenticatorDataBase64);
 			const counter = getCounterFromAuthenticatorData(authenticatorData);
-			console.log("counter", counter);
 
 			await UserService.addPasskey(admin.id, {
 				id: form.data.id,
