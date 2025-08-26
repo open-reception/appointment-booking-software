@@ -68,16 +68,14 @@
 
 	const onToggle = () => {
 		if ($formData.type === "passkey") {
-			const { id, publicKeyBase64, authenticatorDataBase64, type, ...rest } = $formData;
 			$formData = {
-				...rest,
+				...$formData,
 				type: "passphrase",
 				passphrase: ""
 			};
 		} else {
-			const { passphrase, type, ...rest } = $formData;
 			$formData = {
-				...rest,
+				...$formData,
 				type: "passkey",
 				id: "",
 				publicKeyBase64: "",
@@ -119,7 +117,6 @@
 			// Update form data with passkey info
 			const publicKeyBase64 = arrayBufferToBase64(publicKey);
 			const authenticatorDataBase64 = arrayBufferToBase64(authenticatorData);
-
 			const { type, ...rest } = $formData;
 			$formData = {
 				...rest,
@@ -133,10 +130,13 @@
 			$passkeyLoading = "success";
 		}
 	};
+
+	type FormDataPassphrase = Extract<typeof $formData, { type: "passphrase" }>;
+	type FormDataPasskey = Extract<typeof $formData, { type: "passkey" }>;
 </script>
 
 <Form.Root {formId} {enhance}>
-	<Form.Field {form} name="type" class="block">
+	<Form.Field {form} name="type" class="hidden">
 		<Form.Control>
 			{#snippet children({ props })}
 				<Input {...props} bind:value={$formData.type} type="text" />
@@ -164,10 +164,10 @@
 			<Form.Control>
 				{#snippet children({ props })}
 					<Form.Label>{m["form.passphrase"]()}</Form.Label>
-
+					<!-- prettier-ignore -->
 					<Input
 						{...props}
-						bind:value={$formData.passphrase}
+						bind:value={($formData as FormDataPassphrase).passphrase}
 						type="password"
 						minlength={30}
 						maxlength={100}
@@ -183,26 +183,30 @@
 				</Button>.
 			</Form.Description>
 		</Form.Field>
-	{:else if $formData.type === "passkey"}
+	{/if}
+	{#if $formData.type === "passkey"}
 		<div>
-			<Form.Field {form} name="id" class="block">
+			<Form.Field {form} name="id" class="hidden">
 				<Form.Control>
 					{#snippet children({ props })}
-						<Input {...props} bind:value={$formData.id} type="text" />
+						<!-- prettier-ignore -->
+						<Input {...props} bind:value={($formData as FormDataPasskey).id} type="hidden" />
 					{/snippet}
 				</Form.Control>
 			</Form.Field>
-			<Form.Field {form} name="publicKeyBase64" class="block">
+			<Form.Field {form} name="publicKeyBase64" class="hidden">
 				<Form.Control>
 					{#snippet children({ props })}
-						<Input {...props} bind:value={$formData.publicKeyBase64} type="text" />
+						<!-- prettier-ignore -->
+						<Input {...props} bind:value={($formData as FormDataPasskey).publicKeyBase64} type="hidden" />
 					{/snippet}
 				</Form.Control>
 			</Form.Field>
-			<Form.Field {form} name="authenticatorDataBase64" class="block">
+			<Form.Field {form} name="authenticatorDataBase64" class="hidden">
 				<Form.Control>
 					{#snippet children({ props })}
-						<Input {...props} bind:value={$formData.authenticatorDataBase64} type="text" />
+						<!-- prettier-ignore -->
+						<Input {...props} bind:value={($formData as FormDataPasskey).authenticatorDataBase64} type="hidden" />
 					{/snippet}
 				</Form.Control>
 			</Form.Field>

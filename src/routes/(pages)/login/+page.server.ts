@@ -3,6 +3,7 @@ import { superValidate } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
 import type { Actions, PageServerLoad } from "./$types";
 import { formSchema } from "./schema";
+import type { WebAuthnCredential } from "$lib/server/auth/webauthn-service";
 
 export const load: PageServerLoad = async () => {
 	return {
@@ -15,9 +16,32 @@ export const actions: Actions = {
 		const form = await superValidate(event, zod(formSchema));
 
 		if (!form.valid) {
-			return fail(400, {
-				form
-			});
+			if (!form.valid) {
+				return fail(400, {
+					form: { ...form, data: { ...form.data, type: "passkey" } }
+				});
+			}
+		}
+
+		let body: { credential?: WebAuthnCredential; email: string; passphrase?: string } = {
+			email: form.data.email
+		};
+		if (form.data.type === "passphrase") {
+			body = { ...body, passphrase: form.data.passphrase };
+		}
+
+		if (form.data.type === "passkey") {
+			body = {
+				...body,
+				credential: {
+					id: form.data.id,
+					response: {
+						clientDataJSON: form.data.clientDataBase64,
+						authenticatorData: form.data.authenticatorDataBase64,
+						signature: form.data.signatureBase64
+					}
+				}
+			};
 		}
 
 		const resp = await event.fetch("/api/auth/login", {
@@ -25,7 +49,7 @@ export const actions: Actions = {
 			headers: {
 				"Content-Type": "application/json"
 			},
-			body: JSON.stringify({ email: form.data.email, passphrase: form.data.passphrase })
+			body: JSON.stringify(body)
 		});
 
 		if (resp.status < 400) {

@@ -71,6 +71,37 @@ export const generatePasskey = async ({
 	return (await navigator.credentials.create({ publicKey })) as GeneratePasskeyResponse;
 };
 
+export type GetCredentialResponse = PublicKeyCredential & {
+	response: PublicKeyCredential;
+	id: string;
+};
+export const getCredential = async ({
+	id,
+	challenge,
+	email
+}: {
+	id: string;
+	challenge: string;
+	email: string;
+}) => {
+	const publicKey: PublicKeyCredentialCreationOptions = {
+		challenge: base64ToArrayBuffer(challenge),
+		rp: {
+			id,
+			name: "Open Reception"
+		},
+		user: {
+			id: new Uint8Array(16),
+			name: email,
+			displayName: email
+		},
+		pubKeyCredParams: [
+			{ alg: -7, type: "public-key" } // ES256
+		]
+	};
+	return (await navigator.credentials.get({ publicKey })) as GetCredentialResponse;
+};
+
 export const getCounterFromAuthenticatorData = (authenticatorData: ArrayBuffer) => {
 	const view = new DataView(authenticatorData);
 	// Counter is at offset 33, 4 bytes, big-endian
