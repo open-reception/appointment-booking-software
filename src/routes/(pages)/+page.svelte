@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { HorizontalPagePadding, PageWithClaim } from "$lib/components/ui/page";
-	import { Text } from "$lib/components/ui/typography";
+	import { Headline, Text } from "$lib/components/ui/typography";
 
 	export let data;
 </script>
@@ -12,6 +12,7 @@
 <PageWithClaim>
 	<main>
 		<HorizontalPagePadding class="flex flex-col items-start gap-4">
+			<Headline level="h1" style="h3">Hello World</Headline>
 			<Text style="md">
 				Environment configuration is
 				{#await data.streamed.isEnvOk}
