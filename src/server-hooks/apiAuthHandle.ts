@@ -49,7 +49,13 @@ export const apiAuthHandle: Handle = async ({ event, resolve }) => {
 	const isAdminPath = ADMIN_PATHS.some((gadPath) => path.startsWith(gadPath));
 
 	// Allow public paths
-	if (isPublicPath) {
+	if (
+		isPublicPath &&
+		!isProtectedAuthPath &&
+		!isProtectedPath &&
+		!isAdminPath &&
+		!isGlobalAdminPath
+	) {
 		return resolve(event);
 	}
 

@@ -11,7 +11,8 @@ const logger = new UniversalLogger().setContext("AuthChallengeAPI");
 
 registerOpenAPIRoute("/auth/challenge", "POST", {
 	summary: "Generate WebAuthn authentication challenge",
-	description: "Generate a challenge for WebAuthn authentication (login) or registration and return registered passkeys if user exists",
+	description:
+		"Generate a challenge for WebAuthn authentication (login) or registration and return registered passkeys if user exists",
 	tags: ["Authentication"],
 	requestBody: {
 		description: "User email to generate challenge for",
@@ -93,16 +94,16 @@ function getRpId(requestUrl: URL): string {
 	if (env.NODE_ENV === "production") {
 		// In production, use the hostname (without subdomain for main domain)
 		const hostname = requestUrl.hostname;
-		const parts = hostname.split('.');
-		
+		const parts = hostname.split(".");
+
 		// If it's a subdomain (e.g., tenant.example.com), use the main domain (example.com)
 		// This allows passkeys to work across all subdomains
 		if (parts.length > 2) {
-			return parts.slice(-2).join('.');
+			return parts.slice(-2).join(".");
 		}
 		return hostname;
 	}
-	
+
 	// Development: use localhost
 	return "localhost";
 }
@@ -116,14 +117,16 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
 		// Try to get user by email - but don't fail if not found
 		let user = null;
 		let isRegistration = false;
-		
+
 		try {
 			user = await UserService.getUserByEmail(body.email);
 		} catch (error) {
 			if (error instanceof NotFoundError) {
 				// User doesn't exist yet - this is a registration flow
 				isRegistration = true;
-				logger.debug("User not found - generating challenge for registration", { email: body.email });
+				logger.debug("User not found - generating challenge for registration", {
+					email: body.email
+				});
 			} else {
 				throw error;
 			}
@@ -157,11 +160,11 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
 			type: "public-key";
 			transports: string[];
 		}> = [];
-		
+
 		if (user) {
 			// Get user's registered passkeys for login
 			const passkeys = await WebAuthnService.getUserPasskeys(user.id);
-			
+
 			// Format passkeys for WebAuthn API
 			allowCredentials = passkeys.map((passkey) => ({
 				id: passkey.id,
@@ -183,7 +186,16 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
 		}
 
 		const rpId = getRpId(url);
-		
+
+		logger.debug("Returning challenge data", {
+			challenge,
+			allowCredentials,
+			timeout: 60000, // 60 seconds
+			rpId,
+			userVerification: "preferred",
+			isRegistration
+		});
+
 		return json({
 			challenge,
 			allowCredentials,

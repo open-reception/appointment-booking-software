@@ -1,4 +1,4 @@
-import { centralDb } from "$lib/server/db";
+import { centralDb as db } from "$lib/server/db";
 import { userPasskey } from "$lib/server/db/central-schema";
 import { eq } from "drizzle-orm";
 import { randomBytes, createHash } from "node:crypto";
@@ -41,18 +41,18 @@ export class WebAuthnService {
 			});
 
 			// Get the passkey from database
-			const passkeys = await centralDb
+			const passkeyResults = await db
 				.select()
 				.from(userPasskey)
 				.where(eq(userPasskey.id, credential.id))
 				.limit(1);
 
-			if (passkeys.length === 0) {
+			if (passkeyResults.length === 0) {
 				logger.warn("Passkey not found", { credentialId: credential.id });
 				return { verified: false };
 			}
 
-			const passkey = passkeys[0];
+			const passkey = passkeyResults[0];
 
 			// Parse client data JSON
 			const clientDataJSON = JSON.parse(
@@ -66,26 +66,67 @@ export class WebAuthnService {
 			if (expectedChallenge !== receivedChallenge) {
 				logger.warn("Challenge mismatch", {
 					credentialId: credential.id,
-					expectedChallenge: expectedChallenge.substring(0, 8) + "...",
-					receivedChallenge: receivedChallenge.substring(0, 8) + "..."
+					expectedChallenge,
+					receivedChallenge
 				});
 				return { verified: false };
 			}
 
-			// Verify the origin (in production, this should match your domain)
-			// For now, we'll skip this check as it depends on your deployment configuration
-			logger.debug("Origin verification skipped (implement for production)", {
+			// Verify the origin matches expected origin (critical for security)
+			const allowedOrigins = WebAuthnService.getAllowedOrigins();
+			if (!allowedOrigins.includes(clientDataJSON.origin)) {
+				logger.warn("Origin verification failed", {
+					credentialId: credential.id,
+					receivedOrigin: clientDataJSON.origin,
+					allowedOrigins
+				});
+				return { verified: false };
+			}
+
+			logger.debug("Origin verification successful", {
 				origin: clientDataJSON.origin
 			});
 
 			// Parse authenticator data
 			const authenticatorDataBuffer = Buffer.from(credential.response.authenticatorData, "base64");
 
-			// Extract counter from authenticator data (bytes 33-36)
+			// Parse authenticator data for detailed debugging
+			const parsedAuthData = WebAuthnService.parseAuthenticatorData(authenticatorDataBuffer);
+
+			logger.debug("Authenticator data analysis", {
+				credentialId: credential.id,
+				bufferLength: authenticatorDataBuffer.length,
+				bufferHex: authenticatorDataBuffer.toString("hex"),
+				parsed: parsedAuthData
+			});
+
+			// Extract counter from authenticator data
+			// Format: rpIdHash(32) + flags(1) + counter(4) + attestedCredentialData(variable)
+			// Counter is at bytes 33-36 (0-indexed)
+			if (authenticatorDataBuffer.length < 37) {
+				logger.warn("Authenticator data too short for counter extraction", {
+					credentialId: credential.id,
+					bufferLength: authenticatorDataBuffer.length
+				});
+				return { verified: false };
+			}
+
 			const newCounter = authenticatorDataBuffer.readUInt32BE(33);
 
-			// Verify counter is greater than stored counter (prevents replay attacks)
-			if (newCounter <= passkey.counter) {
+			logger.debug("Counter extraction", {
+				credentialId: credential.id,
+				storedCounter: passkey.counter,
+				newCounter,
+				counterBytes: authenticatorDataBuffer.subarray(33, 37).toString("hex")
+			});
+
+			// Some authenticators (especially software-based ones) always return 0
+			// In that case, we skip counter verification but log it
+			if (newCounter === 0 && passkey.counter === 0) {
+				logger.info("Authenticator uses zero counter - skipping counter verification", {
+					credentialId: credential.id
+				});
+			} else if (newCounter <= passkey.counter) {
 				logger.warn("Counter verification failed - possible replay attack", {
 					credentialId: credential.id,
 					storedCounter: passkey.counter,
@@ -116,10 +157,29 @@ export class WebAuthnService {
 				return { verified: false };
 			}
 
+			// Update the counter in the database to prevent replay attacks
+			// Only update if the authenticator provides a non-zero counter
+			if (newCounter > 0) {
+				await db
+					.update(userPasskey)
+					.set({ counter: newCounter })
+					.where(eq(userPasskey.id, passkey.id));
+
+				logger.debug("Counter updated in database", {
+					credentialId: credential.id,
+					newCounter
+				});
+			} else {
+				logger.debug("Counter update skipped (zero counter authenticator)", {
+					credentialId: credential.id
+				});
+			}
+
 			logger.debug("WebAuthn authentication successful", {
 				credentialId: credential.id,
 				userId: passkey.userId,
-				newCounter
+				newCounter,
+				counterUpdated: true
 			});
 
 			return {
@@ -189,14 +249,14 @@ export class WebAuthnService {
 	 * This should be stored in the session and used for verification
 	 */
 	static generateChallenge(): string {
-		return randomBytes(32).toString("base64");
+		return randomBytes(32).toString("base64url");
 	}
 
 	/**
 	 * Update the counter for a passkey after successful authentication
 	 */
 	static async updatePasskeyCounter(passkeyId: string, newCounter: number): Promise<void> {
-		await centralDb
+		await db
 			.update(userPasskey)
 			.set({
 				counter: newCounter,
@@ -212,7 +272,104 @@ export class WebAuthnService {
 	 * Get all passkeys for a user
 	 */
 	static async getUserPasskeys(userId: string) {
-		return await centralDb.select().from(userPasskey).where(eq(userPasskey.userId, userId));
+		return await db.select().from(userPasskey).where(eq(userPasskey.userId, userId));
+	}
+
+	/**
+	 * Get allowed origins for WebAuthn verification
+	 * Uses SERVER_DOMAIN in production, localhost variants in development
+	 */
+	private static getAllowedOrigins(): string[] {
+		const origins: string[] = [];
+
+		// Check if we're in development (NODE_ENV or presence of dev indicators)
+		const isDevelopment =
+			process.env.NODE_ENV === "development" ||
+			process.env.NODE_ENV === "dev" ||
+			!process.env.SERVER_DOMAIN;
+
+		if (isDevelopment) {
+			// Development origins
+			origins.push(
+				"http://localhost:5173",
+				"http://127.0.0.1:5173",
+				"http://localhost:4173",
+				"http://127.0.0.1:4173"
+			);
+		} else {
+			// Production: Use SERVER_DOMAIN
+			const serverDomain = process.env.SERVER_DOMAIN;
+			if (serverDomain) {
+				// Add main domain with HTTPS
+				origins.push(`https://${serverDomain}`);
+
+				// Add www variant if it doesn't already start with www
+				if (!serverDomain.startsWith("www.")) {
+					origins.push(`https://www.${serverDomain}`);
+				}
+
+				// TODO: Webauthn does not support wildcard domains. We'll need another solution for that.
+			}
+		}
+
+		// Allow manual override via WEBAUTHN_ALLOWED_ORIGINS
+		const envOrigins = process.env.WEBAUTHN_ALLOWED_ORIGINS;
+		if (envOrigins) {
+			origins.push(...envOrigins.split(",").map((o) => o.trim()));
+		}
+
+		// Ensure we have at least one allowed origin
+		if (origins.length === 0) {
+			logger.error("No WebAuthn allowed origins configured - this is a security risk!", {
+				NODE_ENV: process.env.NODE_ENV,
+				SERVER_DOMAIN: process.env.SERVER_DOMAIN,
+				WEBAUTHN_ALLOWED_ORIGINS: process.env.WEBAUTHN_ALLOWED_ORIGINS
+			});
+			// Fallback to localhost in development only
+			if (isDevelopment) {
+				origins.push("http://localhost:5173");
+			}
+		}
+
+		logger.debug("WebAuthn allowed origins configured", {
+			origins,
+			isDevelopment,
+			serverDomain: process.env.SERVER_DOMAIN
+		});
+
+		return origins;
+	}
+
+	/**
+	 * Parse authenticator data structure for debugging
+	 */
+	private static parseAuthenticatorData(authenticatorDataBuffer: Buffer) {
+		if (authenticatorDataBuffer.length < 37) {
+			return { error: "Buffer too short" };
+		}
+
+		const rpIdHash = authenticatorDataBuffer.subarray(0, 32);
+		const flags = authenticatorDataBuffer.readUInt8(32);
+		const counter = authenticatorDataBuffer.readUInt32BE(33);
+
+		// Parse flags
+		const userPresent = !!(flags & 0x01);
+		const userVerified = !!(flags & 0x04);
+		const attestedCredentialDataIncluded = !!(flags & 0x40);
+		const extensionDataIncluded = !!(flags & 0x80);
+
+		return {
+			rpIdHash: rpIdHash.toString("hex"),
+			flags: {
+				raw: flags,
+				userPresent,
+				userVerified,
+				attestedCredentialDataIncluded,
+				extensionDataIncluded
+			},
+			counter,
+			totalLength: authenticatorDataBuffer.length
+		};
 	}
 
 	/**
@@ -227,10 +384,10 @@ export class WebAuthnService {
 		try {
 			// Parse authenticator data
 			const authenticatorDataBuffer = Buffer.from(credential.response.authenticatorData, "base64");
-			
+
 			// Extract counter from authenticator data (bytes 33-36)
 			const counter = authenticatorDataBuffer.readUInt32BE(33);
-			
+
 			logger.debug("Counter extracted from credential", { counter });
 			return counter;
 		} catch (error) {

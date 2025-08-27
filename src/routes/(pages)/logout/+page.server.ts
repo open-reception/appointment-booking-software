@@ -6,11 +6,10 @@ export const load: PageServerLoad = async (event) => {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json"
-			}
+			},
+			credentials: "same-origin"
 		})
 		.then(async (resp) => {
-			// TODO: Why is this failing?
-			console.log("resp", resp, await resp.json());
 			return resp.status < 400;
 		});
 

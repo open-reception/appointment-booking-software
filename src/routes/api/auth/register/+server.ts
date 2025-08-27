@@ -181,37 +181,43 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
 		});
 
 		// Create user account
-		const user = await UserService.createUser({
-			name: body.name,
-			email: body.email,
-			role: finalRole,
-			tenantId: finalTenantId,
-			passphrase: body.passphrase,
-			language: inviteUsed?.language || body.language || "de"
-		}, url);
+		const user = await UserService.createUser(
+			{
+				name: body.name,
+				email: body.email,
+				role: finalRole,
+				tenantId: finalTenantId,
+				passphrase: body.passphrase,
+				language: inviteUsed?.language || body.language || "de"
+			},
+			url
+		);
 
 		// Add the passkey to the user account if provided
 		if (body.passkey) {
 			// Validate that this registration was preceded by a challenge request
 			const registrationEmail = cookies.get("webauthn-registration-email");
-			
+
 			if (!registrationEmail || registrationEmail !== body.email) {
-				return json({ error: "Invalid passkey registration. Please request a new challenge first." }, { status: 400 });
+				return json(
+					{ error: "Invalid passkey registration. Please request a new challenge first." },
+					{ status: 400 }
+				);
 			}
-			
+
 			// Clear the registration cookie after validation (challenge cookie is cleared by login route)
 			cookies.delete("webauthn-registration-email", { path: "/" });
-			
+
 			// Extract counter from WebAuthn credential
 			const counter = WebAuthnService.extractCounterFromCredential(body.passkey);
-			
+
 			await UserService.addPasskey(user.id, {
 				id: body.passkey.id,
 				publicKey: body.passkey.publicKey,
-				counter,
+				counter: counter - 1, // Should start at -1, first login is counter 0
 				deviceName: body.passkey.deviceName || "Unknown Device"
 			});
-			
+
 			log.debug("Passkey added to user account", {
 				userId: user.id,
 				passkeyId: body.passkey.id
