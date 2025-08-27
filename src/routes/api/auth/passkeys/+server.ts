@@ -118,7 +118,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		// Extract counter from WebAuthn credential
 		const counter = WebAuthnService.extractCounterFromCredential(body.passkey);
-		
+
 		// Add the passkey using the UserService
 		await UserService.addAdditionalPasskey(body.userId, {
 			id: body.passkey.id,

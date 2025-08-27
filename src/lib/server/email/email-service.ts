@@ -195,28 +195,28 @@ export async function sendAppointmentUpdatedEmail(
  */
 export function generateBaseUrl(requestUrl: URL, tenant: SelectTenant | null): string {
 	const protocol = requestUrl.protocol;
-	const port = requestUrl.port ? `:${requestUrl.port}` : '';
+	const port = requestUrl.port ? `:${requestUrl.port}` : "";
 	const hostname = requestUrl.hostname;
-	
+
 	// In development, always use the original hostname regardless of tenant
-	if (hostname === 'localhost' || hostname.startsWith('127.') || hostname.startsWith('192.168.')) {
+	if (hostname === "localhost" || hostname.startsWith("127.") || hostname.startsWith("192.168.")) {
 		return `${protocol}//${hostname}${port}`;
 	}
-	
+
 	// In production, handle tenant subdomains
 	if (tenant?.shortName) {
-		const parts = hostname.split('.');
-		
+		const parts = hostname.split(".");
+
 		if (parts.length > 2) {
 			// Complex subdomain - use only the last two parts (domain.tld) and add tenant
-			const domain = parts.slice(-2).join('.');
+			const domain = parts.slice(-2).join(".");
 			return `${protocol}//${tenant.shortName}.${domain}${port}`;
 		} else {
 			// Main domain, prepend tenant subdomain
 			return `${protocol}//${tenant.shortName}.${hostname}${port}`;
 		}
 	}
-	
+
 	// For global admin or no tenant, use main domain
 	return `${protocol}//${hostname}${port}`;
 }
@@ -243,7 +243,7 @@ export async function sendConfirmationEmail(
 	const subject = language === "en" ? "Confirm Your Registration" : "Registrierung bestätigen";
 
 	// Generate appropriate base URL if request URL is provided
-	const baseUrl = requestUrl ? generateBaseUrl(requestUrl, tenant) : 'http://localhost:5173';
+	const baseUrl = requestUrl ? generateBaseUrl(requestUrl, tenant) : "http://localhost:5173";
 
 	// Create enhanced tenant object with baseUrl
 	const tenantWithBaseUrl = {

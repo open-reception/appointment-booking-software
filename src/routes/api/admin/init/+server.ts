@@ -136,35 +136,41 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
 		});
 
 		// Create admin account
-		const admin = await UserService.createUser({
-			name: body.name,
-			email: body.email,
-			passphrase: body.passphrase, // Will be undefined if passkey is used
-			language: body.language || "de"
-		}, url);
+		const admin = await UserService.createUser(
+			{
+				name: body.name,
+				email: body.email,
+				passphrase: body.passphrase, // Will be undefined if passkey is used
+				language: body.language || "de"
+			},
+			url
+		);
 
 		// Add the passkey to the admin account if provided
 		if (hasPasskey) {
 			// Validate that this registration was preceded by a challenge request
 			const registrationEmail = cookies.get("webauthn-registration-email");
-			
+
 			if (!registrationEmail || registrationEmail !== body.email) {
-				return json({ error: "Invalid passkey registration. Please request a new challenge first." }, { status: 400 });
+				return json(
+					{ error: "Invalid passkey registration. Please request a new challenge first." },
+					{ status: 400 }
+				);
 			}
-			
+
 			// Clear the registration cookie after validation (challenge cookie is cleared by login route)
 			cookies.delete("webauthn-registration-email", { path: "/" });
-			
+
 			// Extract counter from WebAuthn credential
 			const counter = WebAuthnService.extractCounterFromCredential(body.passkey);
-			
+
 			await UserService.addPasskey(admin.id, {
 				id: body.passkey.id,
 				publicKey: body.passkey.publicKey,
 				counter,
 				deviceName: body.passkey.deviceName || "Unknown Device"
 			});
-			
+
 			log.debug("Passkey added to admin account", {
 				adminId: admin.id,
 				passkeyId: body.passkey.id
