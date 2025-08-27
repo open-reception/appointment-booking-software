@@ -1,23 +1,21 @@
 <script lang="ts">
 	import { m } from "$i18n/messages";
-	import { type WithElementRef } from "$lib/utils.js";
+	import { cn } from "$lib/utils.js";
 	import AtSign from "@lucide/svelte/icons/at-sign";
 	import Error from "@lucide/svelte/icons/ban";
 	import Check from "@lucide/svelte/icons/check-circle";
 	import Loader2Icon from "@lucide/svelte/icons/loader-2";
 	import Pointer from "@lucide/svelte/icons/pointer";
-	import type { HTMLAttributes } from "svelte/elements";
 	import { Button } from "../button";
 
 	export type PasskeyState = "initial" | "click" | "loading" | "user" | "success" | "error";
 	let {
-		ref = $bindable(null),
 		state,
 		class: className,
-		onclick,
-		...restProps
-	}: WithElementRef<HTMLAttributes<HTMLHeadingElement>> & {
+		onclick
+	}: {
 		state: PasskeyState;
+		class?: string;
 		onclick?: () => void;
 	} = $props();
 
@@ -32,7 +30,7 @@
 <Button
 	variant="outline"
 	onclick={onClick}
-	class="flex w-full justify-start"
+	class={cn("flex w-full justify-start", className)}
 	disabled={disabledStates.includes(state)}
 >
 	{#if state === "initial"}

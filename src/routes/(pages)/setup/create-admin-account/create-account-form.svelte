@@ -117,9 +117,8 @@
 			// Update form data with passkey info
 			const publicKeyBase64 = arrayBufferToBase64(publicKey);
 			const authenticatorDataBase64 = arrayBufferToBase64(authenticatorData);
-			const { type, ...rest } = $formData;
 			$formData = {
-				...rest,
+				...$formData,
 				type: "passkey",
 				id: passkeyResp.id,
 				publicKeyBase64,

@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { cn } from "$lib/utils.js";
-	import type { SubmitFunction } from "@sveltejs/kit";
 	import type { Action } from "svelte/action";
 	import type { HTMLAttributes } from "svelte/elements";
 
 	export type EventReporter = (params: { isSubmitting?: boolean }) => void;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	type EnhanceFunction = Action<HTMLFormElement, any>;
 
 	let {

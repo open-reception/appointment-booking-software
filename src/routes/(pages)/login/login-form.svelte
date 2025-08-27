@@ -103,9 +103,8 @@
 			);
 			// @ts-expect-error response type needs to be fixed
 			const signatureBase64 = arrayBufferToBase64(credentialResp.response.signature);
-			const { type, ...rest } = $formData;
 			$formData = {
-				...rest,
+				...$formData,
 				type: "passkey",
 				id: credentialResp.id,
 				authenticatorDataBase64,
@@ -120,20 +119,6 @@
 
 	const { form: formData, enhance } = form;
 	const passkeyLoading: Writable<PasskeyState> = writable("initial");
-
-	// Fixes TypeScript checks in svelte if-blocks
-	const formDataPassphrase = $derived.by(() => {
-		if ($formData.type === "passphrase") {
-			return $formData as Extract<typeof $formData, { type: "passphrase" }>;
-		}
-		return null;
-	});
-	const formDataPasskey = $derived.by(() => {
-		if ($formData.type === "passkey") {
-			return $formData as Extract<typeof $formData, { type: "passkey" }>;
-		}
-		return null;
-	});
 
 	type FormDataPassphrase = Extract<typeof $formData, { type: "passphrase" }>;
 	type FormDataPasskey = Extract<typeof $formData, { type: "passkey" }>;
