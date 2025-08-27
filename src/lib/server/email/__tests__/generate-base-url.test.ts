@@ -26,11 +26,12 @@ describe("generateBaseUrl", () => {
 				id: "tenant-1",
 				shortName: "acme",
 				longName: "ACME Corp",
-				primaryColor: "#000000",
-				backgroundColor: "#ffffff",
 				logo: null,
 				createdAt: new Date(),
-				updatedAt: new Date()
+				updatedAt: new Date(),
+				description: "",
+				databaseUrl: "",
+				setupState: "NEW"
 			};
 
 			const result = generateBaseUrl(requestUrl, tenant);
@@ -39,7 +40,7 @@ describe("generateBaseUrl", () => {
 
 		it("should return localhost URL for null tenant", () => {
 			const requestUrl = new URL("http://localhost:3000");
-			
+
 			const result = generateBaseUrl(requestUrl, null);
 			expect(result).toBe("http://localhost:3000");
 		});
@@ -50,8 +51,9 @@ describe("generateBaseUrl", () => {
 				id: "tenant-1",
 				shortName: "test",
 				longName: "Test Corp",
-				primaryColor: "#000000",
-				backgroundColor: "#ffffff",
+				description: "",
+				databaseUrl: "",
+				setupState: "NEW",
 				logo: null,
 				createdAt: new Date(),
 				updatedAt: new Date()
@@ -67,8 +69,9 @@ describe("generateBaseUrl", () => {
 				id: "tenant-1",
 				shortName: "acme",
 				longName: "ACME Corp",
-				primaryColor: "#000000",
-				backgroundColor: "#ffffff",
+				description: "",
+				databaseUrl: "",
+				setupState: "NEW",
 				logo: null,
 				createdAt: new Date(),
 				updatedAt: new Date()
@@ -84,8 +87,9 @@ describe("generateBaseUrl", () => {
 				id: "tenant-1",
 				shortName: "acme",
 				longName: "ACME Corp",
-				primaryColor: "#000000",
-				backgroundColor: "#ffffff",
+				description: "",
+				databaseUrl: "",
+				setupState: "NEW",
 				logo: null,
 				createdAt: new Date(),
 				updatedAt: new Date()
@@ -103,14 +107,14 @@ describe("generateBaseUrl", () => {
 
 		it("should return main domain for null tenant", () => {
 			const requestUrl = new URL("https://example.com");
-			
+
 			const result = generateBaseUrl(requestUrl, null);
 			expect(result).toBe("https://example.com");
 		});
 
 		it("should return main domain with port for null tenant", () => {
 			const requestUrl = new URL("https://example.com:8443");
-			
+
 			const result = generateBaseUrl(requestUrl, null);
 			expect(result).toBe("https://example.com:8443");
 		});
@@ -121,8 +125,9 @@ describe("generateBaseUrl", () => {
 				id: "tenant-1",
 				shortName: "acme",
 				longName: "ACME Corp",
-				primaryColor: "#000000",
-				backgroundColor: "#ffffff",
+				description: "",
+				databaseUrl: "",
+				setupState: "NEW",
 				logo: null,
 				createdAt: new Date(),
 				updatedAt: new Date()
@@ -138,8 +143,9 @@ describe("generateBaseUrl", () => {
 				id: "tenant-1",
 				shortName: "acme",
 				longName: "ACME Corp",
-				primaryColor: "#000000",
-				backgroundColor: "#ffffff",
+				description: "",
+				databaseUrl: "",
+				setupState: "NEW",
 				logo: null,
 				createdAt: new Date(),
 				updatedAt: new Date()
@@ -155,8 +161,9 @@ describe("generateBaseUrl", () => {
 				id: "tenant-2",
 				shortName: "new-tenant",
 				longName: "New Tenant Corp",
-				primaryColor: "#000000",
-				backgroundColor: "#ffffff",
+				description: "",
+				databaseUrl: "",
+				setupState: "NEW",
 				logo: null,
 				createdAt: new Date(),
 				updatedAt: new Date()
@@ -172,8 +179,9 @@ describe("generateBaseUrl", () => {
 				id: "tenant-2",
 				shortName: "new-tenant",
 				longName: "New Tenant Corp",
-				primaryColor: "#000000",
-				backgroundColor: "#ffffff",
+				description: "",
+				databaseUrl: "",
+				setupState: "NEW",
 				logo: null,
 				createdAt: new Date(),
 				updatedAt: new Date()
@@ -189,8 +197,9 @@ describe("generateBaseUrl", () => {
 				id: "tenant-1",
 				shortName: "tenant",
 				longName: "Tenant Corp",
-				primaryColor: "#000000",
-				backgroundColor: "#ffffff",
+				description: "",
+				databaseUrl: "",
+				setupState: "NEW",
 				logo: null,
 				createdAt: new Date(),
 				updatedAt: new Date()
@@ -206,8 +215,9 @@ describe("generateBaseUrl", () => {
 				id: "tenant-1",
 				shortName: "acme",
 				longName: "ACME Corp",
-				primaryColor: "#000000",
-				backgroundColor: "#ffffff",
+				description: "",
+				databaseUrl: "",
+				setupState: "NEW",
 				logo: null,
 				createdAt: new Date(),
 				updatedAt: new Date()
@@ -223,8 +233,9 @@ describe("generateBaseUrl", () => {
 				id: "tenant-1",
 				shortName: "", // Empty shortName
 				longName: "ACME Corp",
-				primaryColor: "#000000",
-				backgroundColor: "#ffffff",
+				description: "",
+				databaseUrl: "",
+				setupState: "NEW",
 				logo: null,
 				createdAt: new Date(),
 				updatedAt: new Date()
@@ -243,8 +254,9 @@ describe("generateBaseUrl", () => {
 				id: "tenant-1",
 				shortName: "acme",
 				longName: "ACME Corp",
-				primaryColor: "#000000",
-				backgroundColor: "#ffffff",
+				description: "",
+				databaseUrl: "",
+				setupState: "NEW",
 				logo: null,
 				createdAt: new Date(),
 				updatedAt: new Date()
@@ -261,8 +273,9 @@ describe("generateBaseUrl", () => {
 				id: "tenant-1",
 				shortName: "acme",
 				longName: "ACME Corp",
-				primaryColor: "#000000",
-				backgroundColor: "#ffffff",
+				description: "",
+				databaseUrl: "",
+				setupState: "NEW",
 				logo: null,
 				createdAt: new Date(),
 				updatedAt: new Date()
@@ -279,8 +292,9 @@ describe("generateBaseUrl", () => {
 				id: "tenant-1",
 				shortName: "acme",
 				longName: "ACME Corp",
-				primaryColor: "#000000",
-				backgroundColor: "#ffffff",
+				description: "",
+				databaseUrl: "",
+				setupState: "NEW",
 				logo: null,
 				createdAt: new Date(),
 				updatedAt: new Date()
@@ -293,7 +307,7 @@ describe("generateBaseUrl", () => {
 		it("should handle default HTTP port (80)", () => {
 			mockEnv.NODE_ENV = "production";
 			const requestUrl = new URL("http://example.com:80");
-			
+
 			// URL constructor should handle port 80 correctly
 			const result = generateBaseUrl(requestUrl, null);
 			// Default HTTP port shouldn't be included in URL
@@ -303,7 +317,7 @@ describe("generateBaseUrl", () => {
 		it("should handle default HTTPS port (443)", () => {
 			mockEnv.NODE_ENV = "production";
 			const requestUrl = new URL("https://example.com:443");
-			
+
 			// URL constructor should handle port 443 correctly
 			const result = generateBaseUrl(requestUrl, null);
 			// Default HTTPS port shouldn't be included in URL
