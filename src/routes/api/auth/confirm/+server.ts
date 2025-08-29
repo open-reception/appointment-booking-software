@@ -36,7 +36,11 @@ registerOpenAPIRoute("/auth/confirm", "POST", {
 					schema: {
 						type: "object",
 						properties: {
-							message: { type: "string", description: "Success message" }
+							message: { type: "string", description: "Success message" },
+							isSetup: {
+								type: "string",
+								description: "Whether this is the first account that was setup on the server"
+							}
 						},
 						required: ["message"]
 					},
@@ -73,8 +77,9 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		const confirmationResult = await UserService.confirm(body.token);
 
-		const response: Record<string, string> = {
-			message: "User account confirmed successfully. You can now log in."
+		const response: Record<string, string | boolean> = {
+			message: "User account confirmed successfully. You can now log in.",
+			isSetup: confirmationResult.isSetup
 		};
 
 		// Include recovery passphrase if it exists (for WebAuthn-only users)

@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { browser } from "$app/environment";
-	import "../../app.css";
+	import { Toaster } from "$lib/components/ui/sonner/index.js";
 	import { ModeWatcher, setMode } from "mode-watcher";
+	import "../../app.css";
 
 	$effect(() => {
 		if (!browser) return;
@@ -20,4 +21,5 @@
 </script>
 
 <ModeWatcher track={false} />
+<Toaster richColors />
 {@render children()}

@@ -68,12 +68,12 @@ registerOpenAPIRoute("/auth/resend-confirmation", "POST", {
 	}
 });
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, url }) => {
 	try {
 		const body = await request.json();
 
 		// Resend confirmation email
-		await UserService.resendConfirmationEmail(body.email);
+		await UserService.resendConfirmationEmail(body.email, url);
 
 		return json(
 			{

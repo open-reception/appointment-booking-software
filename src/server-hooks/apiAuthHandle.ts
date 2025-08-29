@@ -2,12 +2,13 @@ import type { Handle } from "@sveltejs/kit";
 import { SessionService } from "$lib/server/auth/session-service";
 import { UniversalLogger } from "$lib/logger";
 import { AuthorizationService } from "$lib/server/auth/authorization-service";
+import { getAccessToken } from "./utils/accessToken";
 
 const logger = new UniversalLogger().setContext("AuthHandle");
 
-const ACCESS_TOKEN_COOKIE_NAME = "access_token";
 const PROTECTED_PATHS = ["/api/admin", "/api/tenant-admin", "/api/tenants", "/api/auth/register"];
 const PUBLIC_PATHS = [
+	"/",
 	"/api/auth/challenge",
 	"/api/auth/login",
 	"/api/auth/register",
@@ -33,9 +34,13 @@ const PROTECTED_AUTH_PATHS = [
 	"/api/auth/invite"
 ];
 
-export const authHandle: Handle = async ({ event, resolve }) => {
-	const { url, request } = event;
+export const apiAuthHandle: Handle = async ({ event, resolve }) => {
+	const { url } = event;
 	const path = url.pathname;
+
+	if (!path.startsWith("/api")) {
+		return resolve(event);
+	}
 
 	const isProtectedPath = PROTECTED_PATHS.some((protectedPath) => path.startsWith(protectedPath));
 	const isPublicPath = PUBLIC_PATHS.some((publicPath) => path.startsWith(publicPath));
@@ -44,7 +49,13 @@ export const authHandle: Handle = async ({ event, resolve }) => {
 	const isAdminPath = ADMIN_PATHS.some((gadPath) => path.startsWith(gadPath));
 
 	// Allow public paths
-	if (isPublicPath) {
+	if (
+		isPublicPath &&
+		!isProtectedAuthPath &&
+		!isProtectedPath &&
+		!isAdminPath &&
+		!isGlobalAdminPath
+	) {
 		return resolve(event);
 	}
 
@@ -59,22 +70,7 @@ export const authHandle: Handle = async ({ event, resolve }) => {
 		);
 	}
 
-	let accessToken: string | null = null;
-
-	// Get access token from cookie
-	const accessTokenCookie = event.cookies.get(ACCESS_TOKEN_COOKIE_NAME);
-	if (accessTokenCookie) {
-		accessToken = accessTokenCookie;
-	}
-
-	// Fallback: check Authorization header
-	if (!accessToken) {
-		const authHeader = request.headers.get("authorization");
-		if (authHeader?.startsWith("Bearer ")) {
-			accessToken = authHeader.substring(7);
-		}
-	}
-
+	const accessToken: string | null = getAccessToken(event);
 	if (!accessToken) {
 		logger.warn(`Authentication required for ${path}`);
 		return new Response(JSON.stringify({ error: "Authentication required" }), {

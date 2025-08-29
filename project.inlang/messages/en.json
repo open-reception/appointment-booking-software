@@ -6,5 +6,99 @@
 		"label": "Select Language",
 		"search": "Search Language",
 		"notFound": "Language not found"
+	},
+	"setup": {
+		"start": "Start configuration",
+		"create_admin_account": {
+			"title": "Create Admin Account",
+			"description": "We’ll start by adding your admin account. It will be used to manage this instance.",
+			"action": "Send Verification E-Mail",
+			"success": "Account created!",
+			"error": "An unkonwn error occured."
+		},
+		"verify_email": {
+			"title": "Check your E-Mail",
+			"description": "We’ve send you a magic link to {email}",
+			"action": "Resend E-Mail",
+			"success": "E-Mail was resent"
+		},
+		"confirm": {
+			"success": {
+				"title": "Good job!",
+				"description": "You’ve secured this instance.",
+				"hint": "Next step is setting up a tenant to collect appointments",
+				"action": "Add first Tenant"
+			},
+			"error": {
+				"title": "Verification failed",
+				"description": "The magic link you’ve tried is incorrect or outdated"
+			}
+		}
+	},
+	"slogan": "End-to-End encrypted appointment booking platform.",
+	"logo": "OpenReception Logo: A 3D pixel art with calendar that's also a lock",
+	"form": {
+		"email": "E-Mail Address",
+		"passphrase": "Passphrase",
+		"passphraseRequirements": "At least 30 characters.",
+		"errors": {
+			"email": "Invalid format",
+			"passphrase": "Must be at least 30 characters long",
+			"noPassAtAll": "Either passphrase or passkey is required",
+			"bothPassSet": "Only one of passphrase or passkey should be provided"
+		},
+		"noPassAtAll": "Either passphrase or passkey is required",
+		"passkey": "Passkey"
+	},
+	"login": {
+		"or": "Or",
+		"usePasskey": "use passkey",
+		"usePassphrase": "use passphrase",
+		"orUse": "Or {button}",
+		"title": "Login",
+		"description_passphrase": "Enter your email and passphrase below to access your account.",
+		"action": "Login",
+		"error": "Login failed. Please retry",
+		"passphrase": {
+			"initial": "Requesting passkey",
+			"success": "Passkey saved",
+			"error": "Passkey could not be retrieved"
+		}
+	},
+	"confirm": {
+		"success": {
+			"title": "You’re all set!",
+			"description": "You’ve successfully secured your account",
+			"action": "Proceed"
+		},
+		"error": {
+			"title": "Verification failed",
+			"description": "The magic link you’ve tried is incorrect or outdated",
+			"action": "Request new E-Mail"
+		},
+		"title": "E-Mail verification",
+		"resend": {
+			"title": "Resend Verification E-Mail",
+			"description": "Enter your e-mail address to get the verification link again.",
+			"action": "Resend E-Mail",
+			"success": "E-Mail sent"
+		}
+	},
+	"logout": {
+		"title": "Logout complete",
+		"description": "You are logged-out.",
+		"success": "Logout successful",
+		"action": "Go to Login"
+	},
+	"passkey": {
+		"add": {
+			"initial": "Waiting for E-Mail Address",
+			"click": "Click/Tap to add passkey",
+			"loading": "Completing challenge",
+			"user": "Waiting for creation to complete",
+			"success": "Added Passkey successfully",
+			"error": "Passkey could not be added",
+			"retry": "Retry"
+		}
 	}
 }

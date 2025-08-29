@@ -1,6 +1,6 @@
 import { centralDb } from "../db";
 import * as centralSchema from "../db/central-schema";
-import { eq, desc, gt, and } from "drizzle-orm";
+import { eq, desc, gt, and, count } from "drizzle-orm";
 import type { InferInsertModel } from "drizzle-orm";
 import z from "zod/v4";
 import { NotFoundError, ValidationError } from "../utils/errors";
@@ -71,7 +71,7 @@ export class UserService {
 	/**
 	 * Create a new user
 	 */
-	static async createUser(userData: UserCreation) {
+	static async createUser(userData: UserCreation, requestUrl?: URL) {
 		const log = logger.setContext("UserService");
 		log.debug("Creating new user account", {
 			email: userData.email,
@@ -138,7 +138,8 @@ export class UserService {
 						result[0],
 						tenant,
 						result[0].token,
-						10 // 10 minutes expiration to match tokenValidUntil
+						10, // 10 minutes expiration to match tokenValidUntil
+						requestUrl
 					);
 					log.debug("Confirmation email sent successfully", {
 						userId: result[0].id,
@@ -165,8 +166,9 @@ export class UserService {
 	/**
 	 * Resend the confirmation email for a user
 	 * @param email - Email of the user to confirm
+	 * @param requestUrl - Optional request URL for generating correct baseUrl
 	 */
-	static async resendConfirmationEmail(email: string): Promise<void> {
+	static async resendConfirmationEmail(email: string, requestUrl?: URL): Promise<void> {
 		const log = logger.setContext("UserService");
 		log.debug("Resending confirmation email", { email });
 
@@ -195,7 +197,8 @@ export class UserService {
 					user,
 					tenant,
 					token,
-					10 // 10 minutes expiration to match tokenValidUntil
+					10, // 10 minutes expiration to match tokenValidUntil
+					requestUrl
 				);
 				log.debug("Confirmation email sent successfully", {
 					userId: user.id,
@@ -221,7 +224,9 @@ export class UserService {
 	 * Confirm and activate user after confirmation link was clicked
 	 * @param linkToken - The token from the link
 	 */
-	static async confirm(linkToken: string): Promise<{ recoveryPassphrase?: string }> {
+	static async confirm(
+		linkToken: string
+	): Promise<{ recoveryPassphrase?: string; isSetup: boolean }> {
 		const log = logger.setContext("UserService");
 		log.debug("Confirming user account", { token: linkToken.substring(0, 8) + "..." });
 
@@ -265,6 +270,8 @@ export class UserService {
 				throw new NotFoundError("Failed to confirm user");
 			}
 
+			const countResult = await centralDb.select({ count: count() }).from(centralSchema.user);
+
 			log.debug("User account confirmed successfully", {
 				userId: user.id,
 				token: linkToken.substring(0, 8) + "...",
@@ -272,7 +279,8 @@ export class UserService {
 			});
 
 			return {
-				recoveryPassphrase: user.recoveryPassphrase || undefined
+				recoveryPassphrase: user.recoveryPassphrase || undefined,
+				isSetup: countResult[0].count === 1
 			};
 		} catch (error) {
 			if (error instanceof NotFoundError) throw error;

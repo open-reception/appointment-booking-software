@@ -4,11 +4,11 @@
 	import { tv, type VariantProps } from "tailwind-variants";
 
 	const variants = tv({
-		base: "scroll-m-20 tracking-tight",
+		base: "scroll-m-20",
 		variants: {
 			style: {
-				h1: "text-4xl font-extrabold lg:text-5xl",
-				h2: "border-b pb-2 text-3xl font-semibold transition-colors first:mt-0",
+				h1: "text-4xl font-extrabold lg:text-5xl tracking-tight",
+				h2: "text-3xl font-semibold transition-colors first:mt-0",
 				h3: "text-2xl font-semibold",
 				h4: "text-xl font-semibold"
 			}

@@ -5,7 +5,8 @@ import { corsHandle } from "./server-hooks/corsHandle";
 import { loggingHandle } from "./server-hooks/loggingHandle";
 import { rateLimitHandle } from "./server-hooks/rateLimitHandle";
 import { secHeaderHandle } from "./server-hooks/secHeaderHandle";
-import { authHandle } from "./server-hooks/authHandle";
+import { apiAuthHandle } from "./server-hooks/apiAuthHandle";
+import { authGuard } from "./server-hooks/authGuard";
 import { i18nHandle } from "./server-hooks/i18nHandle";
 import { building } from "$app/environment";
 
@@ -40,5 +41,6 @@ export const handle = sequence(
 	rateLimitHandle,
 	corsHandle,
 	secHeaderHandle,
-	authHandle
+	apiAuthHandle,
+	authGuard
 );

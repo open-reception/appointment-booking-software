@@ -4,14 +4,17 @@
 	import { tick } from "svelte";
 	import * as Command from "$lib/components/ui/command/index.js";
 	import * as Popover from "$lib/components/ui/popover/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
+	import { Button, type ButtonSize, type ButtonVariant } from "$lib/components/ui/button/index.js";
 	import { cn } from "$lib/utils.js";
 
 	const {
 		labels,
 		value,
 		options = [],
-		onChange
+		onChange,
+		class: className = "",
+		triggerVariant = "outline",
+		triggerSize = "default"
 	}: {
 		labels: {
 			placeholder: string;
@@ -20,6 +23,9 @@
 		};
 		value: string;
 		onChange: (value: string) => void;
+		triggerVariant?: ButtonVariant;
+		triggerSize?: ButtonSize;
+		class?: string;
 		options?: { label: string; value: string; keywords?: string[] }[];
 	} = $props();
 
@@ -42,8 +48,9 @@
 <Popover.Root bind:open>
 	<Popover.Trigger bind:ref={triggerRef}>
 		<Button
-			variant="outline"
-			class="w-[200px] justify-between"
+			variant={triggerVariant}
+			size={triggerSize}
+			class={cn("w-[200px] justify-between", className)}
 			role="combobox"
 			aria-expanded={open}
 		>

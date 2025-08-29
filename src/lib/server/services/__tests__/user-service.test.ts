@@ -176,18 +176,25 @@ describe("UserService", () => {
 				limit: vi.fn().mockResolvedValue([{ id: "user-123", recoveryPassphrase: "recovery-123" }])
 			};
 
+			const mockCountSelectBuilder = {
+				from: vi.fn().mockResolvedValue([{ count: 1 }])
+			};
+
 			const mockUpdateBuilder = {
 				set: vi.fn().mockReturnThis(),
 				where: vi.fn().mockReturnThis(),
 				execute: vi.fn().mockResolvedValue({ count: 1 })
 			};
 
-			mockCentralDb.select.mockReturnValue(mockSelectBuilder);
+			// First call for user lookup, second call for count query
+			mockCentralDb.select
+				.mockReturnValueOnce(mockSelectBuilder)
+				.mockReturnValueOnce(mockCountSelectBuilder);
 			mockCentralDb.update.mockReturnValue(mockUpdateBuilder);
 
 			const result = await UserService.confirm(token);
 
-			expect(mockCentralDb.select).toHaveBeenCalled();
+			expect(mockCentralDb.select).toHaveBeenCalledTimes(2);
 			expect(mockCentralDb.update).toHaveBeenCalled();
 			expect(mockUpdateBuilder.set).toHaveBeenCalledWith({
 				confirmed: true,
@@ -195,6 +202,7 @@ describe("UserService", () => {
 				recoveryPassphrase: null
 			});
 			expect(result.recoveryPassphrase).toBe("recovery-123");
+			expect(result.isSetup).toBe(true);
 		});
 
 		it("should throw NotFoundError for invalid token", async () => {
