@@ -64,7 +64,7 @@
 				<DropdownMenu.Label class="text-muted-foreground text-xs"
 					>{m["nav.tenants"]()}</DropdownMenu.Label
 				>
-				{#each tenants as tenant, index (tenant.id)}
+				{#each tenants as tenant (tenant.id)}
 					<DropdownMenu.Item onSelect={() => (activeTenantId = tenant.id)} class="gap-2 p-2">
 						<div class="flex size-6 items-center justify-center rounded-md border">
 							<UnknownTenantIcon class="size-3.5 shrink-0" />
