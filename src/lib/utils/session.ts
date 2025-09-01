@@ -40,8 +40,7 @@ export const refreshUserData = async () => {
 		});
 
 		const data = await response.json();
-		console.log("refreshed user data", data);
-		// auth.setUser(data.user);
+		auth.setUser(data.user);
 	} catch (error) {
 		console.error("Failed to refresh user data", error);
 	}
