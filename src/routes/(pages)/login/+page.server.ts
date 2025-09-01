@@ -4,6 +4,10 @@ import { zod } from "sveltekit-superforms/adapters";
 import type { Actions, PageServerLoad } from "./$types";
 import { formSchema } from "./schema";
 import type { WebAuthnCredential } from "$lib/server/auth/webauthn-service";
+import type { TUser } from "$lib/types/user";
+import logger from "$lib/logger";
+
+const log = logger.setContext("/login");
 
 export const load: PageServerLoad = async () => {
 	return {
@@ -16,11 +20,10 @@ export const actions: Actions = {
 		const form = await superValidate(event, zod(formSchema));
 
 		if (!form.valid) {
-			if (!form.valid) {
-				return fail(400, {
-					form: { ...form, data: { ...form.data, type: "passkey" } }
-				});
-			}
+			log.error("Login form is not valid", { errors: form.errors });
+			return fail(400, {
+				form: { ...form, data: { ...form.data, type: "passkey" } }
+			});
 		}
 
 		let body: { credential?: WebAuthnCredential; email: string; passphrase?: string } = {
@@ -52,8 +55,22 @@ export const actions: Actions = {
 			body: JSON.stringify(body)
 		});
 
-		if (resp.status < 400) {
-			return { form };
+		let user: TUser | null = null;
+		try {
+			const respJson = await resp.json();
+			user = {
+				id: respJson.user.id,
+				email: respJson.user.email,
+				name: respJson.user.name,
+				role: respJson.user.role,
+				tenantId: respJson.user.tenantId
+			};
+		} catch (error) {
+			log.error("Error parsing login response JSON", { error });
+		}
+
+		if (resp.status < 400 && user) {
+			return { form, user };
 		} else {
 			return fail(400, {
 				form

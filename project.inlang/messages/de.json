@@ -92,5 +92,23 @@
 			"error": "Passkey konnte nicht hinzugefügt werden",
 			"retry": "Erneut versuchen"
 		}
+	},
+	"nav": {
+		"home": "Übersicht",
+		"tenants": "Mandanten",
+		"calendar": "Kalender",
+		"staff": "Personal",
+		"agents": "Agenten",
+		"channels": "Kanäle",
+		"absences": "Abwesenheiten",
+		"account": "Konto",
+		"settings": "Einstellungen",
+		"documentation": "Dokumentation",
+		"addTenant": "Mandant hinzufügen",
+		"noTenantSelected": {
+			"title": "Kein Mandant ausgewählt",
+			"description": "Klicke zum Auswählen"
+		},
+		"logout": "Ausloggen"
 	}
 }

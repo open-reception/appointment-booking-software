@@ -3,12 +3,19 @@
 	import { getLocale, setLocale } from "$i18n/runtime.js";
 	import type { ButtonSize, ButtonVariant } from "$lib/components/ui/button";
 	import { ComboBox } from "$lib/components/ui/combobox";
+	import { cn } from "$lib/utils";
 
 	let {
 		class: className = "",
+		triggerClass = "",
 		triggerSize = "default",
 		triggerVariant = "ghost"
-	}: { triggerVariant?: ButtonVariant; triggerSize?: ButtonSize; class?: string } = $props();
+	}: {
+		triggerVariant?: ButtonVariant;
+		triggerSize?: ButtonSize;
+		class?: string;
+		triggerClass?: string;
+	} = $props();
 </script>
 
 <div class={className}>
@@ -28,6 +35,7 @@
 		}}
 		{triggerVariant}
 		{triggerSize}
-		class="w-auto"
+		{triggerClass}
+		class={cn("w-auto")}
 	/>
 </div>
