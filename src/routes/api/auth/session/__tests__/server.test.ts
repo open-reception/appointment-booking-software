@@ -18,21 +18,22 @@ vi.mock("$lib/server/openapi", () => ({
 	registerOpenAPIRoute: vi.fn()
 }));
 
-const createMockRequestEvent = (locals: any): RequestEvent => ({
-	locals,
-	request: new Request("http://localhost/api/auth/session"),
-	url: new URL("http://localhost/api/auth/session"),
-	params: {},
-	route: { id: "/api/auth/session" },
-	cookies: {} as any,
-	fetch: fetch,
-	getClientAddress: () => "127.0.0.1",
-	isDataRequest: false,
-	platform: undefined,
-	setHeaders: vi.fn(),
-	depends: vi.fn(),
-	parent: vi.fn()
-});
+const createMockRequestEvent = (locals: any): RequestEvent =>
+	({
+		locals,
+		request: new Request("http://localhost/api/auth/session"),
+		url: new URL("http://localhost/api/auth/session"),
+		params: {},
+		route: { id: "/api/auth/session" },
+		cookies: {} as any,
+		fetch: fetch,
+		getClientAddress: () => "127.0.0.1",
+		isDataRequest: false,
+		platform: undefined,
+		setHeaders: vi.fn(),
+		depends: vi.fn(),
+		parent: vi.fn()
+	}) as any;
 
 describe("/api/auth/session GET endpoint", () => {
 	it("should return user session data with correct exp field when user is authenticated", async () => {
@@ -49,7 +50,7 @@ describe("/api/auth/session GET endpoint", () => {
 		};
 
 		const event = createMockRequestEvent({ user: mockUser });
-		const response = await GET(event);
+		const response = await GET(event as any);
 		const data = await response.json();
 
 		expect(response.status).toBe(200);
@@ -80,7 +81,7 @@ describe("/api/auth/session GET endpoint", () => {
 		};
 
 		const event = createMockRequestEvent({ user: mockUser });
-		const response = await GET(event);
+		const response = await GET(event as any);
 		const data = await response.json();
 
 		expect(response.status).toBe(200);
@@ -111,7 +112,7 @@ describe("/api/auth/session GET endpoint", () => {
 		};
 
 		const event = createMockRequestEvent({ user: mockUser });
-		const response = await GET(event);
+		const response = await GET(event as any);
 		const data = await response.json();
 
 		expect(response.status).toBe(200);
@@ -130,7 +131,7 @@ describe("/api/auth/session GET endpoint", () => {
 
 	it("should return 401 when user is not authenticated", async () => {
 		const event = createMockRequestEvent({ user: null });
-		const response = await GET(event);
+		const response = await GET(event as any);
 
 		expect(response.status).toBe(401);
 		const data = await response.json();
@@ -154,7 +155,7 @@ describe("/api/auth/session GET endpoint", () => {
 		};
 
 		const event = createMockRequestEvent({ user: mockGlobalAdmin });
-		const response = await GET(event);
+		const response = await GET(event as any);
 		const data = await response.json();
 
 		expect(response.status).toBe(200);
@@ -185,7 +186,7 @@ describe("/api/auth/session GET endpoint", () => {
 		};
 
 		const event = createMockRequestEvent({ user: mockUser });
-		const response = await GET(event);
+		const response = await GET(event as any);
 		const data = await response.json();
 
 		expect(response.status).toBe(200);
@@ -201,7 +202,7 @@ describe("/api/auth/session GET endpoint", () => {
 		};
 
 		const event = createMockRequestEvent(problematicLocals);
-		const response = await GET(event);
+		const response = await GET(event as any);
 
 		expect(response.status).toBe(500);
 		const data = await response.json();
