@@ -23,7 +23,7 @@
 		),
 		"data-slot": "sidebar-group-action",
 		"data-sidebar": "group-action",
-		...restProps,
+		...restProps
 	});
 </script>
 

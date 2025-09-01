@@ -21,5 +21,5 @@ export {
 	Separator as BreadcrumbSeparator,
 	Link as BreadcrumbLink,
 	List as BreadcrumbList,
-	Page as BreadcrumbPage,
+	Page as BreadcrumbPage
 };

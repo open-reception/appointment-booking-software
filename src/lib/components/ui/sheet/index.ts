@@ -32,5 +32,5 @@ export {
 	Header as SheetHeader,
 	Footer as SheetFooter,
 	Title as SheetTitle,
-	Description as SheetDescription,
+	Description as SheetDescription
 };

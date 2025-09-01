@@ -21,7 +21,7 @@
 		),
 		"data-slot": "sidebar-group-label",
 		"data-sidebar": "group-label",
-		...restProps,
+		...restProps
 	});
 </script>
 

@@ -18,7 +18,7 @@
 		"data-slot": "breadcrumb-link",
 		class: cn("hover:text-foreground transition-colors", className),
 		href,
-		...restProps,
+		...restProps
 	});
 </script>
 

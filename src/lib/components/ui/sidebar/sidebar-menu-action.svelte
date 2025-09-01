@@ -30,7 +30,7 @@
 		),
 		"data-slot": "sidebar-menu-action",
 		"data-sidebar": "menu-action",
-		...restProps,
+		...restProps
 	});
 </script>
 
