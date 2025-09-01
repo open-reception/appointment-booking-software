@@ -22,7 +22,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U $$(cat /run/secrets/postgres_user) -d $$(cat /run/secrets/postgres_db)"
+          "pg_isready -U $$(cat /run/secrets/postgres_user) -d $$(cat /run/secrets/postgres_db)",
         ]
       interval: 10s
       timeout: 5s

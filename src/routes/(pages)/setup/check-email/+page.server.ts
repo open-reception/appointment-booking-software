@@ -9,29 +9,29 @@ import logger from "$lib/logger";
 const log = logger.setContext("Setup");
 
 export const load: PageServerLoad = async () => {
-	return {
-		form: await superValidate(zod(formSchema))
-	};
+  return {
+    form: await superValidate(zod(formSchema)),
+  };
 };
 
 export const actions: Actions = {
-	default: async (event) => {
-		const form = await superValidate(event, zod(formSchema));
+  default: async (event) => {
+    const form = await superValidate(event, zod(formSchema));
 
-		if (!form.valid) {
-			return fail(400, {
-				form
-			});
-		}
+    if (!form.valid) {
+      return fail(400, {
+        form,
+      });
+    }
 
-		await UserService.resendConfirmationEmail(form.data.email, event.url);
+    await UserService.resendConfirmationEmail(form.data.email, event.url);
 
-		log.debug("Resent confirmation e-mail", {
-			email: form.data.email
-		});
+    log.debug("Resent confirmation e-mail", {
+      email: form.data.email,
+    });
 
-		return {
-			form
-		};
-	}
+    return {
+      form,
+    };
+  },
 };

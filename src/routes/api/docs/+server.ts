@@ -1,5 +1,5 @@
 export async function GET() {
-	const html = `<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -52,9 +52,9 @@ export async function GET() {
 </body>
 </html>`;
 
-	return new Response(html, {
-		headers: {
-			"Content-Type": "text/html"
-		}
-	});
+  return new Response(html, {
+    headers: {
+      "Content-Type": "text/html",
+    },
+  });
 }
