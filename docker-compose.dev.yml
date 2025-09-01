@@ -20,7 +20,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-appointment_booking}"
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-appointment_booking}",
         ]
       interval: 10s
       timeout: 5s

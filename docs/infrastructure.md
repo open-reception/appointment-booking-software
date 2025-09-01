@@ -170,29 +170,29 @@ import { readFileSync } from "fs";
 import pg from "pg";
 
 function getDatabaseConfig() {
-	if (process.env.NODE_ENV === "production") {
-		// Read from Docker secrets
-		const user = readFileSync("/run/secrets/postgres_user", "utf8").trim();
-		const password = readFileSync("/run/secrets/postgres_password", "utf8").trim();
-		const database = readFileSync("/run/secrets/postgres_db", "utf8").trim();
+  if (process.env.NODE_ENV === "production") {
+    // Read from Docker secrets
+    const user = readFileSync("/run/secrets/postgres_user", "utf8").trim();
+    const password = readFileSync("/run/secrets/postgres_password", "utf8").trim();
+    const database = readFileSync("/run/secrets/postgres_db", "utf8").trim();
 
-		return {
-			host: "postgres",
-			port: 5432,
-			user,
-			password,
-			database
-		};
-	} else {
-		// Development configuration
-		return {
-			host: "localhost",
-			port: process.env.POSTGRES_PORT || 5432,
-			user: process.env.POSTGRES_USER || "postgres",
-			password: process.env.POSTGRES_PASSWORD,
-			database: process.env.POSTGRES_DB || "appointment_booking"
-		};
-	}
+    return {
+      host: "postgres",
+      port: 5432,
+      user,
+      password,
+      database,
+    };
+  } else {
+    // Development configuration
+    return {
+      host: "localhost",
+      port: process.env.POSTGRES_PORT || 5432,
+      user: process.env.POSTGRES_USER || "postgres",
+      password: process.env.POSTGRES_PASSWORD,
+      database: process.env.POSTGRES_DB || "appointment_booking",
+    };
+  }
 }
 
 export const pool = new pg.Pool(getDatabaseConfig());
@@ -207,12 +207,12 @@ import { json } from "@sveltejs/kit";
 import { pool } from "$lib/database.js";
 
 export async function GET() {
-	try {
-		await pool.query("SELECT 1");
-		return json({ status: "healthy", timestamp: new Date().toISOString() });
-	} catch (error) {
-		return json({ status: "unhealthy", error: error.message }, { status: 500 });
-	}
+  try {
+    await pool.query("SELECT 1");
+    return json({ status: "healthy", timestamp: new Date().toISOString() });
+  } catch (error) {
+    return json({ status: "unhealthy", error: error.message }, { status: 500 });
+  }
 }
 ```
 
@@ -225,11 +225,11 @@ import { sveltekit } from "@sveltejs/kit/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-	plugins: [sveltekit()],
-	server: {
-		host: "0.0.0.0",
-		port: 5173
-	}
+  plugins: [sveltekit()],
+  server: {
+    host: "0.0.0.0",
+    port: 5173,
+  },
 });
 ```
 

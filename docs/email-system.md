@@ -159,9 +159,9 @@ Tenants can customize three color values that are automatically applied to email
 
 ```typescript
 interface TenantBranding {
-	primaryColor: string; // Main brand color (buttons, links, logos)
-	secondaryColor: string; // Accent color (success messages, highlights)
-	backgroundColor: string; // Email background color
+  primaryColor: string; // Main brand color (buttons, links, logos)
+  secondaryColor: string; // Accent color (success messages, highlights)
+  backgroundColor: string; // Email background color
 }
 ```
 
@@ -192,9 +192,9 @@ Tenant logos are stored as binary data in the database and automatically convert
 ```html
 {{#if tenant.logo}}
 <img
-	src="data:image/png;base64,{{tenant.logo}}"
-	alt="{{tenant.longName}}"
-	style="max-height: 60px; margin-bottom: 10px;"
+  src="data:image/png;base64,{{tenant.logo}}"
+  alt="{{tenant.longName}}"
+  style="max-height: 60px; margin-bottom: 10px;"
 />
 {{/if}}
 <div class="logo">{{tenant.longName}}</div>
@@ -255,16 +255,16 @@ The email system is designed with privacy in mind:
 ```typescript
 // Client email creation (privacy-focused)
 const clientRecipient = {
-	email: user.email || "", // May be empty
-	name: undefined, // Never stored for clients
-	language: user.language || "de"
+  email: user.email || "", // May be empty
+  name: undefined, // Never stored for clients
+  language: user.language || "de",
 };
 
 // Staff email creation
 const staffRecipient = {
-	email: user.email, // Always required
-	name: user.name || undefined, // Optional display name
-	language: user.language || "de"
+  email: user.email, // Always required
+  name: user.name || undefined, // Optional display name
+  language: user.language || "de",
 };
 ```
 
@@ -303,10 +303,10 @@ The system automatically uses test mode in development:
    ```typescript
    // Add test case in email-system.test.ts
    const result = await templateEngine.renderTemplate("user-created", {
-   	recipient: { email: "test@example.com", name: "Test User" },
-   	subject: "Test Subject",
-   	language: "de",
-   	tenant: mockTenant
+     recipient: { email: "test@example.com", name: "Test User" },
+     subject: "Test Subject",
+     language: "de",
+     tenant: mockTenant,
    });
    ```
 

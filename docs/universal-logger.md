@@ -138,23 +138,23 @@ The server-side Winston logger is configured with:
 import { logger } from "$lib/logger";
 
 export const handle = async ({ event, resolve }) => {
-	const start = Date.now();
-	const requestLogger = logger.setContext("REQUEST");
+  const start = Date.now();
+  const requestLogger = logger.setContext("REQUEST");
 
-	try {
-		const response = await resolve(event);
-		const duration = Date.now() - start;
+  try {
+    const response = await resolve(event);
+    const duration = Date.now() - start;
 
-		requestLogger.info(`${event.request.method} ${event.url.pathname}`, {
-			status: response.status,
-			duration: `${duration}ms`
-		});
+    requestLogger.info(`${event.request.method} ${event.url.pathname}`, {
+      status: response.status,
+      duration: `${duration}ms`,
+    });
 
-		return response;
-	} catch (error) {
-		requestLogger.error("Request failed", { error });
-		throw error;
-	}
+    return response;
+  } catch (error) {
+    requestLogger.error("Request failed", { error });
+    throw error;
+  }
 };
 ```
 

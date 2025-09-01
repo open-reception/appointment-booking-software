@@ -31,6 +31,6 @@ import "../tenants/[id]/+server.js";
 import "../tenants/[id]/config/+server.js";
 
 export async function GET() {
-	const spec = generateOpenApiSpec();
-	return json(spec);
+  const spec = generateOpenApiSpec();
+  return json(spec);
 }

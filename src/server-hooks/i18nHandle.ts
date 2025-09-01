@@ -10,12 +10,12 @@ import { paraglideMiddleware } from "$i18n/server";
  * @returns {Promise<Response>} The response with applied headers and rate limiting
  */
 export const i18nHandle: Handle = ({ event, resolve }) => {
-	return paraglideMiddleware(event.request, ({ request: localizedRequest, locale }) => {
-		event.request = localizedRequest;
-		return resolve(event, {
-			transformPageChunk: ({ html }) => {
-				return html.replace("%lang%", locale);
-			}
-		});
-	});
+  return paraglideMiddleware(event.request, ({ request: localizedRequest, locale }) => {
+    event.request = localizedRequest;
+    return resolve(event, {
+      transformPageChunk: ({ html }) => {
+        return html.replace("%lang%", locale);
+      },
+    });
+  });
 };
