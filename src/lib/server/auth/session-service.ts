@@ -106,7 +106,7 @@ export class SessionService {
 	 */
 	static async validateTokenWithDB(
 		accessToken: string
-	): Promise<{ user: SelectUser; sessionId: string } | null> {
+	): Promise<{ user: SelectUser; sessionId: string; exp: Date } | null> {
 		logger.debug("Validating access token with database");
 
 		try {
@@ -158,6 +158,7 @@ export class SessionService {
 
 			return {
 				user: session.user,
+				exp: session.user_session.expiresAt,
 				sessionId: session.user_session.id
 			};
 		} catch (error) {

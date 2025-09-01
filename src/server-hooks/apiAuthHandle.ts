@@ -92,6 +92,7 @@ export const apiAuthHandle: Handle = async ({ event, resolve }) => {
 	// Add sessionId to the user object for easy access
 	event.locals.user = {
 		userId: sessionData.user.id,
+		exp: sessionData.exp.valueOf(),
 		...sessionData.user,
 		sessionId: sessionData.sessionId
 	};
