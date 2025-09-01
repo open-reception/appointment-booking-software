@@ -100,5 +100,23 @@
 			"error": "Passkey could not be added",
 			"retry": "Retry"
 		}
+	},
+	"nav": {
+		"home": "Home",
+		"tenants": "Tenants",
+		"calendar": "Calendar",
+		"staff": "Staff",
+		"agents": "Agents",
+		"channels": "Channels",
+		"absences": "Absences",
+		"account": "Account",
+		"settings": "Settings",
+		"documentation": "Documentation",
+		"addTenant": "Add tenant",
+		"noTenantSelected": {
+			"title": "No tenant selected",
+			"description": "Click to select"
+		},
+		"logout": "Log out"
 	}
 }

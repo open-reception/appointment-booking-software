@@ -8,6 +8,14 @@ export const ROUTES = {
 	LOGIN: "/login",
 	LOGOUT: "/logout",
 	DASHBOARD: {
-		MAIN: "/dashboard"
+		MAIN: "/dashboard",
+		TENANTS: "/dashboard/tenants",
+		CALENDAR: "/dashboard/calendar",
+		STAFF: "/dashboard/staff",
+		AGENTS: "/dashboard/agents",
+		CHANNELS: "/dashboard/channels",
+		ABSENCES: "/dashboard/absences",
+		SETTINGS: "/dashboard/settings",
+		ACCOUNT: "/dashboard/account"
 	}
 };

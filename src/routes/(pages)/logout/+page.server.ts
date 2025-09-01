@@ -1,3 +1,4 @@
+import { auth } from "$lib/stores/auth";
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async (event) => {
@@ -12,6 +13,8 @@ export const load: PageServerLoad = async (event) => {
 		.then(async (resp) => {
 			return resp.status < 400;
 		});
+
+	auth.reset();
 
 	return { streaming: { success } };
 };

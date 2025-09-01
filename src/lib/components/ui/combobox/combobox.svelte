@@ -14,7 +14,8 @@
 		onChange,
 		class: className = "",
 		triggerVariant = "outline",
-		triggerSize = "default"
+		triggerSize = "default",
+		triggerClass = ""
 	}: {
 		labels: {
 			placeholder: string;
@@ -25,6 +26,7 @@
 		onChange: (value: string) => void;
 		triggerVariant?: ButtonVariant;
 		triggerSize?: ButtonSize;
+		triggerClass?: string;
 		class?: string;
 		options?: { label: string; value: string; keywords?: string[] }[];
 	} = $props();
@@ -46,17 +48,20 @@
 </script>
 
 <Popover.Root bind:open>
-	<Popover.Trigger bind:ref={triggerRef}>
-		<Button
-			variant={triggerVariant}
-			size={triggerSize}
-			class={cn("w-[200px] justify-between", className)}
-			role="combobox"
-			aria-expanded={open}
-		>
-			{selectedValue || labels.placeholder}
-			<ChevronsUpDownIcon class="opacity-50" />
-		</Button>
+	<Popover.Trigger bind:ref={triggerRef} class={triggerClass}>
+		{#snippet child({ props })}
+			<Button
+				variant={triggerVariant}
+				size={triggerSize}
+				class={cn("w-[200px] justify-between", className)}
+				{...props}
+				role="combobox"
+				aria-expanded={open}
+			>
+				{selectedValue || labels.placeholder}
+				<ChevronsUpDownIcon class="ml-2 size-4 shrink-0 opacity-50" />
+			</Button>
+		{/snippet}
 	</Popover.Trigger>
 	<Popover.Content class="w-[200px] p-0">
 		<Command.Root>

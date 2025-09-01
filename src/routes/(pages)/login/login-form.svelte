@@ -17,6 +17,7 @@
 	import type { PasskeyState } from "$lib/components/ui/passkey/state.svelte";
 	import { arrayBufferToBase64, fetchChallenge, getCredential } from "$lib/utils/passkey";
 	import { Label } from "$lib/components/ui/label";
+	import { auth } from "$lib/stores/auth";
 
 	let {
 		data,
@@ -34,6 +35,7 @@
 		},
 		onResult: async (event) => {
 			if (event.result.type === "success") {
+				auth.setUser(event.result.data?.user);
 				await goto(ROUTES.DASHBOARD.MAIN);
 			} else {
 				toast.error(m["login.error"]());
