@@ -6,9 +6,15 @@
   import { PageWithClaim } from "$lib/components/ui/page";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { ROUTES } from "$lib/const/routes.js";
+  import { auth } from "$lib/stores/auth.js";
   import Check from "@lucide/svelte/icons/check";
+  import { onMount } from "svelte";
 
   export let data;
+
+  onMount(() => {
+    auth.reset();
+  });
 </script>
 
 <svelte:head>
