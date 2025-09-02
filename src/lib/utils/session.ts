@@ -17,7 +17,6 @@ export const refreshSession = async () => {
     });
 
     if (!response.ok) {
-      // Token is invalid, clear and redirect to login
       if (response.status === 401) {
         auth.setRefreshing(false);
         goto(ROUTES.LOGOUT);
@@ -40,6 +39,13 @@ export const refreshUserData = async () => {
       },
       credentials: "same-origin",
     });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        goto(ROUTES.LOGOUT);
+        return;
+      }
+    }
 
     const data = await response.json();
     auth.setUser(data.user);
