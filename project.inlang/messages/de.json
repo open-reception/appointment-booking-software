@@ -85,12 +85,12 @@
 	"passkey": {
 		"add": {
 			"initial": "Warten auf E-Mail Adresse",
-			"click": "Klicke/Tippe um einen Passkey hinzuzufügen",
+			"click": "Tippe um Passkey hinzuzufügen",
 			"loading": "Lade Passkey-Challenge",
 			"user": "Warte auf Passkey-Erstellung",
 			"success": "Passkey hinzugefügt",
-			"error": "Passkey konnte nicht hinzugefügt werden",
-			"retry": "Erneut versuchen"
+			"error": "Passkey nicht hinzugefügt",
+			"retry": "Wdh."
 		}
 	},
 	"nav": {

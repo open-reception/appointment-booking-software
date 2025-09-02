@@ -18,6 +18,7 @@
   import { arrayBufferToBase64, fetchChallenge, getCredential } from "$lib/utils/passkey";
   import { Label } from "$lib/components/ui/label";
   import { auth } from "$lib/stores/auth";
+  import logger from "$lib/logger";
 
   let {
     data,
@@ -84,16 +85,19 @@
 
     if (!challenge) {
       $passkeyLoading = "error";
+      logger.error("Failed to fetch challenge", { email: $formData.email });
     } else {
       $passkeyLoading = "user";
       const credentialResp = await getCredential({ ...challenge, email: $formData.email }).catch(
-        () => {
+        (error) => {
           $passkeyLoading = "error";
+          logger.error("Failed to get credential", { ...challenge, error });
         },
       );
 
       if (!credentialResp) {
         $passkeyLoading = "error";
+        logger.error("Credential response is falsy");
         return;
       }
 

@@ -19,6 +19,7 @@
   import { Label } from "$lib/components/ui/label";
   import type { PasskeyState } from "$lib/components/ui/passkey/state.svelte";
   import { arrayBufferToBase64, fetchChallenge, generatePasskey } from "$lib/utils/passkey";
+  import logger from "$lib/logger";
 
   let {
     data,
@@ -90,17 +91,20 @@
     const challenge = await fetchChallenge($formData.email);
 
     if (!challenge) {
+      logger.error("Failed to fetch challenge", { email: $formData.email });
       $passkeyLoading = "error";
     } else {
       $passkeyLoading = "user";
       const passkeyResp = await generatePasskey({ ...challenge, email: $formData.email }).catch(
-        () => {
+        (error) => {
           $passkeyLoading = "error";
+          logger.error("Failed to generate passkey", { ...challenge, error });
         },
       );
 
       if (!passkeyResp) {
         $passkeyLoading = "error";
+        logger.error("Passkey response is falsy");
         return;
       }
 
@@ -108,6 +112,7 @@
       const publicKey = passkeyResp.response.getPublicKey();
       if (!publicKey) {
         $passkeyLoading = "error";
+        logger.error("Failed to get public key", { email: $formData.email });
         return;
       }
 

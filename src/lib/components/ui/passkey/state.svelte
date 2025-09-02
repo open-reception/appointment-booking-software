@@ -30,7 +30,11 @@
 <Button
   variant="outline"
   onclick={onClick}
-  class={cn("flex w-full justify-start", className)}
+  class={cn(
+    "flex w-full justify-start",
+    state === "error" ? "dark:border-destructive border-destructive text-destructive" : "",
+    className,
+  )}
   disabled={disabledStates.includes(state)}
 >
   {#if state === "initial"}
@@ -50,6 +54,9 @@
     {m["passkey.add.success"]()}
   {:else if state === "error"}
     <Error class="size-4" />
-    {m["passkey.add.error"]()}
+    <div class="flex w-full flex-wrap justify-between overflow-hidden">
+      <div>{m["passkey.add.error"]()}</div>
+      <div>{m["passkey.add.retry"]()}</div>
+    </div>
   {/if}
 </Button>

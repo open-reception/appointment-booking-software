@@ -1,3 +1,5 @@
+import logger from "$lib/logger";
+
 export const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
   const bytes = new Uint8Array(buffer);
   let binary = "";
@@ -8,6 +10,16 @@ export const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
   }
 
   return window.btoa(binary);
+};
+
+export const base64UrlToArrayBuffer = (base64url: string) => {
+  // Replace URL-safe characters and add padding
+  const base64 = base64url
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+    .padEnd(base64url.length + ((4 - (base64url.length % 4)) % 4), "=");
+
+  return base64ToArrayBuffer(base64);
 };
 
 export function base64ToArrayBuffer(base64: string) {
@@ -35,8 +47,39 @@ export const fetchChallenge = async (email: string) => {
       challenge: data.challenge,
     };
   } catch {
+    logger.error("Failed to fetch challenge", { email, status: resp.status });
     return null;
   }
+};
+
+export const getCredentialOptions = ({
+  id,
+  challenge,
+  email,
+}: {
+  id: string;
+  challenge: string;
+  email: string;
+}): {
+  publicKey: PublicKeyCredentialCreationOptions;
+} => {
+  return {
+    publicKey: {
+      challenge: base64UrlToArrayBuffer(challenge),
+      rp: {
+        id,
+        name: "Open Reception",
+      },
+      user: {
+        id: new Uint8Array(16),
+        name: email,
+        displayName: email,
+      },
+      pubKeyCredParams: [
+        { alg: -7, type: "public-key" }, // ES256
+      ],
+    },
+  };
 };
 
 export type GeneratePasskeyResponse = {
@@ -53,22 +96,8 @@ export const generatePasskey = async ({
   challenge: string;
   email: string;
 }): Promise<GeneratePasskeyResponse> => {
-  const publicKey: PublicKeyCredentialCreationOptions = {
-    challenge: base64ToArrayBuffer(challenge),
-    rp: {
-      id,
-      name: "Open Reception",
-    },
-    user: {
-      id: new Uint8Array(16),
-      name: email,
-      displayName: email,
-    },
-    pubKeyCredParams: [
-      { alg: -7, type: "public-key" }, // ES256
-    ],
-  };
-  return (await navigator.credentials.create({ publicKey })) as GeneratePasskeyResponse;
+  const options = getCredentialOptions({ id, challenge, email });
+  return (await navigator.credentials.create(options)) as GeneratePasskeyResponse;
 };
 
 export type GetCredentialResponse = PublicKeyCredential & {
@@ -84,22 +113,8 @@ export const getCredential = async ({
   challenge: string;
   email: string;
 }) => {
-  const publicKey: PublicKeyCredentialCreationOptions = {
-    challenge: base64ToArrayBuffer(challenge),
-    rp: {
-      id,
-      name: "Open Reception",
-    },
-    user: {
-      id: new Uint8Array(16),
-      name: email,
-      displayName: email,
-    },
-    pubKeyCredParams: [
-      { alg: -7, type: "public-key" }, // ES256
-    ],
-  };
-  return (await navigator.credentials.get({ publicKey })) as GetCredentialResponse;
+  const options = getCredentialOptions({ id, challenge, email });
+  return (await navigator.credentials.get(options)) as GetCredentialResponse;
 };
 
 export const getCounterFromAuthenticatorData = (authenticatorData: ArrayBuffer) => {
