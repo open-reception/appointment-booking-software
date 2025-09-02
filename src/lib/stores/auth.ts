@@ -37,6 +37,14 @@ function createAuthStore() {
         user: undefined,
       });
     },
+    isAuthenticated: () => {
+      let authState: AuthState;
+      const unsubscribe = store.subscribe((state) => {
+        authState = state;
+      });
+      unsubscribe();
+      return authState!.isAuthenticated;
+    },
   };
 }
 

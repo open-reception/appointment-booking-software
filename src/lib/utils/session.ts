@@ -3,6 +3,8 @@ import { ROUTES } from "$lib/const/routes";
 import { auth } from "$lib/stores/auth";
 
 export const refreshSession = async () => {
+  if (!auth.isAuthenticated()) return;
+
   auth.setRefreshing(true);
 
   try {
