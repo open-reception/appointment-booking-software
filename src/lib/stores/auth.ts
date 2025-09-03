@@ -1,13 +1,14 @@
+import type { UserRole } from "$lib/server/auth/authorization-service";
 import { writable } from "svelte/store";
 
-interface AuthState {
+export interface AuthState {
   isAuthenticated: boolean;
   isRefreshing: boolean;
   user?: {
     id: string;
     email: string;
     name: string;
-    role: string;
+    role: UserRole;
     // The currently selected tenant
     tenantId?: string | null;
   };

@@ -1,13 +1,18 @@
 <script lang="ts">
-  import { refreshSession } from "$lib/utils/session";
+  import { refreshSession, refreshUserData } from "$lib/utils/session";
   import { onMount } from "svelte";
+  import type { LayoutProps } from "./$types";
+  import { auth } from "$lib/stores/auth";
 
-  let { children } = $props();
+  let { data, children }: LayoutProps = $props();
 
   let intervalId: ReturnType<typeof setInterval> | null = null;
 
   onMount(() => {
-    refreshSession();
+    if (data?.user) {
+      auth.setUser(data.user);
+    }
+
     const unsubscribe = () => {
       if (!intervalId) {
         refreshSession();
