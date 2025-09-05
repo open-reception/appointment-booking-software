@@ -7,10 +7,9 @@
   import { Skeleton } from "$lib/components/ui/skeleton";
   import Ban from "@lucide/svelte/icons/ban";
   import Check from "@lucide/svelte/icons/check";
-  import type { PageData } from "./$types";
   import { ROUTES } from "$lib/const/routes";
 
-  export let data: PageData;
+  const { data } = $props();
 </script>
 
 <svelte:head>

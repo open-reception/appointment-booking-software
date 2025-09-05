@@ -45,10 +45,14 @@
 			"email": "Invalid format",
 			"passphrase": "Must be at least 30 characters long",
 			"noPassAtAll": "Either passphrase or passkey is required",
-			"bothPassSet": "Only one of passphrase or passkey should be provided"
+			"bothPassSet": "Only one of passphrase or passkey should be provided",
+			"name": "Must be at least 2 characters",
+			"shortname": "Must be between 4 and 20 characters",
+			"deleteConfirmation": "Must be exactly »{expectedValue}«"
 		},
 		"noPassAtAll": "Either passphrase or passkey is required",
-		"passkey": "Passkey"
+		"passkey": "Passkey",
+		"name": "Name"
 	},
 	"login": {
 		"or": "Or",
@@ -115,8 +119,63 @@
 		"addTenant": "Add tenant",
 		"noTenantSelected": {
 			"title": "No tenant selected",
-			"description": "Click to select"
+			"description": "Click to configure"
 		},
 		"logout": "Log out"
-	}
+	},
+	"cancel": "Cancel",
+	"tenants": {
+		"title": "Tenants",
+		"empty": {
+			"title": "No tenants yet",
+			"description": "Create a site for someone to start collecting appointments."
+		},
+		"add": {
+			"title": "Add Tenant",
+			"description": "Create a site for someone to start collecting appointments.",
+			"name": {
+				"description": "Must be unique on this server. Used as a subdomain {domain}",
+				"errors": {
+					"urlFormat": "Only letters, numbers, and hyphens are allowed"
+				}
+			},
+			"invite": {
+				"title": "Invite a tenant admin"
+			},
+			"email": {
+				"description": "This person will receive a magic link to set up their account."
+			},
+			"action": "Add Tenant",
+			"success": "Tenant added",
+			"errors": {
+				"nameTaken": "Could not add tenant. This name is already taken.",
+				"unkonwn": "Could not add tenant",
+				"emailTaken": "Could not add tenant. This E-Mail Address is already in use."
+			}
+		},
+		"list": {
+			"empty": {
+				"title": "No tenants yet",
+				"description": "Click the button above to add your first tenant."
+			},
+			"manage": "Manage",
+			"view": "View"
+		},
+		"delete": {
+			"title": "Delete Tenant",
+			"description": "Type {name} to confirm.",
+			"action": "Delete Tenant",
+			"success": "Tenant deleted",
+			"error": "Could not delete tenant."
+		},
+		"loading": "Loading tenants"
+	},
+	"components": {
+		"openMenu": "Open menu"
+	},
+	"actions": "Actions",
+	"edit": "Edit",
+	"configure": "Configure",
+	"pause": "Pause",
+	"delete": "Delete"
 }

@@ -44,9 +44,13 @@
 			"email": "Ungültiges Format",
 			"passphrase": "Muss mindestens 30 Zeichen lang sein",
 			"noPassAtAll": "Either passphrase or passkey is required",
-			"bothPassSet": "Nur Passphrase oder Passkey darf gesetzt sein"
+			"bothPassSet": "Nur Passphrase oder Passkey darf gesetzt sein",
+			"name": "Muss mindestens 2 Zeichen lang sein",
+			"shortname": "Muss zwischen 4 und 20 Zeichen lang sein",
+			"deleteConfirmation": "Muss exakt »{expectedValue}« sein"
 		},
-		"passkey": "Passkey"
+		"passkey": "Passkey",
+		"name": "Name"
 	},
 	"login": {
 		"or": "Oder",
@@ -110,5 +114,53 @@
 			"description": "Klicke zum Auswählen"
 		},
 		"logout": "Ausloggen"
-	}
+	},
+	"tenants": {
+		"title": "Mandanten",
+		"empty": {
+			"title": "Bisher keine Mandanten",
+			"description": "Erstelle eine Seite für jemanden, der Termine sammeln möchte."
+		},
+		"add": {
+			"title": "Mandant hinzufügen",
+			"description": "Erstelle eine Seite für jemanden, der Termine sammeln möchte.",
+			"name": {
+				"description": "Muss einmalig auf diesem Server sein. Wird als URL verwendet {domain}",
+				"errors": {
+					"urlFormat": "Nur Kleinbuchstaben, Zahlen und Bindestriche sind erlaubt"
+				}
+			},
+			"invite": {
+				"title": "Tenant-Admin einladen"
+			},
+			"email": {
+				"description": "Diese Person erhält einen magischen Link, um ein Konto einzurichten."
+			},
+			"action": "Mandant hinzufügen",
+			"success": "Mandant hinzugefügt",
+			"errors": {
+				"nameTaken": "Konnte Mandant nicht hinzufügen. Dieser Name ist bereits vergeben.",
+				"unkonwn": "Konnte Mandant nicht hinzufügen",
+				"emailTaken": "Konnte Mandant nicht hinzufügen. Diese E-Mail Adresse wird bereits verwendet."
+			},
+			"hint": "Make sure DNS is already pointing to this server. Changes may take some time to spread."
+		},
+		"list": {
+			"empty": {
+				"title": "No tenants yet",
+				"description": "Click the button above to add your first tenant."
+			},
+			"manage": "Manage",
+			"view": "View"
+		},
+		"loading": "Lade Mandaten"
+	},
+	"components": {
+		"openMenu": "Menü öffnen"
+	},
+	"actions": "Aktionen",
+	"edit": "Editieren",
+	"configure": "Konfigurieren",
+	"pause": "Pausieren",
+	"delete": "Löschen"
 }

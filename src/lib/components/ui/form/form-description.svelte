@@ -14,10 +14,10 @@
 <FormPrimitive.Description
   bind:ref
   data-slot="form-description"
-  class={cn("text-muted-foreground -mt-2 text-sm", className)}
+  class={cn("text-muted-foreground -mt-1 ml-1 text-sm", className)}
   {...restProps}
 >
-  <Text style="sm" color="medium" class="text-medium">
+  <Text style="xs" color="medium" class="text-medium">
     {@render children?.()}
   </Text>
 </FormPrimitive.Description>

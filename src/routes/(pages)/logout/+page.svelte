@@ -10,7 +10,7 @@
   import Check from "@lucide/svelte/icons/check";
   import { onMount } from "svelte";
 
-  export let data;
+  const { data } = $props();
 
   onMount(() => {
     auth.reset();
