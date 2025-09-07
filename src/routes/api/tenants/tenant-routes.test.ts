@@ -29,6 +29,18 @@ vi.mock("$lib/logger", () => ({
       error: vi.fn(),
     })),
   },
+  UniversalLogger: vi.fn().mockImplementation(() => ({
+    setContext: vi.fn(() => ({
+      debug: vi.fn(),
+      error: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
+    })),
+    debug: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+  })),
 }));
 
 vi.mock("$lib/server/utils/errors", () => ({
@@ -44,6 +56,25 @@ vi.mock("$lib/server/utils/errors", () => ({
       this.name = "NotFoundError";
     }
   },
+}));
+
+vi.mock("$lib/server/auth/authorization-service", () => ({
+  AuthorizationService: {
+    requireGlobalAdmin: vi.fn(),
+    requireRole: vi.fn(),
+    requireAnyRole: vi.fn(),
+    requireTenantAccess: vi.fn(),
+    requireTenantAdmin: vi.fn(),
+    requireStaffOrAbove: vi.fn(),
+    canAccessTenant: vi.fn(),
+    isGlobalAdmin: vi.fn(),
+    isTenantAdmin: vi.fn(),
+    isStaff: vi.fn(),
+    hasRole: vi.fn(),
+    hasAnyRole: vi.fn(),
+    getUserTenantId: vi.fn(),
+  },
+  withAuthorization: vi.fn(),
 }));
 
 describe("Tenant API Routes", () => {
