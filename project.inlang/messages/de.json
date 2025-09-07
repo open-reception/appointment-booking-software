@@ -156,7 +156,18 @@
 		"loading": "Lade Mandaten",
 		"allTenants": "All tenants",
 		"unselectTenant": "Mandant abwählen",
-		"failedToSwitch": "Mandant konnte nicht gewechselt werden"
+		"failedToSwitch": "Mandant konnte nicht gewechselt werden",
+		"delete": {
+			"title": "Mandant löschen",
+			"description": "Tippe {name} um den Mandanten zu löschen.",
+			"action": "Mandant löschen",
+			"success": "Mandant gelöscht",
+			"error": "Konnte Mandant nicht löschen.",
+			"unavailable": {
+				"title": "Mandanten kann nicht gelöscht werden",
+				"description": "Du kannst den Mandanten, den Du gerade konfigurierst, nicht löschen. Bitte wechsle zu einem anderen Mandanten, bevor Du diesen löschst."
+			}
+		}
 	},
 	"components": {
 		"openMenu": "Menü öffnen"

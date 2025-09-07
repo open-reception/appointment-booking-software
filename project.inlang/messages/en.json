@@ -166,7 +166,11 @@
 			"description": "Type {name} to confirm.",
 			"action": "Delete Tenant",
 			"success": "Tenant deleted",
-			"error": "Could not delete tenant."
+			"error": "Could not delete tenant.",
+			"unavailable": {
+				"title": "Cannot delete active tenant",
+				"description": "You cannot delete the tenant you are currently configuring. Please switch to another tenant before deleting this one."
+			}
 		},
 		"loading": "Loading tenants",
 		"allTenants": "All tenants",
