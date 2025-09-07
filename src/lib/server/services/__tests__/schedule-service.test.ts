@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ValidationError } from "../../utils/errors";
 
 // Set timezone to UTC for consistent test behavior
-process.env.TZ = 'UTC';
+process.env.TZ = "UTC";
 
 // Mock dependencies before imports
 vi.mock("../../db", () => ({
