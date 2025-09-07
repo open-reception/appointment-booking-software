@@ -3,6 +3,7 @@ import { SessionService } from "$lib/server/auth/session-service";
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { UniversalLogger } from "$lib/logger";
+import { isBefore } from "date-fns";
 
 const logger = new UniversalLogger().setContext("AuthRefreshAPI");
 
@@ -57,7 +58,7 @@ registerOpenAPIRoute("/auth/refresh", "POST", {
   },
 });
 
-export const POST: RequestHandler = async ({ locals, cookies }) => {
+export const POST: RequestHandler = async ({ cookies }) => {
   try {
     // Get current access token from cookie to extract session info
     const accessToken = cookies.get("access_token");
@@ -66,17 +67,24 @@ export const POST: RequestHandler = async ({ locals, cookies }) => {
       return json({ error: "Access token is required" }, { status: 400 });
     }
 
-    // The user object is already available from authHandle,
-    // so we can create a new session based on that
-    if (!locals.user) {
-      return json({ error: "Invalid user context" }, { status: 400 });
+    // Get the (possibly invalid) session from the database
+    const oldSession = await SessionService.getUserSession(accessToken);
+
+    if (!oldSession) {
+      return json({ error: "No valid session found for user" }, { status: 401 });
     }
 
-    const result = await SessionService.createSession(
-      locals.user.userId as string,
-      "", // IP address - could be extracted from request if needed
-      undefined, // user agent
-    );
+    if (isBefore(oldSession.expiresAt, new Date())) {
+      return json(
+        {
+          message: "Session still valid, no refresh needed",
+          expiresAt: oldSession.expiresAt.toISOString(),
+        },
+        { status: 200 },
+      );
+    }
+
+    const result = await SessionService.refreshSession(oldSession.refreshToken);
 
     if (!result) {
       return json({ error: "Invalid or expired refresh token" }, { status: 401 });
