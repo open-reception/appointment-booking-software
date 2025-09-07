@@ -2,6 +2,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ValidationError } from "../../utils/errors";
 
+// Set timezone to UTC for consistent test behavior
+process.env.TZ = 'UTC';
+
 // Mock dependencies before imports
 vi.mock("../../db", () => ({
   getTenantDb: vi.fn(),
@@ -419,7 +422,7 @@ describe("ScheduleService", () => {
           id: "appointment1",
           clientId: "client1",
           channelId: "channel1",
-          appointmentDate: "2024-01-01T08:00:00.000Z", // UTC time for 09:00 local time (Berlin UTC+1)
+          appointmentDate: "2024-01-01T09:00:00.000Z", // 09:00 UTC
           expiryDate: "2024-01-01",
           title: "Test Appointment",
           description: null,
@@ -495,7 +498,7 @@ describe("ScheduleService", () => {
           id: "appointment1",
           clientId: "client1",
           channelId: "channel1",
-          appointmentDate: "2024-01-01T09:00:00.000Z", // 10:00 local time (Berlin UTC+1)
+          appointmentDate: "2024-01-01T10:00:00.000Z", // 10:00 UTC
           expiryDate: "2024-01-01",
           title: "Appointment 1",
           description: null,
@@ -505,7 +508,7 @@ describe("ScheduleService", () => {
           id: "appointment2",
           clientId: "client2",
           channelId: "channel1",
-          appointmentDate: "2024-01-01T13:00:00.000Z", // 14:00 local time (Berlin UTC+1)
+          appointmentDate: "2024-01-01T14:00:00.000Z", // 14:00 UTC
           expiryDate: "2024-01-01",
           title: "Appointment 2",
           description: null,
