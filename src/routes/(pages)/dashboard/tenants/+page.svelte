@@ -16,6 +16,7 @@
   import UnknownTenantIcon from "@lucide/svelte/icons/ticket-x";
   import DeleteIcon from "@lucide/svelte/icons/trash-2";
   import { AddTenantForm } from "./(components)/add-tenant-form";
+  import { tenants as tenantsStore } from "$lib/stores/tenants";
   import DeleteTenantForm from "./(components)/delete-tenant-form/delete-tenant-form.svelte";
 
   const { data } = $props();
@@ -80,7 +81,7 @@
                     type: "action",
                     icon: ConfigureIcon,
                     label: m["configure"](),
-                    onClick: () => {},
+                    onClick: () => tenantsStore.setCurrentTenant(tenant.id, true),
                   },
                   {
                     type: "divider",

@@ -1,6 +1,10 @@
 import { auth, type AuthState } from "$lib/stores/auth";
 import { sidebar, STORAGE_KEY } from "$lib/stores/sidebar";
+import type { TTenant } from "$lib/types/tenant";
 import type { LayoutServerLoad } from "./$types";
+import logger from "$lib/logger";
+
+const log = logger.setContext("/dashboard/+layout.server.ts");
 
 export const load: LayoutServerLoad = async (event) => {
   // Initialize sidebar state from cookies for ssr
@@ -20,7 +24,26 @@ export const load: LayoutServerLoad = async (event) => {
     auth.setUser(user);
   }
 
+  // Load tenants
+  const tenants: Promise<TTenant[]> = event
+    .fetch(`/api/tenants`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "same-origin",
+    })
+    .then(async (res) => {
+      try {
+        const body = await res.json();
+        return body.tenants ?? ([] as TTenant[]);
+      } catch (error) {
+        log.error("Failed to parse tenants response in", { error });
+      }
+    });
+
   return {
     user,
+    tenants,
   };
 };

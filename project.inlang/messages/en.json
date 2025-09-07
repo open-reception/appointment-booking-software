@@ -168,7 +168,10 @@
 			"success": "Tenant deleted",
 			"error": "Could not delete tenant."
 		},
-		"loading": "Loading tenants"
+		"loading": "Loading tenants",
+		"allTenants": "All tenants",
+		"unselectTenant": "Unselect tenant",
+		"failedToSwitch": "Failed to switch tenant"
 	},
 	"components": {
 		"openMenu": "Open menu"

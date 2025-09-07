@@ -31,6 +31,12 @@ function createAuthStore() {
     setUser: (user: AuthState["user"]) => {
       store.update((state) => ({ ...state, isAuthenticated: true, user }));
     },
+    setTenantId: (tenantId: string | null) => {
+      store.update((state) => {
+        if (!state.user) return state;
+        return { ...state, user: { ...state.user, tenantId } };
+      });
+    },
     reset: () => {
       store.set({
         isAuthenticated: false,

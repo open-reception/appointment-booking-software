@@ -153,7 +153,10 @@
 			"manage": "Manage",
 			"view": "View"
 		},
-		"loading": "Lade Mandaten"
+		"loading": "Lade Mandaten",
+		"allTenants": "All tenants",
+		"unselectTenant": "Mandant abwählen",
+		"failedToSwitch": "Mandant konnte nicht gewechselt werden"
 	},
 	"components": {
 		"openMenu": "Menü öffnen"
