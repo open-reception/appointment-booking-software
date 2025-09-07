@@ -10,16 +10,20 @@ import { logger } from "$lib/logger";
  * @returns {Promise<Response>} The response with applied headers and rate limiting
  */
 export const loggingHandle: Handle = async ({ event, resolve }) => {
-	const start = Date.now();
-	const requestLogger = logger.setContext("REQUEST");
+  if (!event.url.pathname.startsWith("/api")) {
+    return resolve(event);
+  }
 
-	const response = await resolve(event, {
-		preload: () => {
-			requestLogger.info(`Incoming ${event.request.method} ${event.url.pathname}`);
-			return true;
-		}
-	});
-	const responseTime = Date.now() - start;
-	requestLogger.logRequest(event.request, responseTime, response.status);
-	return response;
+  const start = Date.now();
+  const requestLogger = logger.setContext("REQUEST");
+
+  const response = await resolve(event, {
+    preload: () => {
+      requestLogger.info(`Incoming ${event.request.method} ${event.url.pathname}`);
+      return true;
+    },
+  });
+  const responseTime = Date.now() - start;
+  requestLogger.logRequest(event.request, responseTime, response.status);
+  return response;
 };

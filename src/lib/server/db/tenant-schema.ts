@@ -1,15 +1,15 @@
 import type { InferSelectModel } from "drizzle-orm";
 import {
-	pgTable,
-	boolean,
-	uuid,
-	text,
-	date,
-	pgEnum,
-	time,
-	integer,
-	json,
-	timestamp
+  pgTable,
+  boolean,
+  uuid,
+  text,
+  date,
+  pgEnum,
+  time,
+  integer,
+  json,
+  timestamp,
 } from "drizzle-orm/pg-core";
 import { bytea } from "./base";
 
@@ -22,11 +22,11 @@ export const channelTypeEnum = pgEnum("channel_type", ["ROOM", "MACHINE", "PERSO
 
 /** Appointment status enumeration - tracks the lifecycle of appointments */
 export const appointmentStatusEnum = pgEnum("appointment_status", [
-	"NEW",
-	"CONFIRMED",
-	"HELD",
-	"REJECTED",
-	"NO_SHOW"
+  "NEW",
+  "CONFIRMED",
+  "HELD",
+  "REJECTED",
+  "NO_SHOW",
 ]);
 
 /**
@@ -36,14 +36,14 @@ export const appointmentStatusEnum = pgEnum("appointment_status", [
  * @table agent
  */
 export const agent = pgTable("agent", {
-	/** Primary key - unique identifier */
-	id: uuid("id").primaryKey().defaultRandom(),
-	/** Agent's display name */
-	name: text("name").notNull(),
-	/** Optional description of the agent's role or specialties */
-	description: text("description"),
-	/** Optional logo/profile image for the agent (PNG, JPEG, GIF, or WEBP) */
-	logo: bytea("logo")
+  /** Primary key - unique identifier */
+  id: uuid("id").primaryKey().defaultRandom(),
+  /** Agent's display name */
+  name: text("name").notNull(),
+  /** Optional description of the agent's role or specialties */
+  description: text("description"),
+  /** Optional logo/profile image for the agent (PNG, JPEG, GIF, or WEBP) */
+  logo: bytea("logo"),
 });
 
 /**
@@ -54,22 +54,22 @@ export const agent = pgTable("agent", {
  * @table channel
  */
 export const channel = pgTable("channel", {
-	/** Primary key - unique identifier */
-	id: uuid("id").primaryKey().defaultRandom(),
-	/** Channel display names in multiple languages (array of strings in same order as languages) */
-	names: json("names").$type<string[]>().notNull(),
-	/** Optional color for UI display (hex code) */
-	color: text("color"),
-	/** Whether the channel is paused and does not offer nor accept new appointments */
-	pause: boolean("paused").notNull().default(false),
-	/** Optional descriptions in multiple languages (array of strings in same order as languages) */
-	descriptions: json("descriptions").$type<string[]>(),
-	/** Active languages for this channel (array of language codes) */
-	languages: json("languages").$type<string[]>().notNull(),
-	/** Whether channel is publicly bookable or requires internal access */
-	isPublic: boolean("is_public"),
-	/** Whether appointments must be explicitly confirmed by staff */
-	requiresConfirmation: boolean("requires_confirmation")
+  /** Primary key - unique identifier */
+  id: uuid("id").primaryKey().defaultRandom(),
+  /** Channel display names in multiple languages (array of strings in same order as languages) */
+  names: json("names").$type<string[]>().notNull(),
+  /** Optional color for UI display (hex code) */
+  color: text("color"),
+  /** Whether the channel is paused and does not offer nor accept new appointments */
+  pause: boolean("paused").notNull().default(false),
+  /** Optional descriptions in multiple languages (array of strings in same order as languages) */
+  descriptions: json("descriptions").$type<string[]>(),
+  /** Active languages for this channel (array of language codes) */
+  languages: json("languages").$type<string[]>().notNull(),
+  /** Whether channel is publicly bookable or requires internal access */
+  isPublic: boolean("is_public"),
+  /** Whether appointments must be explicitly confirmed by staff */
+  requiresConfirmation: boolean("requires_confirmation"),
 });
 
 /**
@@ -80,16 +80,16 @@ export const channel = pgTable("channel", {
  * @table slotTemplate
  */
 export const slotTemplate = pgTable("slotTemplate", {
-	/** Primary key - unique identifier */
-	id: uuid("id").primaryKey().defaultRandom(),
-	/** Bitmask for weekdays (1=Monday, 2=Tuesday, 4=Wednesday, etc.) */
-	weekdays: integer("weekdays"),
-	/** Start time for the slot template */
-	from: time("from").notNull(),
-	/** End time for the slot template */
-	to: time("to").notNull(),
-	/** Duration of individual appointment slots in minutes */
-	duration: integer("duration").notNull()
+  /** Primary key - unique identifier */
+  id: uuid("id").primaryKey().defaultRandom(),
+  /** Bitmask for weekdays (1=Monday, 2=Tuesday, 4=Wednesday, etc.) */
+  weekdays: integer("weekdays"),
+  /** Start time for the slot template */
+  from: time("from").notNull(),
+  /** End time for the slot template */
+  to: time("to").notNull(),
+  /** Duration of individual appointment slots in minutes */
+  duration: integer("duration").notNull(),
 });
 
 /**
@@ -99,14 +99,14 @@ export const slotTemplate = pgTable("slotTemplate", {
  * @table channelAgent
  */
 export const channelAgent = pgTable("channel_agent", {
-	/** Foreign key to channel */
-	channelId: uuid("channel_id")
-		.notNull()
-		.references(() => channel.id),
-	/** Foreign key to agent */
-	agentId: uuid("agent_id")
-		.notNull()
-		.references(() => agent.id)
+  /** Foreign key to channel */
+  channelId: uuid("channel_id")
+    .notNull()
+    .references(() => channel.id),
+  /** Foreign key to agent */
+  agentId: uuid("agent_id")
+    .notNull()
+    .references(() => agent.id),
 });
 
 /**
@@ -116,14 +116,14 @@ export const channelAgent = pgTable("channel_agent", {
  * @table channelSlotTemplate
  */
 export const channelSlotTemplate = pgTable("channel_slot_template", {
-	/** Foreign key to channel */
-	channelId: uuid("channel_id")
-		.notNull()
-		.references(() => channel.id),
-	/** Foreign key to slot template */
-	slotTemplateId: uuid("slot_template_id")
-		.notNull()
-		.references(() => slotTemplate.id)
+  /** Foreign key to channel */
+  channelId: uuid("channel_id")
+    .notNull()
+    .references(() => channel.id),
+  /** Foreign key to slot template */
+  slotTemplateId: uuid("slot_template_id")
+    .notNull()
+    .references(() => slotTemplate.id),
 });
 
 /**
@@ -133,18 +133,18 @@ export const channelSlotTemplate = pgTable("channel_slot_template", {
  * @table client
  */
 export const client = pgTable("client", {
-	/** Primary key - unique identifier */
-	id: uuid("id").primaryKey().defaultRandom(),
-	/** Hash of client email for identification without storing plaintext */
-	hashKey: text("hash_key").notNull().unique(),
-	/** Client's public key for end-to-end encryption */
-	publicKey: text("public_key").notNull(),
-	/** Server-side share of client's private key for recovery */
-	privateKeyShare: text("private_key_share").notNull(),
-	/** Client email address (optional for privacy) */
-	email: text("email"),
-	/** Preferred language for communications (de/en) */
-	language: text("language")
+  /** Primary key - unique identifier */
+  id: uuid("id").primaryKey().defaultRandom(),
+  /** Hash of client email for identification without storing plaintext */
+  hashKey: text("hash_key").notNull().unique(),
+  /** Client's public key for end-to-end encryption */
+  publicKey: text("public_key").notNull(),
+  /** Server-side share of client's private key for recovery */
+  privateKeyShare: text("private_key_share").notNull(),
+  /** Client email address (optional for privacy) */
+  email: text("email"),
+  /** Preferred language for communications (de/en) */
+  language: text("language"),
 });
 
 /**
@@ -154,20 +154,20 @@ export const client = pgTable("client", {
  * @table staff
  */
 export const staff = pgTable("staff", {
-	/** Primary key - unique identifier */
-	id: uuid("id").primaryKey().defaultRandom(),
-	/** Hash of staff login name for identification */
-	hashKey: text("hash_key").notNull().unique(),
-	/** Staff member's public key for end-to-end encryption */
-	publicKey: text("public_key").notNull(),
-	/** Staff member's display name */
-	name: text("name"),
-	/** Job title or position within the organization */
-	position: text("position"),
-	/** Staff email address (required for notifications) */
-	email: text("email").notNull(),
-	/** Preferred language for communications (de/en) */
-	language: text("language")
+  /** Primary key - unique identifier */
+  id: uuid("id").primaryKey().defaultRandom(),
+  /** Hash of staff login name for identification */
+  hashKey: text("hash_key").notNull().unique(),
+  /** Staff member's public key for end-to-end encryption */
+  publicKey: text("public_key").notNull(),
+  /** Staff member's display name */
+  name: text("name"),
+  /** Job title or position within the organization */
+  position: text("position"),
+  /** Staff email address (required for notifications) */
+  email: text("email").notNull(),
+  /** Preferred language for communications (de/en) */
+  language: text("language"),
 });
 
 /**
@@ -177,26 +177,26 @@ export const staff = pgTable("staff", {
  * @table appointment
  */
 export const appointment = pgTable("appointment", {
-	/** Primary key - unique identifier */
-	id: uuid("id").primaryKey().defaultRandom(),
-	/** Foreign key to client who booked the appointment */
-	clientId: uuid("client_id")
-		.notNull()
-		.references(() => client.id),
-	/** Foreign key to channel/resource being booked */
-	channelId: uuid("channel_id")
-		.notNull()
-		.references(() => channel.id),
-	/** Date and time of the appointment */
-	appointmentDate: date("appointment_date").notNull(),
-	/** When appointment data expires and can be auto-deleted */
-	expiryDate: date("expiry_date").notNull(),
-	/** Appointment title/subject */
-	title: text("title").notNull(),
-	/** Optional detailed description of the appointment */
-	description: text("description"),
-	/** Current status of the appointment */
-	status: appointmentStatusEnum("status").notNull().default("NEW")
+  /** Primary key - unique identifier */
+  id: uuid("id").primaryKey().defaultRandom(),
+  /** Foreign key to client who booked the appointment */
+  clientId: uuid("client_id")
+    .notNull()
+    .references(() => client.id),
+  /** Foreign key to channel/resource being booked */
+  channelId: uuid("channel_id")
+    .notNull()
+    .references(() => channel.id),
+  /** Date and time of the appointment */
+  appointmentDate: date("appointment_date").notNull(),
+  /** When appointment data expires and can be auto-deleted */
+  expiryDate: date("expiry_date").notNull(),
+  /** Appointment title/subject */
+  title: text("title").notNull(),
+  /** Optional detailed description of the appointment */
+  description: text("description"),
+  /** Current status of the appointment */
+  status: appointmentStatusEnum("status").notNull().default("NEW"),
 });
 
 /**
@@ -206,22 +206,22 @@ export const appointment = pgTable("appointment", {
  * @table agentAbsence
  */
 export const agentAbsence = pgTable("agent_absence", {
-	/** Primary key - unique identifier */
-	id: uuid("id").primaryKey().defaultRandom(),
-	/** Foreign key to agent who is absent */
-	agentId: uuid("agent_id")
-		.notNull()
-		.references(() => agent.id),
-	/** Start date and time of absence */
-	startDate: timestamp("start_date").notNull(),
-	/** End date and time of absence */
-	endDate: timestamp("end_date").notNull(),
-	/** Type of absence (free text: Urlaub, Krankheit, Fortbildung, etc.) */
-	absenceType: text("absence_type").notNull(),
-	/** Optional description/reason for absence */
-	description: text("description"),
-	/** Whether this is a full day absence or specific time period */
-	isFullDay: boolean("is_full_day").notNull().default(true)
+  /** Primary key - unique identifier */
+  id: uuid("id").primaryKey().defaultRandom(),
+  /** Foreign key to agent who is absent */
+  agentId: uuid("agent_id")
+    .notNull()
+    .references(() => agent.id),
+  /** Start date and time of absence */
+  startDate: timestamp("start_date").notNull(),
+  /** End date and time of absence */
+  endDate: timestamp("end_date").notNull(),
+  /** Type of absence (free text: Urlaub, Krankheit, Fortbildung, etc.) */
+  absenceType: text("absence_type").notNull(),
+  /** Optional description/reason for absence */
+  description: text("description"),
+  /** Whether this is a full day absence or specific time period */
+  isFullDay: boolean("is_full_day").notNull().default(true),
 });
 
 /**

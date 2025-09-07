@@ -21,39 +21,39 @@ const tenantDbCache = new Map<string, PostgresJsDatabase<typeof tenantSchema>>()
  * @returns Promise<PostgresJsDatabase> - The tenant's database connection
  */
 export async function getTenantDb(
-	tenantId: string
+  tenantId: string,
 ): Promise<PostgresJsDatabase<typeof tenantSchema>> {
-	// Check cache first
-	if (tenantDbCache.has(tenantId)) {
-		return tenantDbCache.get(tenantId)!;
-	}
+  // Check cache first
+  if (tenantDbCache.has(tenantId)) {
+    return tenantDbCache.get(tenantId)!;
+  }
 
-	// Get tenant configuration from central database
-	const tenant = await centralDb
-		.select()
-		.from(centralSchema.tenant)
-		.where(eq(centralSchema.tenant.id, tenantId))
-		.limit(1);
+  // Get tenant configuration from central database
+  const tenant = await centralDb
+    .select()
+    .from(centralSchema.tenant)
+    .where(eq(centralSchema.tenant.id, tenantId))
+    .limit(1);
 
-	if (tenant.length === 0) {
-		throw new Error(`Tenant with ID ${tenantId} not found`);
-	}
+  if (tenant.length === 0) {
+    throw new Error(`Tenant with ID ${tenantId} not found`);
+  }
 
-	// Create tenant-specific database connection
-	const tenantClient = postgres(tenant[0].databaseUrl);
-	const tenantDb = drizzle(tenantClient, { schema: tenantSchema });
+  // Create tenant-specific database connection
+  const tenantClient = postgres(tenant[0].databaseUrl);
+  const tenantDb = drizzle(tenantClient, { schema: tenantSchema });
 
-	// Cache the connection
-	tenantDbCache.set(tenantId, tenantDb);
+  // Cache the connection
+  tenantDbCache.set(tenantId, tenantDb);
 
-	return tenantDb;
+  return tenantDb;
 }
 
 /**
  * Clear cached database connections (useful for testing or tenant updates)
  */
 export function clearTenantDbCache(): void {
-	tenantDbCache.clear();
+  tenantDbCache.clear();
 }
 
 // Legacy export for backward compatibility (points to central DB)

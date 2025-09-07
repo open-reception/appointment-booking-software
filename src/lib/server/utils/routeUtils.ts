@@ -8,9 +8,9 @@ import { NotFoundError } from "./errors";
  * @returns core data and configuration of the active tenant
  */
 export const getTenantForSession = async (sessionToken: string) => {
-	const session = await SessionService.getUserFromSession(sessionToken);
-	if (!session || !session.tenantId) throw new NotFoundError("Unknown session token");
-	const tenant = await TenantAdminService.getTenantById(session.tenantId);
-	const tenantData = tenant.tenantData;
-	return { tenantData, config: tenant.configuration };
+  const session = await SessionService.getUserFromSession(sessionToken);
+  if (!session || !session.tenantId) throw new NotFoundError("Unknown session token");
+  const tenant = await TenantAdminService.getTenantById(session.tenantId);
+  const tenantData = tenant.tenantData;
+  return { tenantData, config: tenant.configuration };
 };

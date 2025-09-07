@@ -10,6 +10,8 @@ Thank you for registering with {{tenant.longName}}. To complete your registratio
 
 Enter this code in the confirmation field to complete your registration.
 
+Or simply visit this site: {{tenant.baseUrl}}/confirm/{{confirmationCode}}
+
 IMPORTANT NOTICE: This code is valid for {{expirationMinutes}} minutes only and can be used only once.
 
 If you did not register with {{tenant.longName}}, you can safely ignore this email.

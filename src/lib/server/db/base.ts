@@ -5,7 +5,7 @@ import { customType } from "drizzle-orm/pg-core";
  * Used for storing encrypted data, images, and other binary content
  */
 export const bytea = customType<{ data: Buffer; driverData: Buffer }>({
-	dataType() {
-		return "bytea";
-	}
+  dataType() {
+    return "bytea";
+  },
 });
