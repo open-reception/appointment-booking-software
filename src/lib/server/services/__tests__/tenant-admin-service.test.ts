@@ -84,11 +84,17 @@ describe("TenantAdminService", () => {
         returning: vi.fn().mockResolvedValue([mockCreatedTenant]),
       };
 
+      const mockSelectBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue([]),
+      };
+
       const mockDeleteBuilder = {
         where: vi.fn().mockResolvedValue({ count: 1 }),
       };
 
       mockCentralDb.insert.mockReturnValue(mockInsertBuilder);
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
       mockCentralDb.delete.mockReturnValue(mockDeleteBuilder);
       mockTenantConfig.create.mockResolvedValue(mockConfig);
       mockTenantMigrationService.createAndInitializeTenantDatabase.mockResolvedValue();
@@ -126,11 +132,17 @@ describe("TenantAdminService", () => {
         returning: vi.fn().mockResolvedValue([mockCreatedTenant]),
       };
 
+      const mockSelectBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue([]),
+      };
+
       const mockDeleteBuilder = {
         where: vi.fn().mockResolvedValue({ count: 1 }),
       };
 
       mockCentralDb.insert.mockReturnValue(mockInsertBuilder);
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
       mockCentralDb.delete.mockReturnValue(mockDeleteBuilder);
       mockTenantMigrationService.createAndInitializeTenantDatabase.mockRejectedValue(
         new Error("Database initialization failed"),

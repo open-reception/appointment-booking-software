@@ -1,6 +1,6 @@
 import { json } from "@sveltejs/kit";
 import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
-import { ValidationError } from "$lib/server/utils/errors";
+import { BackendError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { db } from "$lib/server/db";
@@ -178,8 +178,8 @@ export const POST: RequestHandler = async ({ request }) => {
   } catch (error) {
     log.error("Tenant creation error:", JSON.stringify(error || "?"));
 
-    if (error instanceof ValidationError) {
-      return json({ error: error.message }, { status: 400 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
     // Handle unique constraint violation (shortName already exists)
