@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { cookieName } from "$i18n/runtime";
   import { Headline, Text } from "$lib/components/ui/typography";
   import { cn } from "$lib/utils";
   import type { Component } from "svelte";

@@ -84,7 +84,7 @@
     {#if !triggerHidden && triggerLabel}
       <Dialog.Trigger class={buttonVariants({ variant: triggerVariant })}>
         {#if typeof triggerLabel === "string"}
-          {@html triggerLabel}
+          {triggerLabel}
         {:else}
           {@render triggerLabel?.()}
         {/if}
@@ -107,7 +107,7 @@
     {#if !triggerHidden}
       <Drawer.Trigger class={buttonVariants({ variant: triggerVariant })}>
         {#if typeof triggerLabel === "string"}
-          {@html triggerLabel}
+          {triggerLabel}
         {:else}
           {@render triggerLabel?.()}
         {/if}

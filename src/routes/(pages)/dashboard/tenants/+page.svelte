@@ -61,7 +61,7 @@
 
         {#if tenants.length > 0}
           <List>
-            {#each tenants as tenant}
+            {#each tenants as tenant (tenant.id)}
               <ListItem
                 title={tenant.shortName}
                 description={`${tenant.shortName}.${window.location.hostname}`}
