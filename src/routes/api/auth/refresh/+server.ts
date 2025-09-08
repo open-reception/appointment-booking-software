@@ -3,9 +3,11 @@ import { SessionService } from "$lib/server/auth/session-service";
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { UniversalLogger } from "$lib/logger";
-import { isBefore } from "date-fns";
+import { isBefore, subMinutes } from "date-fns";
+import { decodeAccessToken } from "$lib/server/auth/jwt-utils";
 
 const logger = new UniversalLogger().setContext("AuthRefreshAPI");
+const REFRESH_OFFSET = 10;
 
 registerOpenAPIRoute("/auth/refresh", "POST", {
   summary: "Refresh access token",
@@ -68,13 +70,15 @@ export const POST: RequestHandler = async ({ cookies }) => {
     }
 
     // Get the (possibly invalid) session from the database
-    const oldSession = await SessionService.getUserSession(accessToken);
+    const decodedToken = await decodeAccessToken(accessToken);
+    const oldSessionId = decodedToken?.sessionId ?? null;
+    const oldSession = oldSessionId ? await SessionService.getUserSession(oldSessionId) : null;
 
     if (!oldSession) {
       return json({ error: "No valid session found for user" }, { status: 401 });
     }
 
-    if (isBefore(oldSession.expiresAt, new Date())) {
+    if (isBefore(oldSession.expiresAt, subMinutes(new Date(), REFRESH_OFFSET))) {
       return json(
         {
           message: "Session still valid, no refresh needed",

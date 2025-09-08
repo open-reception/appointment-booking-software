@@ -285,13 +285,13 @@ export class SessionService {
     logger.info("Expired sessions cleaned up");
   }
 
-  static async getUserSession(accessToken: string): Promise<SelectUserSession | null> {
-    logger.debug(`Getting active sessions for a given access token`);
+  static async getUserSession(sessionId: string): Promise<SelectUserSession | null> {
+    logger.debug(`Getting active sessions for session id: ${sessionId}`);
 
     const sessions = await db
       .select()
       .from(userSession)
-      .where(eq(userSession.accessToken, accessToken))
+      .where(eq(userSession.id, sessionId))
       .orderBy(userSession.lastUsedAt);
 
     return sessions[0] ?? null;
