@@ -4,6 +4,7 @@ import { fail, redirect, type Actions } from "@sveltejs/kit";
 import { superValidate } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
 import { formSchema as addFormSchema } from "./(components)/add-tenant-form";
+import { formSchema as editFormSchema } from "./(components)/edit-tenant-form";
 import { formSchema as deleteFormSchema } from "./(components)/delete-tenant-form";
 import type { TTenant } from "$lib/types/tenant";
 
@@ -59,7 +60,7 @@ export const actions: Actions = {
       },
       credentials: "same-origin",
       body: JSON.stringify({
-        shortName: form.data.shortname,
+        shortName: form.data.shortName,
         inviteAdmin: form.data.email,
       }),
     });
@@ -76,6 +77,42 @@ export const actions: Actions = {
       }
       return fail(400, {
         form,
+        error,
+      });
+    }
+  },
+  edit: async (event) => {
+    const form = await superValidate(event, zod(editFormSchema));
+
+    if (!form.valid) {
+      log.error("Edit tenant form is not valid", { errors: form.errors });
+      return fail(400, {
+        form: { ...form, data: { ...form.data } },
+        error: "Form is not valid",
+      });
+    }
+
+    const resp = await event.fetch(`/api/tenants/${form.data.tenantId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "same-origin",
+      body: JSON.stringify({ shortName: form.data.shortName }),
+    });
+
+    if (resp.status < 400) {
+      return { form };
+    } else {
+      let error = "Unknown error";
+      try {
+        const body = await resp.json();
+        error = body.error;
+      } catch (e) {
+        log.error("Failed to parse edit tenant error response", { error: e });
+      }
+      return fail(400, {
+        form: { ...form, data: { ...form.data } },
         error,
       });
     }

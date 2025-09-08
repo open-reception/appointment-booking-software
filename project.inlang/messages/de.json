@@ -46,7 +46,7 @@
 			"noPassAtAll": "Either passphrase or passkey is required",
 			"bothPassSet": "Nur Passphrase oder Passkey darf gesetzt sein",
 			"name": "Muss mindestens 2 Zeichen lang sein",
-			"shortname": "Muss zwischen 4 und 20 Zeichen lang sein",
+			"shortname": "Muss zwischen 4 und 15 Zeichen lang sein",
 			"deleteConfirmation": "Muss exakt »{expectedValue}« sein"
 		},
 		"passkey": "Passkey",
@@ -127,7 +127,8 @@
 			"name": {
 				"description": "Muss einmalig auf diesem Server sein. Wird als URL verwendet {domain}",
 				"errors": {
-					"urlFormat": "Nur Kleinbuchstaben, Zahlen und Bindestriche sind erlaubt"
+					"urlFormat": "Nur Kleinbuchstaben, Zahlen und Bindestriche sind erlaubt",
+					"startEndDash": "Darf nicht mit einem Bindestrich beginnen oder enden"
 				}
 			},
 			"invite": {
@@ -167,6 +168,13 @@
 				"title": "Mandanten kann nicht gelöscht werden",
 				"description": "Du kannst den Mandanten, den Du gerade konfigurierst, nicht löschen. Bitte wechsle zu einem anderen Mandanten, bevor Du diesen löschst."
 			}
+		},
+		"edit": {
+			"title": "Mandant bearbeiten",
+			"description": "Aktualisiere den Namen des Mandanten.",
+			"success": "Mandant aktualisiert",
+			"error": "Mandant konnte nicht aktualisiert werden.",
+			"action": "Name ändern"
 		}
 	},
 	"components": {

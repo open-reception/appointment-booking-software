@@ -42,19 +42,19 @@
 </script>
 
 <Form.Root {enhance} action="?/add">
-  <Form.Field {form} name="shortname">
+  <Form.Field {form} name="shortName">
     <Form.Control>
       {#snippet children({ props })}
         <Form.Label>{m["form.name"]()}</Form.Label>
-        <Input {...props} bind:value={$formData.shortname} type="text" autocomplete="off" />
+        <Input {...props} bind:value={$formData.shortName} type="text" autocomplete="off" />
       {/snippet}
     </Form.Control>
     <Form.Description>
       {m["tenants.add.name.description"]({
         domain:
-          $formData.shortname.length < 2
+          $formData.shortName.length < 2
             ? ""
-            : `${$formData.shortname}.${window.location.hostname}`,
+            : `${$formData.shortName}.${window.location.hostname}`,
       })}
     </Form.Description>
     <Form.FieldErrors />

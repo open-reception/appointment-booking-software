@@ -12,8 +12,7 @@ export const formSchema = z.object({
     .refine((val) => !val.startsWith("-") && !val.endsWith("-"), {
       message: m["tenants.add.name.errors.startEndDash"](),
     }),
-  inviteAdmin: z.boolean(),
-  email: z.string().email(m["form.errors.email"]()).optional().or(z.literal("")),
+  tenantId: z.string(),
 });
 
 export type FormSchema = typeof formSchema;

@@ -18,6 +18,7 @@
   import { AddTenantForm } from "./(components)/add-tenant-form";
   import { tenants as tenantsStore } from "$lib/stores/tenants";
   import DeleteTenantForm from "./(components)/delete-tenant-form/delete-tenant-form.svelte";
+  import EditTenantForm from "./(components)/edit-tenant-form/edit-tenant-form.svelte";
 
   const { data } = $props();
   let curTenant: TTenant | null = $state(null);
@@ -75,7 +76,10 @@
                     type: "action",
                     icon: EditIcon,
                     label: m["edit"](),
-                    onClick: () => {},
+                    onClick: () => {
+                      curTenant = tenant;
+                      openDialog("edit-tenant");
+                    },
                   },
                   {
                     type: "action",
@@ -102,6 +106,23 @@
               </ListItem>
             {/each}
           </List>
+          <ResponsiveDialog
+            id="edit-tenant"
+            title={m["tenants.edit.title"]()}
+            description={m["tenants.edit.description"]()}
+            triggerHidden={true}
+          >
+            {#if curTenant}
+              <EditTenantForm
+                entity={curTenant}
+                done={() => {
+                  closeDialog("edit-tenant");
+                  curTenant = null;
+                  invalidate(ROUTES.DASHBOARD.TENANTS);
+                }}
+              />
+            {/if}
+          </ResponsiveDialog>
           <ResponsiveDialog
             id="delete-tenant"
             title={m["tenants.delete.title"]()}

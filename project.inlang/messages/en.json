@@ -47,7 +47,7 @@
 			"noPassAtAll": "Either passphrase or passkey is required",
 			"bothPassSet": "Only one of passphrase or passkey should be provided",
 			"name": "Must be at least 2 characters",
-			"shortname": "Must be between 4 and 20 characters",
+			"shortname": "Must be between 4 and 15 characters",
 			"deleteConfirmation": "Must be exactly »{expectedValue}«"
 		},
 		"noPassAtAll": "Either passphrase or passkey is required",
@@ -136,7 +136,8 @@
 			"name": {
 				"description": "Must be unique on this server. Used as a subdomain {domain}",
 				"errors": {
-					"urlFormat": "Only letters, numbers, and hyphens are allowed"
+					"urlFormat": "Only letters, numbers, and hyphens are allowed",
+					"startEndDash": "Must not start or end with a dash"
 				}
 			},
 			"invite": {
@@ -175,7 +176,14 @@
 		"loading": "Loading tenants",
 		"allTenants": "All tenants",
 		"unselectTenant": "Unselect tenant",
-		"failedToSwitch": "Failed to switch tenant"
+		"failedToSwitch": "Failed to switch tenant",
+		"edit": {
+			"title": "Edit Tenant",
+			"description": "Update the tenant's short name.",
+			"success": "Tenant updated",
+			"error": "Could not update tenant.",
+			"action": "Edit Tenant"
+		}
 	},
 	"components": {
 		"openMenu": "Open menu"
