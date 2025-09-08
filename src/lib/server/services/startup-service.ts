@@ -1,6 +1,7 @@
 import { centralDb } from "../db";
 import { tenant } from "../db/central-schema";
 import { TenantMigrationService } from "./tenant-migration-service";
+import { CentralDatabaseMigrationService } from "./central-database-migration-service";
 import { UniversalLogger } from "$lib/logger";
 
 const logger = new UniversalLogger().setContext("StartupService");
@@ -21,13 +22,31 @@ export class StartupService {
     logger.info("Starting application initialization");
 
     try {
-      // Check and migrate all tenant databases
+      // First ensure central database is up to date
+      await this.ensureCentralDatabase();
+
+      // Then check and migrate all tenant databases
       await this.migrateTenantDatabases();
 
       this.initialized = true;
       logger.info("Application initialization completed successfully");
     } catch (error) {
       logger.error("Application initialization failed", { error: String(error) });
+      throw error;
+    }
+  }
+
+  /**
+   * Ensure central database exists and is up to date
+   */
+  private static async ensureCentralDatabase(): Promise<void> {
+    logger.info("Ensuring central database is up to date");
+
+    try {
+      await CentralDatabaseMigrationService.ensureCentralDatabaseUpToDate();
+      logger.info("Central database is ready");
+    } catch (error) {
+      logger.error("Failed to setup central database", { error: String(error) });
       throw error;
     }
   }

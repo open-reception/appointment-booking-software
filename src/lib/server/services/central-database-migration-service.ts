@@ -5,10 +5,11 @@ import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { UniversalLogger } from "$lib/logger";
 import { ValidationError } from "$lib/server/utils/errors";
+import { env } from "$env/dynamic/private";
 
-const logger = new UniversalLogger().setContext("TenantMigrationService");
+const logger = new UniversalLogger().setContext("CentralDatabaseMigrationService");
 
-export interface TenantDatabaseConfig {
+export interface CentralDatabaseConfig {
   host: string;
   port: number;
   database: string;
@@ -16,26 +17,26 @@ export interface TenantDatabaseConfig {
   password: string;
 }
 
-export class TenantMigrationService {
+export class CentralDatabaseMigrationService {
   /**
-   * Create a new tenant database
+   * Create a new database
    */
-  static async createTenantDatabase(config: TenantDatabaseConfig): Promise<void> {
-    logger.info("Creating new tenant database", { database: config.database });
+  private static async createCentralDatabase(config: CentralDatabaseConfig): Promise<void> {
+    logger.info("Creating central database", { database: config.database });
 
-    // Connect to postgres database to create the new tenant database
+    // Connect to postgres database to create the new central database
     const adminConnectionString = `postgres://${config.username}:${config.password}@${config.host}:${config.port}/postgres`;
     const adminClient = postgres(adminConnectionString);
 
     try {
       // Create the database
       await adminClient.unsafe(`CREATE DATABASE "${config.database}"`);
-      logger.info("Tenant database created successfully", { database: config.database });
+      logger.info("Central database created successfully", { database: config.database });
     } catch (error) {
       if (error instanceof Error && error.message.includes("already exists")) {
-        logger.warn("Tenant database already exists", { database: config.database });
+        logger.warn("Central database already exists", { database: config.database });
       } else {
-        logger.error("Failed to create tenant database", {
+        logger.error("Failed to create central database", {
           database: config.database,
           error: String(error),
         });
@@ -47,27 +48,29 @@ export class TenantMigrationService {
   }
 
   /**
-   * Initialize tenant database with schema
+   * Initialize central database with schema
    */
-  static async initializeTenantSchema(config: TenantDatabaseConfig): Promise<void> {
-    logger.info("Initializing tenant database schema", { database: config.database });
+  private static async initializeCentralSchema(config: CentralDatabaseConfig): Promise<void> {
+    logger.info("Initializing central database schema", { database: config.database });
 
     const connectionString = `postgres://${config.username}:${config.password}@${config.host}:${config.port}/${config.database}`;
     const client = postgres(connectionString);
 
     try {
-      // Create drizzle instance for this tenant database
+      // Create drizzle instance for the central database
       const db = drizzle(client);
 
-      // Get the path to tenant migrations
-      const migrationsPath = join(process.cwd(), "tenant-migrations");
+      // Get the path to central migrations
+      const migrationsPath = join(process.cwd(), "migrations");
 
       // Apply migrations
       await migrate(db, { migrationsFolder: migrationsPath });
 
-      logger.info("Tenant database schema initialized successfully", { database: config.database });
+      logger.info("Central database schema initialized successfully", {
+        database: config.database,
+      });
     } catch (error) {
-      logger.error("Failed to initialize tenant database schema", {
+      logger.error("Failed to initialize central database schema", {
         database: config.database,
         error: String(error),
       });
@@ -78,9 +81,9 @@ export class TenantMigrationService {
   }
 
   /**
-   * Check if tenant database exists
+   * Check if central database exists
    */
-  static async tenantDatabaseExists(config: TenantDatabaseConfig): Promise<boolean> {
+  private static async centralDatabaseExists(config: CentralDatabaseConfig): Promise<boolean> {
     const adminConnectionString = `postgres://${config.username}:${config.password}@${config.host}:${config.port}/postgres`;
     const adminClient = postgres(adminConnectionString);
 
@@ -90,7 +93,7 @@ export class TenantMigrationService {
 			`;
       return result.length > 0;
     } catch (error) {
-      logger.error("Failed to check tenant database existence", {
+      logger.error("Failed to check central database existence", {
         database: config.database,
         error: String(error),
       });
@@ -101,9 +104,11 @@ export class TenantMigrationService {
   }
 
   /**
-   * Get current schema version for a tenant database
+   * Get current schema version for the central database
    */
-  static async getTenantSchemaVersion(config: TenantDatabaseConfig): Promise<string | null> {
+  private static async getCentralSchemaVersion(
+    config: CentralDatabaseConfig,
+  ): Promise<string | null> {
     const connectionString = `postgres://${config.username}:${config.password}@${config.host}:${config.port}/${config.database}`;
     const client = postgres(connectionString);
 
@@ -130,7 +135,7 @@ export class TenantMigrationService {
 
       return result.length > 0 ? result[0].hash : null;
     } catch (error) {
-      logger.error("Failed to get tenant schema version", {
+      logger.error("Failed to get central schema version", {
         database: config.database,
         error: String(error),
       });
@@ -141,11 +146,11 @@ export class TenantMigrationService {
   }
 
   /**
-   * Get the latest available migration hash
+   * Get the latest available migration hash for central database
    */
-  static getLatestMigrationHash(): string | null {
+  private static getLatestCentralMigrationHash(): string | null {
     try {
-      const migrationsPath = join(process.cwd(), "tenant-migrations");
+      const migrationsPath = join(process.cwd(), "migrations");
       const metaPath = join(migrationsPath, "meta", "_journal.json");
 
       if (!existsSync(metaPath)) {
@@ -163,17 +168,17 @@ export class TenantMigrationService {
       const latestEntry = entries[entries.length - 1];
       return latestEntry.hash || null;
     } catch (error) {
-      logger.error("Failed to get latest migration hash", { error: String(error) });
+      logger.error("Failed to get latest central migration hash", { error: String(error) });
       return null;
     }
   }
 
   /**
-   * Check if tenant database needs migration
+   * Check if central database needs migration
    */
-  static async tenantNeedsMigration(config: TenantDatabaseConfig): Promise<boolean> {
-    const currentVersion = await this.getTenantSchemaVersion(config);
-    const latestVersion = this.getLatestMigrationHash();
+  private static async centralNeedsMigration(config: CentralDatabaseConfig): Promise<boolean> {
+    const currentVersion = await this.getCentralSchemaVersion(config);
+    const latestVersion = this.getLatestCentralMigrationHash();
 
     if (!latestVersion) {
       return false; // No migrations available
@@ -187,23 +192,23 @@ export class TenantMigrationService {
   }
 
   /**
-   * Apply pending migrations to a tenant database
+   * Apply pending migrations to the central database
    */
-  static async migrateTenantDatabase(config: TenantDatabaseConfig): Promise<void> {
-    logger.info("Migrating tenant database", { database: config.database });
+  private static async migrateCentralDatabase(config: CentralDatabaseConfig): Promise<void> {
+    logger.info("Migrating central database", { database: config.database });
 
     const connectionString = `postgres://${config.username}:${config.password}@${config.host}:${config.port}/${config.database}`;
     const client = postgres(connectionString);
 
     try {
       const db = drizzle(client);
-      const migrationsPath = join(process.cwd(), "tenant-migrations");
+      const migrationsPath = join(process.cwd(), "migrations");
 
       await migrate(db, { migrationsFolder: migrationsPath });
 
-      logger.info("Tenant database migrated successfully", { database: config.database });
+      logger.info("Central database migrated successfully", { database: config.database });
     } catch (error) {
-      logger.error("Failed to migrate tenant database", {
+      logger.error("Failed to migrate central database", {
         database: config.database,
         error: String(error),
       });
@@ -214,11 +219,15 @@ export class TenantMigrationService {
   }
 
   /**
-   * Create tenant database configuration from database URL
+   * Create central database configuration from DATABASE_URL environment variable
    */
-  static parseDatabaseUrl(databaseUrl: string): TenantDatabaseConfig {
+  private static parseCentralDatabaseUrl(): CentralDatabaseConfig {
+    if (!env.DATABASE_URL) {
+      throw new ValidationError("DATABASE_URL environment variable is not set");
+    }
+
     try {
-      const url = new URL(databaseUrl);
+      const url = new URL(env.DATABASE_URL);
 
       return {
         host: url.hostname,
@@ -228,23 +237,23 @@ export class TenantMigrationService {
         password: url.password,
       };
     } catch {
-      throw new ValidationError(`Invalid database URL: ${databaseUrl}`);
+      throw new ValidationError(`Invalid DATABASE_URL: ${env.DATABASE_URL}`);
     }
   }
 
   /**
-   * Create a complete tenant database with schema
+   * Create a complete central database with schema
    */
-  static async createAndInitializeTenantDatabase(databaseUrl: string): Promise<void> {
-    const config = this.parseDatabaseUrl(databaseUrl);
+  private static async createAndInitializeCentralDatabase(): Promise<void> {
+    const config = this.parseCentralDatabaseUrl();
 
     // Create the database
-    await this.createTenantDatabase(config);
+    await this.createCentralDatabase(config);
 
     // Initialize the schema
-    await this.initializeTenantSchema(config);
+    await this.initializeCentralSchema(config);
 
-    logger.info("Tenant database created and initialized", {
+    logger.info("Central database created and initialized", {
       database: config.database,
       host: config.host,
       port: config.port,
@@ -252,32 +261,32 @@ export class TenantMigrationService {
   }
 
   /**
-   * Ensure tenant database is up to date
+   * Ensure central database is up to date
    */
-  static async ensureTenantDatabaseUpToDate(databaseUrl: string): Promise<void> {
-    const config = this.parseDatabaseUrl(databaseUrl);
+  static async ensureCentralDatabaseUpToDate(): Promise<void> {
+    const config = this.parseCentralDatabaseUrl();
 
-    logger.info("Checking tenant database status", { database: config.database });
+    logger.info("Checking central database status", { database: config.database });
 
     // Check if database exists
-    const exists = await this.tenantDatabaseExists(config);
+    const exists = await this.centralDatabaseExists(config);
     if (!exists) {
-      logger.info("Tenant database does not exist, creating...", { database: config.database });
-      await this.createAndInitializeTenantDatabase(databaseUrl);
+      logger.info("Central database does not exist, creating...", { database: config.database });
+      await this.createAndInitializeCentralDatabase();
       return;
     }
 
-    logger.info("Tenant database exists, checking for pending migrations", {
+    logger.info("Central database exists, checking for pending migrations", {
       database: config.database,
     });
 
     // Check if migration is needed
-    const needsMigration = await this.tenantNeedsMigration(config);
+    const needsMigration = await this.centralNeedsMigration(config);
     if (needsMigration) {
-      logger.info("Tenant database needs migration, applying...", { database: config.database });
-      await this.migrateTenantDatabase(config);
+      logger.info("Central database needs migration, applying...", { database: config.database });
+      await this.migrateCentralDatabase(config);
     } else {
-      logger.info("Tenant database is up to date", { database: config.database });
+      logger.info("Central database is up to date", { database: config.database });
     }
   }
 }
