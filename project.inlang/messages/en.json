@@ -182,7 +182,7 @@
 	},
 	"actions": "Actions",
 	"edit": "Edit",
-	"configure": "Configure",
 	"pause": "Pause",
-	"delete": "Delete"
+	"delete": "Delete",
+	"select": "Select"
 }

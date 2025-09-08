@@ -11,8 +11,9 @@
   import ChevronsUpDownIcon from "@lucide/svelte/icons/chevrons-up-down";
   import EllipsisIcon from "@lucide/svelte/icons/ellipsis";
   import UnplugIcon from "@lucide/svelte/icons/unplug";
-  import UnknownTenantIcon from "@lucide/svelte/icons/ticket-x";
+  import UnknownTenantIcon from "@lucide/svelte/icons/shield-question-mark";
   import Loader from "@lucide/svelte/icons/loader-2";
+  import { cn } from "$lib/utils";
 
   const sidebar = useSidebar();
 
@@ -27,11 +28,17 @@
 
 <Sidebar.Menu>
   {#if $tenants.isLoading}
-    <Sidebar.MenuItem class="bg-sidebar-accent flex h-12 items-center justify-start rounded-md p-4">
-      <div class="flex items-center">
-        <Loader class="size-4 animate-spin" strokeWidth={1} />
-      </div>
-    </Sidebar.MenuItem>
+    <div class="@container">
+      <Sidebar.MenuItem
+        class={cn(
+          "bg-sidebar-accent flex h-8 items-center justify-center rounded-md @[50px]:h-12 @[50px]:justify-start @[50px]:px-4",
+        )}
+      >
+        <div class="flex items-center">
+          <Loader class="size-4 animate-spin" strokeWidth={1} />
+        </div>
+      </Sidebar.MenuItem>
+    </div>
   {:else}
     <Sidebar.MenuItem>
       <DropdownMenu.Root>
@@ -45,7 +52,11 @@
               <div
                 class="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg"
               >
-                <UnknownTenantIcon class="size-4" />
+                {#if activeTenant}
+                  <UnknownTenantIcon class="size-4" />
+                {:else}
+                  <UnplugIcon class="size-4" />
+                {/if}
               </div>
               <div class="grid flex-1 text-left text-sm leading-tight">
                 {#if activeTenant}

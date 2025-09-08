@@ -3,14 +3,14 @@
   import { m } from "$i18n/messages";
   import { MaxPageWidth } from "$lib/components/layouts/max-page-width";
   import { SidebarLayout } from "$lib/components/layouts/sidebar-layout";
-  import EmptyState from "$lib/components/templates/empty-state/empty-state.svelte";
+  import EmptyState from "$lib/components/templates/empty-state/center-state.svelte";
   import { List, ListItem } from "$lib/components/templates/list";
   import { LoadingList } from "$lib/components/templates/loading";
   import { Button } from "$lib/components/ui/button";
   import { ResponsiveDialog, closeDialog, openDialog } from "$lib/components/ui/responsive-dialog";
   import { ROUTES } from "$lib/const/routes";
   import { type TTenant } from "$lib/types/tenant";
-  import ConfigureIcon from "@lucide/svelte/icons/cog";
+  import SelectIcon from "@lucide/svelte/icons/plug-zap";
   import EditIcon from "@lucide/svelte/icons/pencil";
   import PlusIcon from "@lucide/svelte/icons/plus";
   import UnknownTenantIcon from "@lucide/svelte/icons/ticket-x";
@@ -79,8 +79,8 @@
                   },
                   {
                     type: "action",
-                    icon: ConfigureIcon,
-                    label: m["configure"](),
+                    icon: SelectIcon,
+                    label: m["select"](),
                     onClick: () => tenantsStore.setCurrentTenant(tenant.id, true),
                   },
                   {

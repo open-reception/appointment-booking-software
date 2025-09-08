@@ -174,7 +174,7 @@
 	},
 	"actions": "Aktionen",
 	"edit": "Editieren",
-	"configure": "Konfigurieren",
 	"pause": "Pausieren",
-	"delete": "Löschen"
+	"delete": "Löschen",
+	"select": "Auswählen"
 }
