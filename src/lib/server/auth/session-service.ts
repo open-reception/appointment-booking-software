@@ -285,6 +285,18 @@ export class SessionService {
     logger.info("Expired sessions cleaned up");
   }
 
+  static async getUserSession(sessionId: string): Promise<SelectUserSession | null> {
+    logger.debug(`Getting active sessions for session id: ${sessionId}`);
+
+    const sessions = await db
+      .select()
+      .from(userSession)
+      .where(eq(userSession.id, sessionId))
+      .orderBy(userSession.lastUsedAt);
+
+    return sessions[0] ?? null;
+  }
+
   static async getActiveSessions(userId: string): Promise<SelectUserSession[]> {
     logger.debug(`Getting active sessions for user: ${userId}`);
 

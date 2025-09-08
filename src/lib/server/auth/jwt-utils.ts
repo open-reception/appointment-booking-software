@@ -1,4 +1,4 @@
-import { SignJWT, jwtVerify, type JWTPayload } from "jose";
+import { SignJWT, decodeJwt, jwtVerify, type JWTPayload } from "jose";
 import { env } from "$env/dynamic/private";
 import type { SelectUser } from "$lib/server/db/central-schema";
 import { UniversalLogger } from "$lib/logger";
@@ -55,6 +55,28 @@ export async function generateRefreshToken(userId: string, sessionId: string): P
     .sign(JWT_SECRET);
 
   return jwt;
+}
+
+export async function decodeAccessToken(
+  token: string,
+): Promise<(JWTPayload & { userId: string; sessionId: string }) | null> {
+  try {
+    const payload = await decodeJwt(token);
+
+    return {
+      userId: payload.userId as string,
+      email: payload.email,
+      name: payload.name,
+      role: payload.role as "GLOBAL_ADMIN" | "TENANT_ADMIN" | "STAFF",
+      tenantId: payload.tenantId as string | undefined,
+      sessionId: payload.sessionId as string,
+      iat: payload.iat,
+      exp: payload.exp,
+    };
+  } catch (error) {
+    logger.warn("JWT verification failed:", { error: String(error) });
+    return null;
+  }
 }
 
 export async function verifyAccessToken(
