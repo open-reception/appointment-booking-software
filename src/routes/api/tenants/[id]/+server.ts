@@ -1,6 +1,7 @@
 import { json } from "@sveltejs/kit";
 import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
 import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
+import { AuthorizationService } from "$lib/server/auth/authorization-service";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
@@ -227,6 +228,158 @@ registerOpenAPIRoute("/tenants/{id}", "GET", {
   },
 });
 
+// Register OpenAPI documentation for DELETE
+registerOpenAPIRoute("/tenants/{id}", "DELETE", {
+  summary: "Delete tenant",
+  description:
+    "Permanently deletes a tenant and all associated data. This operation drops the tenant's database, removes tenant assignments from global admins, deletes non-global-admin users, and removes the tenant record. Only global admins can perform this operation.",
+  tags: ["Tenants"],
+  parameters: [
+    {
+      name: "id",
+      in: "path",
+      required: true,
+      schema: { type: "string", format: "uuid" },
+      description: "Tenant ID to delete",
+    },
+  ],
+  responses: {
+    "200": {
+      description: "Tenant deleted successfully",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              message: { type: "string", description: "Success message" },
+              result: {
+                type: "object",
+                properties: {
+                  tenantId: { type: "string", format: "uuid", description: "Deleted tenant ID" },
+                  shortName: { type: "string", description: "Deleted tenant short name" },
+                  deletedUsersCount: { type: "number", description: "Number of users deleted" },
+                  updatedGlobalAdminsCount: {
+                    type: "number",
+                    description: "Number of global admins whose tenant assignment was removed",
+                  },
+                  deletedConfigsCount: {
+                    type: "number",
+                    description: "Number of configuration entries deleted",
+                  },
+                  deletedUsers: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string", format: "uuid" },
+                        email: { type: "string" },
+                        role: { type: "string" },
+                      },
+                    },
+                    description: "List of deleted users",
+                  },
+                  updatedGlobalAdmins: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string", format: "uuid" },
+                        email: { type: "string" },
+                        role: { type: "string" },
+                      },
+                    },
+                    description: "List of global admins whose tenant assignment was removed",
+                  },
+                },
+                required: [
+                  "tenantId",
+                  "shortName",
+                  "deletedUsersCount",
+                  "updatedGlobalAdminsCount",
+                  "deletedConfigsCount",
+                  "deletedUsers",
+                  "updatedGlobalAdmins",
+                ],
+              },
+            },
+            required: ["message", "result"],
+          },
+          example: {
+            message: "Tenant deleted successfully",
+            result: {
+              tenantId: "01234567-89ab-cdef-0123-456789abcdef",
+              shortName: "acme-corp",
+              deletedUsersCount: 3,
+              updatedGlobalAdminsCount: 1,
+              deletedConfigsCount: 12,
+              deletedUsers: [
+                {
+                  id: "11111111-1111-1111-1111-111111111111",
+                  email: "admin@acme.com",
+                  role: "TENANT_ADMIN",
+                },
+                {
+                  id: "22222222-2222-2222-2222-222222222222",
+                  email: "staff1@acme.com",
+                  role: "STAFF",
+                },
+                {
+                  id: "33333333-3333-3333-3333-333333333333",
+                  email: "staff2@acme.com",
+                  role: "STAFF",
+                },
+              ],
+              updatedGlobalAdmins: [
+                {
+                  id: "44444444-4444-4444-4444-444444444444",
+                  email: "global@system.com",
+                  role: "GLOBAL_ADMIN",
+                },
+              ],
+            },
+          },
+        },
+      },
+    },
+    "401": {
+      description: "Authentication required",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+          example: { error: "Authentication required" },
+        },
+      },
+    },
+    "403": {
+      description: "Insufficient permissions (only global admins can delete tenants)",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+          example: { error: "Insufficient permissions" },
+        },
+      },
+    },
+    "404": {
+      description: "Tenant not found",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+          example: { error: "Tenant not found" },
+        },
+      },
+    },
+    "500": {
+      description: "Internal server error",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+          example: { error: "Internal server error" },
+        },
+      },
+    },
+  },
+});
+
 export const PUT: RequestHandler = async ({ params, request }) => {
   const log = logger.setContext("API");
 
@@ -321,6 +474,71 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     });
   } catch (error) {
     log.error("Error getting tenant details:", JSON.stringify(error || "?"));
+
+    if (error instanceof NotFoundError) {
+      return json({ error: "Tenant not found" }, { status: 404 });
+    }
+
+    return json({ error: "Internal server error" }, { status: 500 });
+  }
+};
+
+export const DELETE: RequestHandler = async ({ params, locals }) => {
+  const log = logger.setContext("API");
+
+  try {
+    const tenantId = params.id;
+
+    // Check if user is authenticated
+    if (!locals.user) {
+      return json({ error: "Authentication required" }, { status: 401 });
+    }
+
+    if (!tenantId) {
+      return json({ error: "No tenant id given" }, { status: 400 });
+    }
+
+    log.info("Attempting tenant deletion", {
+      tenantId,
+      requestedBy: locals.user.userId,
+      userRole: locals.user.role,
+    });
+
+    // Authorization: Only global admins can delete tenants
+    try {
+      AuthorizationService.requireGlobalAdmin(locals.user);
+    } catch {
+      log.warn("Tenant deletion denied: insufficient permissions", {
+        tenantId,
+        requestedBy: locals.user.userId,
+        userRole: locals.user.role,
+      });
+      return json({ error: "Insufficient permissions" }, { status: 403 });
+    }
+
+    // Get tenant service and perform deletion
+    const tenantService = await TenantAdminService.getTenantById(tenantId);
+    const result = await tenantService.deleteTenant();
+
+    log.info("Tenant deletion completed successfully", {
+      tenantId,
+      shortName: result.shortName,
+      deletedUsersCount: result.deletedUsersCount,
+      updatedGlobalAdminsCount: result.updatedGlobalAdminsCount,
+      deletedConfigsCount: result.deletedConfigsCount,
+      requestedBy: locals.user.userId,
+    });
+
+    return json({
+      message: "Tenant deleted successfully",
+      result,
+    });
+  } catch (error) {
+    log.error("Error deleting tenant", {
+      tenantId: params.id,
+      requestedBy: locals.user?.userId,
+      error: JSON.stringify(error || "?"),
+    });
 
     if (error instanceof NotFoundError) {
       return json({ error: "Tenant not found" }, { status: 404 });
