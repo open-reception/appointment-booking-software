@@ -54,7 +54,7 @@
             {data}
             done={() => {
               invalidate(ROUTES.DASHBOARD.TENANTS);
-              closeDialog("add-tenant");
+              closeDialog("add");
             }}
           />
         </ResponsiveDialog>
@@ -78,7 +78,7 @@
                     label: m["edit"](),
                     onClick: () => {
                       curTenant = tenant;
-                      openDialog("edit-tenant");
+                      openDialog("edit");
                     },
                   },
                   {
@@ -97,7 +97,7 @@
                     isDestructive: true,
                     onClick: () => {
                       curTenant = tenant;
-                      openDialog("delete-tenant");
+                      openDialog("delete");
                     },
                   },
                 ]}
@@ -107,7 +107,7 @@
             {/each}
           </List>
           <ResponsiveDialog
-            id="edit-tenant"
+            id="edit"
             title={m["tenants.edit.title"]()}
             description={m["tenants.edit.description"]()}
             triggerHidden={true}
@@ -116,23 +116,19 @@
               <EditTenantForm
                 entity={curTenant}
                 done={() => {
-                  closeDialog("edit-tenant");
+                  closeDialog("edit");
                   curTenant = null;
                   invalidate(ROUTES.DASHBOARD.TENANTS);
                 }}
               />
             {/if}
           </ResponsiveDialog>
-          <ResponsiveDialog
-            id="delete-tenant"
-            title={m["tenants.delete.title"]()}
-            triggerHidden={true}
-          >
+          <ResponsiveDialog id="delete" title={m["tenants.delete.title"]()} triggerHidden={true}>
             {#if curTenant}
               <DeleteTenantForm
                 entity={curTenant}
                 done={() => {
-                  closeDialog("delete-tenant");
+                  closeDialog("delete");
                   curTenant = null;
                   invalidate(ROUTES.DASHBOARD.TENANTS);
                 }}
@@ -146,7 +142,7 @@
               headline="No tenants yet"
               description={m["tenants.empty.description"]()}
             />
-            <Button size="lg" onclick={() => openDialog("add-tenant")}>
+            <Button size="lg" onclick={() => openDialog("add")}>
               <PlusIcon />
               {m["tenants.add.title"]()}
             </Button>
