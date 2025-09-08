@@ -35,15 +35,8 @@ vi.mock("$lib/logger", () => ({
   },
 }));
 
-// Mock ValidationError
-vi.mock("$lib/server/utils/errors", () => ({
-  ValidationError: class ValidationError extends Error {
-    constructor(message: string) {
-      super(message);
-      this.name = "ValidationError";
-    }
-  },
-}));
+// Don't mock errors - use real ones
+// vi.mock("$lib/server/utils/errors");
 
 describe("/api/tenants", () => {
   beforeEach(() => {
@@ -191,9 +184,9 @@ describe("/api/tenants", () => {
       const data = await response.json();
 
       expect(data).toEqual({
-        error: "Invalid tenant creation request",
+        message: "Invalid tenant creation request",
       });
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(422);
     });
 
     it("should handle unique constraint violations", async () => {

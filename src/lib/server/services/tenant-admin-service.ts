@@ -8,7 +8,7 @@ import { env } from "$env/dynamic/private";
 import { eq } from "drizzle-orm";
 import logger from "$lib/logger";
 import z from "zod/v4";
-import { ValidationError, NotFoundError } from "../utils/errors";
+import { ValidationError, NotFoundError, ConflictError } from "../utils/errors";
 import { sendTenantAdminInviteEmail } from "../email/email-service";
 
 if (!env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
@@ -67,6 +67,26 @@ export class TenantAdminService {
     log.debug("Creating new tenant", {
       shortName: request.shortName,
     });
+
+    // Check if tenant can be created without any duplications. Do not create tenant if:
+    // - short name already exists
+    // - invited tenant admin email already exists
+    const tenantExists = await centralDb
+      .select()
+      .from(centralSchema.tenant)
+      .where(eq(centralSchema.tenant.shortName, request.shortName));
+    if (tenantExists.length > 0) {
+      throw new ConflictError("Tenant with shortname already exists");
+    }
+    if (request.inviteAdmin) {
+      const adminExists = await centralDb
+        .select()
+        .from(centralSchema.user)
+        .where(eq(centralSchema.user.email, request.inviteAdmin));
+      if (adminExists.length > 0) {
+        throw new ConflictError("Tenant Admin E-Mail Address already exists");
+      }
+    }
 
     const configuration = TenantAdminService.getConfigDefaults();
 
