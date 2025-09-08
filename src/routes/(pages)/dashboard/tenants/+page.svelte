@@ -42,7 +42,7 @@
     {:then tenants}
       <div class="flex flex-col items-start gap-5">
         <ResponsiveDialog
-          id="add-tenant"
+          id="add"
           title={m["tenants.add.title"]()}
           description={m["tenants.add.description"]()}
           triggerHidden={tenants.length === 0}

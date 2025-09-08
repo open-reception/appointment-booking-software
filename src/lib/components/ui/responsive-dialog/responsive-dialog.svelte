@@ -68,6 +68,14 @@
     return unsubscribe;
   });
 
+  $effect(() => {
+    if (open) {
+      openDialog(id);
+    } else {
+      closeDialog(id);
+    }
+  });
+
   onDestroy(() => {
     responsiveDialogs.update((state) => {
       const newState = new Map(state);
