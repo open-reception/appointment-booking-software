@@ -57,7 +57,7 @@
 {:else}
   <Form.Root {enhance} action="?/delete">
     <Text style="sm" class="text-muted-foreground -mt-2 font-normal">
-      {#each m["tenants.delete.description"]({ name: "{name}" }).split("{name}") as part, i}
+      {#each m["tenants.delete.description"]({ name: "{name}" }).split("{name}") as part, i (i)}
         {part}
         {#if i === 0}
           <code class="bg-muted rounded-md px-1 py-0.5">{entity.shortName}</code>
