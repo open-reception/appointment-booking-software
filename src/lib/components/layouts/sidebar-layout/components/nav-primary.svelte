@@ -62,16 +62,18 @@
 <Sidebar.Group class="gap-1">
   {#each items as item (item.title)}
     {#if item.isTenantOnly === false || $auth.user?.tenantId}
-      <Sidebar.MenuItem>
-        <Sidebar.MenuButton isActive={isCurrentSection(item.url)} tooltipContent={item.title}>
-          {#snippet child({ props })}
-            <a href={item.url} {...props}>
-              <item.icon />
-              <Text style="md" class="ml-2">{item.title}</Text>
-            </a>
-          {/snippet}
-        </Sidebar.MenuButton>
-      </Sidebar.MenuItem>
+      {#if $auth.user && item.roles.includes($auth.user?.role)}
+        <Sidebar.MenuItem>
+          <Sidebar.MenuButton isActive={isCurrentSection(item.url)} tooltipContent={item.title}>
+            {#snippet child({ props })}
+              <a href={item.url} {...props}>
+                <item.icon />
+                <Text style="md" class="ml-2">{item.title}</Text>
+              </a>
+            {/snippet}
+          </Sidebar.MenuButton>
+        </Sidebar.MenuItem>
+      {/if}
     {/if}
   {/each}
 </Sidebar.Group>
