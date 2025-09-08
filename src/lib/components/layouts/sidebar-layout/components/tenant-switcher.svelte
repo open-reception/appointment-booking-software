@@ -108,7 +108,8 @@
               <div class="text-muted-foreground font-medium">{m["tenants.allTenants"]()}</div>
             </DropdownMenu.Item>
           {/if}
-          {#if activeTenant}
+          <!-- {#if activeTenant}
+            Will be available once the api supports unplugging a tenant
             <DropdownMenu.Separator />
             <DropdownMenu.Item class="gap-2 p-2" onclick={() => tenants.setCurrentTenant(null)}>
               <div class="flex size-6 items-center justify-center rounded-md border bg-transparent">
@@ -116,7 +117,7 @@
               </div>
               <div class="text-muted-foreground font-medium">{m["tenants.unselectTenant"]()}</div>
             </DropdownMenu.Item>
-          {/if}
+          {/if} -->
         </DropdownMenu.Content>
       </DropdownMenu.Root>
     </Sidebar.MenuItem>
