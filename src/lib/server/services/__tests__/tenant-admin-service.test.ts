@@ -427,7 +427,8 @@ describe("TenantAdminService", () => {
       });
 
       const service = await TenantAdminService.getTenantById(tenantId);
-      service["#tenant"] = mockTenant; // Set private field for testing
+      //
+      (service as any)["#tenant"] = mockTenant; // Set private field for testing
 
       const result = await service.deleteTenant();
 
@@ -552,7 +553,7 @@ describe("TenantAdminService", () => {
       });
 
       const service = await TenantAdminService.getTenantById(tenantId);
-      service["#tenant"] = mockTenant;
+      (service as any)["#tenant"] = mockTenant;
 
       // Should not throw error even if database drop fails
       const result = await service.deleteTenant();
@@ -625,7 +626,7 @@ describe("TenantAdminService", () => {
       }));
 
       const service = await TenantAdminService.getTenantById(tenantId);
-      service["#tenant"] = mockTenant;
+      (service as any)["#tenant"] = mockTenant;
 
       await expect(service.deleteTenant()).rejects.toThrow("Tenant with ID tenant-123 not found");
     });
