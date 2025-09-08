@@ -13,12 +13,16 @@ import { sendTenantAdminInviteEmail } from "../email/email-service";
 
 if (!env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
 
-const tentantCreationSchema = z.object({
-  shortName: z.string().min(4).max(15),
+const tenantCreationSchema = z.object({
+  shortName: z
+    .string()
+    .min(4)
+    .max(15)
+    .regex(/^[a-z][a-z-]*[a-z]$/),
   inviteAdmin: z.email().optional(),
 });
 
-export type TenantCreationRequest = z.infer<typeof tentantCreationSchema>;
+export type TenantCreationRequest = z.infer<typeof tenantCreationSchema>;
 
 export interface TenantConfiguration extends Record<string, string | number | boolean> {
   brandColor: string;
@@ -60,7 +64,7 @@ export class TenantAdminService {
   static async createTenant(request: TenantCreationRequest) {
     const log = logger.setContext("TenantAdminService");
 
-    const validation = tentantCreationSchema.safeParse(request);
+    const validation = tenantCreationSchema.safeParse(request);
 
     if (!validation.success) throw new ValidationError("Invalid tenant creation request");
 
@@ -236,6 +240,15 @@ export class TenantAdminService {
       tenantId: this.tenantId,
       updateFields: Object.keys(updateData),
     });
+
+    if (updateData.shortName) {
+      const shortNameValidation = tenantCreationSchema.shape.shortName.safeParse(
+        updateData.shortName,
+      );
+      if (!shortNameValidation.success) {
+        throw new ValidationError("Invalid shortName format");
+      }
+    }
 
     try {
       const result = await centralDb
