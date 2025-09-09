@@ -80,13 +80,13 @@
   const segments = processTranslation(translation, interpolations);
 </script>
 
-{#each segments as segment}
+{#each segments as segment, index (`segment-${index}`)}
   {#if segment.type === "text"}
     {segment.content}
   {:else if segment.snippet}
     {@render segment.snippet(segment.value, segment.param)}
   {:else if defaultSnippet && segment.value}
-    {@render defaultSnippet(segment.value, segment.param)}
+    {@render defaultSnippet(segment.value)}
   {:else if children && segment.value}
     {@render children(segment.value, segment.param)}
   {:else}
@@ -94,6 +94,6 @@
   {/if}
 {/each}
 
-{#snippet defaultSnippet(value: string | number, param: string)}
+{#snippet defaultSnippet(value: string | number)}
   <em>{value}</em>
 {/snippet}

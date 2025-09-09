@@ -1,8 +1,7 @@
 <script lang="ts">
-  import type { MouseEventHandler } from "svelte/elements";
+  import DoneIcon from "@lucide/svelte/icons/check";
   import { Button, type ButtonVariant } from "../button";
   import { Headline, Text } from "../typography";
-  import DoneIcon from "@lucide/svelte/icons/check";
 
   type Step = {
     title: string;
