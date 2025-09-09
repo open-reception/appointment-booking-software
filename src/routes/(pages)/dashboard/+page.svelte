@@ -5,6 +5,7 @@
   import { Button } from "$lib/components/ui/button";
   import { InlineCode } from "$lib/components/ui/inline-code";
   import { OnboardingGuide } from "$lib/components/ui/onboarding-guide";
+  import { Skeleton } from "$lib/components/ui/skeleton";
   import TranslationWithComponent from "$lib/components/ui/translation-with-component/translation-with-component.svelte";
   import { Headline, Text } from "$lib/components/ui/typography";
   import { ROUTES } from "$lib/const/routes";
@@ -51,7 +52,9 @@
     {/if}
     <Headline level="h1" style="h2">{m["dashboard.hello"]()} 👋</Headline>
     {#if $auth.user?.role === "GLOBAL_ADMIN"}
-      {#if $tenants.tenants.length === 0}
+      {#if $tenants.isLoading}
+        <Skeleton class="h-5 w-75 max-w-full" />
+      {:else if $tenants.tenants.length === 0}
         <OnboardingGuide
           title={m["dashboard.tenants.setup.title"]()}
           steps={[
