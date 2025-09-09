@@ -7,6 +7,7 @@
   import { type Infer, superForm, type SuperValidated } from "sveltekit-superforms";
   import { zodClient } from "sveltekit-superforms/adapters";
   import { formSchema, type FormSchema } from ".";
+  import { ERRORS } from "$lib/errors";
 
   let { data, done }: { done: () => void; data: { form: SuperValidated<Infer<FormSchema>> } } =
     $props();
@@ -19,12 +20,10 @@
         done();
       } else if (event.result.type === "failure") {
         switch (event.result.data?.error) {
-          // TODO: Use constants for these strings shared with backend
-          case "Tenant Admin E-Mail Address already exists":
-            toast.error(m["tenants.add.errors.nameTaken"]());
+          case ERRORS.USERS.EMAIL_EXISTS:
+            toast.error(m["tenants.add.errors.emailTaken"]());
             break;
-          // TODO: Use constants for these strings shared with backend
-          case "Tenant Shortname already exists":
+          case ERRORS.TENANTS.NAME_EXISTS:
             toast.error(m["tenants.add.errors.nameTaken"]());
             break;
           default:

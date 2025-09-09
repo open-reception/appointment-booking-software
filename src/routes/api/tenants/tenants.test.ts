@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "./+server.js";
 import { GET } from "./config/defaults/+server.js";
+import { ERRORS } from "$lib/errors.js";
 
 // Mock the TenantAdminService
 vi.mock("$lib/server/services/tenant-admin-service", () => ({
@@ -202,7 +203,7 @@ describe("/api/tenants", () => {
       const data = await response.json();
 
       expect(data).toEqual({
-        error: "A tenant with this short name already exists",
+        error: ERRORS.TENANTS.NAME_EXISTS,
       });
       expect(response.status).toBe(409);
     });
