@@ -113,7 +113,8 @@
 			"title": "Kein Mandant ausgewählt",
 			"description": "Klicke zum Auswählen"
 		},
-		"logout": "Ausloggen"
+		"logout": "Ausloggen",
+		"toggleSidebar": "Seitenleiste umstellen"
 	},
 	"tenants": {
 		"title": "Mandanten",
@@ -184,5 +185,26 @@
 	"edit": "Editieren",
 	"pause": "Pausieren",
 	"delete": "Löschen",
-	"select": "Auswählen"
+	"select": "Auswählen",
+	"close": "Schließen",
+	"dashboard": {
+		"hello": "Hallo",
+		"tenants": {
+			"currentTenant": "Du verwaltest gerade den Mandanten {name}.",
+			"setup": {
+				"title": "Dieser Server ist einsatzbereit",
+				"sections": {
+					"tenants": {
+						"title": "Ersten Mandanten anlegen",
+						"description": "Mandanten sind die Organisationen/Personen, die Termine sammeln werden.",
+						"action": "Ersten Mandanten anlegen"
+					}
+				}
+			}
+		},
+		"sidebar": {
+			"title": "Zum ersten Mal hier?",
+			"description": "Tippe {name} um die Seitenleiste umzustellen"
+		}
+	}
 }

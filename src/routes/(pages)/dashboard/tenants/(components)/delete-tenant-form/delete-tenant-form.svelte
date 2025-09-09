@@ -12,6 +12,8 @@
   import { auth } from "$lib/stores/auth";
   import { CenterState } from "$lib/components/templates/empty-state";
   import StopIcon from "@lucide/svelte/icons/octagon-x";
+  import { InlineCode } from "$lib/components/ui/inline-code";
+  import { TranslationWithComponent } from "$lib/components/ui/translation-with-component";
 
   let { entity, done }: { entity: TTenant; done: () => void } = $props();
 
@@ -57,12 +59,10 @@
 {:else}
   <Form.Root {enhance} action="?/delete">
     <Text style="sm" class="text-muted-foreground -mt-2 font-normal">
-      {#each m["tenants.delete.description"]({ name: "{name}" }).split("{name}") as part, i (i)}
-        {part}
-        {#if i === 0}
-          <code class="bg-muted rounded-md px-1 py-0.5">{entity.shortName}</code>
-        {/if}
-      {/each}
+      <TranslationWithComponent
+        translation={m["tenants.delete.description"]({ name: "{name}" })}
+        interpolations={[{ param: "{name}", value: entity.shortName, snippet: inlineCode }]}
+      />
     </Text>
     <Form.Field {form} name="shortname">
       <Form.Control>
@@ -89,3 +89,7 @@
     </div>
   </Form.Root>
 {/if}
+
+{#snippet inlineCode(value: string | number)}
+  <InlineCode>{value}</InlineCode>
+{/snippet}

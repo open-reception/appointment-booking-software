@@ -9,19 +9,27 @@
   import { Button } from "$lib/components/ui/button";
   import { ResponsiveDialog, closeDialog, openDialog } from "$lib/components/ui/responsive-dialog";
   import { ROUTES } from "$lib/const/routes";
+  import { tenants as tenantsStore } from "$lib/stores/tenants";
   import { type TTenant } from "$lib/types/tenant";
-  import SelectIcon from "@lucide/svelte/icons/plug-zap";
   import EditIcon from "@lucide/svelte/icons/pencil";
+  import SelectIcon from "@lucide/svelte/icons/plug-zap";
   import PlusIcon from "@lucide/svelte/icons/plus";
   import UnknownTenantIcon from "@lucide/svelte/icons/ticket-x";
   import DeleteIcon from "@lucide/svelte/icons/trash-2";
+  import { onMount } from "svelte";
   import { AddTenantForm } from "./(components)/add-tenant-form";
-  import { tenants as tenantsStore } from "$lib/stores/tenants";
   import DeleteTenantForm from "./(components)/delete-tenant-form/delete-tenant-form.svelte";
   import EditTenantForm from "./(components)/edit-tenant-form/edit-tenant-form.svelte";
 
   const { data } = $props();
   let curTenant: TTenant | null = $state(null);
+
+  onMount(() => {
+    if (history.state["sveltekit:states"]?.action === "add") {
+      openDialog("add");
+      history.replaceState({}, "");
+    }
+  });
 </script>
 
 <svelte:head>

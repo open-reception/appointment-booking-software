@@ -1,5 +1,9 @@
 import { auth, type AuthState } from "$lib/stores/auth";
-import { sidebar, STORAGE_KEY } from "$lib/stores/sidebar";
+import {
+  sidebar,
+  SIDEBAR_OPEN_STORAGE_KEY,
+  SIDEBAR_EDUCATION_STORAGE_KEY,
+} from "$lib/stores/sidebar";
 import type { TTenant } from "$lib/types/tenant";
 import type { LayoutServerLoad } from "./$types";
 import logger from "$lib/logger";
@@ -8,8 +12,10 @@ const log = logger.setContext("/dashboard/+layout.server.ts");
 
 export const load: LayoutServerLoad = async (event) => {
   // Initialize sidebar state from cookies for ssr
-  const isOpen = event.cookies.get(STORAGE_KEY);
+  const isOpen = event.cookies.get(SIDEBAR_OPEN_STORAGE_KEY);
+  const isEducated = event.cookies.get(SIDEBAR_EDUCATION_STORAGE_KEY);
   sidebar.setOpen(isOpen === "true" ? true : false);
+  sidebar.setEducated(isEducated === "true" ? true : false);
 
   // Initialize auth state from locals for ssr
   let user: AuthState["user"] | null = null;

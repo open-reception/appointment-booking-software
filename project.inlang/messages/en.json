@@ -121,9 +121,9 @@
 			"title": "No tenant selected",
 			"description": "Click to configure"
 		},
-		"logout": "Log out"
+		"logout": "Log out",
+		"toggleSidebar": "Toggle sidebar"
 	},
-	"cancel": "Cancel",
 	"tenants": {
 		"title": "Tenants",
 		"empty": {
@@ -151,7 +151,8 @@
 			"errors": {
 				"nameTaken": "Could not add tenant. This name is already taken.",
 				"unkonwn": "Could not add tenant",
-				"emailTaken": "Could not add tenant. This E-Mail Address is already in use."
+				"emailTaken": "Could not add tenant. This E-Mail Address is already in use.",
+				"startEndDash": "Cannot start or end with a dash"
 			}
 		},
 		"list": {
@@ -188,9 +189,31 @@
 	"components": {
 		"openMenu": "Open menu"
 	},
+	"cancel": "Cancel",
 	"actions": "Actions",
 	"edit": "Edit",
 	"pause": "Pause",
 	"delete": "Delete",
-	"select": "Select"
+	"select": "Select",
+	"dashboard": {
+		"hello": "Hello",
+		"tenants": {
+			"currentTenant": "You are currently managing tenant {name}.",
+			"setup": {
+				"title": "This server is ready to use",
+				"sections": {
+					"tenants": {
+						"title": "Setup first tenant",
+						"description": "Tenants are the organizations/individuals that will collect appointments.",
+						"action": "Add first Tenant"
+					}
+				}
+			}
+		},
+		"sidebar": {
+			"title": "Zum ersten Mal hier?",
+			"description": "Tippe {name} um die Seitenleiste umzustellen"
+		}
+	},
+	"close": "Schließen"
 }

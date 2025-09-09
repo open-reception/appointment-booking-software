@@ -23,7 +23,12 @@
           class="mb-3 flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12"
         >
           <div class="flex items-center gap-2">
-            <Sidebar.Trigger class="-ml-1" />
+            <Sidebar.Trigger
+              class="-ml-1"
+              onclick={() => {
+                sidebar.setEducated(true, true);
+              }}
+            />
             {#if breakcrumbs && breakcrumbs.length > 0}
               <Separator orientation="vertical" class="mr-2 data-[orientation=vertical]:h-4" />
               <Breadcrumb.Root>
