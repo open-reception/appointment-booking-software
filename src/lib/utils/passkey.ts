@@ -1,15 +1,24 @@
 import logger from "$lib/logger";
 
 export const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
+  try {
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
 
-  // Simple loop, no fancy operations
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
+    // Simple loop, no fancy operations
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+
+    return window.btoa(binary);
+  } catch (error) {
+    logger.error("Failed to convert ArrayBuffer to Base64", {
+      error,
+      notes:
+        "If you see this error locally, the best way to use passkeys is Chromium as of writing this",
+    });
+    throw error;
   }
-
-  return window.btoa(binary);
 };
 
 export const base64UrlToArrayBuffer = (base64url: string) => {
