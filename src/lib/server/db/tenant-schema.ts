@@ -17,9 +17,6 @@ import { bytea } from "./base";
  * Database enums for tenant-specific entities
  */
 
-/** Channel type enumeration - defines what kind of resource a channel represents */
-export const channelTypeEnum = pgEnum("channel_type", ["ROOM", "MACHINE", "PERSONNEL"]);
-
 /** Appointment status enumeration - tracks the lifecycle of appointments */
 export const appointmentStatusEnum = pgEnum("appointment_status", [
   "NEW",
@@ -191,12 +188,12 @@ export const appointment = pgTable("appointment", {
   appointmentDate: date("appointment_date").notNull(),
   /** When appointment data expires and can be auto-deleted */
   expiryDate: date("expiry_date").notNull(),
-  /** Appointment title/subject */
-  title: text("title").notNull(),
-  /** Optional detailed description of the appointment */
-  description: text("description"),
   /** Current status of the appointment */
   status: appointmentStatusEnum("status").notNull().default("NEW"),
+  /** Appointment title/subject */
+  name: text("name").notNull(),
+  /** Optional detailed description of the appointment */
+  phone: text("phone"), // TODO Sensible information will be removed in future (appointment) branch since it will be stored in an encrypted blob
 });
 
 /**
@@ -217,11 +214,9 @@ export const agentAbsence = pgTable("agent_absence", {
   /** End date and time of absence */
   endDate: timestamp("end_date").notNull(),
   /** Type of absence (free text: Urlaub, Krankheit, Fortbildung, etc.) */
-  absenceType: text("absence_type").notNull(),
+  absenceType: text("absence_type").notNull().default(""),
   /** Optional description/reason for absence */
   description: text("description"),
-  /** Whether this is a full day absence or specific time period */
-  isFullDay: boolean("is_full_day").notNull().default(true),
 });
 
 /**
