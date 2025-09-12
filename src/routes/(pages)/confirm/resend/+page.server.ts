@@ -3,6 +3,9 @@ import { superValidate } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
 import type { Actions, PageServerLoad } from "./$types";
 import { formSchema } from "./schema";
+import logger from "$lib/logger";
+
+const log = logger.setContext("/confirm/resend/+page.server.ts");
 
 export const load: PageServerLoad = async () => {
   return {
@@ -15,6 +18,7 @@ export const actions: Actions = {
     const form = await superValidate(event, zod(formSchema));
 
     if (!form.valid) {
+      log.error("Resend confirmation email form is not valid", { errors: form.errors });
       return fail(400, {
         form,
       });

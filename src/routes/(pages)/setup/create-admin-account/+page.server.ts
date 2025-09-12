@@ -7,7 +7,7 @@ import type { Actions, PageServerLoad } from "./$types";
 import { formSchema } from "./schema";
 import { base64ToArrayBuffer, getCounterFromAuthenticatorData } from "$lib/utils/passkey";
 
-const log = logger.setContext("Setup");
+const log = logger.setContext("/setup/create-admin-form/+page.server.ts");
 
 export const load: PageServerLoad = async () => {
   return {
@@ -19,6 +19,7 @@ export const actions: Actions = {
   default: async (event) => {
     const form = await superValidate(event, zod(formSchema));
     if (!form.valid) {
+      log.error("Create global admin form is not valid", { errors: form.errors });
       return fail(400, {
         form: { ...form, data: { ...form.data, type: "passkey" } },
       });
@@ -50,13 +51,6 @@ export const actions: Actions = {
         deviceName: "Unknown Device",
       });
     }
-
-    log.debug("Admin account created successfully", {
-      adminId: admin.id,
-      email: admin.email,
-      authMethod: form.data.type === "passkey" ? "passkey" : "passphrase",
-      passkeyId: form.data.type === "passkey" ? form.data.id : undefined,
-    });
 
     return { form };
   },
