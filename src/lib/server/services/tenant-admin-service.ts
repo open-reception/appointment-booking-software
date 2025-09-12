@@ -10,6 +10,7 @@ import logger from "$lib/logger";
 import z from "zod/v4";
 import { ValidationError, NotFoundError, ConflictError } from "../utils/errors";
 import { sendTenantAdminInviteEmail } from "../email/email-service";
+import { ERRORS } from "$lib/errors";
 
 if (!env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
 
@@ -88,7 +89,7 @@ export class TenantAdminService {
         .from(centralSchema.user)
         .where(eq(centralSchema.user.email, request.inviteAdmin));
       if (adminExists.length > 0) {
-        throw new ConflictError("Tenant Admin E-Mail Address already exists");
+        throw new ConflictError(ERRORS.USERS.EMAIL_EXISTS);
       }
     }
 

@@ -6,10 +6,10 @@
   import ResendConfirmationForm from "./resend-confirmation-form.svelte";
   import type { EventReporter } from "$lib/components/ui/form/form-root.svelte";
 
-  export let data;
+  const { data } = $props();
 
   const formId = "resend-confirmation-form";
-  let isSubmitting = false;
+  let isSubmitting = $state(false);
 
   const onEvent: EventReporter = (params) => {
     if (params.isSubmitting) {

@@ -8,7 +8,7 @@
       style: {
         lg: "text-xl",
         md: "leading-5",
-        sm: "text-sm font-medium leading-none",
+        sm: "text-sm/5 font-medium",
         xs: "text-xs",
       },
       color: {

@@ -2,7 +2,7 @@
   import { HorizontalPagePadding, PageWithClaim } from "$lib/components/ui/page";
   import { Headline, Text } from "$lib/components/ui/typography";
 
-  export let data;
+  const { data } = $props();
 </script>
 
 <svelte:head>

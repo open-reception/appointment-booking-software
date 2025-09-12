@@ -6,10 +6,10 @@
   import CreateAdminAccountForm from "./create-account-form.svelte";
   import type { EventReporter } from "$lib/components/ui/form/form-root.svelte";
 
-  export let data;
+  const { data } = $props();
 
   const formId = "create-account-form";
-  let isSubmitting = false;
+  let isSubmitting = $state(false);
 
   const onEvent: EventReporter = (params) => {
     if (params.isSubmitting) {

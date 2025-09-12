@@ -9,49 +9,55 @@
   import StaffIcon from "@lucide/svelte/icons/users";
   import { auth } from "$lib/stores/auth";
   import { m } from "$i18n/messages";
+  import type { NavItem } from "..";
 
-  const items = [
+  const items: NavItem[] = [
     {
       title: m["nav.staff"](),
       url: ROUTES.DASHBOARD.STAFF,
-      isTenatOnly: true,
+      isTenantOnly: true,
       icon: StaffIcon,
+      roles: ["GLOBAL_ADMIN", "TENANT_ADMIN"],
     },
     {
       title: m["nav.settings"](),
       url: ROUTES.DASHBOARD.SETTINGS,
-      isTenatOnly: true,
+      isTenantOnly: true,
       icon: SettingsIcon,
+      roles: ["GLOBAL_ADMIN", "TENANT_ADMIN"],
     },
     {
       title: m["nav.documentation"](),
       url: "https://open-reception.org",
-      isTenatOnly: false,
+      isTenantOnly: false,
       icon: DocsIcon,
+      roles: ["GLOBAL_ADMIN", "TENANT_ADMIN", "STAFF"],
     },
   ];
 </script>
 
 <Sidebar.Group>
   {#each items as item (item.title)}
-    {#if item.isTenatOnly === false || $auth.user?.tenantId}
-      <Sidebar.MenuItem>
-        <Sidebar.MenuButton isActive={isCurrentSection(item.url)} tooltipContent={item.title}>
-          {#snippet child({ props })}
-            <a
-              href={item.url}
-              {...props}
-              target={item.url.startsWith("http") ? "_blank" : undefined}
-            >
-              <item.icon />
-              <Text style="xs">{item.title}</Text>
-              {#if item.url.startsWith("http")}
-                <ExternalLinkIcon class="text-light ml-auto !size-3" />
-              {/if}
-            </a>
-          {/snippet}
-        </Sidebar.MenuButton>
-      </Sidebar.MenuItem>
+    {#if item.isTenantOnly === false || $auth.user?.tenantId}
+      {#if $auth.user && item.roles.includes($auth.user?.role)}
+        <Sidebar.MenuItem>
+          <Sidebar.MenuButton isActive={isCurrentSection(item.url)} tooltipContent={item.title}>
+            {#snippet child({ props })}
+              <a
+                href={item.url}
+                {...props}
+                target={item.url.startsWith("http") ? "_blank" : undefined}
+              >
+                <item.icon />
+                <Text style="xs">{item.title}</Text>
+                {#if item.url.startsWith("http")}
+                  <ExternalLinkIcon class="text-light ml-auto !size-3" />
+                {/if}
+              </a>
+            {/snippet}
+          </Sidebar.MenuButton>
+        </Sidebar.MenuItem>
+      {/if}
     {/if}
   {/each}
 </Sidebar.Group>
