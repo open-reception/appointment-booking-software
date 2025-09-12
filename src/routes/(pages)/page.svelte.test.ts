@@ -2,6 +2,7 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/svelte";
 import Page from "./+page.svelte";
+import type { Locale } from "$i18n/runtime";
 
 describe("/+page.svelte", () => {
   beforeEach(() => {
@@ -15,6 +16,7 @@ describe("/+page.svelte", () => {
 
   test("should render h1", async () => {
     const mockData = {
+      locale: "en" as Locale,
       streamed: {
         isEnvOk: Promise.resolve(true),
       },
