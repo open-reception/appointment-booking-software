@@ -120,6 +120,11 @@
 
       // Update UI to show passkey is ready
       $passkeyLoading = "success";
+
+      const isValid = await form.validateForm();
+      if (isValid) {
+        form.submit();
+      }
     }
   };
 

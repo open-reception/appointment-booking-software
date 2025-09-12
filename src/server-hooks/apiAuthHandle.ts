@@ -21,13 +21,13 @@ const PUBLIC_PATHS = [
   "/api/log",
   "/api/admin/init",
   "/api/admin/exists",
+  "/api/auth/refresh", // Must be public since the access token might already be invalid when this gets called
 ];
 const GLOBAL_ADMIN_PATHS = ["/api/admin", "/api/tenants"];
 const ADMIN_PATHS = ["/api/tenant-admin"];
 
 const PROTECTED_AUTH_PATHS = [
   "/api/auth/logout",
-  "/api/auth/refresh",
   "/api/auth/session",
   "/api/auth/sessions",
   "/api/auth/passkeys",
