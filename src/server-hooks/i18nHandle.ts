@@ -1,5 +1,11 @@
-import type { Handle } from "@sveltejs/kit";
+import {
+  extractLocaleFromCookie,
+  extractLocaleFromHeader,
+  setLocale,
+  type Locale,
+} from "$i18n/runtime";
 import { paraglideMiddleware } from "$i18n/server";
+import type { Handle } from "@sveltejs/kit";
 
 /**
  * SvelteKit server hook that handles i18n localization
@@ -10,6 +16,16 @@ import { paraglideMiddleware } from "$i18n/server";
  * @returns {Promise<Response>} The response with applied headers and rate limiting
  */
 export const i18nHandle: Handle = ({ event, resolve }) => {
+  // Determine browser locale and use it
+  const cookieLocale = extractLocaleFromCookie();
+  let locale: Locale | undefined = cookieLocale as Locale;
+
+  if (!locale) {
+    locale = extractLocaleFromHeader(event.request);
+    setLocale(locale);
+    event.locals.locale = locale;
+  }
+
   return paraglideMiddleware(event.request, ({ request: localizedRequest, locale }) => {
     event.request = localizedRequest;
     return resolve(event, {

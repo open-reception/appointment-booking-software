@@ -1,5 +1,6 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 
+import type { Locale } from "$i18n/runtime";
 import type { UserRole } from "$lib/server/auth/authorization-service";
 import type { JWTPayload } from "jose";
 
@@ -16,6 +17,7 @@ declare global {
         role: UserRole;
         tenantId?: string | null;
       };
+      locale?: Locale;
     }
     // interface PageData {}
     // interface PageState {}
