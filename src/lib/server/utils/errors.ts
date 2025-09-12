@@ -20,6 +20,7 @@ export class AuthenticationError extends BackendError {
     this.name = "AuthenticationError";
   }
 }
+
 export class ValidationError extends BackendError {
   constructor(
     message: string,

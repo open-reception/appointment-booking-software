@@ -4,6 +4,7 @@ import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
+import { checkPermission } from "$lib/server/utils/permissions";
 
 // Register OpenAPI documentation for POST
 registerOpenAPIRoute("/tenants/{id}/channels", "POST", {
@@ -319,29 +320,20 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
   try {
     const tenantId = params.id;
 
-    // Check if user is authenticated
-    if (!locals.user) {
-      return json({ error: "Authentication required" }, { status: 401 });
-    }
-
     if (!tenantId) {
       return json({ error: "No tenant id given" }, { status: 400 });
     }
 
-    // Authorization check: Only global admins and tenant admins can create channels
-    if (locals.user.role === "GLOBAL_ADMIN") {
-      // Global admin can create channels for any tenant
-    } else if (locals.user.role === "TENANT_ADMIN" && locals.user.tenantId === tenantId) {
-      // Tenant admin can create channels for their own tenant
-    } else {
-      return json({ error: "Insufficient permissions" }, { status: 403 });
+    const error = checkPermission(locals, tenantId, true);
+    if (error) {
+      return error;
     }
 
     const body = await request.json();
 
     log.debug("Creating new channel", {
       tenantId,
-      requestedBy: locals.user.userId,
+      requestedBy: locals.user?.userId,
       channelNames: body.names,
       languages: body.languages,
     });
@@ -352,7 +344,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
     log.debug("Channel created successfully", {
       tenantId,
       channelId: newChannel.id,
-      requestedBy: locals.user.userId,
+      requestedBy: locals.user?.userId,
     });
 
     return json(
@@ -383,27 +375,18 @@ export const GET: RequestHandler = async ({ params, locals }) => {
   try {
     const tenantId = params.id;
 
-    // Check if user is authenticated
-    if (!locals.user) {
-      return json({ error: "Authentication required" }, { status: 401 });
-    }
-
     if (!tenantId) {
       return json({ error: "No tenant id given" }, { status: 400 });
     }
 
-    // Authorization check: Only global admins and tenant admins can view channels
-    if (locals.user.role === "GLOBAL_ADMIN") {
-      // Global admin can view channels for any tenant
-    } else if (locals.user.role === "TENANT_ADMIN" && locals.user.tenantId === tenantId) {
-      // Tenant admin can view channels for their own tenant
-    } else {
-      return json({ error: "Insufficient permissions" }, { status: 403 });
+    const error = checkPermission(locals, tenantId, true);
+    if (error) {
+      return error;
     }
 
     log.debug("Getting all channels", {
       tenantId,
-      requestedBy: locals.user.userId,
+      requestedBy: locals.user?.userId,
     });
 
     const channelService = await ChannelService.forTenant(tenantId);
@@ -412,7 +395,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     log.debug("Channels retrieved successfully", {
       tenantId,
       count: channels.length,
-      requestedBy: locals.user.userId,
+      requestedBy: locals.user?.userId,
     });
 
     return json({

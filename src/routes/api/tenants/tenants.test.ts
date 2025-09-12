@@ -73,7 +73,13 @@ describe("/api/tenants", () => {
         isSubRequest: false,
         platform: undefined,
         setHeaders: {} as any,
-        locals: {},
+        locals: {
+          user: {
+            userId: "global-admin-id",
+            tenantId: null,
+            role: "GLOBAL_ADMIN",
+          },
+        },
       } as any);
       const data = await response.json();
 
@@ -118,7 +124,13 @@ describe("/api/tenants", () => {
         isSubRequest: false,
         platform: undefined,
         setHeaders: {} as any,
-        locals: {},
+        locals: {
+          user: {
+            userId: "global-admin-id",
+            tenantId: null,
+            role: "GLOBAL_ADMIN",
+          },
+        },
       } as any);
       const data = await response.json();
 
@@ -161,7 +173,13 @@ describe("/api/tenants", () => {
         isSubRequest: false,
         platform: undefined,
         setHeaders: {} as any,
-        locals: {},
+        locals: {
+          user: {
+            userId: "global-admin-id",
+            tenantId: null,
+            role: "GLOBAL_ADMIN",
+          },
+        },
       } as any);
       const data = await response.json();
 
@@ -197,7 +215,13 @@ describe("/api/tenants", () => {
         isSubRequest: false,
         platform: undefined,
         setHeaders: {} as any,
-        locals: {},
+        locals: {
+          user: {
+            userId: "global-admin-id",
+            tenantId: null,
+            role: "GLOBAL_ADMIN",
+          },
+        },
       } as any);
       const data = await response.json();
 
@@ -233,7 +257,13 @@ describe("/api/tenants", () => {
         isSubRequest: false,
         platform: undefined,
         setHeaders: {} as any,
-        locals: {},
+        locals: {
+          user: {
+            userId: "global-admin-id",
+            tenantId: null,
+            role: "GLOBAL_ADMIN",
+          },
+        },
       } as any);
       const data = await response.json();
 
