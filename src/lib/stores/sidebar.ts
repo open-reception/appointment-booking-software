@@ -13,7 +13,6 @@ export const SIDEBAR_EDUCATION_STORAGE_KEY = "sidebar-is-educated";
 function createSidebarStore() {
   const isOpenValue = browser ? getCookie(SIDEBAR_OPEN_STORAGE_KEY) : null;
   const isEducatedValue = browser ? getCookie(SIDEBAR_EDUCATION_STORAGE_KEY) : null;
-  console.log("isEducatedValue", isEducatedValue);
   const store = writable<AuthState>({
     isOpen: isOpenValue === "true" ? true : false,
     isEducated: isEducatedValue === "true" ? true : false,
