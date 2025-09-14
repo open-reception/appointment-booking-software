@@ -5,6 +5,7 @@
   import NavSecondary from "./nav-secondary.svelte";
   import NavUser from "./nav-user.svelte";
   import TenantSwitcher from "./tenant-switcher.svelte";
+
   let {
     ref = $bindable(null),
     collapsible = "icon",

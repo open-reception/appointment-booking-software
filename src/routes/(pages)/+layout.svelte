@@ -3,9 +3,16 @@
   import { Toaster } from "$lib/components/ui/sonner/index.js";
   import { ModeWatcher, setMode } from "mode-watcher";
   import "../../app.css";
+  import { setLocale } from "$i18n/runtime";
+
+  let { data, children } = $props();
 
   $effect(() => {
     if (!browser) return;
+
+    if (data.locale) {
+      setLocale(data.locale);
+    }
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handler = () => {
@@ -16,8 +23,6 @@
     mediaQuery.addEventListener("change", handler);
     return () => mediaQuery.removeEventListener("change", handler);
   });
-
-  let { children } = $props();
 </script>
 
 <ModeWatcher track={false} />

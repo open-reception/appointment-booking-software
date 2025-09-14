@@ -44,9 +44,13 @@
 			"email": "Ungültiges Format",
 			"passphrase": "Muss mindestens 30 Zeichen lang sein",
 			"noPassAtAll": "Either passphrase or passkey is required",
-			"bothPassSet": "Nur Passphrase oder Passkey darf gesetzt sein"
+			"bothPassSet": "Nur Passphrase oder Passkey darf gesetzt sein",
+			"name": "Muss mindestens 2 Zeichen lang sein",
+			"shortname": "Muss zwischen 4 und 15 Zeichen lang sein",
+			"deleteConfirmation": "Muss exakt »{expectedValue}« sein"
 		},
-		"passkey": "Passkey"
+		"passkey": "Passkey",
+		"name": "Name"
 	},
 	"login": {
 		"or": "Oder",
@@ -109,6 +113,98 @@
 			"title": "Kein Mandant ausgewählt",
 			"description": "Klicke zum Auswählen"
 		},
-		"logout": "Ausloggen"
+		"logout": "Ausloggen",
+		"toggleSidebar": "Seitenleiste umstellen"
+	},
+	"tenants": {
+		"title": "Mandanten",
+		"empty": {
+			"title": "Bisher keine Mandanten",
+			"description": "Erstelle eine Seite für jemanden, der Termine sammeln möchte."
+		},
+		"add": {
+			"title": "Mandant hinzufügen",
+			"description": "Erstelle eine Seite für jemanden, der Termine sammeln möchte.",
+			"name": {
+				"description": "Muss einmalig auf diesem Server sein. Wird als URL verwendet {domain}",
+				"errors": {
+					"urlFormat": "Nur Kleinbuchstaben, Zahlen und Bindestriche sind erlaubt",
+					"startEndDash": "Darf nicht mit einem Bindestrich beginnen oder enden"
+				}
+			},
+			"invite": {
+				"title": "Tenant-Admin einladen"
+			},
+			"email": {
+				"description": "Diese Person erhält einen magischen Link, um ein Konto einzurichten."
+			},
+			"action": "Mandant hinzufügen",
+			"success": "Mandant hinzugefügt",
+			"errors": {
+				"nameTaken": "Konnte Mandant nicht hinzufügen. Dieser Name ist bereits vergeben.",
+				"unkonwn": "Konnte Mandant nicht hinzufügen",
+				"emailTaken": "Konnte Mandant nicht hinzufügen. Diese E-Mail Adresse wird bereits verwendet."
+			},
+			"hint": "Make sure DNS is already pointing to this server. Changes may take some time to spread."
+		},
+		"list": {
+			"empty": {
+				"title": "No tenants yet",
+				"description": "Click the button above to add your first tenant."
+			},
+			"manage": "Manage",
+			"view": "View"
+		},
+		"loading": "Lade Mandaten",
+		"allTenants": "All tenants",
+		"unselectTenant": "Mandant abwählen",
+		"failedToSwitch": "Mandant konnte nicht gewechselt werden",
+		"delete": {
+			"title": "Mandant löschen",
+			"description": "Tippe {name} um den Mandanten zu löschen.",
+			"action": "Mandant löschen",
+			"success": "Mandant gelöscht",
+			"error": "Konnte Mandant nicht löschen.",
+			"unavailable": {
+				"title": "Mandanten kann nicht gelöscht werden",
+				"description": "Du kannst den Mandanten, den Du gerade konfigurierst, nicht löschen. Bitte wechsle zu einem anderen Mandanten, bevor Du diesen löschst."
+			}
+		},
+		"edit": {
+			"title": "Mandant bearbeiten",
+			"description": "Aktualisiere den Namen des Mandanten.",
+			"success": "Mandant aktualisiert",
+			"error": "Mandant konnte nicht aktualisiert werden.",
+			"action": "Name ändern"
+		}
+	},
+	"components": {
+		"openMenu": "Menü öffnen"
+	},
+	"actions": "Aktionen",
+	"edit": "Editieren",
+	"pause": "Pausieren",
+	"delete": "Löschen",
+	"select": "Auswählen",
+	"close": "Schließen",
+	"dashboard": {
+		"hello": "Hallo",
+		"tenants": {
+			"currentTenant": "Du verwaltest gerade den Mandanten {name}.",
+			"setup": {
+				"title": "Dieser Server ist einsatzbereit",
+				"sections": {
+					"tenants": {
+						"title": "Ersten Mandanten anlegen",
+						"description": "Mandanten sind die Organisationen/Personen, die Termine sammeln werden.",
+						"action": "Ersten Mandanten anlegen"
+					}
+				}
+			}
+		},
+		"sidebar": {
+			"title": "Zum ersten Mal hier?",
+			"description": "Tippe {name} um die Seitenleiste umzustellen"
+		}
 	}
 }

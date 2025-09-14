@@ -3,7 +3,6 @@ import { SessionService } from "$lib/server/auth/session-service";
 import { AuthorizationService } from "$lib/server/auth/authorization-service";
 import { getAccessToken } from "./utils/accessToken";
 import { ROUTES } from "$lib/const/routes";
-import { auth } from "$lib/stores/auth";
 
 export const authGuard: Handle = async ({ event, resolve }) => {
   const { url } = event;
@@ -26,13 +25,14 @@ export const authGuard: Handle = async ({ event, resolve }) => {
     if (!sessionData) redirect(302, ROUTES.LOGIN);
 
     // Set user in auth store for SSR
-    auth.setUser({
-      id: sessionData.user.id,
-      email: sessionData.user.email,
+    event.locals.user = {
+      userId: sessionData.user.id,
+      sessionId: sessionData.sessionId,
       name: sessionData.user.name,
+      email: sessionData.user.email,
       role: sessionData.user.role,
       tenantId: sessionData.user.tenantId,
-    });
+    };
 
     switch (true) {
       case isDashboardRoute &&

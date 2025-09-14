@@ -1,6 +1,7 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 
 import type { SelectUser } from "$lib/server/db/central-schema";
+import type { Locale } from "$i18n/runtime";
 
 // for information about these interfaces
 declare global {
@@ -8,6 +9,7 @@ declare global {
     // interface Error {}
     interface Locals {
       user?: SelectUser & { userId: string; sessionId: string; exp: number };
+      locale?: Locale;
     }
     // interface PageData {}
     // interface PageState {}

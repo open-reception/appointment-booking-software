@@ -129,6 +129,8 @@
 
   --max-w-sm: 400px;
   --max-w-md: 640px;
+  --max-w-lg: 1024px;
+  --max-w-xl: 1280px;
 }
 
 @layer base {

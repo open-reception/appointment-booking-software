@@ -6,6 +6,7 @@ import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 import { checkPermission } from "$lib/server/utils/permissions";
+import { ERRORS } from "$lib/errors";
 
 // Register OpenAPI documentation for PUT
 registerOpenAPIRoute("/tenants/{id}", "PUT", {
@@ -120,7 +121,7 @@ registerOpenAPIRoute("/tenants/{id}", "PUT", {
       content: {
         "application/json": {
           schema: { $ref: "#/components/schemas/Error" },
-          example: { error: "A tenant with this short name already exists" },
+          example: { error: ERRORS.TENANTS.NAME_EXISTS },
         },
       },
     },
@@ -427,7 +428,7 @@ export const PUT: RequestHandler = async ({ locals, params, request }) => {
 
     // Handle unique constraint violation (shortName already exists)
     if (error instanceof Error && error.message.includes("unique constraint")) {
-      return json({ error: "A tenant with this short name already exists" }, { status: 409 });
+      return json({ error: ERRORS.TENANTS.NAME_EXISTS }, { status: 409 });
     }
 
     return json({ error: "Internal server error" }, { status: 500 });

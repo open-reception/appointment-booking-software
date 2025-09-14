@@ -7,6 +7,7 @@ import { db } from "$lib/server/db";
 import { tenant } from "$lib/server/db/central-schema";
 import logger from "$lib/logger";
 import { checkPermission } from "$lib/server/utils/permissions";
+import { ERRORS } from "$lib/errors";
 
 // Register OpenAPI documentation
 registerOpenAPIRoute("/tenants", "POST", {
@@ -190,7 +191,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 
     // Handle unique constraint violation (shortName already exists)
     if (error instanceof Error && error.message.includes("unique constraint")) {
-      return json({ error: "A tenant with this short name already exists" }, { status: 409 });
+      return json({ error: ERRORS.TENANTS.NAME_EXISTS }, { status: 409 });
     }
 
     return json({ error: "Internal server error" }, { status: 500 });
