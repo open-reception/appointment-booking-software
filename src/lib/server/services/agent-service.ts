@@ -25,7 +25,6 @@ const absenceCreationSchema = z.object({
   endDate: z.string().datetime({ message: "Invalid datetime format" }),
   absenceType: z.string().min(1).max(100),
   description: z.string().optional(),
-  isFullDay: z.boolean().default(true),
 });
 
 const absenceUpdateSchema = z.object({
@@ -33,7 +32,6 @@ const absenceUpdateSchema = z.object({
   endDate: z.string().datetime({ message: "Invalid datetime format" }).optional(),
   absenceType: z.string().min(1).max(100).optional(),
   description: z.string().optional(),
-  isFullDay: z.boolean().optional(),
 });
 
 const absenceQuerySchema = z.object({
@@ -489,7 +487,6 @@ export class AgentService {
           endDate: new Date(request.endDate),
           absenceType: request.absenceType,
           description: request.description,
-          isFullDay: request.isFullDay,
         })
         .returning();
 

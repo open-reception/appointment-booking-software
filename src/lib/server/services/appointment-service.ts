@@ -12,7 +12,8 @@ const appointmentCreationSchema = z.object({
   channelId: z.string().uuid(),
   appointmentDate: z.string().datetime(),
   expiryDate: z.string().date(),
-  title: z.string().min(1).max(200),
+  name: z.string().min(1).max(200),
+  phone: z.string().min(1).max(200).optional().default(""),
   description: z.string().optional(),
   status: z.enum(["NEW", "CONFIRMED", "HELD", "REJECTED", "NO_SHOW"]).default("NEW"),
 });
@@ -21,7 +22,8 @@ const appointmentUpdateSchema = z.object({
   appointmentDate: z.string().datetime().optional(),
   expiryDate: z.string().date().optional(),
   title: z.string().min(1).max(200).optional(),
-  description: z.string().optional(),
+  name: z.string().optional(),
+  phone: z.string().min(1).max(200).optional(),
   status: z.enum(["NEW", "CONFIRMED", "HELD", "REJECTED", "NO_SHOW"]).optional(),
 });
 
@@ -145,8 +147,8 @@ export class AppointmentService {
           channelId: request.channelId,
           appointmentDate: request.appointmentDate,
           expiryDate: request.expiryDate,
-          title: request.title,
-          description: request.description,
+          name: request.name,
+          phone: request.phone ?? "",
           status: request.status,
         })
         .returning();

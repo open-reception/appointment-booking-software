@@ -99,7 +99,8 @@ describe("AppointmentService", () => {
         channelId: "123e4567-e89b-12d3-a456-426614174001",
         appointmentDate: "invalid-date",
         expiryDate: "2024-01-02",
-        title: "",
+        phone: "",
+        name: "",
       };
 
       await expect(
@@ -113,7 +114,8 @@ describe("AppointmentService", () => {
         channelId: "123e4567-e89b-12d3-a456-426614174002",
         appointmentDate: "2024-01-01T10:00:00.000Z",
         expiryDate: "2024-01-31",
-        title: "Test Appointment",
+        name: "Test Appointment",
+        phone: "123-456-7890",
         description: "Test Description",
         status: "NEW",
       };
@@ -186,7 +188,8 @@ describe("AppointmentService", () => {
         channelId: "123e4567-e89b-12d3-a456-426614174002",
         appointmentDate: "2024-01-01T10:00:00.000Z",
         expiryDate: "2024-01-31",
-        title: "Test Appointment",
+        name: "Test Appointment",
+        phone: "123-456-7890",
         status: "NEW",
       };
 
@@ -207,7 +210,8 @@ describe("AppointmentService", () => {
         channelId: "123e4567-e89b-12d3-a456-426614174002",
         appointmentDate: "2024-01-01T10:00:00.000Z",
         expiryDate: "2024-01-31",
-        title: "Test Appointment",
+        name: "Test Appointment",
+        phone: "123-456-7890",
         status: "NEW",
       };
 
@@ -235,7 +239,8 @@ describe("AppointmentService", () => {
         channelId: "123e4567-e89b-12d3-a456-426614174002",
         appointmentDate: "2024-01-01T10:00:00.000Z",
         expiryDate: "2024-01-31",
-        title: "Test Appointment",
+        name: "Test Appointment",
+        phone: "123-456-7890",
         status: "NEW",
       };
 

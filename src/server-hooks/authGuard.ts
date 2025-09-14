@@ -26,12 +26,10 @@ export const authGuard: Handle = async ({ event, resolve }) => {
 
     // Set user in auth store for SSR
     event.locals.user = {
-      userId: sessionData.user.id,
+      ...sessionData.user,
       sessionId: sessionData.sessionId,
-      name: sessionData.user.name,
-      email: sessionData.user.email,
-      role: sessionData.user.role,
-      tenantId: sessionData.user.tenantId,
+      userId: sessionData.user.id,
+      exp: sessionData.exp.valueOf(),
     };
 
     switch (true) {

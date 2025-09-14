@@ -498,7 +498,6 @@ describe("AgentService", () => {
       endDate: "2024-01-01T17:00:00.000Z",
       absenceType: "Urlaub",
       description: "Annual vacation",
-      isFullDay: true,
     };
 
     beforeEach(async () => {
@@ -513,7 +512,6 @@ describe("AgentService", () => {
           endDate: "2024-01-01T17:00:00.000Z",
           absenceType: "Urlaub",
           description: "Annual vacation",
-          isFullDay: true,
         };
 
         // Mock agent exists
@@ -554,7 +552,6 @@ describe("AgentService", () => {
           endDate: new Date(request.endDate),
           absenceType: request.absenceType,
           description: request.description,
-          isFullDay: request.isFullDay,
         });
       });
 
@@ -564,7 +561,7 @@ describe("AgentService", () => {
           startDate: "invalid-date",
           endDate: "2024-01-01T17:00:00.000Z",
           absenceType: "",
-          isFullDay: true,
+          description: "",
         };
 
         await expect(
@@ -578,7 +575,6 @@ describe("AgentService", () => {
           startDate: "2024-01-01T17:00:00.000Z", // End before start
           endDate: "2024-01-01T08:00:00.000Z",
           absenceType: "Urlaub",
-          isFullDay: true,
         };
 
         await expect(service.createAbsence(request)).rejects.toThrow(ValidationError);
@@ -590,7 +586,6 @@ describe("AgentService", () => {
           startDate: "2024-01-01T08:00:00.000Z",
           endDate: "2024-01-01T17:00:00.000Z",
           absenceType: "Urlaub",
-          isFullDay: true,
         };
 
         const selectChain = {
@@ -611,7 +606,6 @@ describe("AgentService", () => {
           startDate: "2024-01-01T08:00:00.000Z",
           endDate: "2024-01-01T17:00:00.000Z",
           absenceType: "Urlaub",
-          isFullDay: true,
         };
 
         // Mock agent exists

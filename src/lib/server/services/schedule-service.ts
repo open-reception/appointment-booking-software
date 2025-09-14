@@ -367,13 +367,6 @@ export class ScheduleService {
       const absenceStart = new Date(absence.startDate);
       const absenceEnd = new Date(absence.endDate);
 
-      // For full day absences, check if the date falls within the absence period
-      if (absence.isFullDay) {
-        const absenceStartDate = absenceStart.toISOString().split("T")[0];
-        const absenceEndDate = absenceEnd.toISOString().split("T")[0];
-        return dateString >= absenceStartDate && dateString <= absenceEndDate;
-      }
-
       // For time-specific absences, check if the time slot overlaps
       return (
         (slotStartDateTime >= absenceStart && slotStartDateTime < absenceEnd) ||

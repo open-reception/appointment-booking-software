@@ -125,8 +125,7 @@ export async function sendAppointmentReminderEmail(
     appointment,
     appointmentDate: appointment.appointmentDate,
     appointmentTime: appointment.appointmentDate, // You might want to add a separate time field
-    title: appointment.title,
-    description: appointment.description,
+    title: appointment.channelId,
     cancelUrl,
   });
 }
@@ -153,8 +152,7 @@ export async function sendAppointmentCreatedEmail(
   await sendTemplatedEmail("appointment-created", recipient, subject, language, tenant, {
     appointment,
     appointmentDate: appointment.appointmentDate,
-    title: appointment.title,
-    description: appointment.description,
+    title: appointment.channelId, // TODO: Get the channel to give back a proper title
     cancelUrl,
   });
 }
@@ -181,8 +179,7 @@ export async function sendAppointmentUpdatedEmail(
   await sendTemplatedEmail("appointment-updated", recipient, subject, language, tenant, {
     appointment,
     appointmentDate: appointment.appointmentDate,
-    title: appointment.title,
-    description: appointment.description,
+    title: appointment.channelId, // TODO: Get the channel to give back a proper title
     cancelUrl,
   });
 }
