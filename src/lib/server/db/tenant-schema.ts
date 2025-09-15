@@ -40,7 +40,7 @@ export const agent = pgTable("agent", {
   /** Optional description of the agent's role or specialties */
   description: text("description"),
   /** Optional logo/profile image for the agent (PNG, JPEG, GIF, or WEBP) */
-  logo: bytea("logo"),
+  image: bytea("image"),
 });
 
 /**
@@ -145,29 +145,6 @@ export const client = pgTable("client", {
 });
 
 /**
- * Staff table - represents employees/staff members who manage appointments
- * Staff members have administrative access and can view/manage appointments
- * Stored in tenant-specific database
- * @table staff
- */
-export const staff = pgTable("staff", {
-  /** Primary key - unique identifier */
-  id: uuid("id").primaryKey().defaultRandom(),
-  /** Hash of staff login name for identification */
-  hashKey: text("hash_key").notNull().unique(),
-  /** Staff member's public key for end-to-end encryption */
-  publicKey: text("public_key").notNull(),
-  /** Staff member's display name */
-  name: text("name"),
-  /** Job title or position within the organization */
-  position: text("position"),
-  /** Staff email address (required for notifications) */
-  email: text("email").notNull(),
-  /** Preferred language for communications (de/en) */
-  language: text("language"),
-});
-
-/**
  * Appointment table - represents scheduled appointments between clients and channels
  * Contains encrypted appointment data for privacy protection
  * Stored in tenant-specific database
@@ -226,9 +203,6 @@ export const agentAbsence = pgTable("agent_absence", {
 
 /** Client record type for database queries */
 export type SelectClient = InferSelectModel<typeof client>;
-
-/** Staff record type for database queries */
-export type SelectStaff = InferSelectModel<typeof staff>;
 
 /** Channel record type for database queries */
 export type SelectChannel = InferSelectModel<typeof channel>;

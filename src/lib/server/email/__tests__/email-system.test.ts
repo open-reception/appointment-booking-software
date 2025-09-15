@@ -231,7 +231,7 @@ describe("Email System", () => {
       const staffUser = {
         id: "test-id",
         hashKey: "test-hash",
-        publicKey: "test-key",
+        privateKeyShare: "test-share",
         name: "Max Mustermann",
         position: "Arzt",
         email: "test@example.com",
@@ -282,7 +282,7 @@ describe("Email System", () => {
       const staffUser = {
         id: "test-id",
         hashKey: "test-hash",
-        publicKey: "test-key",
+        privateKeyShare: "test-share",
         name: "John Doe",
         position: "Doctor",
         email: "test@example.com",
@@ -388,7 +388,6 @@ describe("Email System", () => {
       const staffUser = {
         id: "test-id",
         hashKey: "test-hash",
-        publicKey: "test-key",
         name: "Max Mustermann",
         position: "Arzt",
         email: "test@example.com",
@@ -441,7 +440,6 @@ describe("Email System", () => {
       const staffUser = {
         id: "test-id",
         hashKey: "test-hash",
-        publicKey: "test-key",
         name: "John Doe",
         position: "Doctor",
         email: "test@example.com",

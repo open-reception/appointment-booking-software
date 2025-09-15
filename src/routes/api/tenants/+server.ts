@@ -104,6 +104,7 @@ registerOpenAPIRoute("/tenants", "GET", {
                     id: { type: "string", format: "uuid", description: "Tenant ID" },
                     shortName: { type: "string", description: "Tenant short name" },
                     longName: { type: "string", description: "Tenant long name" },
+                    logo: { type: "string", format: "uri", description: "URL of the tenant logo" },
                     setupState: {
                       type: "string",
                       enum: ["NEW", "SETTINGS_CREATED", "AGENTS_SET_UP", "FIRST_CHANNEL_CREATED"],
@@ -222,6 +223,7 @@ export const GET: RequestHandler = async ({ locals }) => {
         shortName: tenant.shortName,
         longName: tenant.longName,
         setupState: tenant.setupState,
+        logo: tenant.logo,
       })
       .from(tenant)
       .orderBy(tenant.shortName);

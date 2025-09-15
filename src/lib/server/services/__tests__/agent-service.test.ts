@@ -101,7 +101,7 @@ describe("AgentService", () => {
       const request = {
         name: "Test Agent",
         description: "Test description",
-        logo: Buffer.from("test"),
+        image: Buffer.from("test"),
       };
 
       const result = await service.createAgent(request);
@@ -111,7 +111,7 @@ describe("AgentService", () => {
       expect(insertChain.values).toHaveBeenCalledWith({
         name: "Test Agent",
         description: "Test description",
-        logo: Buffer.from("test"),
+        image: Buffer.from("test"),
       });
     });
 

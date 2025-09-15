@@ -339,7 +339,7 @@ export class ChannelService {
               id: tenantSchema.agent.id,
               name: tenantSchema.agent.name,
               description: tenantSchema.agent.description,
-              logo: tenantSchema.agent.logo,
+              image: tenantSchema.agent.image,
             })
             .from(tenantSchema.agent)
             .innerJoin(
@@ -516,7 +516,7 @@ export class ChannelService {
           id: tenantSchema.agent.id,
           name: tenantSchema.agent.name,
           description: tenantSchema.agent.description,
-          logo: tenantSchema.agent.logo,
+          image: tenantSchema.agent.image,
         })
         .from(tenantSchema.agent)
         .innerJoin(

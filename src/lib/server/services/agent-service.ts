@@ -10,13 +10,13 @@ import { ValidationError, NotFoundError, ConflictError } from "../utils/errors";
 const agentCreationSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().optional(),
-  logo: z.instanceof(Buffer).optional(),
+  image: z.instanceof(Buffer).optional(),
 });
 
 const agentUpdateSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   description: z.string().optional(),
-  logo: z.instanceof(Buffer).optional(),
+  image: z.instanceof(Buffer).optional(),
 });
 
 const absenceCreationSchema = z.object({
@@ -97,7 +97,7 @@ export class AgentService {
         .values({
           name: request.name,
           description: request.description,
-          logo: request.logo,
+          image: request.image,
         })
         .returning();
 
@@ -296,7 +296,7 @@ export class AgentService {
           id: tenantSchema.agent.id,
           name: tenantSchema.agent.name,
           description: tenantSchema.agent.description,
-          logo: tenantSchema.agent.logo,
+          image: tenantSchema.agent.image,
         })
         .from(tenantSchema.agent)
         .innerJoin(
