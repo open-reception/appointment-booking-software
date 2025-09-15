@@ -7,7 +7,7 @@ import type { WebAuthnCredential } from "$lib/server/auth/webauthn-service";
 import type { TUser } from "$lib/types/user";
 import logger from "$lib/logger";
 
-const log = logger.setContext("/login");
+const log = logger.setContext(import.meta.filename);
 
 export const load: PageServerLoad = async () => {
   return {
@@ -66,7 +66,7 @@ export const actions: Actions = {
         tenantId: respJson.user.tenantId,
       };
     } catch (error) {
-      log.error("Error parsing login response JSON", { error });
+      log.error("Failed to parse login response", { error });
     }
 
     if (resp.status < 400 && user) {

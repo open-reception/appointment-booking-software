@@ -1,7 +1,7 @@
 import logger from "$lib/logger";
 import type { PageServerLoad } from "./$types";
 
-const log = logger.setContext("BFF");
+const log = logger.setContext(import.meta.filename);
 
 export const load: PageServerLoad = async (event) => {
   const confirmation: Promise<{ success: boolean; isSetup: boolean }> = event
@@ -19,7 +19,7 @@ export const load: PageServerLoad = async (event) => {
         const isSetup = body.isSetup ?? false;
         return { success, isSetup };
       } catch (error) {
-        log.error("Unable to parse JSON from API repsonse", { path: "/confirm/[token]", error });
+        log.error("Failed to parse confirm token response", { error });
         return { success, isSetup: false };
       }
     });

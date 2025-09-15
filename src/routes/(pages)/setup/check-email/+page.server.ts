@@ -6,7 +6,7 @@ import { UserService } from "$lib/server/services/user-service";
 import { fail } from "@sveltejs/kit";
 import logger from "$lib/logger";
 
-const log = logger.setContext("Setup");
+const log = logger.setContext(import.meta.filename);
 
 export const load: PageServerLoad = async () => {
   return {
@@ -19,16 +19,13 @@ export const actions: Actions = {
     const form = await superValidate(event, zod(formSchema));
 
     if (!form.valid) {
+      log.error("Resend confirmation email form is not valid", { errors: form.errors });
       return fail(400, {
         form,
       });
     }
 
     await UserService.resendConfirmationEmail(form.data.email, event.url);
-
-    log.debug("Resent confirmation e-mail", {
-      email: form.data.email,
-    });
 
     return {
       form,
