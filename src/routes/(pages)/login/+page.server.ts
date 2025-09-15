@@ -7,7 +7,7 @@ import type { WebAuthnCredential } from "$lib/server/auth/webauthn-service";
 import type { TUser } from "$lib/types/user";
 import logger from "$lib/logger";
 
-const log = logger.setContext("/login/+page.server.ts");
+const log = logger.setContext(import.meta.filename);
 
 export const load: PageServerLoad = async () => {
   return {

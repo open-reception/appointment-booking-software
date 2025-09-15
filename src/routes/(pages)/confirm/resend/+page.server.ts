@@ -5,7 +5,7 @@ import type { Actions, PageServerLoad } from "./$types";
 import { formSchema } from "./schema";
 import logger from "$lib/logger";
 
-const log = logger.setContext("/confirm/resend/+page.server.ts");
+const log = logger.setContext(import.meta.filename);
 
 export const load: PageServerLoad = async () => {
   return {

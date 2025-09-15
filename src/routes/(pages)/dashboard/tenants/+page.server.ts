@@ -8,7 +8,7 @@ import { formSchema as editFormSchema } from "./(components)/edit-tenant-form";
 import { formSchema as deleteFormSchema } from "./(components)/delete-tenant-form";
 import type { TTenant } from "$lib/types/tenant";
 
-const log = logger.setContext("/dashboard/tenants/+page.server.ts");
+const log = logger.setContext(import.meta.filename);
 
 export const load = async (event) => {
   const list = event

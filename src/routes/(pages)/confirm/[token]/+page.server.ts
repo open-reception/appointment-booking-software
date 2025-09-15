@@ -1,7 +1,7 @@
 import logger from "$lib/logger";
 import type { PageServerLoad } from "./$types";
 
-const log = logger.setContext("/confirm/{token}/+page.server.ts");
+const log = logger.setContext(import.meta.filename);
 
 export const load: PageServerLoad = async (event) => {
   const confirmation: Promise<{ success: boolean; isSetup: boolean }> = event

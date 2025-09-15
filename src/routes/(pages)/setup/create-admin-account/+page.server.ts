@@ -7,7 +7,7 @@ import type { Actions, PageServerLoad } from "./$types";
 import { formSchema } from "./schema";
 import { base64ToArrayBuffer, getCounterFromAuthenticatorData } from "$lib/utils/passkey";
 
-const log = logger.setContext("/setup/create-admin-form/+page.server.ts");
+const log = logger.setContext(import.meta.filename);
 
 export const load: PageServerLoad = async () => {
   return {
