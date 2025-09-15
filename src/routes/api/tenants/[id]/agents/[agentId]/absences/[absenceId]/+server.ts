@@ -1,17 +1,17 @@
 import { json } from "@sveltejs/kit";
 import { AgentService } from "$lib/server/services/agent-service";
-import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
+import { ValidationError, NotFoundError, ConflictError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 import { checkPermission } from "$lib/server/utils/permissions";
 
 // Register OpenAPI documentation for GET
-registerOpenAPIRoute("/tenants/{id}/agents/{agentId}", "GET", {
-  summary: "Get agent details",
+registerOpenAPIRoute("/tenants/{id}/agents/{agentId}/absences/{absenceId}", "GET", {
+  summary: "Get specific absence",
   description:
-    "Retrieves detailed information about a specific agent. Global admins, tenant admins, and staff can view agent details.",
-  tags: ["Agents"],
+    "Retrieves details of a specific agent absence. Global admins, tenant admins, and staff can view absences.",
+  tags: ["Agent Absences"],
   parameters: [
     {
       name: "id",
@@ -27,27 +27,37 @@ registerOpenAPIRoute("/tenants/{id}/agents/{agentId}", "GET", {
       schema: { type: "string", format: "uuid" },
       description: "Agent ID",
     },
+    {
+      name: "absenceId",
+      in: "path",
+      required: true,
+      schema: { type: "string", format: "uuid" },
+      description: "Absence ID",
+    },
   ],
   responses: {
     "200": {
-      description: "Agent details retrieved successfully",
+      description: "Absence details retrieved successfully",
       content: {
         "application/json": {
           schema: {
             type: "object",
             properties: {
-              agent: {
+              absence: {
                 type: "object",
                 properties: {
-                  id: { type: "string", format: "uuid", description: "Agent ID" },
-                  name: { type: "string", description: "Agent name" },
-                  description: { type: "string", description: "Agent description" },
-                  logo: { type: "string", format: "byte", description: "Agent logo" },
+                  id: { type: "string", format: "uuid", description: "Absence ID" },
+                  agentId: { type: "string", format: "uuid", description: "Agent ID" },
+                  startDate: { type: "string", format: "date-time", description: "Start date" },
+                  endDate: { type: "string", format: "date-time", description: "End date" },
+                  absenceType: { type: "string", description: "Type of absence" },
+                  description: { type: "string", description: "Description" },
+                  isFullDay: { type: "boolean", description: "Full day absence" },
                 },
-                required: ["id", "name"],
+                required: ["id", "agentId", "startDate", "endDate", "absenceType", "isFullDay"],
               },
             },
-            required: ["agent"],
+            required: ["absence"],
           },
         },
       },
@@ -69,7 +79,7 @@ registerOpenAPIRoute("/tenants/{id}/agents/{agentId}", "GET", {
       },
     },
     "404": {
-      description: "Agent or tenant not found",
+      description: "Absence, agent, or tenant not found",
       content: {
         "application/json": {
           schema: { $ref: "#/components/schemas/Error" },
@@ -88,11 +98,11 @@ registerOpenAPIRoute("/tenants/{id}/agents/{agentId}", "GET", {
 });
 
 // Register OpenAPI documentation for PUT
-registerOpenAPIRoute("/tenants/{id}/agents/{agentId}", "PUT", {
-  summary: "Update an agent",
+registerOpenAPIRoute("/tenants/{id}/agents/{agentId}/absences/{absenceId}", "PUT", {
+  summary: "Update agent absence",
   description:
-    "Updates an existing agent for a specific tenant. Only global admins and tenant admins can update agents.",
-  tags: ["Agents"],
+    "Updates an existing agent absence. Global admins, tenant admins, and staff can update absences.",
+  tags: ["Agent Absences"],
   parameters: [
     {
       name: "id",
@@ -108,30 +118,48 @@ registerOpenAPIRoute("/tenants/{id}/agents/{agentId}", "PUT", {
       schema: { type: "string", format: "uuid" },
       description: "Agent ID",
     },
+    {
+      name: "absenceId",
+      in: "path",
+      required: true,
+      schema: { type: "string", format: "uuid" },
+      description: "Absence ID",
+    },
   ],
   requestBody: {
-    description: "Agent update data",
+    description: "Absence update data",
     content: {
       "application/json": {
         schema: {
           type: "object",
           properties: {
-            name: {
+            startDate: {
               type: "string",
-              minLength: 1,
+              format: "date-time",
+              description: "Start date and time of absence",
+              example: "2024-01-15T00:00:00.000Z",
+            },
+            endDate: {
+              type: "string",
+              format: "date-time",
+              description: "End date and time of absence",
+              example: "2024-01-17T23:59:59.999Z",
+            },
+            absenceType: {
+              type: "string",
               maxLength: 100,
-              description: "Agent name",
-              example: "Updated Support Agent",
+              description: "Type of absence (free text)",
+              example: "Krankheit",
             },
             description: {
               type: "string",
-              description: "Agent description",
-              example: "Updated description for customer support",
+              description: "Optional description of the absence",
+              example: "Erkältung",
             },
-            logo: {
-              type: "string",
-              format: "byte",
-              description: "Base64 encoded agent logo",
+            isFullDay: {
+              type: "boolean",
+              description: "Whether this is a full day absence",
+              example: false,
             },
           },
         },
@@ -140,25 +168,28 @@ registerOpenAPIRoute("/tenants/{id}/agents/{agentId}", "PUT", {
   },
   responses: {
     "200": {
-      description: "Agent updated successfully",
+      description: "Absence updated successfully",
       content: {
         "application/json": {
           schema: {
             type: "object",
             properties: {
               message: { type: "string", description: "Success message" },
-              agent: {
+              absence: {
                 type: "object",
                 properties: {
-                  id: { type: "string", format: "uuid", description: "Agent ID" },
-                  name: { type: "string", description: "Agent name" },
-                  description: { type: "string", description: "Agent description" },
-                  logo: { type: "string", format: "byte", description: "Agent logo" },
+                  id: { type: "string", format: "uuid", description: "Absence ID" },
+                  agentId: { type: "string", format: "uuid", description: "Agent ID" },
+                  startDate: { type: "string", format: "date-time", description: "Start date" },
+                  endDate: { type: "string", format: "date-time", description: "End date" },
+                  absenceType: { type: "string", description: "Type of absence" },
+                  description: { type: "string", description: "Description" },
+                  isFullDay: { type: "boolean", description: "Full day absence" },
                 },
-                required: ["id", "name"],
+                required: ["id", "agentId", "startDate", "endDate", "absenceType", "isFullDay"],
               },
             },
-            required: ["message", "agent"],
+            required: ["message", "absence"],
           },
         },
       },
@@ -188,7 +219,15 @@ registerOpenAPIRoute("/tenants/{id}/agents/{agentId}", "PUT", {
       },
     },
     "404": {
-      description: "Agent or tenant not found",
+      description: "Absence, agent, or tenant not found",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "409": {
+      description: "Absence period overlaps with existing absence",
       content: {
         "application/json": {
           schema: { $ref: "#/components/schemas/Error" },
@@ -207,11 +246,11 @@ registerOpenAPIRoute("/tenants/{id}/agents/{agentId}", "PUT", {
 });
 
 // Register OpenAPI documentation for DELETE
-registerOpenAPIRoute("/tenants/{id}/agents/{agentId}", "DELETE", {
-  summary: "Delete an agent",
+registerOpenAPIRoute("/tenants/{id}/agents/{agentId}/absences/{absenceId}", "DELETE", {
+  summary: "Delete agent absence",
   description:
-    "Deletes an existing agent from a specific tenant. Only global admins and tenant admins can delete agents. This will also remove all channel assignments for this agent.",
-  tags: ["Agents"],
+    "Deletes an agent absence. Global admins, tenant admins, and staff can delete absences.",
+  tags: ["Agent Absences"],
   parameters: [
     {
       name: "id",
@@ -227,10 +266,17 @@ registerOpenAPIRoute("/tenants/{id}/agents/{agentId}", "DELETE", {
       schema: { type: "string", format: "uuid" },
       description: "Agent ID",
     },
+    {
+      name: "absenceId",
+      in: "path",
+      required: true,
+      schema: { type: "string", format: "uuid" },
+      description: "Absence ID",
+    },
   ],
   responses: {
     "200": {
-      description: "Agent deleted successfully",
+      description: "Absence deleted successfully",
       content: {
         "application/json": {
           schema: {
@@ -260,7 +306,7 @@ registerOpenAPIRoute("/tenants/{id}/agents/{agentId}", "DELETE", {
       },
     },
     "404": {
-      description: "Agent or tenant not found",
+      description: "Absence, agent, or tenant not found",
       content: {
         "application/json": {
           schema: { $ref: "#/components/schemas/Error" },
@@ -284,10 +330,11 @@ export const GET: RequestHandler = async ({ params, locals }) => {
   try {
     const tenantId = params.id;
     const agentId = params.agentId;
+    const absenceId = params.absenceId;
 
     // Check if user is authenticated
-    if (!tenantId || !agentId) {
-      return json({ error: "Missing tenant or agent ID" }, { status: 400 });
+    if (!tenantId || !agentId || !absenceId) {
+      return json({ error: "Missing tenant, agent, or absence ID" }, { status: 400 });
     }
 
     const error = checkPermission(locals, tenantId);
@@ -295,33 +342,40 @@ export const GET: RequestHandler = async ({ params, locals }) => {
       return error;
     }
 
-    log.debug("Getting agent details", {
+    log.debug("Getting absence details", {
       tenantId,
       agentId,
+      absenceId,
       requestedBy: locals.user?.userId,
     });
 
     const agentService = await AgentService.forTenant(tenantId);
-    const agent = await agentService.getAgentById(agentId);
+    const absence = await agentService.getAbsenceById(absenceId);
 
-    if (!agent) {
-      return json({ error: "Agent not found" }, { status: 404 });
+    if (!absence) {
+      return json({ error: "Absence not found" }, { status: 404 });
     }
 
-    log.debug("Agent details retrieved successfully", {
+    // Verify the absence belongs to the requested agent
+    if (absence.agentId !== agentId) {
+      return json({ error: "Absence not found for this agent" }, { status: 404 });
+    }
+
+    log.debug("Absence details retrieved successfully", {
       tenantId,
       agentId,
+      absenceId,
       requestedBy: locals.user?.userId,
     });
 
     return json({
-      agent,
+      absence,
     });
   } catch (error) {
-    log.error("Error getting agent details:", JSON.stringify(error || "?"));
+    log.error("Error getting absence details:", JSON.stringify(error || "?"));
 
     if (error instanceof NotFoundError) {
-      return json({ error: "Agent not found" }, { status: 404 });
+      return json({ error: "Absence not found" }, { status: 404 });
     }
 
     return json({ error: "Internal server error" }, { status: 500 });
@@ -334,48 +388,66 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
   try {
     const tenantId = params.id;
     const agentId = params.agentId;
+    const absenceId = params.absenceId;
 
     // Check if user is authenticated
-    if (!tenantId || !agentId) {
-      return json({ error: "Missing tenant or agent ID" }, { status: 400 });
+    if (!tenantId || !agentId || !absenceId) {
+      return json({ error: "Missing tenant, agent, or absence ID" }, { status: 400 });
     }
 
-    const error = checkPermission(locals, tenantId, true);
+    const error = checkPermission(locals, tenantId);
     if (error) {
       return error;
     }
 
     const body = await request.json();
 
-    log.debug("Updating agent", {
+    log.debug("Updating agent absence", {
       tenantId,
       agentId,
+      absenceId,
       requestedBy: locals.user?.userId,
       updateFields: Object.keys(body),
     });
 
     const agentService = await AgentService.forTenant(tenantId);
-    const updatedAgent = await agentService.updateAgent(agentId, body);
 
-    log.debug("Agent updated successfully", {
+    // First verify the absence exists and belongs to the agent
+    const existingAbsence = await agentService.getAbsenceById(absenceId);
+    if (!existingAbsence) {
+      return json({ error: "Absence not found" }, { status: 404 });
+    }
+
+    if (existingAbsence.agentId !== agentId) {
+      return json({ error: "Absence not found for this agent" }, { status: 404 });
+    }
+
+    const updatedAbsence = await agentService.updateAbsence(absenceId, body);
+
+    log.debug("Agent absence updated successfully", {
       tenantId,
       agentId,
+      absenceId,
       requestedBy: locals.user?.userId,
     });
 
     return json({
-      message: "Agent updated successfully",
-      agent: updatedAgent,
+      message: "Absence updated successfully",
+      absence: updatedAbsence,
     });
   } catch (error) {
-    log.error("Error updating agent:", JSON.stringify(error || "?"));
+    log.error("Error updating agent absence:", JSON.stringify(error || "?"));
 
     if (error instanceof ValidationError) {
       return json({ error: error.message }, { status: 400 });
     }
 
     if (error instanceof NotFoundError) {
-      return json({ error: "Agent not found" }, { status: 404 });
+      return json({ error: "Absence not found" }, { status: 404 });
+    }
+
+    if (error instanceof ConflictError) {
+      return json({ error: error.message }, { status: 409 });
     }
 
     return json({ error: "Internal server error" }, { status: 500 });
@@ -388,43 +460,57 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
   try {
     const tenantId = params.id;
     const agentId = params.agentId;
+    const absenceId = params.absenceId;
 
-    if (!tenantId || !agentId) {
-      return json({ error: "Missing tenant or agent ID" }, { status: 400 });
+    if (!tenantId || !agentId || !absenceId) {
+      return json({ error: "Missing tenant, agent, or absence ID" }, { status: 400 });
     }
 
-    const error = checkPermission(locals, tenantId, true);
+    const error = checkPermission(locals, tenantId);
     if (error) {
       return error;
     }
 
-    log.debug("Deleting agent", {
+    log.debug("Deleting agent absence", {
       tenantId,
       agentId,
+      absenceId,
       requestedBy: locals.user?.userId,
     });
 
     const agentService = await AgentService.forTenant(tenantId);
-    const deleted = await agentService.deleteAgent(agentId);
 
-    if (!deleted) {
-      return json({ error: "Agent not found" }, { status: 404 });
+    // First verify the absence exists and belongs to the agent
+    const existingAbsence = await agentService.getAbsenceById(absenceId);
+    if (!existingAbsence) {
+      return json({ error: "Absence not found" }, { status: 404 });
     }
 
-    log.debug("Agent deleted successfully", {
+    if (existingAbsence.agentId !== agentId) {
+      return json({ error: "Absence not found for this agent" }, { status: 404 });
+    }
+
+    const deleted = await agentService.deleteAbsence(absenceId);
+
+    if (!deleted) {
+      return json({ error: "Absence not found" }, { status: 404 });
+    }
+
+    log.debug("Agent absence deleted successfully", {
       tenantId,
       agentId,
+      absenceId,
       requestedBy: locals.user?.userId,
     });
 
     return json({
-      message: "Agent deleted successfully",
+      message: "Absence deleted successfully",
     });
   } catch (error) {
-    log.error("Error deleting agent:", JSON.stringify(error || "?"));
+    log.error("Error deleting agent absence:", JSON.stringify(error || "?"));
 
     if (error instanceof NotFoundError) {
-      return json({ error: "Agent not found" }, { status: 404 });
+      return json({ error: "Absence not found" }, { status: 404 });
     }
 
     return json({ error: "Internal server error" }, { status: 500 });

@@ -5,8 +5,8 @@ import {
   type TemplateData,
   type Language,
 } from "./template-engine";
-import type { SelectClient, SelectStaff, SelectAppointment } from "$lib/server/db/tenant-schema";
-import type { SelectTenant } from "$lib/server/db/central-schema";
+import type { SelectClient, SelectAppointment } from "$lib/server/db/tenant-schema";
+import type { SelectTenant, SelectUser } from "$lib/server/db/central-schema";
 
 /**
  * Send a templated email using the template engine
@@ -46,14 +46,14 @@ export async function sendTemplatedEmail(
 
 /**
  * Send welcome email to newly created user
- * @param {SelectClient | SelectStaff} user - Database user object
+ * @param {SelectClient | SelectUser} user - Database user object
  * @param {SelectTenant} tenant - Tenant information for branding
  * @param {string} loginUrl - URL for user to login
  * @throws {Error} When email sending fails
  * @returns {Promise<void>}
  */
 export async function sendUserCreatedEmail(
-  user: SelectClient | SelectStaff,
+  user: SelectClient | SelectUser,
   tenant: SelectTenant,
   loginUrl: string,
 ): Promise<void> {
@@ -68,13 +68,13 @@ export async function sendUserCreatedEmail(
 
 /**
  * Send informational email about PIN reset (no reset code included)
- * @param {SelectClient | SelectStaff} user - Database user object
+ * @param {SelectClient | SelectUser} user - Database user object
  * @param {SelectTenant} tenant - Tenant information for branding
  * @throws {Error} When email sending fails
  * @returns {Promise<void>}
  */
 export async function sendPinResetEmail(
-  user: SelectClient | SelectStaff,
+  user: SelectClient | SelectUser,
   tenant: SelectTenant,
 ): Promise<void> {
   const recipient = createEmailRecipient(user);
@@ -86,13 +86,13 @@ export async function sendPinResetEmail(
 
 /**
  * Send informational email about key reset
- * @param {SelectClient | SelectStaff} user - Database user object
+ * @param {SelectClient | SelectUser} user - Database user object
  * @param {SelectTenant} tenant - Tenant information for branding
  * @throws {Error} When email sending fails
  * @returns {Promise<void>}
  */
 export async function sendKeyResetEmail(
-  user: SelectClient | SelectStaff,
+  user: SelectClient | SelectUser,
   tenant: SelectTenant,
 ): Promise<void> {
   const recipient = createEmailRecipient(user);
@@ -104,7 +104,7 @@ export async function sendKeyResetEmail(
 
 /**
  * Send appointment reminder email
- * @param {SelectClient | SelectStaff} user - Database user object
+ * @param {SelectClient | SelectUser} user - Database user object
  * @param {SelectTenant} tenant - Tenant information for branding
  * @param {SelectAppointment} appointment - Appointment details
  * @param {string} [cancelUrl] - Optional URL to cancel appointment
@@ -112,7 +112,7 @@ export async function sendKeyResetEmail(
  * @returns {Promise<void>}
  */
 export async function sendAppointmentReminderEmail(
-  user: SelectClient | SelectStaff,
+  user: SelectClient | SelectUser,
   tenant: SelectTenant,
   appointment: SelectAppointment,
   cancelUrl?: string,
@@ -125,15 +125,14 @@ export async function sendAppointmentReminderEmail(
     appointment,
     appointmentDate: appointment.appointmentDate,
     appointmentTime: appointment.appointmentDate, // You might want to add a separate time field
-    title: appointment.title,
-    description: appointment.description,
+    title: appointment.channelId,
     cancelUrl,
   });
 }
 
 /**
  * Send appointment confirmation email for newly created appointments
- * @param {SelectClient | SelectStaff} user - Database user object
+ * @param {SelectClient | SelectUser} user - Database user object
  * @param {SelectTenant} tenant - Tenant information for branding
  * @param {SelectAppointment} appointment - Appointment details
  * @param {string} [cancelUrl] - Optional URL to cancel appointment
@@ -141,7 +140,7 @@ export async function sendAppointmentReminderEmail(
  * @returns {Promise<void>}
  */
 export async function sendAppointmentCreatedEmail(
-  user: SelectClient | SelectStaff,
+  user: SelectClient | SelectUser,
   tenant: SelectTenant,
   appointment: SelectAppointment,
   cancelUrl?: string,
@@ -153,15 +152,14 @@ export async function sendAppointmentCreatedEmail(
   await sendTemplatedEmail("appointment-created", recipient, subject, language, tenant, {
     appointment,
     appointmentDate: appointment.appointmentDate,
-    title: appointment.title,
-    description: appointment.description,
+    title: appointment.channelId, // TODO: Get the channel to give back a proper title
     cancelUrl,
   });
 }
 
 /**
  * Send appointment update notification email
- * @param {SelectClient | SelectStaff} user - Database user object
+ * @param {SelectClient | SelectUser} user - Database user object
  * @param {SelectTenant} tenant - Tenant information for branding
  * @param {SelectAppointment} appointment - Updated appointment details
  * @param {string} [cancelUrl] - Optional URL to cancel appointment
@@ -169,7 +167,7 @@ export async function sendAppointmentCreatedEmail(
  * @returns {Promise<void>}
  */
 export async function sendAppointmentUpdatedEmail(
-  user: SelectClient | SelectStaff,
+  user: SelectClient | SelectUser,
   tenant: SelectTenant,
   appointment: SelectAppointment,
   cancelUrl?: string,
@@ -181,8 +179,7 @@ export async function sendAppointmentUpdatedEmail(
   await sendTemplatedEmail("appointment-updated", recipient, subject, language, tenant, {
     appointment,
     appointmentDate: appointment.appointmentDate,
-    title: appointment.title,
-    description: appointment.description,
+    title: appointment.channelId, // TODO: Get the channel to give back a proper title
     cancelUrl,
   });
 }

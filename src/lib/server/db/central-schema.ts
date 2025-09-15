@@ -88,13 +88,15 @@ export const tenantConfig = pgTable(
   }),
 );
 
+// TODO: Filter in API für bestimmte Rollen
+
 export const user = pgTable(
   "user",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     email: text("email").notNull().unique(),
     name: text("name").notNull(),
-    role: userRoleEnum("role").notNull().default("GLOBAL_ADMIN"),
+    role: userRoleEnum("role").notNull().default("STAFF"),
     tenantId: uuid("tenant_id").references(() => tenant.id),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),

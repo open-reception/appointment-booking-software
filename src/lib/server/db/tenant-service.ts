@@ -33,14 +33,6 @@ export class TenantService {
   }
 
   /**
-   * Get all staff for this tenant
-   */
-  async getStaff() {
-    const db = await this.getDb();
-    return await db.select().from(tenantSchema.staff);
-  }
-
-  /**
    * Get all channels for this tenant
    */
   async getChannels() {

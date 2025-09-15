@@ -5,6 +5,7 @@ import { AuthorizationService } from "$lib/server/auth/authorization-service";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
+import { checkPermission } from "$lib/server/utils/permissions";
 import { ERRORS } from "$lib/errors";
 
 // Register OpenAPI documentation for PUT
@@ -381,7 +382,7 @@ registerOpenAPIRoute("/tenants/{id}", "DELETE", {
   },
 });
 
-export const PUT: RequestHandler = async ({ params, request }) => {
+export const PUT: RequestHandler = async ({ locals, params, request }) => {
   const log = logger.setContext("API");
 
   try {
@@ -395,6 +396,11 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
     if (!tenantId) {
       return json({ error: "No tenant id given" }, { status: 400 });
+    }
+
+    const error = checkPermission(locals, tenantId, true);
+    if (error) {
+      return error;
     }
 
     const tenantService = await TenantAdminService.getTenantById(tenantId);
@@ -435,27 +441,18 @@ export const GET: RequestHandler = async ({ params, locals }) => {
   try {
     const tenantId = params.id;
 
-    // Check if user is authenticated
-    if (!locals.user) {
-      return json({ error: "Authentication required" }, { status: 401 });
-    }
-
     if (!tenantId) {
       return json({ error: "No tenant id given" }, { status: 400 });
     }
 
     log.debug("Getting tenant details", {
       tenantId,
-      requestedBy: locals.user.userId,
+      requestedBy: locals.user?.userId,
     });
 
-    // Authorization check: Global admins can access any tenant, tenant admins only their own
-    if (locals.user.role === "GLOBAL_ADMIN") {
-      // Global admin can access any tenant
-    } else if (locals.user.role === "TENANT_ADMIN" && locals.user.tenantId === tenantId) {
-      // Tenant admin can access their own tenant
-    } else {
-      return json({ error: "Insufficient permissions" }, { status: 403 });
+    const error = checkPermission(locals, tenantId, true);
+    if (error) {
+      return error;
     }
 
     const tenantService = await TenantAdminService.getTenantById(tenantId);
@@ -467,7 +464,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
     log.debug("Tenant details retrieved successfully", {
       tenantId,
-      requestedBy: locals.user.userId,
+      requestedBy: locals.user?.userId,
     });
 
     return json({

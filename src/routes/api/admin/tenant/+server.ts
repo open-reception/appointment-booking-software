@@ -8,6 +8,7 @@ import { UserService } from "$lib/server/services/user-service";
 import { generateAccessToken } from "$lib/server/auth/jwt-utils";
 import { UniversalLogger } from "$lib/logger";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
+import { checkPermission } from "$lib/server/utils/permissions";
 
 const logger = new UniversalLogger().setContext("AdminTenantSwitch");
 
@@ -22,12 +23,9 @@ const tenantSwitchSchema = z.object({
 export const POST: RequestHandler = async ({ request, locals, cookies }) => {
   try {
     // Verify user is authenticated and is global admin
-    if (!locals.user) {
-      throw error(401, "Authentication required");
-    }
-
-    if (locals.user.role !== "GLOBAL_ADMIN") {
-      throw error(403, "Only global admins can switch tenants");
+    const permissionError = checkPermission(locals, null, true);
+    if (permissionError) {
+      return permissionError;
     }
 
     const body = await request.json();
@@ -35,7 +33,7 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 
     if (!validation.success) {
       logger.warn("Invalid tenant switch request", {
-        userId: locals.user.id,
+        userId: locals.user?.id,
         errors: validation.error.errors,
       });
       throw error(400, "Invalid request body");
@@ -52,7 +50,7 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 
     if (tenantExists.length === 0) {
       logger.warn("Tenant not found for switching", {
-        userId: locals.user.id,
+        userId: locals.user?.id,
         tenantId,
       });
       throw error(404, "Tenant not found");
@@ -61,13 +59,13 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
     // Current user is already authenticated via authHandle
 
     // Update user's active tenant in the database
-    const updatedUser = await UserService.updateUser(locals.user.userId as string, {
+    const updatedUser = await UserService.updateUser(locals.user?.userId as string, {
       tenantId: tenantId || null,
     });
 
     if (!updatedUser) {
       logger.error("Failed to update user tenant", {
-        userId: locals.user.userId,
+        userId: locals.user?.userId,
         tenantId,
       });
       throw error(500, "Failed to update user data");
@@ -76,7 +74,7 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
     // Generate new access token with updated tenant context
     const newAccessToken = await generateAccessToken(
       updatedUser,
-      (locals.user.sessionId as string) || "temp-session",
+      (locals.user?.sessionId as string) || "temp-session",
     );
 
     // Set new access token cookie
@@ -89,8 +87,8 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
     });
 
     logger.info("Tenant switched successfully", {
-      userId: locals.user.userId,
-      fromTenant: locals.user.tenantId,
+      userId: locals.user?.userId,
+      fromTenant: locals.user?.tenantId,
       toTenant: tenantId,
     });
 

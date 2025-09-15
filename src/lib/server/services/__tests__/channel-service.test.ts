@@ -58,7 +58,7 @@ const mockAgent = {
   id: "550e8400-e29b-41d4-a716-446655440001",
   name: "Test Agent",
   description: "Test description",
-  logo: null,
+  image: null,
 };
 
 const mockSlotTemplate = {

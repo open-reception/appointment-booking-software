@@ -230,12 +230,23 @@ describe("Email System", () => {
       // Create a mock staff user with German language
       const staffUser = {
         id: "test-id",
+        tenantId: "",
         hashKey: "test-hash",
-        publicKey: "test-key",
+        privateKeyShare: "test-share",
         name: "Max Mustermann",
         position: "Arzt",
         email: "test@example.com",
         language: "de",
+        role: "TENANT_ADMIN" as "GLOBAL_ADMIN" | "TENANT_ADMIN" | "STAFF",
+        createdAt: null,
+        updatedAt: null,
+        lastLoginAt: null,
+        isActive: null,
+        confirmed: null,
+        token: null,
+        tokenValidUntil: null,
+        passphraseHash: null,
+        recoveryPassphrase: null,
       };
       const mockTenant = {
         id: "tenant-1",
@@ -280,14 +291,26 @@ describe("Email System", () => {
 
       // Create a mock staff user with English language
       const staffUser = {
+        tenantId: "",
         id: "test-id",
         hashKey: "test-hash",
-        publicKey: "test-key",
+        privateKeyShare: "test-share",
         name: "John Doe",
         position: "Doctor",
         email: "test@example.com",
         language: "en",
+        role: "TENANT_ADMIN" as "GLOBAL_ADMIN" | "TENANT_ADMIN" | "STAFF",
+        createdAt: null,
+        updatedAt: null,
+        lastLoginAt: null,
+        isActive: null,
+        confirmed: null,
+        token: null,
+        tokenValidUntil: null,
+        passphraseHash: null,
+        recoveryPassphrase: null,
       };
+
       const mockTenant = {
         id: "tenant-1",
         shortName: "test",
@@ -388,7 +411,6 @@ describe("Email System", () => {
       const staffUser = {
         id: "test-id",
         hashKey: "test-hash",
-        publicKey: "test-key",
         name: "Max Mustermann",
         position: "Arzt",
         email: "test@example.com",
@@ -441,7 +463,6 @@ describe("Email System", () => {
       const staffUser = {
         id: "test-id",
         hashKey: "test-hash",
-        publicKey: "test-key",
         name: "John Doe",
         position: "Doctor",
         email: "test@example.com",

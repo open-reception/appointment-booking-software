@@ -6,6 +6,7 @@ import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { db } from "$lib/server/db";
 import { tenant } from "$lib/server/db/central-schema";
 import logger from "$lib/logger";
+import { checkPermission } from "$lib/server/utils/permissions";
 import { ERRORS } from "$lib/errors";
 
 // Register OpenAPI documentation
@@ -103,6 +104,7 @@ registerOpenAPIRoute("/tenants", "GET", {
                     id: { type: "string", format: "uuid", description: "Tenant ID" },
                     shortName: { type: "string", description: "Tenant short name" },
                     longName: { type: "string", description: "Tenant long name" },
+                    logo: { type: "string", format: "uri", description: "URL of the tenant logo" },
                     setupState: {
                       type: "string",
                       enum: ["NEW", "SETTINGS_CREATED", "AGENTS_SET_UP", "FIRST_CHANNEL_CREATED"],
@@ -147,7 +149,7 @@ registerOpenAPIRoute("/tenants", "GET", {
   },
 });
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ locals, request }) => {
   const log = logger.setContext("API");
 
   try {
@@ -157,6 +159,11 @@ export const POST: RequestHandler = async ({ request }) => {
       shortName: body.shortName,
       hasInviteAdmin: !!body.inviteAdmin,
     });
+
+    const error = checkPermission(locals, null, true);
+    if (error) {
+      return error;
+    }
 
     const tenantService = await TenantAdminService.createTenant({
       shortName: body.shortName,
@@ -216,6 +223,7 @@ export const GET: RequestHandler = async ({ locals }) => {
         shortName: tenant.shortName,
         longName: tenant.longName,
         setupState: tenant.setupState,
+        logo: tenant.logo,
       })
       .from(tenant)
       .orderBy(tenant.shortName);

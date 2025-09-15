@@ -5,6 +5,7 @@ import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 import z from "zod/v4";
+import { checkPermission } from "$lib/server/utils/permissions";
 
 const setupStateSchema = z.object({
   setupState: z.enum(["NEW", "SETTINGS_CREATED", "AGENTS_SET_UP", "FIRST_CHANNEL_CREATED"]),
@@ -100,7 +101,7 @@ registerOpenAPIRoute("/tenants/{id}/setup-state", "PUT", {
   },
 });
 
-export const PUT: RequestHandler = async ({ params, request }) => {
+export const PUT: RequestHandler = async ({ locals, params, request }) => {
   const log = logger.setContext("API");
 
   try {
@@ -114,6 +115,11 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
     if (!tenantId) {
       return json({ error: "No tenant id given" }, { status: 400 });
+    }
+
+    const error = checkPermission(locals, tenantId, true);
+    if (error) {
+      return error;
     }
 
     const validation = setupStateSchema.safeParse(body);

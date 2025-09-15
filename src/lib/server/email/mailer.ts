@@ -1,7 +1,8 @@
 import nodemailer from "nodemailer";
 import { env } from "$env/dynamic/private";
-import type { SelectClient, SelectStaff } from "$lib/server/db/tenant-schema";
+import type { SelectClient } from "$lib/server/db/tenant-schema";
 import type Mail from "nodemailer/lib/mailer";
+import type { SelectUser } from "../db/central-schema";
 
 /**
  * Email recipient interface
@@ -25,7 +26,7 @@ export interface EmailRecipient {
 export function createEmailRecipient(
   user:
     | SelectClient
-    | SelectStaff
+    | SelectUser
     | { id: string; email: string | null; name: string | null; language?: string | null },
 ): EmailRecipient {
   // Handle SelectUser type (from central schema)
@@ -34,14 +35,6 @@ export function createEmailRecipient(
       email: user.email || "",
       name: user.name || undefined,
       language: user.language || "de", // Use user's language preference
-    };
-  }
-  // Handle SelectStaff type (has name property)
-  else if ("name" in user) {
-    return {
-      email: user.email,
-      name: user.name || undefined,
-      language: user.language || "de",
     };
   }
   // Handle SelectClient type (no name property)
