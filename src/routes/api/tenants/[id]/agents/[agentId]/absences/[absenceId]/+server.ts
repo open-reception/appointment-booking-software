@@ -340,7 +340,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
     // Check if user is authenticated
     if (!tenantId || !agentId || !absenceId) {
-      return new ValidationError("Missing tenant, agent, or absence ID").toJson();
+      throw new ValidationError("Missing tenant, agent, or absence ID");
     }
 
     checkPermission(locals, tenantId);

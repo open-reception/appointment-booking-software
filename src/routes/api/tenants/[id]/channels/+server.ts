@@ -322,7 +322,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
     const tenantId = params.id;
 
     if (!tenantId) {
-      return json({ error: "No tenant id given" }, { status: 400 });
+      throw new ValidationError(ERRORS.TENANTS.NO_TENANT_ID);
     }
 
     checkPermission(locals, tenantId, true);
