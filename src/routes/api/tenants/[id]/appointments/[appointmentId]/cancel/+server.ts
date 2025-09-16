@@ -116,7 +116,7 @@ export const PUT: RequestHandler = async ({ params, locals }) => {
 
     // Check if user is authenticated
     if (!tenantId || !appointmentId) {
-      throw new ValidationError("Tenant ID and appointment ID are required", 400);
+      throw new ValidationError("Tenant ID and appointment ID are required");
     }
 
     checkPermission(locals, tenantId);
