@@ -15,6 +15,13 @@
       "when": 1752668982273,
       "tag": "0001_equal_wonder_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1758021433890,
+      "tag": "0002_fat_pete_wisdom",
+      "breakpoints": true
     }
   ]
 }
