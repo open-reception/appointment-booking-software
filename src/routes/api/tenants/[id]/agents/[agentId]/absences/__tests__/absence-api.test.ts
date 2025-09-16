@@ -196,7 +196,7 @@ describe("Agent Absence API Routes", () => {
       const response = await POST(event);
       const data = await response.json();
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(422);
       expect(data.error).toBe("Invalid date range");
     });
 
@@ -243,7 +243,7 @@ describe("Agent Absence API Routes", () => {
       const response = await POST(event);
       const data = await response.json();
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(422);
       expect(data.error).toBe("Missing tenant or agent ID");
     });
   });
@@ -422,7 +422,7 @@ describe("Agent Absence API Routes", () => {
       const response = await GET(event);
       const data = await response.json();
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(422);
       expect(data.error).toBe("Invalid date format");
     });
 

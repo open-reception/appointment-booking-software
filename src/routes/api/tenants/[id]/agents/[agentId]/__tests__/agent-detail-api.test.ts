@@ -250,7 +250,7 @@ describe("Agent Detail API Routes", () => {
       const response = await PUT(event);
       const data = await response.json();
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(422);
       expect(data.error).toBe("Invalid agent data");
     });
 

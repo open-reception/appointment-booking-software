@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect } from "vitest";
 import { AuthorizationService } from "../authorization-service";
-import { AuthenticationError } from "$lib/server/utils/errors";
+import { AuthenticationError, AuthorizationError } from "$lib/server/utils/errors";
 import type { JWTPayload } from "jose";
 
 const mockGlobalAdmin: JWTPayload = {
@@ -47,7 +47,7 @@ describe("AuthorizationService", () => {
     it("should deny access for incorrect role", () => {
       expect(() => {
         AuthorizationService.requireRole(mockTenantAdmin, "GLOBAL_ADMIN");
-      }).toThrow(AuthenticationError);
+      }).toThrow(AuthorizationError);
     });
 
     it("should deny access for null user", () => {
@@ -71,7 +71,7 @@ describe("AuthorizationService", () => {
     it("should deny access for disallowed role", () => {
       expect(() => {
         AuthorizationService.requireAnyRole(mockStaff, ["GLOBAL_ADMIN", "TENANT_ADMIN"]);
-      }).toThrow(AuthenticationError);
+      }).toThrow(AuthorizationError);
     });
   });
 
@@ -91,7 +91,7 @@ describe("AuthorizationService", () => {
     it("should deny tenant admin access to other tenants", () => {
       expect(() => {
         AuthorizationService.requireTenantAccess(mockTenantAdmin, "tenant-456");
-      }).toThrow(AuthenticationError);
+      }).toThrow(AuthorizationError);
     });
 
     it("should allow staff access to their own tenant", () => {
@@ -103,7 +103,7 @@ describe("AuthorizationService", () => {
     it("should deny staff access to other tenants", () => {
       expect(() => {
         AuthorizationService.requireTenantAccess(mockStaff, "tenant-456");
-      }).toThrow(AuthenticationError);
+      }).toThrow(AuthorizationError);
     });
   });
 
@@ -117,7 +117,7 @@ describe("AuthorizationService", () => {
     it("should deny non-global admin access", () => {
       expect(() => {
         AuthorizationService.requireGlobalAdmin(mockTenantAdmin);
-      }).toThrow(AuthenticationError);
+      }).toThrow(AuthorizationError);
     });
   });
 
@@ -137,7 +137,7 @@ describe("AuthorizationService", () => {
     it("should deny staff access", () => {
       expect(() => {
         AuthorizationService.requireTenantAdmin(mockStaff);
-      }).toThrow(AuthenticationError);
+      }).toThrow(AuthorizationError);
     });
 
     it("should check tenant access for tenant admin", () => {
@@ -147,7 +147,7 @@ describe("AuthorizationService", () => {
 
       expect(() => {
         AuthorizationService.requireTenantAdmin(mockTenantAdmin, "tenant-456");
-      }).toThrow(AuthenticationError);
+      }).toThrow(AuthorizationError);
     });
   });
 
@@ -173,7 +173,7 @@ describe("AuthorizationService", () => {
 
       expect(() => {
         AuthorizationService.requireStaffOrAbove(mockStaff, "tenant-456");
-      }).toThrow(AuthenticationError);
+      }).toThrow(AuthorizationError);
     });
   });
 

@@ -126,7 +126,7 @@ describe("UniversalLogger Integration - Client Error Forwarding", () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
-        statusText: "Internal Server Error",
+        statusText: "Internal server error",
       });
 
       const { createLogger } = await import("../index");

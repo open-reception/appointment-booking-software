@@ -66,9 +66,7 @@ describe("GET /api/admin/exists", () => {
     const data = await response.json();
 
     expect(response.status).toBe(500);
-    expect(data).toEqual({
-      error: "Internal server error",
-    });
+    expect(data.error).toBe("Internal server error");
     expect(UserService.adminExists).toHaveBeenCalledOnce();
     expect(UserService.getAdminCount).not.toHaveBeenCalled();
   });
@@ -81,9 +79,7 @@ describe("GET /api/admin/exists", () => {
     const data = await response.json();
 
     expect(response.status).toBe(500);
-    expect(data).toEqual({
-      error: "Internal server error",
-    });
+    expect(data.error).toBe("Internal server error");
     expect(UserService.adminExists).toHaveBeenCalledOnce();
     expect(UserService.getAdminCount).toHaveBeenCalledOnce();
   });

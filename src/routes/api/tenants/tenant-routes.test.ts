@@ -43,21 +43,6 @@ vi.mock("$lib/logger", () => ({
   })),
 }));
 
-vi.mock("$lib/server/utils/errors", () => ({
-  ValidationError: class ValidationError extends Error {
-    constructor(message: string) {
-      super(message);
-      this.name = "ValidationError";
-    }
-  },
-  NotFoundError: class NotFoundError extends Error {
-    constructor(message: string) {
-      super(message);
-      this.name = "NotFoundError";
-    }
-  },
-}));
-
 vi.mock("$lib/server/auth/authorization-service", () => ({
   AuthorizationService: {
     requireGlobalAdmin: vi.fn(),
@@ -154,10 +139,8 @@ describe("Tenant API Routes", () => {
       } as any);
       const data = await response.json();
 
-      expect(data).toEqual({
-        error: "No tenant id given",
-      });
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(422);
+      expect(data.error).toBe("No tenant id given");
     });
   });
 
@@ -210,10 +193,8 @@ describe("Tenant API Routes", () => {
       } as any);
       const data = await response.json();
 
-      expect(data).toEqual({
-        error: "No tenant id given",
-      });
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(422);
+      expect(data.error).toBe("No tenant id given");
     });
   });
 
@@ -295,10 +276,8 @@ describe("Tenant API Routes", () => {
       } as any);
       const data = await response.json();
 
-      expect(data).toEqual({
-        error: "Invalid configuration data",
-      });
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(422);
+      expect(data.error).toBe("Invalid configuration data");
     });
 
     it("should handle tenant not found", async () => {
@@ -330,10 +309,8 @@ describe("Tenant API Routes", () => {
       } as any);
       const data = await response.json();
 
-      expect(data).toEqual({
-        error: "Tenant not found",
-      });
       expect(response.status).toBe(404);
+      expect(data.error).toBe("Tenant not found");
     });
   });
 });

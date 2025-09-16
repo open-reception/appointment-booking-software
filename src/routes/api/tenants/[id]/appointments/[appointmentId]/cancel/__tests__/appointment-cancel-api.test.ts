@@ -74,10 +74,7 @@ describe("Appointment Cancel API", () => {
     });
 
     it("should return 401 if user is not authenticated", async () => {
-      const event = createMockRequestEvent({
-        locals: {},
-      });
-
+      const event = createMockRequestEvent({ locals: {} });
       const response = await PUT(event);
       const result = await response.json();
 
@@ -96,7 +93,6 @@ describe("Appointment Cancel API", () => {
           } as any,
         },
       });
-
       const response = await PUT(event);
       const result = await response.json();
 

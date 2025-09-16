@@ -134,19 +134,16 @@ describe("Agent API Routes", () => {
       expect(data.agents).toEqual(mockAgents);
     });
 
-    it("should reject unauthenticated requests", async () => {
-      const event = createMockRequestEvent({
-        locals: { user: null } as any,
-      });
-
+    it("should return 401 for unauthenticated requests", async () => {
+      const event = createMockRequestEvent({ locals: { user: null } as any });
       const response = await GET(event);
-      const data = await response.json();
+      const result = await response.json();
 
       expect(response.status).toBe(401);
-      expect(data.error).toBe("Authentication required");
+      expect(result.error).toBe("Authentication required");
     });
 
-    it("should reject insufficient permissions", async () => {
+    it("should return 403 for insufficient permissions", async () => {
       const event = createMockRequestEvent({
         locals: {
           user: {
@@ -156,12 +153,11 @@ describe("Agent API Routes", () => {
           } as any,
         },
       });
-
       const response = await GET(event);
-      const data = await response.json();
+      const result = await response.json();
 
       expect(response.status).toBe(403);
-      expect(data.error).toBe("Insufficient permissions");
+      expect(result.error).toBe("Insufficient permissions");
     });
 
     it("should handle missing tenant ID", async () => {
@@ -172,7 +168,7 @@ describe("Agent API Routes", () => {
       const response = await GET(event);
       const data = await response.json();
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(422);
       expect(data.error).toBe("No tenant id given");
     });
 
@@ -251,7 +247,7 @@ describe("Agent API Routes", () => {
       expect(data.agent).toEqual(mockAgent);
     });
 
-    it("should reject staff users from creating agents", async () => {
+    it("should return 403 for staff users creating agents", async () => {
       const event = createMockRequestEvent({
         locals: {
           user: {
@@ -261,25 +257,21 @@ describe("Agent API Routes", () => {
           } as any,
         },
       });
-
       const response = await POST(event);
-      const data = await response.json();
+      const result = await response.json();
 
       expect(response.status).toBe(403);
-      expect(data.error).toBe("Insufficient permissions");
+      expect(result.error).toBe("Insufficient permissions");
       expect(mockAgentService.createAgent).not.toHaveBeenCalled();
     });
 
-    it("should reject unauthenticated requests", async () => {
-      const event = createMockRequestEvent({
-        locals: { user: null } as any,
-      });
-
+    it("should return 401 for unauthenticated requests", async () => {
+      const event = createMockRequestEvent({ locals: { user: null } as any });
       const response = await POST(event);
-      const data = await response.json();
+      const result = await response.json();
 
       expect(response.status).toBe(401);
-      expect(data.error).toBe("Authentication required");
+      expect(result.error).toBe("Authentication required");
     });
 
     it("should handle validation errors", async () => {
@@ -289,7 +281,7 @@ describe("Agent API Routes", () => {
       const response = await POST(event);
       const data = await response.json();
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(422);
       expect(data.error).toBe("Invalid agent name");
     });
 
@@ -323,7 +315,7 @@ describe("Agent API Routes", () => {
       const response = await POST(event);
       const data = await response.json();
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(422);
       expect(data.error).toBe("No tenant id given");
     });
   });
