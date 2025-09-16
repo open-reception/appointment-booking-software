@@ -146,7 +146,7 @@ describe("Appointment Cancel API", () => {
       expect(response.status).toBe(200);
     });
 
-    it("should return 400 if tenant ID or appointment ID is missing", async () => {
+    it("should return 422 if tenant ID or appointment ID is missing", async () => {
       const event = createMockRequestEvent({
         params: { id: mockTenantId },
       });
@@ -154,7 +154,7 @@ describe("Appointment Cancel API", () => {
       const response = await PUT(event);
       const result = await response.json();
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(422);
       expect(result.error).toBe("Tenant ID and appointment ID are required");
     });
 
