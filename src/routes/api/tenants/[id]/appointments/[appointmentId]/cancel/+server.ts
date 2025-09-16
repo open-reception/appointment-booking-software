@@ -1,6 +1,6 @@
 import { json } from "@sveltejs/kit";
 import { AppointmentService } from "$lib/server/services/appointment-service";
-import { NotFoundError } from "$lib/server/utils/errors";
+import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
@@ -116,13 +116,10 @@ export const PUT: RequestHandler = async ({ params, locals }) => {
 
     // Check if user is authenticated
     if (!tenantId || !appointmentId) {
-      return json({ error: "Tenant ID and appointment ID are required" }, { status: 400 });
+      throw new ValidationError("Tenant ID and appointment ID are required", 400);
     }
 
-    const error = checkPermission(locals, tenantId);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId);
 
     log.debug("Cancelling appointment", {
       tenantId,
@@ -144,12 +141,12 @@ export const PUT: RequestHandler = async ({ params, locals }) => {
       appointment: cancelledAppointment,
     });
   } catch (error) {
-    log.error("Error cancelling appointment:", JSON.stringify(error || "?"));
+    logError(log)("Error cancelling appointment", error, locals.user?.userId, params.id);
 
-    if (error instanceof NotFoundError) {
-      return json({ error: error.message }, { status: 404 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };

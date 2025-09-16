@@ -1,6 +1,12 @@
 import { json } from "@sveltejs/kit";
 import { AgentService } from "$lib/server/services/agent-service";
-import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
+import {
+  ValidationError,
+  NotFoundError,
+  logError,
+  BackendError,
+  InternalError,
+} from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
@@ -287,13 +293,10 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
     // Check if user is authenticated
     if (!tenantId || !agentId) {
-      return json({ error: "Missing tenant or agent ID" }, { status: 400 });
+      throw new ValidationError("Missing tenant or agent ID");
     }
 
-    const error = checkPermission(locals, tenantId);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId);
 
     log.debug("Getting agent details", {
       tenantId,
@@ -305,7 +308,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     const agent = await agentService.getAgentById(agentId);
 
     if (!agent) {
-      return json({ error: "Agent not found" }, { status: 404 });
+      throw new NotFoundError("Agent not found");
     }
 
     log.debug("Agent details retrieved successfully", {
@@ -318,13 +321,13 @@ export const GET: RequestHandler = async ({ params, locals }) => {
       agent,
     });
   } catch (error) {
-    log.error("Error getting agent details:", JSON.stringify(error || "?"));
+    logError(log)("Error getting agent details", error, locals.user?.userId, params.id);
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Agent not found" }, { status: 404 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };
 
@@ -337,14 +340,10 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 
     // Check if user is authenticated
     if (!tenantId || !agentId) {
-      return json({ error: "Missing tenant or agent ID" }, { status: 400 });
+      throw new ValidationError("Missing tenant or agent ID");
     }
 
-    const error = checkPermission(locals, tenantId, true);
-    if (error) {
-      return error;
-    }
-
+    checkPermission(locals, tenantId, true);
     const body = await request.json();
 
     log.debug("Updating agent", {
@@ -368,17 +367,13 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
       agent: updatedAgent,
     });
   } catch (error) {
-    log.error("Error updating agent:", JSON.stringify(error || "?"));
+    logError(log)("Error updating agent", error, locals.user?.userId, params.id);
 
-    if (error instanceof ValidationError) {
-      return json({ error: error.message }, { status: 400 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Agent not found" }, { status: 404 });
-    }
-
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };
 
@@ -390,13 +385,10 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
     const agentId = params.agentId;
 
     if (!tenantId || !agentId) {
-      return json({ error: "Missing tenant or agent ID" }, { status: 400 });
+      throw new ValidationError("Missing tenant or agent ID");
     }
 
-    const error = checkPermission(locals, tenantId, true);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId, true);
 
     log.debug("Deleting agent", {
       tenantId,
@@ -408,7 +400,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
     const deleted = await agentService.deleteAgent(agentId);
 
     if (!deleted) {
-      return json({ error: "Agent not found" }, { status: 404 });
+      throw new NotFoundError("Agent not found");
     }
 
     log.debug("Agent deleted successfully", {
@@ -421,12 +413,12 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
       message: "Agent deleted successfully",
     });
   } catch (error) {
-    log.error("Error deleting agent:", JSON.stringify(error || "?"));
+    logError(log)("Error deleting agent", error, locals.user?.userId, params.id);
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Agent not found" }, { status: 404 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };

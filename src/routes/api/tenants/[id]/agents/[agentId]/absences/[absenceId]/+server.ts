@@ -1,6 +1,12 @@
 import { json } from "@sveltejs/kit";
 import { AgentService } from "$lib/server/services/agent-service";
-import { ValidationError, NotFoundError, ConflictError } from "$lib/server/utils/errors";
+import {
+  ValidationError,
+  NotFoundError,
+  logError,
+  BackendError,
+  InternalError,
+} from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
@@ -334,13 +340,10 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
     // Check if user is authenticated
     if (!tenantId || !agentId || !absenceId) {
-      return json({ error: "Missing tenant, agent, or absence ID" }, { status: 400 });
+      return new ValidationError("Missing tenant, agent, or absence ID").toJson();
     }
 
-    const error = checkPermission(locals, tenantId);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId);
 
     log.debug("Getting absence details", {
       tenantId,
@@ -353,12 +356,12 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     const absence = await agentService.getAbsenceById(absenceId);
 
     if (!absence) {
-      return json({ error: "Absence not found" }, { status: 404 });
+      throw new NotFoundError("Absence not found");
     }
 
     // Verify the absence belongs to the requested agent
     if (absence.agentId !== agentId) {
-      return json({ error: "Absence not found for this agent" }, { status: 404 });
+      throw new NotFoundError("Absence not found for this agent");
     }
 
     log.debug("Absence details retrieved successfully", {
@@ -372,13 +375,13 @@ export const GET: RequestHandler = async ({ params, locals }) => {
       absence,
     });
   } catch (error) {
-    log.error("Error getting absence details:", JSON.stringify(error || "?"));
+    logError(log)("Error getting absence details", error, locals.user?.userId, params.id);
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Absence not found" }, { status: 404 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };
 
@@ -392,13 +395,10 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 
     // Check if user is authenticated
     if (!tenantId || !agentId || !absenceId) {
-      return json({ error: "Missing tenant, agent, or absence ID" }, { status: 400 });
+      throw new ValidationError("Missing tenant, agent, or absence ID");
     }
 
-    const error = checkPermission(locals, tenantId);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId);
 
     const body = await request.json();
 
@@ -415,11 +415,11 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
     // First verify the absence exists and belongs to the agent
     const existingAbsence = await agentService.getAbsenceById(absenceId);
     if (!existingAbsence) {
-      return json({ error: "Absence not found" }, { status: 404 });
+      throw new NotFoundError("Absence not found");
     }
 
     if (existingAbsence.agentId !== agentId) {
-      return json({ error: "Absence not found for this agent" }, { status: 404 });
+      throw new NotFoundError("Absence not found for this agent");
     }
 
     const updatedAbsence = await agentService.updateAbsence(absenceId, body);
@@ -436,21 +436,13 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
       absence: updatedAbsence,
     });
   } catch (error) {
-    log.error("Error updating agent absence:", JSON.stringify(error || "?"));
+    logError(log)("Error updating agent absence", error, locals.user?.userId, params.id);
 
-    if (error instanceof ValidationError) {
-      return json({ error: error.message }, { status: 400 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Absence not found" }, { status: 404 });
-    }
-
-    if (error instanceof ConflictError) {
-      return json({ error: error.message }, { status: 409 });
-    }
-
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };
 
@@ -463,13 +455,10 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
     const absenceId = params.absenceId;
 
     if (!tenantId || !agentId || !absenceId) {
-      return json({ error: "Missing tenant, agent, or absence ID" }, { status: 400 });
+      throw new ValidationError("Missing tenant, agent, or absence ID");
     }
 
-    const error = checkPermission(locals, tenantId);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId);
 
     log.debug("Deleting agent absence", {
       tenantId,
@@ -483,11 +472,11 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
     // First verify the absence exists and belongs to the agent
     const existingAbsence = await agentService.getAbsenceById(absenceId);
     if (!existingAbsence) {
-      return json({ error: "Absence not found" }, { status: 404 });
+      throw new NotFoundError("Absence not found");
     }
 
     if (existingAbsence.agentId !== agentId) {
-      return json({ error: "Absence not found for this agent" }, { status: 404 });
+      throw new NotFoundError("Absence not found for this agent");
     }
 
     const deleted = await agentService.deleteAbsence(absenceId);
@@ -507,12 +496,12 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
       message: "Absence deleted successfully",
     });
   } catch (error) {
-    log.error("Error deleting agent absence:", JSON.stringify(error || "?"));
+    logError(log)("Error deleting agent absence", error, locals.user?.userId, params.id);
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Absence not found" }, { status: 404 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };

@@ -1,10 +1,11 @@
 import { json } from "@sveltejs/kit";
 import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
-import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
+import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 import { checkPermission } from "$lib/server/utils/permissions";
+import { ERRORS } from "$lib/errors";
 
 // Register OpenAPI documentation for GET
 registerOpenAPIRoute("/tenants/{id}/config", "GET", {
@@ -185,13 +186,10 @@ export const GET: RequestHandler = async ({ locals, params }) => {
     log.debug("Getting tenant configuration", { tenantId });
 
     if (!tenantId) {
-      return json({ error: "No tenant id given" }, { status: 400 });
+      throw new ValidationError(ERRORS.TENANTS.NO_TENANT_ID);
     }
 
-    const error = checkPermission(locals, tenantId, true);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId, true);
 
     const tenantService = await TenantAdminService.getTenantById(tenantId);
     const config = await tenantService.configuration;
@@ -203,13 +201,13 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 
     return json(config);
   } catch (error) {
-    log.error("Error getting tenant configuration:", JSON.stringify(error || "?"));
+    logError(log)("Error getting tenant configuration", error, locals.user?.userId, params.id);
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Tenant not found" }, { status: 404 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };
 
@@ -226,13 +224,10 @@ export const PUT: RequestHandler = async ({ locals, params, request }) => {
     });
 
     if (!tenantId) {
-      return json({ error: "No tenant id given" }, { status: 400 });
+      throw new ValidationError(ERRORS.TENANTS.NO_TENANT_ID);
     }
 
-    const error = checkPermission(locals, tenantId, true);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId, true);
 
     const tenantService = await TenantAdminService.getTenantById(tenantId);
     await tenantService.updateTenantConfig(body);
@@ -247,16 +242,12 @@ export const PUT: RequestHandler = async ({ locals, params, request }) => {
       updatedKeys: Object.keys(body),
     });
   } catch (error) {
-    log.error("Error updating tenant configuration:", JSON.stringify(error || "?"));
+    logError(log)("Error updating tenant configuration", error, locals.user?.userId, params.id);
 
-    if (error instanceof ValidationError) {
-      return json({ error: error.message }, { status: 400 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Tenant not found" }, { status: 404 });
-    }
-
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };

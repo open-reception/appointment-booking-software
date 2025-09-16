@@ -1,10 +1,17 @@
 import { json } from "@sveltejs/kit";
 import { AppointmentService } from "$lib/server/services/appointment-service";
-import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
+import {
+  BackendError,
+  ConflictError,
+  InternalError,
+  logError,
+  ValidationError,
+} from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 import { checkPermission } from "$lib/server/utils/permissions";
+import { ERRORS } from "$lib/errors";
 
 // Register OpenAPI documentation for POST
 registerOpenAPIRoute("/tenants/{id}/appointments", "POST", {
@@ -326,13 +333,10 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
     const tenantId = params.id;
 
     if (!tenantId) {
-      return json({ error: "No tenant id given" }, { status: 400 });
+      throw new ValidationError(ERRORS.TENANTS.NO_TENANT_ID);
     }
 
-    const error = checkPermission(locals, tenantId);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId);
 
     const body = await request.json();
 
@@ -360,25 +364,19 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
       { status: 201 },
     );
   } catch (error) {
-    log.error("Error creating appointment:", JSON.stringify(error || "?"));
-
-    if (error instanceof ValidationError) {
-      return json({ error: error.message }, { status: 400 });
+    logError(log)("Error creating appointment", error, locals.user?.userId, params.id);
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    if (error instanceof NotFoundError) {
-      return json({ error: error.message }, { status: 404 });
-    }
-
-    // ConflictError from AppointmentService
     if (
       (error instanceof Error && error.message.includes("conflict")) ||
       (error instanceof Error && error.message.includes("paused"))
     ) {
-      return json({ error: error.message }, { status: 409 });
+      return new ConflictError(error.message).toJson();
     }
 
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };
 
@@ -389,13 +387,10 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
     const tenantId = params.id;
 
     if (!tenantId) {
-      return json({ error: "No tenant id given" }, { status: 400 });
+      throw new ValidationError(ERRORS.TENANTS.NO_TENANT_ID);
     }
 
-    const error = checkPermission(locals, tenantId);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId);
 
     // Extract query parameters
     const startDate = url.searchParams.get("startDate");
@@ -405,7 +400,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
     const status = url.searchParams.get("status");
 
     if (!startDate || !endDate) {
-      return json({ error: "startDate and endDate are required" }, { status: 400 });
+      throw new ValidationError("startDate and endDate are required");
     }
 
     const query = {
@@ -435,16 +430,11 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
       appointments,
     });
   } catch (error) {
-    log.error("Error getting appointments:", JSON.stringify(error || "?"));
-
-    if (error instanceof ValidationError) {
-      return json({ error: error.message }, { status: 400 });
+    logError(log)("Error getting appointments", error, locals.user?.userId, params.id);
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Tenant not found" }, { status: 404 });
-    }
-
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };

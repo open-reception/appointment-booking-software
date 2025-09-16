@@ -1,11 +1,12 @@
 import { json } from "@sveltejs/kit";
 import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
-import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
+import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 import z from "zod/v4";
 import { checkPermission } from "$lib/server/utils/permissions";
+import { ERRORS } from "$lib/errors";
 
 const setupStateSchema = z.object({
   setupState: z.enum(["NEW", "SETTINGS_CREATED", "AGENTS_SET_UP", "FIRST_CHANNEL_CREATED"]),
@@ -114,13 +115,10 @@ export const PUT: RequestHandler = async ({ locals, params, request }) => {
     });
 
     if (!tenantId) {
-      return json({ error: "No tenant id given" }, { status: 400 });
+      throw new ValidationError(ERRORS.TENANTS.NO_TENANT_ID);
     }
 
-    const error = checkPermission(locals, tenantId, true);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId, true);
 
     const validation = setupStateSchema.safeParse(body);
     if (!validation.success) {
@@ -140,16 +138,12 @@ export const PUT: RequestHandler = async ({ locals, params, request }) => {
       tenant: updatedTenant,
     });
   } catch (error) {
-    log.error("Error updating tenant setup state:", JSON.stringify(error || "?"));
+    logError(log)("Error updating tenant setup state", error, locals.user?.userId, params.id);
 
-    if (error instanceof ValidationError) {
-      return json({ error: error.message }, { status: 400 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Tenant not found" }, { status: 404 });
-    }
-
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };

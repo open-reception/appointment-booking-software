@@ -1,10 +1,11 @@
 import { json } from "@sveltejs/kit";
 import { ChannelService } from "$lib/server/services/channel-service";
-import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
+import { ValidationError, logError, BackendError, InternalError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 import { checkPermission } from "$lib/server/utils/permissions";
+import { ERRORS } from "$lib/errors";
 
 // Register OpenAPI documentation for POST
 registerOpenAPIRoute("/tenants/{id}/channels", "POST", {
@@ -324,10 +325,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
       return json({ error: "No tenant id given" }, { status: 400 });
     }
 
-    const error = checkPermission(locals, tenantId, true);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId, true);
 
     const body = await request.json();
 
@@ -355,17 +353,13 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
       { status: 201 },
     );
   } catch (error) {
-    log.error("Error creating channel:", JSON.stringify(error || "?"));
+    logError(log)("Error creating channel", error, locals.user?.userId, params.id);
 
-    if (error instanceof ValidationError) {
-      return json({ error: error.message }, { status: 400 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Tenant not found" }, { status: 404 });
-    }
-
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };
 
@@ -376,13 +370,10 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     const tenantId = params.id;
 
     if (!tenantId) {
-      return json({ error: "No tenant id given" }, { status: 400 });
+      throw new ValidationError(ERRORS.TENANTS.NO_TENANT_ID);
     }
 
-    const error = checkPermission(locals, tenantId, true);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId, true);
 
     log.debug("Getting all channels", {
       tenantId,
@@ -402,12 +393,11 @@ export const GET: RequestHandler = async ({ params, locals }) => {
       channels,
     });
   } catch (error) {
-    log.error("Error getting channels:", JSON.stringify(error || "?"));
+    logError(log)("Error in getting channels", error, locals.user?.userId, params.id);
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Tenant not found" }, { status: 404 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
-
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };

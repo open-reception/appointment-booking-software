@@ -1,14 +1,21 @@
-import { error, json, type RequestHandler } from "@sveltejs/kit";
+import { json, type RequestHandler } from "@sveltejs/kit";
 import { z } from "zod";
 import { centralDb } from "$lib/server/db";
 import { tenant } from "$lib/server/db/central-schema";
 import { eq } from "drizzle-orm";
-import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
+import {
+  BackendError,
+  InternalError,
+  logError,
+  NotFoundError,
+  ValidationError,
+} from "$lib/server/utils/errors";
 import { UserService } from "$lib/server/services/user-service";
 import { generateAccessToken } from "$lib/server/auth/jwt-utils";
 import { UniversalLogger } from "$lib/logger";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { checkPermission } from "$lib/server/utils/permissions";
+import { ERRORS } from "$lib/errors";
 
 const logger = new UniversalLogger().setContext("AdminTenantSwitch");
 
@@ -23,10 +30,7 @@ const tenantSwitchSchema = z.object({
 export const POST: RequestHandler = async ({ request, locals, cookies }) => {
   try {
     // Verify user is authenticated and is global admin
-    const permissionError = checkPermission(locals, null, true);
-    if (permissionError) {
-      return permissionError;
-    }
+    checkPermission(locals, null, true);
 
     const body = await request.json();
     const validation = tenantSwitchSchema.safeParse(body);
@@ -36,7 +40,7 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
         userId: locals.user?.id,
         errors: validation.error.errors,
       });
-      throw error(400, "Invalid request body");
+      throw new ValidationError(ERRORS.VALIDATION.INVALID_REQUEST_BODY);
     }
 
     const { tenantId } = validation.data;
@@ -53,7 +57,7 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
         userId: locals.user?.id,
         tenantId,
       });
-      throw error(404, "Tenant not found");
+      throw new NotFoundError(ERRORS.TENANTS.NOT_FOUND);
     }
 
     // Current user is already authenticated via authHandle
@@ -68,7 +72,7 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
         userId: locals.user?.userId,
         tenantId,
       });
-      throw error(500, "Failed to update user data");
+      throw new InternalError(ERRORS.USERS.FAILED_TO_UPDATE);
     }
 
     // Generate new access token with updated tenant context
@@ -105,18 +109,12 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
       },
     });
   } catch (err) {
-    if (err instanceof ValidationError) {
-      logger.warn("Validation error in tenant switch", { error: err.message });
-      throw error(400, err.message);
-    }
+    logError(logger)("Error in tenant switch", err, locals.user?.userId);
 
-    if (err instanceof NotFoundError) {
-      logger.warn("Not found error in tenant switch", { error: err.message });
-      throw error(404, err.message);
+    if (err instanceof BackendError) {
+      return err.toJson();
     }
-
-    logger.error("Unexpected error in tenant switch", { error: String(err) });
-    throw error(500, "Internal server error");
+    return new InternalError().toJson();
   }
 };
 

@@ -3,6 +3,7 @@ import { UserService } from "$lib/server/services/user-service";
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
+import { BackendError, InternalError, logError } from "$lib/server/utils/errors";
 
 // Register OpenAPI documentation
 registerOpenAPIRoute("/admin/exists", "GET", {
@@ -63,7 +64,11 @@ export const GET: RequestHandler = async () => {
       count: adminCount,
     });
   } catch (error) {
-    log.error("Error checking admin existence:", String(error));
-    return json({ error: "Internal server error" }, { status: 500 });
+    logError(log)("Error checking admin existence", error);
+
+    if (error instanceof BackendError) {
+      return error.toJson();
+    }
+    return new InternalError().toJson();
   }
 };

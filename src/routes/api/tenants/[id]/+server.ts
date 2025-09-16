@@ -1,7 +1,13 @@
 import { json } from "@sveltejs/kit";
 import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
-import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
-import { AuthorizationService } from "$lib/server/auth/authorization-service";
+import {
+  ValidationError,
+  BackendError,
+  ConflictError,
+  InternalError,
+  logError,
+  NotFoundError,
+} from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
@@ -395,13 +401,10 @@ export const PUT: RequestHandler = async ({ locals, params, request }) => {
     });
 
     if (!tenantId) {
-      return json({ error: "No tenant id given" }, { status: 400 });
+      throw new ValidationError(ERRORS.TENANTS.NO_TENANT_ID);
     }
 
-    const error = checkPermission(locals, tenantId, true);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId, true);
 
     const tenantService = await TenantAdminService.getTenantById(tenantId);
     const updatedTenant = await tenantService.updateTenantData(body);
@@ -416,22 +419,18 @@ export const PUT: RequestHandler = async ({ locals, params, request }) => {
       tenant: updatedTenant,
     });
   } catch (error) {
-    log.error("Error updating tenant metadata:", JSON.stringify(error || "?"));
+    logError(log)("Error updating tenant metadata", error, locals.user?.userId, params.id);
 
-    if (error instanceof ValidationError) {
-      return json({ error: error.message }, { status: 400 });
-    }
-
-    if (error instanceof NotFoundError) {
-      return json({ error: "Tenant not found" }, { status: 404 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
     // Handle unique constraint violation (shortName already exists)
     if (error instanceof Error && error.message.includes("unique constraint")) {
-      return json({ error: ERRORS.TENANTS.NAME_EXISTS }, { status: 409 });
+      return new ConflictError(ERRORS.TENANTS.NAME_EXISTS).toJson();
     }
 
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };
 
@@ -442,7 +441,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     const tenantId = params.id;
 
     if (!tenantId) {
-      return json({ error: "No tenant id given" }, { status: 400 });
+      throw new ValidationError(ERRORS.TENANTS.NO_TENANT_ID);
     }
 
     log.debug("Getting tenant details", {
@@ -450,16 +449,13 @@ export const GET: RequestHandler = async ({ params, locals }) => {
       requestedBy: locals.user?.userId,
     });
 
-    const error = checkPermission(locals, tenantId, true);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId, true);
 
     const tenantService = await TenantAdminService.getTenantById(tenantId);
     const tenantData = tenantService.tenantData;
 
     if (!tenantData) {
-      return json({ error: "Tenant not found" }, { status: 404 });
+      throw new NotFoundError(ERRORS.TENANTS.NOT_FOUND);
     }
 
     log.debug("Tenant details retrieved successfully", {
@@ -471,13 +467,13 @@ export const GET: RequestHandler = async ({ params, locals }) => {
       tenant: tenantData,
     });
   } catch (error) {
-    log.error("Error getting tenant details:", JSON.stringify(error || "?"));
+    logError(log)("Error getting tenant details", error, locals.user?.userId, params.id);
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Tenant not found" }, { status: 404 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };
 
@@ -488,31 +484,17 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
     const tenantId = params.id;
 
     // Check if user is authenticated
-    if (!locals.user) {
-      return json({ error: "Authentication required" }, { status: 401 });
-    }
+    checkPermission(locals, tenantId ?? null, true, true);
 
     if (!tenantId) {
-      return json({ error: "No tenant id given" }, { status: 400 });
+      throw new ValidationError(ERRORS.TENANTS.NO_TENANT_ID);
     }
 
     log.info("Attempting tenant deletion", {
       tenantId,
-      requestedBy: locals.user.userId,
-      userRole: locals.user.role,
+      requestedBy: locals.user?.userId,
+      userRole: locals.user?.role,
     });
-
-    // Authorization: Only global admins can delete tenants
-    try {
-      AuthorizationService.requireGlobalAdmin(locals.user);
-    } catch {
-      log.warn("Tenant deletion denied: insufficient permissions", {
-        tenantId,
-        requestedBy: locals.user.userId,
-        userRole: locals.user.role,
-      });
-      return json({ error: "Insufficient permissions" }, { status: 403 });
-    }
 
     // Get tenant service and perform deletion
     const tenantService = await TenantAdminService.getTenantById(tenantId);
@@ -524,7 +506,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
       deletedUsersCount: result.deletedUsersCount,
       updatedGlobalAdminsCount: result.updatedGlobalAdminsCount,
       deletedConfigsCount: result.deletedConfigsCount,
-      requestedBy: locals.user.userId,
+      requestedBy: locals.user?.userId,
     });
 
     return json({
@@ -532,16 +514,12 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
       result,
     });
   } catch (error) {
-    log.error("Error deleting tenant", {
-      tenantId: params.id,
-      requestedBy: locals.user?.userId,
-      error: JSON.stringify(error || "?"),
-    });
+    logError(log)("Error deleting tenant", error, locals.user?.userId, params.id);
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Tenant not found" }, { status: 404 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };

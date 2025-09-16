@@ -1,10 +1,17 @@
 import { json } from "@sveltejs/kit";
 import { UserService } from "$lib/server/services/user-service";
 import { WebAuthnService } from "$lib/server/auth/webauthn-service";
-import { ValidationError } from "$lib/server/utils/errors";
+import {
+  BackendError,
+  ConflictError,
+  InternalError,
+  logError,
+  ValidationError,
+} from "$lib/server/utils/errors";
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
+import { ERRORS } from "$lib/errors";
 
 // Register OpenAPI documentation
 registerOpenAPIRoute("/admin/init", "POST", {
@@ -113,7 +120,7 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
     const body = await request.json();
 
     if (await UserService.adminExists()) {
-      return json({ error: "System was already initialized" }, { status: 409 });
+      throw new ConflictError(ERRORS.USERS.ADMIN_EXISTS);
     }
 
     // Validate that either passkey or passphrase is provided (but not both)
@@ -121,11 +128,11 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
     const hasPassphrase = !!body.passphrase;
 
     if (!hasPasskey && !hasPassphrase) {
-      return json({ error: "Either passkey or passphrase must be provided" }, { status: 400 });
+      throw new ValidationError(ERRORS.SECURITY.EITHER_PASSKEY_OR_PHRASE);
     }
 
     if (hasPasskey && hasPassphrase) {
-      return json({ error: "Cannot provide both passkey and passphrase" }, { status: 400 });
+      throw new ValidationError(ERRORS.SECURITY.BOTH_PASSKEY_AND_PHRASE);
     }
 
     log.debug("Creating admin account", {
@@ -152,10 +159,7 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
       const registrationEmail = cookies.get("webauthn-registration-email");
 
       if (!registrationEmail || registrationEmail !== body.email) {
-        return json(
-          { error: "Invalid passkey registration. Please request a new challenge first." },
-          { status: 400 },
-        );
+        throw new ValidationError(ERRORS.SECURITY.INVALID_PASSKEY_REGISTRATION);
       }
 
       // Clear the registration cookie after validation (challenge cookie is cleared by login route)
@@ -193,17 +197,17 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
       { status: 201 },
     );
   } catch (error) {
-    log.error("Admin registration error:", JSON.stringify(error || "?"));
+    logError(log)("Admin registration error", error);
 
-    if (error instanceof ValidationError) {
-      return json({ error: error.message }, { status: 400 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
     // Handle unique constraint violation (email already exists)
     if (error instanceof Error && error.message.includes("unique constraint")) {
-      return json({ error: "An admin with this email already exists" }, { status: 409 });
+      return new ConflictError("An admin with this email already exists").toJson();
     }
 
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };

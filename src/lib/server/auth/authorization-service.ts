@@ -1,6 +1,6 @@
 import type { JWTPayload } from "jose";
 import { UniversalLogger } from "$lib/logger";
-import { AuthenticationError } from "$lib/server/utils/errors";
+import { AuthorizationError, AuthenticationError } from "$lib/server/utils/errors";
 
 const logger = new UniversalLogger().setContext("Authorization");
 
@@ -9,14 +9,14 @@ export type UserRole = "GLOBAL_ADMIN" | "TENANT_ADMIN" | "STAFF";
 export class AuthorizationService {
   static requireRole(user: JWTPayload, requiredRole: UserRole): void {
     if (!user) {
-      throw new AuthenticationError("Authentication required");
+      throw new AuthenticationError();
     }
 
     if (user.role !== requiredRole) {
       logger.warn(
         `Access denied: User ${user.email} has role ${user.role}, required ${requiredRole}`,
       );
-      throw new AuthenticationError("Insufficient permissions");
+      throw new AuthorizationError();
     }
 
     logger.debug(`Authorization granted: User ${user.email} has required role ${requiredRole}`);
@@ -24,14 +24,14 @@ export class AuthorizationService {
 
   static requireAnyRole(user: JWTPayload, allowedRoles: UserRole[]): void {
     if (!user) {
-      throw new AuthenticationError("Authentication required");
+      throw new AuthenticationError();
     }
 
     if (!allowedRoles.includes(user.role as UserRole)) {
       logger.warn(
         `Access denied: User ${user.email} has role ${user.role}, allowed roles: ${allowedRoles.join(", ")}`,
       );
-      throw new AuthenticationError("Insufficient permissions");
+      throw new AuthorizationError();
     }
 
     logger.debug(`Authorization granted: User ${user.email} has allowed role ${user.role}`);
@@ -39,7 +39,7 @@ export class AuthorizationService {
 
   static requireTenantAccess(user: JWTPayload, tenantId: string): void {
     if (!user) {
-      throw new AuthenticationError("Authentication required");
+      throw new AuthenticationError();
     }
 
     if (user.role === "GLOBAL_ADMIN") {
@@ -52,14 +52,14 @@ export class AuthorizationService {
     if (user.role === "TENANT_ADMIN" || user.role === "STAFF") {
       if (!user.tenantId) {
         logger.warn(`Access denied: User ${user.email} has no tenant assigned`);
-        throw new AuthenticationError("No tenant access");
+        throw new AuthorizationError("No tenant access");
       }
 
       if (user.tenantId !== tenantId) {
         logger.warn(
           `Access denied: User ${user.email} trying to access tenant ${tenantId}, but belongs to ${user.tenantId}`,
         );
-        throw new AuthenticationError("Tenant access denied");
+        throw new AuthorizationError("Tenant access denied");
       }
 
       logger.debug(`Authorization granted: User ${user.email} accessing own tenant ${tenantId}`);
@@ -67,7 +67,7 @@ export class AuthorizationService {
     }
 
     logger.warn(`Access denied: User ${user.email} has invalid role ${user.role}`);
-    throw new AuthenticationError("Invalid role");
+    throw new AuthorizationError("Invalid role");
   }
 
   static requireGlobalAdmin(user: JWTPayload): void {
