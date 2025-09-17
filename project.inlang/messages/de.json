@@ -102,7 +102,7 @@
 		"tenants": "Mandanten",
 		"calendar": "Kalender",
 		"staff": "Personal",
-		"agents": "Agenten",
+		"agents": "Akteure",
 		"channels": "Kanäle",
 		"absences": "Abwesenheiten",
 		"account": "Konto",
@@ -205,6 +205,58 @@
 		"sidebar": {
 			"title": "Zum ersten Mal hier?",
 			"description": "Tippe {name} um die Seitenleiste umzustellen"
+		}
+	},
+	"agents": {
+		"title": "Akteure",
+		"empty": {
+			"title": "Bisher keine Akteure",
+			"description": "Akteure sind erforderliche Teilnehmer bei Terminen."
+		},
+		"add": {
+			"title": "Akteur hinzufügen",
+			"description": "Erstelle einen Akteur, der Termine entgegennehmen kann.",
+			"fields": {
+				"name": {
+					"title": "Name",
+					"errors": {
+						"length": "Muss zwischen 2 und 50 Zeichen lang sein"
+					}
+				},
+				"description": {
+					"title": "Beschreibung (optional)",
+					"description": "Kann Schwerpunkte, Qualifikationen oder andere Informationen enthalten, die Kunden helfen, den richtigen Akteur auszuwählen."
+				},
+				"image": {
+					"title": "Bild (optional)"
+				}
+			},
+			"action": "Akteur hinzufügen",
+			"success": "Akteur hinzugefügt",
+			"errors": {
+				"unkonwn": "Konnte Akteur nicht hinzufügen"
+			}
+		},
+		"list": {
+			"empty": {
+				"title": "Bisher keine Akteure",
+				"description": "Akteure sind erforderliche Teilnehmer bei Terminen."
+			}
+		},
+		"delete": {
+			"title": "Akteur löschen",
+			"description": "Tippe {name} um den Akteur zu löschen.",
+			"action": "Akteur löschen",
+			"success": "Akteur gelöscht",
+			"error": "Konnte Akteur nicht löschen."
+		},
+		"loading": "Lade Akteure",
+		"edit": {
+			"title": "Akteur bearbeiten",
+			"description": "Aktualisiere die öffentlichen Informationen des Akteurs.",
+			"success": "Akteur aktualisiert",
+			"error": "Konnte Akteur nicht aktualisieren.",
+			"action": "Akteur bearbeiten"
 		}
 	}
 }

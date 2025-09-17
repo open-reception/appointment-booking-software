@@ -3,16 +3,21 @@ import logger from "$lib/logger";
 import { fail, redirect, type Actions } from "@sveltejs/kit";
 import { superValidate } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
-import { formSchema as addFormSchema } from "./(components)/add-tenant-form";
-import { formSchema as editFormSchema } from "./(components)/edit-tenant-form";
-import { formSchema as deleteFormSchema } from "./(components)/delete-tenant-form";
-import type { TTenant } from "$lib/types/tenant";
+import { formSchema as addFormSchema } from "./(components)/add-agent-form";
+import { formSchema as editFormSchema } from "./(components)/edit-agent-form";
+import { formSchema as deleteFormSchema } from "./(components)/delete-agent-form";
+import type { TAgent } from "$lib/types/agent";
 
 const log = logger.setContext(import.meta.filename);
 
 export const load = async (event) => {
+  if (!event.locals.user?.tenantId) {
+    log.error("User trying to access agents, but has no tenantId");
+    redirect(302, ROUTES.LOGOUT);
+  }
+
   const list = event
-    .fetch(`/api/tenants`, {
+    .fetch(`/api/tenants/${event.locals.user?.tenantId}/agents`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -27,9 +32,10 @@ export const load = async (event) => {
 
       try {
         const body = await res.json();
-        return body.tenants as TTenant[];
+        console.log("Agents response body:", body);
+        return body.agents as TAgent[];
       } catch (error) {
-        log.error("Failed to parse tenants response", { error });
+        log.error("Failed to parse agents response", { error });
       }
     });
 
@@ -46,22 +52,27 @@ export const actions: Actions = {
     const form = await superValidate(event, zod(addFormSchema));
 
     if (!form.valid) {
-      log.error("Add tenant form is not valid", { errors: form.errors });
+      log.error("Add agent form is not valid", { errors: form.errors });
       return fail(400, {
         form: { ...form, data: { ...form.data } },
         error: "Form is not valid",
       });
     }
 
-    const resp = await event.fetch(`/api/tenants`, {
+    if (!event.locals.user?.tenantId) {
+      log.error("User trying to add an agent, but has no tenantId");
+      redirect(302, ROUTES.LOGOUT);
+    }
+
+    const resp = await event.fetch(`/api/tenants/${event.locals.user?.tenantId}/agents`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       credentials: "same-origin",
       body: JSON.stringify({
-        shortName: form.data.shortName,
-        inviteAdmin: form.data.email,
+        name: form.data.name,
+        description: form.data.description,
       }),
     });
 
@@ -73,7 +84,7 @@ export const actions: Actions = {
         const body = await resp.json();
         error = body.error;
       } catch (e) {
-        log.error("Failed to parse add tenant error response", { error: e });
+        log.error("Failed to parse add agent error response", { error: e });
       }
       return fail(400, {
         form,
@@ -85,21 +96,29 @@ export const actions: Actions = {
     const form = await superValidate(event, zod(editFormSchema));
 
     if (!form.valid) {
-      log.error("Edit tenant form is not valid", { errors: form.errors });
+      log.error("Edit agent form is not valid", { errors: form.errors });
       return fail(400, {
         form: { ...form, data: { ...form.data } },
         error: "Form is not valid",
       });
     }
 
-    const resp = await event.fetch(`/api/tenants/${form.data.id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
+    if (!event.locals.user?.tenantId) {
+      log.error("User trying to edit an agent, but has no tenantId");
+      redirect(302, ROUTES.LOGOUT);
+    }
+
+    const resp = await event.fetch(
+      `/api/tenants/${event.locals.user?.tenantId}/agents/${form.data.id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+        body: JSON.stringify({ name: form.data.name, description: form.data.description }),
       },
-      credentials: "same-origin",
-      body: JSON.stringify({ shortName: form.data.shortName }),
-    });
+    );
 
     if (resp.status < 400) {
       return { form };
@@ -109,7 +128,7 @@ export const actions: Actions = {
         const body = await resp.json();
         error = body.error;
       } catch (e) {
-        log.error("Failed to parse edit tenant error response", { error: e });
+        log.error("Failed to parse edit agent error response", { error: e });
       }
       return fail(400, {
         form: { ...form, data: { ...form.data } },
@@ -121,20 +140,28 @@ export const actions: Actions = {
     const form = await superValidate(event, zod(deleteFormSchema));
 
     if (!form.valid) {
-      log.error("Delete tenant form is not valid", { errors: form.errors });
+      log.error("Delete agent form is not valid", { errors: form.errors });
       return fail(400, {
         form: { ...form, data: { ...form.data } },
         error: "Form is not valid",
       });
     }
 
-    const resp = await event.fetch(`/api/tenants/${form.data.id}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
+    if (!event.locals.user?.tenantId) {
+      log.error("User trying to delete an agent, but has no tenantId");
+      redirect(302, ROUTES.LOGOUT);
+    }
+
+    const resp = await event.fetch(
+      `/api/tenants/${event.locals.user?.tenantId}/agents/${form.data.id}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
       },
-      credentials: "same-origin",
-    });
+    );
 
     if (resp.status < 400) {
       return { form };
@@ -144,7 +171,7 @@ export const actions: Actions = {
         const body = await resp.json();
         error = body.error;
       } catch (e) {
-        log.error("Failed to parse delete tenant error response", { error: e });
+        log.error("Failed to parse delete agent error response", { error: e });
       }
       return fail(400, {
         form,
