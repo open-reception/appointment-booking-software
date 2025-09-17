@@ -11,8 +11,13 @@ import type { TAgent } from "$lib/types/agent";
 const log = logger.setContext(import.meta.filename);
 
 export const load = async (event) => {
+  if (!event.locals.user?.tenantId) {
+    log.error("User trying to access agents, but has no tenantId");
+    redirect(302, ROUTES.LOGOUT);
+  }
+
   const list = event
-    .fetch(`/api/agents`, {
+    .fetch(`/api/tenants/${event.locals.user?.tenantId}/agents`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -54,7 +59,12 @@ export const actions: Actions = {
       });
     }
 
-    const resp = await event.fetch(`/api/agents`, {
+    if (!event.locals.user?.tenantId) {
+      log.error("User trying to add an agent, but has no tenantId");
+      redirect(302, ROUTES.LOGOUT);
+    }
+
+    const resp = await event.fetch(`/api/tenants/${event.locals.user?.tenantId}/agents`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -93,14 +103,22 @@ export const actions: Actions = {
       });
     }
 
-    const resp = await event.fetch(`/api/agents/${form.data.id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
+    if (!event.locals.user?.tenantId) {
+      log.error("User trying to edit an agent, but has no tenantId");
+      redirect(302, ROUTES.LOGOUT);
+    }
+
+    const resp = await event.fetch(
+      `/api/tenants/${event.locals.user?.tenantId}/agents/${form.data.id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+        body: JSON.stringify({ name: form.data.name, description: form.data.description }),
       },
-      credentials: "same-origin",
-      body: JSON.stringify({ name: form.data.name, description: form.data.description }),
-    });
+    );
 
     if (resp.status < 400) {
       return { form };
@@ -129,13 +147,21 @@ export const actions: Actions = {
       });
     }
 
-    const resp = await event.fetch(`/api/agents/${form.data.id}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
+    if (!event.locals.user?.tenantId) {
+      log.error("User trying to delete an agent, but has no tenantId");
+      redirect(302, ROUTES.LOGOUT);
+    }
+
+    const resp = await event.fetch(
+      `/api/tenants/${event.locals.user?.tenantId}/agents/${form.data.id}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
       },
-      credentials: "same-origin",
-    });
+    );
 
     if (resp.status < 400) {
       return { form };
