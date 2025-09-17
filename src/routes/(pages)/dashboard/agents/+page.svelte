@@ -132,7 +132,7 @@
           <div class="flex w-full flex-col items-center">
             <EmptyState
               Icon={UnknownItemIcon}
-              headline="No tenants yet"
+              headline={m["agents.empty.title"]()}
               description={m["agents.empty.description"]()}
             />
             <Button size="lg" onclick={() => openDialog("add")}>

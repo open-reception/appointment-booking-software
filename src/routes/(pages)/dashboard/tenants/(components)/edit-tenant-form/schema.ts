@@ -12,7 +12,7 @@ export const formSchema = z.object({
     .refine((val) => !val.startsWith("-") && !val.endsWith("-"), {
       message: m["tenants.add.name.errors.startEndDash"](),
     }),
-  tenantId: z.string(),
+  id: z.string(),
 });
 
 export type FormSchema = typeof formSchema;

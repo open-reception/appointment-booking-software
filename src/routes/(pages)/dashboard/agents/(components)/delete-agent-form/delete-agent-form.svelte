@@ -65,7 +65,6 @@
   <Form.Field {form} name="id" class="hidden">
     <Form.Control>
       {#snippet children({ props })}
-        <Form.Label>{m["form.name"]()}</Form.Label>
         <Input {...props} bind:value={$formData.id} type="hidden" />
       {/snippet}
     </Form.Control>
