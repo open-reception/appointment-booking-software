@@ -11,6 +11,7 @@ import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 import { checkPermission } from "$lib/server/utils/permissions";
+import { ERRORS } from "$lib/errors";
 
 // Register OpenAPI documentation for GET
 registerOpenAPIRoute("/tenants/{id}/agents/{agentId}", "GET", {
@@ -293,7 +294,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
     // Check if user is authenticated
     if (!tenantId || !agentId) {
-      throw new ValidationError("Missing tenant or agent ID");
+      throw new ValidationError(ERRORS.TENANTS.MISSING_TENANT_OR_AGENT_ID);
     }
 
     checkPermission(locals, tenantId);
@@ -340,7 +341,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 
     // Check if user is authenticated
     if (!tenantId || !agentId) {
-      throw new ValidationError("Missing tenant or agent ID");
+      throw new ValidationError(ERRORS.TENANTS.MISSING_TENANT_OR_AGENT_ID);
     }
 
     checkPermission(locals, tenantId, true);
@@ -385,7 +386,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
     const agentId = params.agentId;
 
     if (!tenantId || !agentId) {
-      throw new ValidationError("Missing tenant or agent ID");
+      throw new ValidationError(ERRORS.TENANTS.MISSING_TENANT_OR_AGENT_ID);
     }
 
     checkPermission(locals, tenantId, true);
@@ -400,7 +401,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
     const deleted = await agentService.deleteAgent(agentId);
 
     if (!deleted) {
-      throw new NotFoundError("Agent not found");
+      throw new NotFoundError(ERRORS.AGENTS.NOT_FOUND);
     }
 
     log.debug("Agent deleted successfully", {

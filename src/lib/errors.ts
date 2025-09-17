@@ -17,6 +17,7 @@ export const ERRORS = {
     NAME_EXISTS: "A tenant with this short name already exists",
     NO_TENANT_ID: "No tenant id given",
     NOT_FOUND: "Tenant not found",
+    MISSING_TENANT_OR_AGENT_ID: "Missing tenant or agent ID",
   },
   CHANNELS: {
     NOT_FOUND: "Channel not found",
@@ -25,5 +26,8 @@ export const ERRORS = {
     ADMIN_EXISTS: "System was already initialized",
     EMAIL_EXISTS: "E-Mail Address already exists",
     FAILED_TO_UPDATE: "Failed to update user data",
+  },
+  AGENTS: {
+    NOT_FOUND: "Agent not found",
   },
 };
