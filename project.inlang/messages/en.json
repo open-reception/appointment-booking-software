@@ -215,5 +215,57 @@
 			"description": "Tippe {name} um die Seitenleiste umzustellen"
 		}
 	},
-	"close": "Schließen"
+	"close": "Schließen",
+	"agents": {
+		"title": "Agents",
+		"empty": {
+			"title": "No agents yet",
+			"description": "Agents are required participants in appointments."
+		},
+		"add": {
+			"title": "Add Agent",
+			"description": "Agents can be people, teams or working groups. This information is public.",
+			"fields": {
+				"name": {
+					"title": "Name",
+					"errors": {
+						"length": "Must be between 2 and 50 characters"
+					}
+				},
+				"description": {
+					"title": "Description (optinal)",
+					"description": "Can be titles, roles or other information that will help clients to choose the right agent."
+				},
+				"image": {
+					"title": "Image (optional)"
+				}
+			},
+			"action": "Add Agent",
+			"success": "Agent added",
+			"errors": {
+				"unkonwn": "Could not add agent"
+			}
+		},
+		"list": {
+			"empty": {
+				"title": "No agents yet",
+				"description": "Agents are required participants in appointments."
+			}
+		},
+		"delete": {
+			"title": "Delete Agent",
+			"description": "Type {name} to confirm.",
+			"action": "Delete Agent",
+			"success": "Agent deleted",
+			"error": "Could not delete agent."
+		},
+		"loading": "Loading agents",
+		"edit": {
+			"title": "Edit Agent",
+			"description": "Update the agent's public details.",
+			"success": "Agent updated",
+			"error": "Could not update agent.",
+			"action": "Edit Agent"
+		}
+	}
 }
