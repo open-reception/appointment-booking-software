@@ -11,7 +11,7 @@
   let { entity, done }: { entity: TTenant; done: () => void } = $props();
 
   const form = superForm(
-    { tenantId: entity.id, shortName: entity.shortName },
+    { id: entity.id, shortName: entity.shortName },
     {
       validators: zodClient(formSchema),
       onResult: async (event) => {
@@ -50,11 +50,10 @@
     </Form.Description>
     <Form.FieldErrors />
   </Form.Field>
-  <Form.Field {form} name="tenantId" class="hidden">
+  <Form.Field {form} name="id" class="hidden">
     <Form.Control>
       {#snippet children({ props })}
-        <Form.Label>{m["form.name"]()}</Form.Label>
-        <Input {...props} bind:value={$formData.tenantId} type="hidden" />
+        <Input {...props} bind:value={$formData.id} type="hidden" />
       {/snippet}
     </Form.Control>
   </Form.Field>
