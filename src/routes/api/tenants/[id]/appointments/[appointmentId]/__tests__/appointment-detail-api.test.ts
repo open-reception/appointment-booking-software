@@ -77,7 +77,6 @@ describe("Appointment Detail API Routes", () => {
 
     it("should return 404 if appointment not found", async () => {
       mockAppointmentService.getAppointmentById.mockResolvedValue(null);
-
       const event = createMockRequestEvent();
       const response = await GET(event);
       const result = await response.json();
@@ -87,10 +86,7 @@ describe("Appointment Detail API Routes", () => {
     });
 
     it("should return 401 if user is not authenticated", async () => {
-      const event = createMockRequestEvent({
-        locals: {},
-      });
-
+      const event = createMockRequestEvent({ locals: {} });
       const response = await GET(event);
       const result = await response.json();
 
@@ -109,7 +105,6 @@ describe("Appointment Detail API Routes", () => {
           } as any,
         },
       });
-
       const response = await GET(event);
       const result = await response.json();
 
@@ -265,7 +260,7 @@ describe("Appointment Detail API Routes", () => {
       expect(response.status).toBe(200);
     });
 
-    it("should return 400 if tenant ID or appointment ID is missing", async () => {
+    it("should return 422 if tenant ID or appointment ID is missing", async () => {
       const event = createMockRequestEvent({
         params: { id: mockTenantId },
       });
@@ -273,7 +268,7 @@ describe("Appointment Detail API Routes", () => {
       const response = await DELETE(event);
       const result = await response.json();
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(422);
       expect(result.error).toBe("Tenant ID and appointment ID are required");
     });
 

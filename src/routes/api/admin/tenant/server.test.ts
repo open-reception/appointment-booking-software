@@ -14,8 +14,9 @@ vi.mock("@sveltejs/kit", async () => {
       (error as any).body = { message };
       throw error;
     }),
-    json: vi.fn((data: any) => {
-      return new Response(JSON.stringify(data), { status: 200 });
+    json: vi.fn((data: any, options: any = {}) => {
+      const status = options.status || 200;
+      return new Response(JSON.stringify(data), { status });
     }),
   };
 });
@@ -83,12 +84,6 @@ vi.mock("drizzle-orm", () => ({
   eq: vi.fn(() => "eq-condition"),
 }));
 
-// Mock error classes
-vi.mock("$lib/server/utils/errors", () => ({
-  ValidationError: class ValidationError extends Error {},
-  NotFoundError: class NotFoundError extends Error {},
-}));
-
 // Mock permissions module
 vi.mock("$lib/server/utils/permissions", () => ({
   checkPermission: vi.fn(),
@@ -98,6 +93,7 @@ import { centralDb } from "$lib/server/db";
 import { UserService } from "$lib/server/services/user-service";
 import { generateAccessToken } from "$lib/server/auth/jwt-utils";
 import { checkPermission } from "$lib/server/utils/permissions";
+import { AuthenticationError, AuthorizationError } from "$lib/server/utils/errors";
 
 describe("POST /api/admin/tenant", () => {
   const mockUser = {
@@ -144,14 +140,17 @@ describe("POST /api/admin/tenant", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset checkPermission mock to not throw by default
+    vi.mocked(checkPermission).mockImplementation(() => {
+      // Default implementation that doesn't throw
+    });
   });
 
   it("should successfully switch to a tenant", async () => {
     const tenantId = "550e8400-e29b-41d4-a716-446655440000";
     const requestEvent = createRequestEvent({ tenantId });
 
-    // Mock permission check to pass
-    vi.mocked(checkPermission).mockReturnValue(null);
+    // Permission check will use default mock (pass)
 
     // Mock tenant exists query
     const mockSelectQuery = {
@@ -197,11 +196,10 @@ describe("POST /api/admin/tenant", () => {
       null,
     );
 
-    // Mock permission check to return 401 error
-    const mockErrorResponse = new Response(JSON.stringify({ error: "Authentication required" }), {
-      status: 401,
+    // Mock permission check to throw authentication error
+    vi.mocked(checkPermission).mockImplementationOnce(() => {
+      throw new AuthenticationError("Authentication required");
     });
-    vi.mocked(checkPermission).mockReturnValue(mockErrorResponse);
 
     const response = await POST(requestEvent);
     expect(response.status).toBe(401);
@@ -216,11 +214,10 @@ describe("POST /api/admin/tenant", () => {
       tenantAdminUser,
     );
 
-    // Mock permission check to return 403 error
-    const mockErrorResponse = new Response(JSON.stringify({ error: "Insufficient permissions" }), {
-      status: 403,
+    // Mock permission check to throw authorization error
+    vi.mocked(checkPermission).mockImplementationOnce(() => {
+      throw new AuthorizationError("Insufficient permissions");
     });
-    vi.mocked(checkPermission).mockReturnValue(mockErrorResponse);
 
     const response = await POST(requestEvent);
     expect(response.status).toBe(403);
@@ -228,20 +225,22 @@ describe("POST /api/admin/tenant", () => {
     expect(result.error).toBe("Insufficient permissions");
   });
 
-  it("should return 400 when request body is invalid", async () => {
+  it("should return 422 when request body is invalid", async () => {
     const requestEvent = createRequestEvent({ tenantId: "invalid-uuid" });
 
-    // Mock permission check to pass
-    vi.mocked(checkPermission).mockReturnValue(null);
+    // Permission check will use default mock (pass)
 
-    await expect(POST(requestEvent)).rejects.toThrow();
+    const response = await POST(requestEvent);
+    const result = await response.json();
+
+    expect(response.status).toBe(422);
+    expect(result.error).toBe("Invalid request body");
   });
 
   it("should return 404 when tenant does not exist", async () => {
     const requestEvent = createRequestEvent({ tenantId: "550e8400-e29b-41d4-a716-446655440000" });
 
-    // Mock permission check to pass
-    vi.mocked(checkPermission).mockReturnValue(null);
+    // Permission check will use default mock (pass)
 
     // Mock tenant doesn't exist
     const mockSelectQuery = {
@@ -251,6 +250,10 @@ describe("POST /api/admin/tenant", () => {
     };
     vi.mocked(centralDb.select).mockReturnValue(mockSelectQuery as any);
 
-    await expect(POST(requestEvent)).rejects.toThrow();
+    const response = await POST(requestEvent);
+    const result = await response.json();
+
+    expect(response.status).toBe(404);
+    expect(result.error).toBe("Tenant not found");
   });
 });

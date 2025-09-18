@@ -92,10 +92,7 @@ describe("Appointment API Routes", () => {
     });
 
     it("should return 401 if user is not authenticated", async () => {
-      const event = createMockRequestEvent({
-        locals: {},
-      });
-
+      const event = createMockRequestEvent({ locals: {} });
       const response = await POST(event);
       const result = await response.json();
 
@@ -114,7 +111,6 @@ describe("Appointment API Routes", () => {
           } as any,
         },
       });
-
       const response = await POST(event);
       const result = await response.json();
 
@@ -178,7 +174,7 @@ describe("Appointment API Routes", () => {
       expect(response.status).toBe(201);
     });
 
-    it("should return 400 for validation errors", async () => {
+    it("should return 422 for validation errors", async () => {
       mockAppointmentService.createAppointment.mockRejectedValue(
         new ValidationError("Invalid data"),
       );
@@ -187,7 +183,7 @@ describe("Appointment API Routes", () => {
       const response = await POST(event);
       const result = await response.json();
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(422);
       expect(result.error).toBe("Invalid data");
     });
 
@@ -277,7 +273,7 @@ describe("Appointment API Routes", () => {
       expect(result.error).toBe("Insufficient permissions");
     });
 
-    it("should return 400 if startDate or endDate is missing", async () => {
+    it("should return 422 if startDate or endDate is missing", async () => {
       const event = createMockRequestEvent({
         url: new URL("http://localhost?startDate=2024-12-01T00:00:00Z"),
       });
@@ -285,7 +281,7 @@ describe("Appointment API Routes", () => {
       const response = await GET(event);
       const result = await response.json();
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(422);
       expect(result.error).toBe("startDate and endDate are required");
     });
 
@@ -310,7 +306,7 @@ describe("Appointment API Routes", () => {
       });
     });
 
-    it("should return 400 for validation errors", async () => {
+    it("should return 422 for validation errors", async () => {
       mockAppointmentService.queryAppointments.mockRejectedValue(
         new ValidationError("Invalid query"),
       );
@@ -319,7 +315,7 @@ describe("Appointment API Routes", () => {
       const response = await GET(event);
       const result = await response.json();
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(422);
       expect(result.error).toBe("Invalid query");
     });
   });

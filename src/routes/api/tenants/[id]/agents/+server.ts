@@ -1,10 +1,11 @@
 import { json } from "@sveltejs/kit";
 import { AgentService } from "$lib/server/services/agent-service";
-import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
+import { ValidationError, logError, BackendError, InternalError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 import { checkPermission } from "$lib/server/utils/permissions";
+import { ERRORS } from "$lib/errors";
 
 // Register OpenAPI documentation for POST
 registerOpenAPIRoute("/tenants/{id}/agents", "POST", {
@@ -204,13 +205,10 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 
     // Check if user is authenticated
     if (!tenantId) {
-      return json({ error: "No tenant id given" }, { status: 400 });
+      throw new ValidationError(ERRORS.TENANTS.NO_TENANT_ID);
     }
 
-    const error = checkPermission(locals, tenantId, true);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId, true);
 
     const body = await request.json();
 
@@ -237,17 +235,13 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
       { status: 201 },
     );
   } catch (error) {
-    log.error("Error creating agent:", JSON.stringify(error || "?"));
+    logError(log)("Error creating agent:", error, locals.user?.userId, params.id);
 
-    if (error instanceof ValidationError) {
-      return json({ error: error.message }, { status: 400 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Tenant not found" }, { status: 404 });
-    }
-
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };
 
@@ -259,13 +253,10 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
     // Check if user is authenticated
     if (!tenantId) {
-      return json({ error: "No tenant id given" }, { status: 400 });
+      throw new ValidationError(ERRORS.TENANTS.NO_TENANT_ID);
     }
 
-    const error = checkPermission(locals, tenantId);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId);
 
     log.debug("Getting all agents", {
       tenantId,
@@ -285,12 +276,12 @@ export const GET: RequestHandler = async ({ params, locals }) => {
       agents,
     });
   } catch (error) {
-    log.error("Error getting agents:", JSON.stringify(error || "?"));
+    logError(log)("Error getting agents:", error, locals.user?.userId, params.id);
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Tenant not found" }, { status: 404 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };

@@ -34,7 +34,7 @@ registerOpenAPIRoute("/health/services", "GET", {
       },
     },
     "500": {
-      description: "Internal Server Error",
+      description: "Internal server error",
       content: {
         "application/json": {
           schema: { $ref: "#/components/schemas/Error" },

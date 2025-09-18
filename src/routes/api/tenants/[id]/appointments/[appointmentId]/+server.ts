@@ -1,6 +1,12 @@
 import { json } from "@sveltejs/kit";
 import { AppointmentService } from "$lib/server/services/appointment-service";
-import { NotFoundError } from "$lib/server/utils/errors";
+import {
+  BackendError,
+  InternalError,
+  logError,
+  NotFoundError,
+  ValidationError,
+} from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
@@ -204,13 +210,10 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     const appointmentId = params.appointmentId;
 
     if (!tenantId || !appointmentId) {
-      return json({ error: "Tenant ID and appointment ID are required" }, { status: 400 });
+      throw new ValidationError("Tenant ID and appointment ID are required");
     }
 
-    const error = checkPermission(locals, tenantId);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId);
 
     log.debug("Getting appointment by ID", {
       tenantId,
@@ -222,7 +225,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     const appointment = await appointmentService.getAppointmentById(appointmentId);
 
     if (!appointment) {
-      return json({ error: "Appointment not found" }, { status: 404 });
+      throw new NotFoundError("Appointment not found");
     }
 
     log.debug("Appointment retrieved successfully", {
@@ -235,13 +238,13 @@ export const GET: RequestHandler = async ({ params, locals }) => {
       appointment,
     });
   } catch (error) {
-    log.error("Error getting appointment:", JSON.stringify(error || "?"));
+    logError(log)("Error getting appointment", error, locals.user?.userId, params.id);
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Tenant not found" }, { status: 404 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };
 
@@ -253,13 +256,10 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
     const appointmentId = params.appointmentId;
 
     if (!tenantId || !appointmentId) {
-      return json({ error: "Tenant ID and appointment ID are required" }, { status: 400 });
+      throw new ValidationError("Tenant ID and appointment ID are required");
     }
 
-    const error = checkPermission(locals, tenantId, true);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId, true);
 
     log.debug("Deleting appointment", {
       tenantId,
@@ -284,12 +284,12 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
       message: "Appointment deleted successfully",
     });
   } catch (error) {
-    log.error("Error deleting appointment:", JSON.stringify(error || "?"));
+    logError(log)("Error deleting appointment", error, locals.user?.userId, params.id);
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Tenant not found" }, { status: 404 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };

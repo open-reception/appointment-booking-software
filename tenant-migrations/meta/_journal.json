@@ -8,6 +8,13 @@
       "when": 1752671302514,
       "tag": "0000_neat_nemesis",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1758021994040,
+      "tag": "0001_equal_king_bedlam",
+      "breakpoints": true
     }
   ]
 }

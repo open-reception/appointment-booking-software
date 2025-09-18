@@ -1,6 +1,6 @@
 import { json } from "@sveltejs/kit";
 import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
-import { BackendError } from "$lib/server/utils/errors";
+import { BackendError, ConflictError, InternalError, logError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { db } from "$lib/server/db";
@@ -160,10 +160,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
       hasInviteAdmin: !!body.inviteAdmin,
     });
 
-    const error = checkPermission(locals, null, true);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, null, true);
 
     const tenantService = await TenantAdminService.createTenant({
       shortName: body.shortName,
@@ -184,18 +181,17 @@ export const POST: RequestHandler = async ({ locals, request }) => {
       { status: 201 },
     );
   } catch (error) {
-    log.error("Tenant creation error:", JSON.stringify(error || "?"));
+    logError(log)("Tenant creation error", error, locals.user?.userId);
 
     if (error instanceof BackendError) {
       return error.toJson();
     }
 
-    // Handle unique constraint violation (shortName already exists)
     if (error instanceof Error && error.message.includes("unique constraint")) {
-      return json({ error: ERRORS.TENANTS.NAME_EXISTS }, { status: 409 });
+      return new ConflictError(ERRORS.TENANTS.NAME_EXISTS).toJson();
     }
 
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };
 
@@ -204,16 +200,10 @@ export const GET: RequestHandler = async ({ locals }) => {
 
   try {
     // Check if user is authenticated and is a global admin
-    if (!locals.user) {
-      return json({ error: "Authentication required" }, { status: 401 });
-    }
-
-    if (locals.user.role !== "GLOBAL_ADMIN") {
-      return json({ error: "Global admin access required" }, { status: 403 });
-    }
+    checkPermission(locals, null, true, true);
 
     log.debug("Getting all tenants", {
-      requestedBy: locals.user.userId,
+      requestedBy: locals.user?.userId,
     });
 
     // Get all tenants from database
@@ -230,14 +220,14 @@ export const GET: RequestHandler = async ({ locals }) => {
 
     log.debug("Retrieved tenants successfully", {
       tenantCount: tenants.length,
-      requestedBy: locals.user.userId,
+      requestedBy: locals.user?.userId,
     });
 
     return json({
       tenants: tenants,
     });
   } catch (error) {
-    log.error("Failed to get tenants:", JSON.stringify(error || "?"));
-    return json({ error: "Internal server error" }, { status: 500 });
+    logError(log)("Error getting tenants", error, locals.user?.userId);
+    return new InternalError().toJson();
   }
 };

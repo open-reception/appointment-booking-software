@@ -1,6 +1,6 @@
 import { json } from "@sveltejs/kit";
 import { AgentService } from "$lib/server/services/agent-service";
-import { ValidationError, NotFoundError, ConflictError } from "$lib/server/utils/errors";
+import { ValidationError, logError, BackendError, InternalError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
@@ -258,13 +258,10 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
     const agentId = params.agentId;
 
     if (!tenantId || !agentId) {
-      return json({ error: "Missing tenant or agent ID" }, { status: 400 });
+      throw new ValidationError("Missing tenant or agent ID");
     }
 
-    const error = checkPermission(locals, tenantId);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId);
 
     const body = await request.json();
 
@@ -301,21 +298,13 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
       { status: 201 },
     );
   } catch (error) {
-    log.error("Error creating agent absence:", JSON.stringify(error || "?"));
+    logError(log)("Creating agent absence failed", error, locals.user?.userId, params.id);
 
-    if (error instanceof ValidationError) {
-      return json({ error: error.message }, { status: 400 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Agent not found" }, { status: 404 });
-    }
-
-    if (error instanceof ConflictError) {
-      return json({ error: error.message }, { status: 409 });
-    }
-
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };
 
@@ -327,13 +316,10 @@ export const GET: RequestHandler = async ({ params, locals, url }) => {
     const agentId = params.agentId;
 
     if (!tenantId || !agentId) {
-      return json({ error: "Missing tenant or agent ID" }, { status: 400 });
+      throw new ValidationError("Missing tenant or agent ID");
     }
 
-    const error = checkPermission(locals, tenantId);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId);
 
     // Get optional query parameters for date filtering
     const startDate = url.searchParams.get("startDate");
@@ -365,16 +351,12 @@ export const GET: RequestHandler = async ({ params, locals, url }) => {
       absences,
     });
   } catch (error) {
-    log.error("Error getting agent absences:", JSON.stringify(error || "?"));
+    logError(log)("Getting agent absences failed", error, locals.user?.userId, params.id);
 
-    if (error instanceof ValidationError) {
-      return json({ error: error.message }, { status: 400 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Agent not found" }, { status: 404 });
-    }
-
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };

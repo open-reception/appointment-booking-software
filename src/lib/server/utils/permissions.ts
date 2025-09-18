@@ -1,4 +1,4 @@
-import { json } from "@sveltejs/kit";
+import { AuthenticationError, AuthorizationError } from "./errors";
 
 /**
  * Check whether the user can access the data within a route.
@@ -10,29 +10,32 @@ export const checkPermission = (
   locals: App.Locals,
   tenantId: string | null,
   administrative: boolean = false,
-): Response | null => {
+  global: boolean = false,
+): void => {
   if (!locals.user) {
-    return json({ error: "Authentication required" }, { status: 401 });
+    throw new AuthenticationError();
   }
   if (locals.user.role === "GLOBAL_ADMIN") {
     // Global admin can view absences for any tenant
-    return null;
+    return;
   } else if (
+    !global &&
     locals.user.role === "TENANT_ADMIN" &&
     tenantId != null &&
     locals.user.tenantId === tenantId
   ) {
     // Tenant admin and staff can view absences for their own tenant
-    return null;
+    return;
   } else if (
+    !global &&
     !administrative &&
     locals.user.role === "STAFF" &&
     tenantId != null &&
     locals.user.tenantId === tenantId
   ) {
     // Tenant admin and staff can view absences for their own tenant
-    return null;
+    return;
   } else {
-    return json({ error: "Insufficient permissions" }, { status: 403 });
+    throw new AuthorizationError();
   }
 };

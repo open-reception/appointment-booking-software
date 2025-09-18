@@ -1,10 +1,17 @@
 import { json } from "@sveltejs/kit";
 import { ChannelService } from "$lib/server/services/channel-service";
-import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
+import {
+  ValidationError,
+  NotFoundError,
+  BackendError,
+  InternalError,
+  logError,
+} from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 import { checkPermission } from "$lib/server/utils/permissions";
+import { ERRORS } from "$lib/errors";
 
 // Register OpenAPI documentation for GET
 registerOpenAPIRoute("/tenants/{id}/channels/{channelId}", "GET", {
@@ -405,13 +412,10 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     const channelId = params.channelId;
 
     if (!tenantId || !channelId) {
-      return json({ error: "Missing tenant or channel ID" }, { status: 400 });
+      throw new ValidationError("Missing tenant or channel ID");
     }
 
-    const error = checkPermission(locals, tenantId, true);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId, true);
 
     log.debug("Getting channel details", {
       tenantId,
@@ -423,7 +427,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     const channel = await channelService.getChannelById(channelId);
 
     if (!channel) {
-      return json({ error: "Channel not found" }, { status: 404 });
+      throw new NotFoundError(ERRORS.CHANNELS.NOT_FOUND);
     }
 
     log.debug("Channel details retrieved successfully", {
@@ -436,13 +440,12 @@ export const GET: RequestHandler = async ({ params, locals }) => {
       channel,
     });
   } catch (error) {
-    log.error("Error getting channel details:", JSON.stringify(error || "?"));
+    logError(log)("Error getting channel details", error, locals.user?.userId, params.id);
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Channel not found" }, { status: 404 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
-
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };
 
@@ -454,13 +457,10 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
     const channelId = params.channelId;
 
     if (!tenantId || !channelId) {
-      return json({ error: "Missing tenant or channel ID" }, { status: 400 });
+      throw new ValidationError("Missing tenant or channel ID");
     }
 
-    const error = checkPermission(locals, tenantId, true);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId, true);
 
     const body = await request.json();
 
@@ -485,17 +485,13 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
       channel: updatedChannel,
     });
   } catch (error) {
-    log.error("Error updating channel:", JSON.stringify(error || "?"));
+    logError(log)("Error updating channel", error, locals.user?.userId, params.id);
 
-    if (error instanceof ValidationError) {
-      return json({ error: error.message }, { status: 400 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Channel not found" }, { status: 404 });
-    }
-
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };
 
@@ -507,13 +503,10 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
     const channelId = params.channelId;
 
     if (!tenantId || !channelId) {
-      return json({ error: "Missing tenant or channel ID" }, { status: 400 });
+      throw new ValidationError("Missing tenant or channel ID");
     }
 
-    const error = checkPermission(locals, tenantId, true);
-    if (error) {
-      return error;
-    }
+    checkPermission(locals, tenantId, true);
 
     log.debug("Deleting channel", {
       tenantId,
@@ -525,7 +518,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
     const deleted = await channelService.deleteChannel(channelId);
 
     if (!deleted) {
-      return json({ error: "Channel not found" }, { status: 404 });
+      throw new NotFoundError(ERRORS.CHANNELS.NOT_FOUND);
     }
 
     log.debug("Channel deleted successfully", {
@@ -538,12 +531,12 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
       message: "Channel deleted successfully",
     });
   } catch (error) {
-    log.error("Error deleting channel:", JSON.stringify(error || "?"));
+    logError(log)("Error deleting channel", error, locals.user?.userId, params.id);
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Channel not found" }, { status: 404 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };

@@ -184,9 +184,7 @@ describe("/api/tenants", () => {
       } as any);
       const data = await response.json();
 
-      expect(data).toEqual({
-        message: "Invalid tenant creation request",
-      });
+      expect(data.error).toEqual("Invalid tenant creation request");
       expect(response.status).toBe(422);
     });
 
@@ -226,9 +224,7 @@ describe("/api/tenants", () => {
       } as any);
       const data = await response.json();
 
-      expect(data).toEqual({
-        error: ERRORS.TENANTS.NAME_EXISTS,
-      });
+      expect(data.error).toEqual(ERRORS.TENANTS.NAME_EXISTS);
       expect(response.status).toBe(409);
     });
 
@@ -268,9 +264,7 @@ describe("/api/tenants", () => {
       } as any);
       const data = await response.json();
 
-      expect(data).toEqual({
-        error: "Internal server error",
-      });
+      expect(data.error).toEqual("Internal server error");
       expect(response.status).toBe(500);
     });
   });
@@ -339,9 +333,7 @@ describe("/api/tenants", () => {
       } as any);
       const data = await response.json();
 
-      expect(data).toEqual({
-        error: "Internal server error",
-      });
+      expect(data.error).toEqual("Internal server error");
       expect(response.status).toBe(500);
     });
   });
