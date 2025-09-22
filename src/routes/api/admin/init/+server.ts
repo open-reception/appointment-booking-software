@@ -149,6 +149,7 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
         email: body.email,
         passphrase: body.passphrase, // Will be undefined if passkey is used
         language: body.language || "de",
+        role: "GLOBAL_ADMIN",
       },
       url,
     );
