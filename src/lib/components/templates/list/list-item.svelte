@@ -45,12 +45,12 @@
         <img
           src={image}
           alt={title}
-          class="h-10 w-10 rounded-md object-cover object-center"
+          class="size-10 rounded-md border object-cover object-center"
           loading="lazy"
         />
       {:else if typeof image === "function"}
         {@const Fallback = image as Component}
-        <Fallback class="bg-muted text-muted-foreground size-8 rounded-sm border stroke-1 p-1" />
+        <Fallback class="bg-muted text-muted-foreground size-10 rounded-sm border stroke-1 p-1" />
       {/if}
     {/if}
     <div></div>

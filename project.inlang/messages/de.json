@@ -182,7 +182,7 @@
 		"openMenu": "Menü öffnen",
 		"inputCroppedImageBlob": {
 			"trigger": "Bild hochladen",
-			"description": "Unterstützte Formate sind JPG, PNG, WEBP",
+			"description": "Unterstützte Formate sind JPG, PNG, GIF, WEBP",
 			"remove": "Bild entfernen",
 			"crop": {
 				"title": "Bild zuschneiden",

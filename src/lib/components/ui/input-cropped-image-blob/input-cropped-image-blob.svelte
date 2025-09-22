@@ -240,7 +240,7 @@
   <input
     bind:this={fileInput}
     type="file"
-    accept="image/jpeg, image/png, image/webp"
+    accept="image/jpeg, image/png, image/gif, image/webp"
     class="hidden"
     onchange={handleFileSelect}
   />
@@ -250,7 +250,7 @@
     {#if value}
       <Button
         size="xs"
-        class="absolute top-1 right-1 rounded-sm !px-1 py-1"
+        class="absolute top-1 right-1 cursor-pointer rounded-sm !px-1 py-1"
         onclick={() => (value = null)}
       >
         <Trash />

@@ -190,7 +190,7 @@
 		"openMenu": "Open menu",
 		"inputCroppedImageBlob": {
 			"trigger": "Upload Image",
-			"description": "Supported formats are JPG, PNG and WEBP",
+			"description": "Supported formats are JPG, PNG, GIF and WEBP",
 			"remove": "Remove Image",
 			"crop": {
 				"title": "Crop Image",

@@ -14,7 +14,12 @@
   let { entity, done }: { entity: TAgent; done: () => void } = $props();
 
   const form = superForm(
-    { id: entity.id, name: entity.name, description: entity.description, image: entity.image },
+    {
+      id: entity.id,
+      name: entity.name,
+      description: entity.description,
+      image: entity.image ?? "",
+    },
     {
       validators: zodClient(formSchema),
       onResult: async (event) => {
@@ -59,7 +64,7 @@
     <Form.Control>
       {#snippet children({ props })}
         <Form.Label>{m["agents.add.fields.image.title"]()}</Form.Label>
-        <InputCroppedImageBlob {...props} FallbackIcon={ItemIcon} />
+        <InputCroppedImageBlob {...props} bind:value={$formData.image} FallbackIcon={ItemIcon} />
       {/snippet}
     </Form.Control>
     <Form.FieldErrors />
