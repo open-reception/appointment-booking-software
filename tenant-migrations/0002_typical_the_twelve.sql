@@ -1,1 +1,1 @@
-ALTER TABLE "agent" ALTER COLUMN "image" SET DATA TYPE varchar(100000);
+ALTER TABLE "agent" ALTER COLUMN "image" SET DATA TYPE varchar(250000);
