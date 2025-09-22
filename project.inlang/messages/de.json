@@ -228,11 +228,11 @@
 		"title": "Akteure",
 		"empty": {
 			"title": "Bisher keine Akteure",
-			"description": "Akteure sind erforderliche Teilnehmer bei Terminen."
+			"description": "Akteure sind erforderliche Teilnehmer:innen bei Terminen."
 		},
 		"add": {
-			"title": "Akteur hinzufügen",
-			"description": "Erstelle einen Akteur, der Termine entgegennehmen kann.",
+			"title": "Akteur:in hinzufügen",
+			"description": "Erstelle eine Akteur:in, der/die Termine entgegennehmen kann.",
 			"fields": {
 				"name": {
 					"title": "Name",
@@ -248,10 +248,10 @@
 					"title": "Bild (optional)"
 				}
 			},
-			"action": "Akteur hinzufügen",
-			"success": "Akteur hinzugefügt",
+			"action": "Akteur:in hinzufügen",
+			"success": "Akteur:in hinzugefügt",
 			"errors": {
-				"unkonwn": "Konnte Akteur nicht hinzufügen"
+				"unkonwn": "Konnte Akteur:in nicht hinzufügen"
 			}
 		},
 		"list": {
@@ -261,19 +261,19 @@
 			}
 		},
 		"delete": {
-			"title": "Akteur löschen",
-			"description": "Tippe {name} um den Akteur zu löschen.",
-			"action": "Akteur löschen",
-			"success": "Akteur gelöscht",
-			"error": "Konnte Akteur nicht löschen."
+			"title": "Akteur:in löschen",
+			"description": "Tippe {name} um den/die Akteur:in zu löschen.",
+			"action": "Akteur:in löschen",
+			"success": "Akteur:in gelöscht",
+			"error": "Konnte Akteur:in nicht löschen."
 		},
 		"loading": "Lade Akteure",
 		"edit": {
-			"title": "Akteur bearbeiten",
-			"description": "Aktualisiere die öffentlichen Informationen des Akteurs.",
-			"success": "Akteur aktualisiert",
-			"error": "Konnte Akteur nicht aktualisieren.",
-			"action": "Akteur bearbeiten"
+			"title": "Akteur:in bearbeiten",
+			"description": "Aktualisiere die öffentlichen Informationen des/der Akteurs:in.",
+			"success": "Akteur:in aktualisiert",
+			"error": "Konnte Akteur:in nicht aktualisieren.",
+			"action": "Übernehmen"
 		}
 	}
 }
