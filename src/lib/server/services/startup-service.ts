@@ -1,108 +1,127 @@
 import { centralDb } from "../db";
 import { tenant } from "../db/central-schema";
 import { TenantMigrationService } from "./tenant-migration-service";
+import { CentralDatabaseMigrationService } from "./central-database-migration-service";
 import { UniversalLogger } from "$lib/logger";
 
 const logger = new UniversalLogger().setContext("StartupService");
 
 export class StartupService {
-	private static initialized = false;
+  private static initialized = false;
 
-	/**
-	 * Initialize the application on startup
-	 * This should be called once when the application starts
-	 */
-	static async initialize(): Promise<void> {
-		if (this.initialized) {
-			logger.debug("StartupService already initialized, skipping");
-			return;
-		}
+  /**
+   * Initialize the application on startup
+   * This should be called once when the application starts
+   */
+  static async initialize(): Promise<void> {
+    if (this.initialized) {
+      logger.debug("StartupService already initialized, skipping");
+      return;
+    }
 
-		logger.info("Starting application initialization");
+    logger.info("Starting application initialization");
 
-		try {
-			// Check and migrate all tenant databases
-			await this.migrateTenantDatabases();
+    try {
+      // First ensure central database is up to date
+      await this.ensureCentralDatabase();
 
-			this.initialized = true;
-			logger.info("Application initialization completed successfully");
-		} catch (error) {
-			logger.error("Application initialization failed", { error: String(error) });
-			throw error;
-		}
-	}
+      // Then check and migrate all tenant databases
+      await this.migrateTenantDatabases();
 
-	/**
-	 * Check and migrate all tenant databases
-	 */
-	private static async migrateTenantDatabases(): Promise<void> {
-		logger.info("Checking tenant database migrations");
+      this.initialized = true;
+      logger.info("Application initialization completed successfully");
+    } catch (error) {
+      logger.error("Application initialization failed", { error: String(error) });
+      throw error;
+    }
+  }
 
-		try {
-			// Get all tenants from central database
-			const tenants = await centralDb
-				.select({
-					id: tenant.id,
-					shortName: tenant.shortName,
-					databaseUrl: tenant.databaseUrl
-				})
-				.from(tenant);
+  /**
+   * Ensure central database exists and is up to date
+   */
+  private static async ensureCentralDatabase(): Promise<void> {
+    logger.info("Ensuring central database is up to date");
 
-			if (tenants.length === 0) {
-				logger.info("No tenants found, skipping tenant database migrations");
-				return;
-			}
+    try {
+      await CentralDatabaseMigrationService.ensureCentralDatabaseUpToDate();
+      logger.info("Central database is ready");
+    } catch (error) {
+      logger.error("Failed to setup central database", { error: String(error) });
+      throw error;
+    }
+  }
 
-			logger.info(`Found ${tenants.length} tenants, checking migrations`);
+  /**
+   * Check and migrate all tenant databases
+   */
+  private static async migrateTenantDatabases(): Promise<void> {
+    logger.info("Checking tenant database migrations");
 
-			// Process tenants in parallel (but with concurrency limit)
-			const migrationPromises = tenants.map(async (tenantData) => {
-				try {
-					logger.debug("Checking tenant database migration", {
-						tenantId: tenantData.id,
-						shortName: tenantData.shortName
-					});
+    try {
+      // Get all tenants from central database
+      const tenants = await centralDb
+        .select({
+          id: tenant.id,
+          shortName: tenant.shortName,
+          databaseUrl: tenant.databaseUrl,
+        })
+        .from(tenant);
 
-					await TenantMigrationService.ensureTenantDatabaseUpToDate(tenantData.databaseUrl);
+      if (tenants.length === 0) {
+        logger.info("No tenants found, skipping tenant database migrations");
+        return;
+      }
 
-					logger.debug("Tenant database migration completed", {
-						tenantId: tenantData.id,
-						shortName: tenantData.shortName
-					});
-				} catch (error) {
-					logger.error("Failed to migrate tenant database", {
-						tenantId: tenantData.id,
-						shortName: tenantData.shortName,
-						databaseUrl: tenantData.databaseUrl,
-						error: String(error)
-					});
+      logger.info(`Found ${tenants.length} tenants, checking migrations`);
 
-					// Don't throw here - we want to continue with other tenants
-					// In production, you might want to implement retry logic or alerts
-				}
-			});
+      // Process tenants in parallel (but with concurrency limit)
+      const migrationPromises = tenants.map(async (tenantData) => {
+        try {
+          logger.debug("Checking tenant database migration", {
+            tenantId: tenantData.id,
+            shortName: tenantData.shortName,
+          });
 
-			// Wait for all migrations to complete
-			await Promise.all(migrationPromises);
+          await TenantMigrationService.ensureTenantDatabaseUpToDate(tenantData.databaseUrl);
 
-			logger.info("All tenant database migrations completed");
-		} catch (error) {
-			logger.error("Failed to migrate tenant databases", { error: String(error) });
-			throw error;
-		}
-	}
+          logger.debug("Tenant database migration completed", {
+            tenantId: tenantData.id,
+            shortName: tenantData.shortName,
+          });
+        } catch (error) {
+          logger.error("Failed to migrate tenant database", {
+            tenantId: tenantData.id,
+            shortName: tenantData.shortName,
+            databaseUrl: tenantData.databaseUrl,
+            error: String(error),
+          });
 
-	/**
-	 * Force re-initialization (useful for testing)
-	 */
-	static reset(): void {
-		this.initialized = false;
-	}
+          // Don't throw here - we want to continue with other tenants
+          // In production, you might want to implement retry logic or alerts
+        }
+      });
 
-	/**
-	 * Check if the startup service has been initialized
-	 */
-	static isInitialized(): boolean {
-		return this.initialized;
-	}
+      // Wait for all migrations to complete
+      await Promise.all(migrationPromises);
+
+      logger.info("All tenant database migrations completed");
+    } catch (error) {
+      logger.error("Failed to migrate tenant databases", { error: String(error) });
+      throw error;
+    }
+  }
+
+  /**
+   * Force re-initialization (useful for testing)
+   */
+  static reset(): void {
+    this.initialized = false;
+  }
+
+  /**
+   * Check if the startup service has been initialized
+   */
+  static isInitialized(): boolean {
+    return this.initialized;
+  }
 }

@@ -20,17 +20,17 @@ const RATE_LIMIT_MAX_REQUESTS = 10;
  * @returns {string} The client IP address or 'unknown'
  */
 function getClientIP(request: Request): string {
-	const forwarded = request.headers.get("x-forwarded-for");
-	if (forwarded) {
-		return forwarded.split(",")[0].trim();
-	}
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    return forwarded.split(",")[0].trim();
+  }
 
-	const realIP = request.headers.get("x-real-ip");
-	if (realIP) {
-		return realIP;
-	}
+  const realIP = request.headers.get("x-real-ip");
+  if (realIP) {
+    return realIP;
+  }
 
-	return "unknown";
+  return "unknown";
 }
 
 /**
@@ -43,35 +43,35 @@ function getClientIP(request: Request): string {
  * @returns {boolean} True if client is rate limited, false otherwise
  */
 function isRateLimited(clientIP: string): boolean {
-	const now = Date.now();
-	const key = clientIP;
+  const now = Date.now();
+  const key = clientIP;
 
-	const record = rateLimitStore.get(key);
+  const record = rateLimitStore.get(key);
 
-	if (!record || now > record.resetTime) {
-		// Reset or create new record
-		rateLimitStore.set(key, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
-		return false;
-	}
+  if (!record || now > record.resetTime) {
+    // Reset or create new record
+    rateLimitStore.set(key, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return false;
+  }
 
-	if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
-		return true;
-	}
+  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return true;
+  }
 
-	record.count++;
-	return false;
+  record.count++;
+  return false;
 }
 
 /**
  * Clean up limit store every minute
  */
 setInterval(() => {
-	const now = Date.now();
-	for (const [key, record] of rateLimitStore.entries()) {
-		if (now > record.resetTime) {
-			rateLimitStore.delete(key);
-		}
-	}
+  const now = Date.now();
+  for (const [key, record] of rateLimitStore.entries()) {
+    if (now > record.resetTime) {
+      rateLimitStore.delete(key);
+    }
+  }
 }, 60000);
 
 /**
@@ -83,20 +83,20 @@ setInterval(() => {
  * @returns {Promise<Response>} The response with applied headers and rate limiting
  */
 export const rateLimitHandle: Handle = async ({ event, resolve }) => {
-	const { request } = event;
-	const clientIP = getClientIP(request);
+  const { request } = event;
+  const clientIP = getClientIP(request);
 
-	if (isRateLimited(clientIP)) {
-		return new Response("Too Many Requests", {
-			status: 429,
-			headers: {
-				"Retry-After": "1",
-				"Content-Type": "text/plain"
-			}
-		});
-	}
+  if (isRateLimited(clientIP)) {
+    return new Response("Too Many Requests", {
+      status: 429,
+      headers: {
+        "Retry-After": "1",
+        "Content-Type": "text/plain",
+      },
+    });
+  }
 
-	const response = await resolve(event);
+  const response = await resolve(event);
 
-	return response;
+  return response;
 };

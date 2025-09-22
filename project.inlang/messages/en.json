@@ -6,5 +6,214 @@
 		"label": "Select Language",
 		"search": "Search Language",
 		"notFound": "Language not found"
-	}
+	},
+	"setup": {
+		"start": "Start configuration",
+		"create_admin_account": {
+			"title": "Create Admin Account",
+			"description": "We’ll start by adding your admin account. It will be used to manage this instance.",
+			"action": "Send Verification E-Mail",
+			"success": "Account created!",
+			"error": "An unkonwn error occured."
+		},
+		"verify_email": {
+			"title": "Check your E-Mail",
+			"description": "We’ve send you a magic link to {email}",
+			"action": "Resend E-Mail",
+			"success": "E-Mail was resent"
+		},
+		"confirm": {
+			"success": {
+				"title": "Good job!",
+				"description": "You’ve secured this instance.",
+				"hint": "Next step is setting up a tenant to collect appointments",
+				"action": "Add first Tenant"
+			},
+			"error": {
+				"title": "Verification failed",
+				"description": "The magic link you’ve tried is incorrect or outdated"
+			}
+		}
+	},
+	"slogan": "End-to-End encrypted appointment booking platform.",
+	"logo": "OpenReception Logo: A 3D pixel art with calendar that's also a lock",
+	"form": {
+		"email": "E-Mail Address",
+		"passphrase": "Passphrase",
+		"passphraseRequirements": "At least 30 characters.",
+		"errors": {
+			"email": "Invalid format",
+			"passphrase": "Must be at least 30 characters long",
+			"noPassAtAll": "Either passphrase or passkey is required",
+			"bothPassSet": "Only one of passphrase or passkey should be provided",
+			"name": "Must be at least 2 characters",
+			"shortname": "Must be between 4 and 15 characters",
+			"deleteConfirmation": "Must be exactly »{expectedValue}«"
+		},
+		"noPassAtAll": "Either passphrase or passkey is required",
+		"passkey": "Passkey",
+		"name": "Name"
+	},
+	"login": {
+		"or": "Or",
+		"usePasskey": "use passkey",
+		"usePassphrase": "use passphrase",
+		"orUse": "Or {button}",
+		"title": "Login",
+		"description_passphrase": "Enter your email and passphrase below to access your account.",
+		"action": "Login",
+		"error": "Login failed. Please retry",
+		"passphrase": {
+			"initial": "Requesting passkey",
+			"success": "Passkey saved",
+			"error": "Passkey could not be retrieved"
+		}
+	},
+	"confirm": {
+		"success": {
+			"title": "You’re all set!",
+			"description": "You’ve successfully secured your account",
+			"action": "Proceed"
+		},
+		"error": {
+			"title": "Verification failed",
+			"description": "The magic link you’ve tried is incorrect or outdated",
+			"action": "Request new E-Mail"
+		},
+		"title": "E-Mail verification",
+		"resend": {
+			"title": "Resend Verification E-Mail",
+			"description": "Enter your e-mail address to get the verification link again.",
+			"action": "Resend E-Mail",
+			"success": "E-Mail sent"
+		}
+	},
+	"logout": {
+		"title": "Logout complete",
+		"description": "You are logged-out.",
+		"success": "Logout successful",
+		"action": "Go to Login"
+	},
+	"passkey": {
+		"add": {
+			"initial": "Waiting for E-Mail Address",
+			"click": "Click/Tap to add passkey",
+			"loading": "Completing challenge",
+			"user": "Waiting for creation to complete",
+			"success": "Added Passkey successfully",
+			"error": "Passkey could not be added",
+			"retry": "Retry"
+		}
+	},
+	"nav": {
+		"home": "Home",
+		"tenants": "Tenants",
+		"calendar": "Calendar",
+		"staff": "Staff",
+		"agents": "Agents",
+		"channels": "Channels",
+		"absences": "Absences",
+		"account": "Account",
+		"settings": "Settings",
+		"documentation": "Documentation",
+		"addTenant": "Add tenant",
+		"noTenantSelected": {
+			"title": "No tenant selected",
+			"description": "Click to configure"
+		},
+		"logout": "Log out",
+		"toggleSidebar": "Toggle sidebar"
+	},
+	"tenants": {
+		"title": "Tenants",
+		"empty": {
+			"title": "No tenants yet",
+			"description": "Create a site for someone to start collecting appointments."
+		},
+		"add": {
+			"title": "Add Tenant",
+			"description": "Create a site for someone to start collecting appointments.",
+			"name": {
+				"description": "Must be unique on this server. Used as a subdomain {domain}",
+				"errors": {
+					"urlFormat": "Only letters, numbers, and hyphens are allowed",
+					"startEndDash": "Must not start or end with a dash"
+				}
+			},
+			"invite": {
+				"title": "Invite a tenant admin"
+			},
+			"email": {
+				"description": "This person will receive a magic link to set up their account."
+			},
+			"action": "Add Tenant",
+			"success": "Tenant added",
+			"errors": {
+				"nameTaken": "Could not add tenant. This name is already taken.",
+				"unkonwn": "Could not add tenant",
+				"emailTaken": "Could not add tenant. This E-Mail Address is already in use.",
+				"startEndDash": "Cannot start or end with a dash"
+			}
+		},
+		"list": {
+			"empty": {
+				"title": "No tenants yet",
+				"description": "Click the button above to add your first tenant."
+			},
+			"manage": "Manage",
+			"view": "View"
+		},
+		"delete": {
+			"title": "Delete Tenant",
+			"description": "Type {name} to confirm.",
+			"action": "Delete Tenant",
+			"success": "Tenant deleted",
+			"error": "Could not delete tenant.",
+			"unavailable": {
+				"title": "Cannot delete active tenant",
+				"description": "You cannot delete the tenant you are currently configuring. Please switch to another tenant before deleting this one."
+			}
+		},
+		"loading": "Loading tenants",
+		"allTenants": "All tenants",
+		"unselectTenant": "Unselect tenant",
+		"failedToSwitch": "Failed to switch tenant",
+		"edit": {
+			"title": "Edit Tenant",
+			"description": "Update the tenant's short name.",
+			"success": "Tenant updated",
+			"error": "Could not update tenant.",
+			"action": "Edit Tenant"
+		}
+	},
+	"components": {
+		"openMenu": "Open menu"
+	},
+	"cancel": "Cancel",
+	"actions": "Actions",
+	"edit": "Edit",
+	"pause": "Pause",
+	"delete": "Delete",
+	"select": "Select",
+	"dashboard": {
+		"hello": "Hello",
+		"tenants": {
+			"currentTenant": "You are currently managing tenant {name}.",
+			"setup": {
+				"title": "This server is ready to use",
+				"sections": {
+					"tenants": {
+						"title": "Setup first tenant",
+						"description": "Tenants are the organizations/individuals that will collect appointments.",
+						"action": "Add first Tenant"
+					}
+				}
+			}
+		},
+		"sidebar": {
+			"title": "Zum ersten Mal hier?",
+			"description": "Tippe {name} um die Seitenleiste umzustellen"
+		}
+	},
+	"close": "Schließen"
 }

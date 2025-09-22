@@ -1,149 +1,149 @@
 import { json } from "@sveltejs/kit";
 import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
-import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
+import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 import z from "zod/v4";
+import { checkPermission } from "$lib/server/utils/permissions";
+import { ERRORS } from "$lib/errors";
 
 const setupStateSchema = z.object({
-	setupState: z.enum(["NEW", "SETTINGS_CREATED", "AGENTS_SET_UP", "FIRST_CHANNEL_CREATED"])
+  setupState: z.enum(["NEW", "SETTINGS_CREATED", "AGENTS_SET_UP", "FIRST_CHANNEL_CREATED"]),
 });
 
 // Register OpenAPI documentation for PUT
 registerOpenAPIRoute("/tenants/{id}/setup-state", "PUT", {
-	summary: "Update tenant setup state",
-	description: "Updates the setup state for a specific tenant",
-	tags: ["Tenants"],
-	parameters: [
-		{
-			name: "id",
-			in: "path",
-			required: true,
-			schema: { type: "string" },
-			description: "Tenant ID"
-		}
-	],
-	requestBody: {
-		description: "Setup state update",
-		content: {
-			"application/json": {
-				schema: {
-					type: "object",
-					properties: {
-						setupState: {
-							type: "string",
-							enum: ["NEW", "SETTINGS_CREATED", "AGENTS_SET_UP", "FIRST_CHANNEL_CREATED"],
-							description: "The new setup state for the tenant"
-						}
-					},
-					required: ["setupState"]
-				}
-			}
-		}
-	},
-	responses: {
-		"200": {
-			description: "Tenant setup state updated successfully",
-			content: {
-				"application/json": {
-					schema: {
-						type: "object",
-						properties: {
-							message: { type: "string", description: "Success message" },
-							tenant: {
-								type: "object",
-								properties: {
-									id: { type: "string", description: "Tenant ID" },
-									setupState: {
-										type: "string",
-										enum: ["NEW", "SETTINGS_CREATED", "AGENTS_SET_UP", "FIRST_CHANNEL_CREATED"],
-										description: "Current setup state"
-									},
-									updatedAt: {
-										type: "string",
-										format: "date-time",
-										description: "Last update timestamp"
-									}
-								}
-							}
-						},
-						required: ["message", "tenant"]
-					}
-				}
-			}
-		},
-		"400": {
-			description: "Invalid input data",
-			content: {
-				"application/json": {
-					schema: { $ref: "#/components/schemas/Error" }
-				}
-			}
-		},
-		"404": {
-			description: "Tenant not found",
-			content: {
-				"application/json": {
-					schema: { $ref: "#/components/schemas/Error" }
-				}
-			}
-		},
-		"500": {
-			description: "Internal server error",
-			content: {
-				"application/json": {
-					schema: { $ref: "#/components/schemas/Error" }
-				}
-			}
-		}
-	}
+  summary: "Update tenant setup state",
+  description: "Updates the setup state for a specific tenant",
+  tags: ["Tenants"],
+  parameters: [
+    {
+      name: "id",
+      in: "path",
+      required: true,
+      schema: { type: "string" },
+      description: "Tenant ID",
+    },
+  ],
+  requestBody: {
+    description: "Setup state update",
+    content: {
+      "application/json": {
+        schema: {
+          type: "object",
+          properties: {
+            setupState: {
+              type: "string",
+              enum: ["NEW", "SETTINGS_CREATED", "AGENTS_SET_UP", "FIRST_CHANNEL_CREATED"],
+              description: "The new setup state for the tenant",
+            },
+          },
+          required: ["setupState"],
+        },
+      },
+    },
+  },
+  responses: {
+    "200": {
+      description: "Tenant setup state updated successfully",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              message: { type: "string", description: "Success message" },
+              tenant: {
+                type: "object",
+                properties: {
+                  id: { type: "string", description: "Tenant ID" },
+                  setupState: {
+                    type: "string",
+                    enum: ["NEW", "SETTINGS_CREATED", "AGENTS_SET_UP", "FIRST_CHANNEL_CREATED"],
+                    description: "Current setup state",
+                  },
+                  updatedAt: {
+                    type: "string",
+                    format: "date-time",
+                    description: "Last update timestamp",
+                  },
+                },
+              },
+            },
+            required: ["message", "tenant"],
+          },
+        },
+      },
+    },
+    "400": {
+      description: "Invalid input data",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "404": {
+      description: "Tenant not found",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "500": {
+      description: "Internal server error",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+  },
 });
 
-export const PUT: RequestHandler = async ({ params, request }) => {
-	const log = logger.setContext("API");
+export const PUT: RequestHandler = async ({ locals, params, request }) => {
+  const log = logger.setContext("API");
 
-	try {
-		const tenantId = params.id;
-		const body = await request.json();
+  try {
+    const tenantId = params.id;
+    const body = await request.json();
 
-		log.debug("Updating tenant setup state", {
-			tenantId,
-			setupState: body.setupState
-		});
+    log.debug("Updating tenant setup state", {
+      tenantId,
+      setupState: body.setupState,
+    });
 
-		if (!tenantId) {
-			return json({ error: "No tenant id given" }, { status: 400 });
-		}
+    if (!tenantId) {
+      throw new ValidationError(ERRORS.TENANTS.NO_TENANT_ID);
+    }
 
-		const validation = setupStateSchema.safeParse(body);
-		if (!validation.success) {
-			return json({ error: "Invalid setup state" }, { status: 400 });
-		}
+    checkPermission(locals, tenantId, true);
 
-		const tenantService = await TenantAdminService.getTenantById(tenantId);
-		const updatedTenant = await tenantService.setSetupState(validation.data.setupState);
+    const validation = setupStateSchema.safeParse(body);
+    if (!validation.success) {
+      return json({ error: "Invalid setup state" }, { status: 400 });
+    }
 
-		log.debug("Tenant setup state updated successfully", {
-			tenantId,
-			setupState: validation.data.setupState
-		});
+    const tenantService = await TenantAdminService.getTenantById(tenantId);
+    const updatedTenant = await tenantService.setSetupState(validation.data.setupState);
 
-		return json({
-			message: "Tenant setup state updated successfully",
-			tenant: updatedTenant
-		});
-	} catch (error) {
-		log.error("Error updating tenant setup state:", JSON.stringify(error || "?"));
+    log.debug("Tenant setup state updated successfully", {
+      tenantId,
+      setupState: validation.data.setupState,
+    });
 
-		if (error instanceof ValidationError) {
-			return json({ error: error.message }, { status: 400 });
-		}
+    return json({
+      message: "Tenant setup state updated successfully",
+      tenant: updatedTenant,
+    });
+  } catch (error) {
+    logError(log)("Error updating tenant setup state", error, locals.user?.userId, params.id);
 
-		if (error instanceof NotFoundError) {
-			return json({ error: "Tenant not found" }, { status: 404 });
-		}
+    if (error instanceof BackendError) {
+      return error.toJson();
+    }
 
-		return json({ error: "Internal server error" }, { status: 500 });
-	}
+    return new InternalError().toJson();
+  }
 };

@@ -1,456 +1,425 @@
 import { json } from "@sveltejs/kit";
 import { AgentService } from "$lib/server/services/agent-service";
-import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
+import {
+  ValidationError,
+  NotFoundError,
+  logError,
+  BackendError,
+  InternalError,
+} from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
+import { checkPermission } from "$lib/server/utils/permissions";
+import { ERRORS } from "$lib/errors";
 
 // Register OpenAPI documentation for GET
 registerOpenAPIRoute("/tenants/{id}/agents/{agentId}", "GET", {
-	summary: "Get agent details",
-	description:
-		"Retrieves detailed information about a specific agent. Only global admins and tenant admins can view agent details.",
-	tags: ["Agents"],
-	parameters: [
-		{
-			name: "id",
-			in: "path",
-			required: true,
-			schema: { type: "string", format: "uuid" },
-			description: "Tenant ID"
-		},
-		{
-			name: "agentId",
-			in: "path",
-			required: true,
-			schema: { type: "string", format: "uuid" },
-			description: "Agent ID"
-		}
-	],
-	responses: {
-		"200": {
-			description: "Agent details retrieved successfully",
-			content: {
-				"application/json": {
-					schema: {
-						type: "object",
-						properties: {
-							agent: {
-								type: "object",
-								properties: {
-									id: { type: "string", format: "uuid", description: "Agent ID" },
-									name: { type: "string", description: "Agent name" },
-									description: { type: "string", description: "Agent description" },
-									logo: { type: "string", format: "byte", description: "Agent logo" }
-								},
-								required: ["id", "name"]
-							}
-						},
-						required: ["agent"]
-					}
-				}
-			}
-		},
-		"401": {
-			description: "Authentication required",
-			content: {
-				"application/json": {
-					schema: { $ref: "#/components/schemas/Error" }
-				}
-			}
-		},
-		"403": {
-			description: "Insufficient permissions",
-			content: {
-				"application/json": {
-					schema: { $ref: "#/components/schemas/Error" }
-				}
-			}
-		},
-		"404": {
-			description: "Agent or tenant not found",
-			content: {
-				"application/json": {
-					schema: { $ref: "#/components/schemas/Error" }
-				}
-			}
-		},
-		"500": {
-			description: "Internal server error",
-			content: {
-				"application/json": {
-					schema: { $ref: "#/components/schemas/Error" }
-				}
-			}
-		}
-	}
+  summary: "Get agent details",
+  description:
+    "Retrieves detailed information about a specific agent. Global admins, tenant admins, and staff can view agent details.",
+  tags: ["Agents"],
+  parameters: [
+    {
+      name: "id",
+      in: "path",
+      required: true,
+      schema: { type: "string", format: "uuid" },
+      description: "Tenant ID",
+    },
+    {
+      name: "agentId",
+      in: "path",
+      required: true,
+      schema: { type: "string", format: "uuid" },
+      description: "Agent ID",
+    },
+  ],
+  responses: {
+    "200": {
+      description: "Agent details retrieved successfully",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              agent: {
+                type: "object",
+                properties: {
+                  id: { type: "string", format: "uuid", description: "Agent ID" },
+                  name: { type: "string", description: "Agent name" },
+                  description: { type: "string", description: "Agent description" },
+                  logo: { type: "string", format: "byte", description: "Agent logo" },
+                },
+                required: ["id", "name"],
+              },
+            },
+            required: ["agent"],
+          },
+        },
+      },
+    },
+    "401": {
+      description: "Authentication required",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "403": {
+      description: "Insufficient permissions",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "404": {
+      description: "Agent or tenant not found",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "500": {
+      description: "Internal server error",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+  },
 });
 
 // Register OpenAPI documentation for PUT
 registerOpenAPIRoute("/tenants/{id}/agents/{agentId}", "PUT", {
-	summary: "Update an agent",
-	description:
-		"Updates an existing agent for a specific tenant. Only global admins and tenant admins can update agents.",
-	tags: ["Agents"],
-	parameters: [
-		{
-			name: "id",
-			in: "path",
-			required: true,
-			schema: { type: "string", format: "uuid" },
-			description: "Tenant ID"
-		},
-		{
-			name: "agentId",
-			in: "path",
-			required: true,
-			schema: { type: "string", format: "uuid" },
-			description: "Agent ID"
-		}
-	],
-	requestBody: {
-		description: "Agent update data",
-		content: {
-			"application/json": {
-				schema: {
-					type: "object",
-					properties: {
-						name: {
-							type: "string",
-							minLength: 1,
-							maxLength: 100,
-							description: "Agent name",
-							example: "Updated Support Agent"
-						},
-						description: {
-							type: "string",
-							description: "Agent description",
-							example: "Updated description for customer support"
-						},
-						logo: {
-							type: "string",
-							format: "byte",
-							description: "Base64 encoded agent logo"
-						}
-					}
-				}
-			}
-		}
-	},
-	responses: {
-		"200": {
-			description: "Agent updated successfully",
-			content: {
-				"application/json": {
-					schema: {
-						type: "object",
-						properties: {
-							message: { type: "string", description: "Success message" },
-							agent: {
-								type: "object",
-								properties: {
-									id: { type: "string", format: "uuid", description: "Agent ID" },
-									name: { type: "string", description: "Agent name" },
-									description: { type: "string", description: "Agent description" },
-									logo: { type: "string", format: "byte", description: "Agent logo" }
-								},
-								required: ["id", "name"]
-							}
-						},
-						required: ["message", "agent"]
-					}
-				}
-			}
-		},
-		"400": {
-			description: "Invalid input data",
-			content: {
-				"application/json": {
-					schema: { $ref: "#/components/schemas/Error" }
-				}
-			}
-		},
-		"401": {
-			description: "Authentication required",
-			content: {
-				"application/json": {
-					schema: { $ref: "#/components/schemas/Error" }
-				}
-			}
-		},
-		"403": {
-			description: "Insufficient permissions",
-			content: {
-				"application/json": {
-					schema: { $ref: "#/components/schemas/Error" }
-				}
-			}
-		},
-		"404": {
-			description: "Agent or tenant not found",
-			content: {
-				"application/json": {
-					schema: { $ref: "#/components/schemas/Error" }
-				}
-			}
-		},
-		"500": {
-			description: "Internal server error",
-			content: {
-				"application/json": {
-					schema: { $ref: "#/components/schemas/Error" }
-				}
-			}
-		}
-	}
+  summary: "Update an agent",
+  description:
+    "Updates an existing agent for a specific tenant. Only global admins and tenant admins can update agents.",
+  tags: ["Agents"],
+  parameters: [
+    {
+      name: "id",
+      in: "path",
+      required: true,
+      schema: { type: "string", format: "uuid" },
+      description: "Tenant ID",
+    },
+    {
+      name: "agentId",
+      in: "path",
+      required: true,
+      schema: { type: "string", format: "uuid" },
+      description: "Agent ID",
+    },
+  ],
+  requestBody: {
+    description: "Agent update data",
+    content: {
+      "application/json": {
+        schema: {
+          type: "object",
+          properties: {
+            name: {
+              type: "string",
+              minLength: 1,
+              maxLength: 100,
+              description: "Agent name",
+              example: "Updated Support Agent",
+            },
+            description: {
+              type: "string",
+              description: "Agent description",
+              example: "Updated description for customer support",
+            },
+            logo: {
+              type: "string",
+              format: "byte",
+              description: "Base64 encoded agent logo",
+            },
+          },
+        },
+      },
+    },
+  },
+  responses: {
+    "200": {
+      description: "Agent updated successfully",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              message: { type: "string", description: "Success message" },
+              agent: {
+                type: "object",
+                properties: {
+                  id: { type: "string", format: "uuid", description: "Agent ID" },
+                  name: { type: "string", description: "Agent name" },
+                  description: { type: "string", description: "Agent description" },
+                  logo: { type: "string", format: "byte", description: "Agent logo" },
+                },
+                required: ["id", "name"],
+              },
+            },
+            required: ["message", "agent"],
+          },
+        },
+      },
+    },
+    "400": {
+      description: "Invalid input data",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "401": {
+      description: "Authentication required",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "403": {
+      description: "Insufficient permissions",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "404": {
+      description: "Agent or tenant not found",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "500": {
+      description: "Internal server error",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+  },
 });
 
 // Register OpenAPI documentation for DELETE
 registerOpenAPIRoute("/tenants/{id}/agents/{agentId}", "DELETE", {
-	summary: "Delete an agent",
-	description:
-		"Deletes an existing agent from a specific tenant. Only global admins and tenant admins can delete agents. This will also remove all channel assignments for this agent.",
-	tags: ["Agents"],
-	parameters: [
-		{
-			name: "id",
-			in: "path",
-			required: true,
-			schema: { type: "string", format: "uuid" },
-			description: "Tenant ID"
-		},
-		{
-			name: "agentId",
-			in: "path",
-			required: true,
-			schema: { type: "string", format: "uuid" },
-			description: "Agent ID"
-		}
-	],
-	responses: {
-		"200": {
-			description: "Agent deleted successfully",
-			content: {
-				"application/json": {
-					schema: {
-						type: "object",
-						properties: {
-							message: { type: "string", description: "Success message" }
-						},
-						required: ["message"]
-					}
-				}
-			}
-		},
-		"401": {
-			description: "Authentication required",
-			content: {
-				"application/json": {
-					schema: { $ref: "#/components/schemas/Error" }
-				}
-			}
-		},
-		"403": {
-			description: "Insufficient permissions",
-			content: {
-				"application/json": {
-					schema: { $ref: "#/components/schemas/Error" }
-				}
-			}
-		},
-		"404": {
-			description: "Agent or tenant not found",
-			content: {
-				"application/json": {
-					schema: { $ref: "#/components/schemas/Error" }
-				}
-			}
-		},
-		"500": {
-			description: "Internal server error",
-			content: {
-				"application/json": {
-					schema: { $ref: "#/components/schemas/Error" }
-				}
-			}
-		}
-	}
+  summary: "Delete an agent",
+  description:
+    "Deletes an existing agent from a specific tenant. Only global admins and tenant admins can delete agents. This will also remove all channel assignments for this agent.",
+  tags: ["Agents"],
+  parameters: [
+    {
+      name: "id",
+      in: "path",
+      required: true,
+      schema: { type: "string", format: "uuid" },
+      description: "Tenant ID",
+    },
+    {
+      name: "agentId",
+      in: "path",
+      required: true,
+      schema: { type: "string", format: "uuid" },
+      description: "Agent ID",
+    },
+  ],
+  responses: {
+    "200": {
+      description: "Agent deleted successfully",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              message: { type: "string", description: "Success message" },
+            },
+            required: ["message"],
+          },
+        },
+      },
+    },
+    "401": {
+      description: "Authentication required",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "403": {
+      description: "Insufficient permissions",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "404": {
+      description: "Agent or tenant not found",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "500": {
+      description: "Internal server error",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+  },
 });
 
 export const GET: RequestHandler = async ({ params, locals }) => {
-	const log = logger.setContext("API");
+  const log = logger.setContext("API");
 
-	try {
-		const tenantId = params.id;
-		const agentId = params.agentId;
+  try {
+    const tenantId = params.id;
+    const agentId = params.agentId;
 
-		// Check if user is authenticated
-		if (!locals.user) {
-			return json({ error: "Authentication required" }, { status: 401 });
-		}
+    // Check if user is authenticated
+    if (!tenantId || !agentId) {
+      throw new ValidationError(ERRORS.TENANTS.MISSING_TENANT_OR_AGENT_ID);
+    }
 
-		if (!tenantId || !agentId) {
-			return json({ error: "Missing tenant or agent ID" }, { status: 400 });
-		}
+    checkPermission(locals, tenantId);
 
-		// Authorization check: Only global admins and tenant admins can view agent details
-		if (locals.user.role === "GLOBAL_ADMIN") {
-			// Global admin can view agents for any tenant
-		} else if (locals.user.role === "TENANT_ADMIN" && locals.user.tenantId === tenantId) {
-			// Tenant admin can view agents for their own tenant
-		} else {
-			return json({ error: "Insufficient permissions" }, { status: 403 });
-		}
+    log.debug("Getting agent details", {
+      tenantId,
+      agentId,
+      requestedBy: locals.user?.userId,
+    });
 
-		log.debug("Getting agent details", {
-			tenantId,
-			agentId,
-			requestedBy: locals.user.userId
-		});
+    const agentService = await AgentService.forTenant(tenantId);
+    const agent = await agentService.getAgentById(agentId);
 
-		const agentService = await AgentService.forTenant(tenantId);
-		const agent = await agentService.getAgentById(agentId);
+    if (!agent) {
+      throw new NotFoundError("Agent not found");
+    }
 
-		if (!agent) {
-			return json({ error: "Agent not found" }, { status: 404 });
-		}
+    log.debug("Agent details retrieved successfully", {
+      tenantId,
+      agentId,
+      requestedBy: locals.user?.userId,
+    });
 
-		log.debug("Agent details retrieved successfully", {
-			tenantId,
-			agentId,
-			requestedBy: locals.user.userId
-		});
+    return json({
+      agent,
+    });
+  } catch (error) {
+    logError(log)("Error getting agent details", error, locals.user?.userId, params.id);
 
-		return json({
-			agent
-		});
-	} catch (error) {
-		log.error("Error getting agent details:", JSON.stringify(error || "?"));
+    if (error instanceof BackendError) {
+      return error.toJson();
+    }
 
-		if (error instanceof NotFoundError) {
-			return json({ error: "Agent not found" }, { status: 404 });
-		}
-
-		return json({ error: "Internal server error" }, { status: 500 });
-	}
+    return new InternalError().toJson();
+  }
 };
 
 export const PUT: RequestHandler = async ({ params, request, locals }) => {
-	const log = logger.setContext("API");
+  const log = logger.setContext("API");
 
-	try {
-		const tenantId = params.id;
-		const agentId = params.agentId;
+  try {
+    const tenantId = params.id;
+    const agentId = params.agentId;
 
-		// Check if user is authenticated
-		if (!locals.user) {
-			return json({ error: "Authentication required" }, { status: 401 });
-		}
+    // Check if user is authenticated
+    if (!tenantId || !agentId) {
+      throw new ValidationError(ERRORS.TENANTS.MISSING_TENANT_OR_AGENT_ID);
+    }
 
-		if (!tenantId || !agentId) {
-			return json({ error: "Missing tenant or agent ID" }, { status: 400 });
-		}
+    checkPermission(locals, tenantId, true);
+    const body = await request.json();
 
-		// Authorization check: Only global admins and tenant admins can update agents
-		if (locals.user.role === "GLOBAL_ADMIN") {
-			// Global admin can update agents for any tenant
-		} else if (locals.user.role === "TENANT_ADMIN" && locals.user.tenantId === tenantId) {
-			// Tenant admin can update agents for their own tenant
-		} else {
-			return json({ error: "Insufficient permissions" }, { status: 403 });
-		}
+    log.debug("Updating agent", {
+      tenantId,
+      agentId,
+      requestedBy: locals.user?.userId,
+      updateFields: Object.keys(body),
+    });
 
-		const body = await request.json();
+    const agentService = await AgentService.forTenant(tenantId);
+    const updatedAgent = await agentService.updateAgent(agentId, body);
 
-		log.debug("Updating agent", {
-			tenantId,
-			agentId,
-			requestedBy: locals.user.userId,
-			updateFields: Object.keys(body)
-		});
+    log.debug("Agent updated successfully", {
+      tenantId,
+      agentId,
+      requestedBy: locals.user?.userId,
+    });
 
-		const agentService = await AgentService.forTenant(tenantId);
-		const updatedAgent = await agentService.updateAgent(agentId, body);
+    return json({
+      message: "Agent updated successfully",
+      agent: updatedAgent,
+    });
+  } catch (error) {
+    logError(log)("Error updating agent", error, locals.user?.userId, params.id);
 
-		log.debug("Agent updated successfully", {
-			tenantId,
-			agentId,
-			requestedBy: locals.user.userId
-		});
+    if (error instanceof BackendError) {
+      return error.toJson();
+    }
 
-		return json({
-			message: "Agent updated successfully",
-			agent: updatedAgent
-		});
-	} catch (error) {
-		log.error("Error updating agent:", JSON.stringify(error || "?"));
-
-		if (error instanceof ValidationError) {
-			return json({ error: error.message }, { status: 400 });
-		}
-
-		if (error instanceof NotFoundError) {
-			return json({ error: "Agent not found" }, { status: 404 });
-		}
-
-		return json({ error: "Internal server error" }, { status: 500 });
-	}
+    return new InternalError().toJson();
+  }
 };
 
 export const DELETE: RequestHandler = async ({ params, locals }) => {
-	const log = logger.setContext("API");
+  const log = logger.setContext("API");
 
-	try {
-		const tenantId = params.id;
-		const agentId = params.agentId;
+  try {
+    const tenantId = params.id;
+    const agentId = params.agentId;
 
-		// Check if user is authenticated
-		if (!locals.user) {
-			return json({ error: "Authentication required" }, { status: 401 });
-		}
+    if (!tenantId || !agentId) {
+      throw new ValidationError(ERRORS.TENANTS.MISSING_TENANT_OR_AGENT_ID);
+    }
 
-		if (!tenantId || !agentId) {
-			return json({ error: "Missing tenant or agent ID" }, { status: 400 });
-		}
+    checkPermission(locals, tenantId, true);
 
-		// Authorization check: Only global admins and tenant admins can delete agents
-		if (locals.user.role === "GLOBAL_ADMIN") {
-			// Global admin can delete agents for any tenant
-		} else if (locals.user.role === "TENANT_ADMIN" && locals.user.tenantId === tenantId) {
-			// Tenant admin can delete agents for their own tenant
-		} else {
-			return json({ error: "Insufficient permissions" }, { status: 403 });
-		}
+    log.debug("Deleting agent", {
+      tenantId,
+      agentId,
+      requestedBy: locals.user?.userId,
+    });
 
-		log.debug("Deleting agent", {
-			tenantId,
-			agentId,
-			requestedBy: locals.user.userId
-		});
+    const agentService = await AgentService.forTenant(tenantId);
+    const deleted = await agentService.deleteAgent(agentId);
 
-		const agentService = await AgentService.forTenant(tenantId);
-		const deleted = await agentService.deleteAgent(agentId);
+    if (!deleted) {
+      throw new NotFoundError(ERRORS.AGENTS.NOT_FOUND);
+    }
 
-		if (!deleted) {
-			return json({ error: "Agent not found" }, { status: 404 });
-		}
+    log.debug("Agent deleted successfully", {
+      tenantId,
+      agentId,
+      requestedBy: locals.user?.userId,
+    });
 
-		log.debug("Agent deleted successfully", {
-			tenantId,
-			agentId,
-			requestedBy: locals.user.userId
-		});
+    return json({
+      message: "Agent deleted successfully",
+    });
+  } catch (error) {
+    logError(log)("Error deleting agent", error, locals.user?.userId, params.id);
 
-		return json({
-			message: "Agent deleted successfully"
-		});
-	} catch (error) {
-		log.error("Error deleting agent:", JSON.stringify(error || "?"));
+    if (error instanceof BackendError) {
+      return error.toJson();
+    }
 
-		if (error instanceof NotFoundError) {
-			return json({ error: "Agent not found" }, { status: 404 });
-		}
-
-		return json({ error: "Internal server error" }, { status: 500 });
-	}
+    return new InternalError().toJson();
+  }
 };

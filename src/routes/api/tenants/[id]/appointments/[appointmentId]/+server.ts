@@ -1,432 +1,295 @@
-import { json, type RequestHandler } from "@sveltejs/kit";
+import { json } from "@sveltejs/kit";
 import { AppointmentService } from "$lib/server/services/appointment-service";
-import { ValidationError } from "$lib/server/utils/errors";
+import {
+  BackendError,
+  InternalError,
+  logError,
+  NotFoundError,
+  ValidationError,
+} from "$lib/server/utils/errors";
+import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
-import { getTenant } from "$lib/server/db";
+import { checkPermission } from "$lib/server/utils/permissions";
 
-// Register OpenAPI documentation
-registerOpenAPIRoute("POST", "/api/tenants/{tenantId}/appointments/{appointmentId}", {
-	tags: ["Appointments"],
-	summary: "Get encrypted appointment details",
-	description:
-		"Retrieves encrypted appointment details for client-side decryption. Returns encrypted data and key shares - PIN verification and decryption happens in the frontend.",
-	parameters: [
-		{
-			name: "tenantId",
-			in: "path",
-			required: true,
-			schema: { type: "string", format: "uuid" },
-			description: "The tenant ID"
-		},
-		{
-			name: "appointmentId",
-			in: "path",
-			required: true,
-			schema: { type: "string", format: "uuid" },
-			description: "The appointment ID"
-		}
-	],
-	requestBody: {
-		content: {
-			"application/json": {
-				schema: {
-					type: "object",
-					required: ["email"],
-					properties: {
-						email: {
-							type: "string",
-							format: "email",
-							description: "Client email address for verification"
-						}
-					}
-				}
-			}
-		}
-	},
-	responses: {
-		200: {
-			description: "Encrypted appointment details retrieved successfully",
-			content: {
-				"application/json": {
-					schema: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							data: {
-								type: "object",
-								properties: {
-									id: { type: "string", format: "uuid" },
-									appointmentDate: { type: "string" },
-									expiryDate: { type: "string" },
-									status: {
-										type: "string",
-										enum: ["NEW", "CONFIRMED", "HELD", "REJECTED", "NO_SHOW"]
-									},
-									channel: {
-										type: "object",
-										properties: {
-											id: { type: "string", format: "uuid" },
-											names: { type: "array", items: { type: "string" } },
-											color: { type: "string" },
-											languages: { type: "array", items: { type: "string" } }
-										}
-									},
-									encryptedData: { 
-										type: "string", 
-										description: "Encrypted appointment data for client-side decryption" 
-									},
-									clientKeyShare: { 
-										type: "string", 
-										description: "Encrypted symmetric key for client decryption" 
-									},
-									client: {
-										type: "object",
-										properties: {
-											publicKey: { type: "string" },
-											privateKeyShare: { type: "string" }
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		400: {
-			description: "Validation error",
-			content: {
-				"application/json": {
-					schema: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							error: { type: "string" },
-							message: { type: "string" }
-						}
-					}
-				}
-			}
-		},
-		404: {
-			description: "Appointment not found or access denied",
-			content: {
-				"application/json": {
-					schema: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							error: { type: "string" },
-							message: { type: "string" }
-						}
-					}
-				}
-			}
-		},
-		500: {
-			description: "Internal server error",
-			content: {
-				"application/json": {
-					schema: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							error: { type: "string" },
-							message: { type: "string" }
-						}
-					}
-				}
-			}
-		}
-	}
+// Register OpenAPI documentation for GET
+registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "GET", {
+  summary: "Get appointment by ID",
+  description:
+    "Retrieves a specific appointment by ID. Global admins, tenant admins, and staff can view appointments.",
+  tags: ["Appointments"],
+  parameters: [
+    {
+      name: "id",
+      in: "path",
+      required: true,
+      schema: { type: "string", format: "uuid" },
+      description: "Tenant ID",
+    },
+    {
+      name: "appointmentId",
+      in: "path",
+      required: true,
+      schema: { type: "string", format: "uuid" },
+      description: "Appointment ID",
+    },
+  ],
+  responses: {
+    "200": {
+      description: "Appointment retrieved successfully",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              appointment: {
+                type: "object",
+                properties: {
+                  id: { type: "string", format: "uuid", description: "Appointment ID" },
+                  clientId: { type: "string", format: "uuid", description: "Client ID" },
+                  channelId: { type: "string", format: "uuid", description: "Channel ID" },
+                  appointmentDate: {
+                    type: "string",
+                    format: "date-time",
+                    description: "Appointment date",
+                  },
+                  expiryDate: { type: "string", format: "date", description: "Expiry date" },
+                  title: { type: "string", description: "Appointment title" },
+                  description: { type: "string", description: "Appointment description" },
+                  status: {
+                    type: "string",
+                    enum: ["NEW", "CONFIRMED", "HELD", "REJECTED", "NO_SHOW"],
+                  },
+                  client: {
+                    type: "object",
+                    description: "Client details",
+                    properties: {
+                      id: { type: "string", format: "uuid" },
+                      hashKey: { type: "string" },
+                      email: { type: "string" },
+                    },
+                  },
+                  channel: {
+                    type: "object",
+                    description: "Channel details",
+                    properties: {
+                      id: { type: "string", format: "uuid" },
+                      names: { type: "array", items: { type: "string" } },
+                      color: { type: "string" },
+                    },
+                  },
+                },
+                required: [
+                  "id",
+                  "clientId",
+                  "channelId",
+                  "appointmentDate",
+                  "expiryDate",
+                  "title",
+                  "status",
+                ],
+              },
+            },
+            required: ["appointment"],
+          },
+        },
+      },
+    },
+    "401": {
+      description: "Authentication required",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "403": {
+      description: "Insufficient permissions",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "404": {
+      description: "Tenant or appointment not found",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "500": {
+      description: "Internal server error",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+  },
 });
 
-registerOpenAPIRoute("DELETE", "/api/tenants/{tenantId}/appointments/{appointmentId}", {
-	tags: ["Appointments"],
-	summary: "Cancel appointment",
-	description:
-		"Cancels an appointment. PIN verification should be done client-side before calling this endpoint. Only requires email for server-side verification.",
-	parameters: [
-		{
-			name: "tenantId",
-			in: "path",
-			required: true,
-			schema: { type: "string", format: "uuid" },
-			description: "The tenant ID"
-		},
-		{
-			name: "appointmentId",
-			in: "path",
-			required: true,
-			schema: { type: "string", format: "uuid" },
-			description: "The appointment ID"
-		}
-	],
-	requestBody: {
-		content: {
-			"application/json": {
-				schema: {
-					type: "object",
-					required: ["email"],
-					properties: {
-						email: {
-							type: "string",
-							format: "email",
-							description: "Client email address for verification"
-						}
-					}
-				}
-			}
-		}
-	},
-	responses: {
-		200: {
-			description: "Appointment cancelled successfully",
-			content: {
-				"application/json": {
-					schema: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" }
-						}
-					}
-				}
-			}
-		},
-		400: {
-			description: "Validation error",
-			content: {
-				"application/json": {
-					schema: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							error: { type: "string" },
-							message: { type: "string" }
-						}
-					}
-				}
-			}
-		},
-		404: {
-			description: "Appointment not found or access denied",
-			content: {
-				"application/json": {
-					schema: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							error: { type: "string" },
-							message: { type: "string" }
-						}
-					}
-				}
-			}
-		},
-		500: {
-			description: "Internal server error",
-			content: {
-				"application/json": {
-					schema: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							error: { type: "string" },
-							message: { type: "string" }
-						}
-					}
-				}
-			}
-		}
-	}
+// Register OpenAPI documentation for DELETE
+registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "DELETE", {
+  summary: "Delete appointment",
+  description:
+    "Permanently deletes an appointment. Only global admins and tenant admins can delete appointments.",
+  tags: ["Appointments"],
+  parameters: [
+    {
+      name: "id",
+      in: "path",
+      required: true,
+      schema: { type: "string", format: "uuid" },
+      description: "Tenant ID",
+    },
+    {
+      name: "appointmentId",
+      in: "path",
+      required: true,
+      schema: { type: "string", format: "uuid" },
+      description: "Appointment ID",
+    },
+  ],
+  responses: {
+    "200": {
+      description: "Appointment deleted successfully",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              message: { type: "string", description: "Success message" },
+            },
+            required: ["message"],
+          },
+        },
+      },
+    },
+    "401": {
+      description: "Authentication required",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "403": {
+      description: "Insufficient permissions",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "404": {
+      description: "Tenant or appointment not found",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "500": {
+      description: "Internal server error",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+  },
 });
 
-/**
- * POST /api/tenants/[id]/appointments/[appointmentId]
- * Get encrypted appointment details (client-side decryption)
- */
-export const POST: RequestHandler = async ({ request, params }) => {
-	const log = logger.setContext("AppointmentAPI");
-	const tenantId = params.id as string;
-	const appointmentId = params.appointmentId as string;
+export const GET: RequestHandler = async ({ params, locals }) => {
+  const log = logger.setContext("API");
 
-	log.debug("Getting appointment details", { tenantId, appointmentId });
+  try {
+    const tenantId = params.id;
+    const appointmentId = params.appointmentId;
 
-	try {
-		const body = await request.json();
-		const { email } = body;
+    if (!tenantId || !appointmentId) {
+      throw new ValidationError("Tenant ID and appointment ID are required");
+    }
 
-		if (!email) {
-			return json(
-				{
-					success: false,
-					error: "VALIDATION_ERROR",
-					message: "email is required in request body"
-				},
-				{ status: 400 }
-			);
-		}
+    checkPermission(locals, tenantId);
 
-		const tenant = await getTenant(tenantId);
-		const appointmentService = await AppointmentService.forTenant(tenant);
-		
-		// Get appointment without PIN - server never decrypts
-		const appointment = await appointmentService.getAppointmentById(appointmentId, email);
+    log.debug("Getting appointment by ID", {
+      tenantId,
+      appointmentId,
+      requestedBy: locals.user?.userId,
+    });
 
-		if (!appointment) {
-			log.debug("Appointment not found or access denied", {
-				tenantId,
-				appointmentId
-			});
-			return json(
-				{
-					success: false,
-					error: "NOT_FOUND",
-					message: "Appointment not found or you don't have access to it"
-				},
-				{ status: 404 }
-			);
-		}
+    const appointmentService = await AppointmentService.forTenant(tenantId);
+    const appointment = await appointmentService.getAppointmentById(appointmentId);
 
-		log.debug("Appointment details retrieved (encrypted)", {
-			tenantId,
-			appointmentId,
-			status: appointment.status
-		});
+    if (!appointment) {
+      throw new NotFoundError("Appointment not found");
+    }
 
-		return json({
-			success: true,
-			data: {
-				id: appointment.id,
-				appointmentDate: appointment.appointmentDate,
-				expiryDate: appointment.expiryDate,
-				status: appointment.status,
-				channel: {
-					id: appointment.channel.id,
-					names: appointment.channel.names,
-					color: appointment.channel.color,
-					languages: appointment.channel.languages
-				},
-				// Encrypted data for client-side decryption
-				encryptedData: appointment.encryptedData,
-				clientKeyShare: appointment.clientKeyShare,
-				// Client crypto data for frontend decryption
-				client: {
-					publicKey: appointment.client.publicKey,
-					privateKeyShare: appointment.client.privateKeyShare
-				}
-			}
-		});
-	} catch (error) {
-		log.error("Internal error getting appointment details", {
-			tenantId,
-			appointmentId,
-			error: String(error)
-		});
+    log.debug("Appointment retrieved successfully", {
+      tenantId,
+      appointmentId,
+      requestedBy: locals.user?.userId,
+    });
 
-		return json(
-			{
-				success: false,
-				error: "INTERNAL_ERROR",
-				message: "An unexpected error occurred"
-			},
-			{ status: 500 }
-		);
-	}
+    return json({
+      appointment,
+    });
+  } catch (error) {
+    logError(log)("Error getting appointment", error, locals.user?.userId, params.id);
+
+    if (error instanceof BackendError) {
+      return error.toJson();
+    }
+
+    return new InternalError().toJson();
+  }
 };
 
-/**
- * DELETE /api/tenants/[id]/appointments/[appointmentId]
- * Cancel an appointment (PIN verification happens client-side)
- */
-export const DELETE: RequestHandler = async ({ request, params }) => {
-	const log = logger.setContext("AppointmentAPI");
-	const tenantId = params.id as string;
-	const appointmentId = params.appointmentId as string;
+export const DELETE: RequestHandler = async ({ params, locals }) => {
+  const log = logger.setContext("API");
 
-	log.debug("Cancelling appointment", { tenantId, appointmentId });
+  try {
+    const tenantId = params.id;
+    const appointmentId = params.appointmentId;
 
-	try {
-		const body = await request.json();
-		const { email } = body;
+    if (!tenantId || !appointmentId) {
+      throw new ValidationError("Tenant ID and appointment ID are required");
+    }
 
-		if (!email) {
-			return json(
-				{
-					success: false,
-					error: "VALIDATION_ERROR",
-					message: "email is required in request body"
-				},
-				{ status: 400 }
-			);
-		}
+    checkPermission(locals, tenantId, true);
 
-		// Note: PIN verification must happen client-side before calling this endpoint
-		// Frontend should verify PIN can decrypt appointment data before cancelling
+    log.debug("Deleting appointment", {
+      tenantId,
+      appointmentId,
+      requestedBy: locals.user?.userId,
+    });
 
-		const tenant = await getTenant(tenantId);
-		const appointmentService = await AppointmentService.forTenant(tenant);
-		const cancelled = await appointmentService.cancelAppointment({
-			appointmentId,
-			email
-		});
+    const appointmentService = await AppointmentService.forTenant(tenantId);
+    const deleted = await appointmentService.deleteAppointment(appointmentId);
 
-		if (!cancelled) {
-			log.debug("Appointment not found or access denied for cancellation", {
-				tenantId,
-				appointmentId
-			});
-			return json(
-				{
-					success: false,
-					error: "NOT_FOUND",
-					message: "Appointment not found or access denied"
-				},
-				{ status: 404 }
-			);
-		}
+    if (!deleted) {
+      return json({ error: "Appointment not found" }, { status: 404 });
+    }
 
-		log.debug("Appointment cancelled successfully", {
-			tenantId,
-			appointmentId
-		});
+    log.debug("Appointment deleted successfully", {
+      tenantId,
+      appointmentId,
+      requestedBy: locals.user?.userId,
+    });
 
-		return json({
-			success: true,
-			message: "Appointment cancelled successfully"
-		});
-	} catch (error) {
-		if (error instanceof ValidationError) {
-			log.debug("Validation error cancelling appointment", {
-				tenantId,
-				appointmentId,
-				error: error.message
-			});
-			return json(
-				{
-					success: false,
-					error: "VALIDATION_ERROR",
-					message: error.message
-				},
-				{ status: 400 }
-			);
-		}
+    return json({
+      message: "Appointment deleted successfully",
+    });
+  } catch (error) {
+    logError(log)("Error deleting appointment", error, locals.user?.userId, params.id);
 
-		log.error("Internal error cancelling appointment", {
-			tenantId,
-			appointmentId,
-			error: String(error)
-		});
+    if (error instanceof BackendError) {
+      return error.toJson();
+    }
 
-		return json(
-			{
-				success: false,
-				error: "INTERNAL_ERROR",
-			message: "An unexpected error occurred"
-		},
-		{ status: 500 }
-	);
-	}
+    return new InternalError().toJson();
+  }
 };

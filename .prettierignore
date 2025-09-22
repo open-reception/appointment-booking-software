@@ -10,3 +10,4 @@ bun.lockb
 
 # Build Artifacts
 src/i18n/**
+project.inlang/**

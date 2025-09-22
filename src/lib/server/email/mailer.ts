@@ -1,7 +1,8 @@
 import nodemailer from "nodemailer";
 import { env } from "$env/dynamic/private";
-import type { SelectClient, SelectStaff } from "$lib/server/db/tenant-schema";
+import type { SelectClient } from "$lib/server/db/tenant-schema";
 import type Mail from "nodemailer/lib/mailer";
+import type { SelectUser } from "../db/central-schema";
 
 /**
  * Email recipient interface
@@ -11,9 +12,9 @@ import type Mail from "nodemailer/lib/mailer";
  * @property {string} [language] - Optional language preference (de/en)
  */
 export interface EmailRecipient {
-	email: string;
-	name?: string;
-	language?: string;
+  email: string;
+  name?: string;
+  language?: string;
 }
 
 /**
@@ -23,35 +24,27 @@ export interface EmailRecipient {
  * @throws {Error} When user has no email address
  */
 export function createEmailRecipient(
-	user:
-		| SelectClient
-		| SelectStaff
-		| { id: string; email: string | null; name: string | null; language?: string | null }
+  user:
+    | SelectClient
+    | SelectUser
+    | { id: string; email: string | null; name: string | null; language?: string | null },
 ): EmailRecipient {
-	// Handle SelectUser type (from central schema)
-	if ("email" in user && !("publicKey" in user)) {
-		return {
-			email: user.email || "",
-			name: user.name || undefined,
-			language: user.language || "de" // Use user's language preference
-		};
-	}
-	// Handle SelectStaff type (has name property)
-	else if ("name" in user) {
-		return {
-			email: user.email,
-			name: user.name || undefined,
-			language: user.language || "de"
-		};
-	}
-	// Handle SelectClient type (no name property)
-	else {
-		return {
-			email: user.email || "", // Client email is optional
-			name: undefined, // Clients don't have names for privacy
-			language: user.language || "de"
-		};
-	}
+  // Handle SelectUser type (from central schema)
+  if ("email" in user && !("publicKey" in user)) {
+    return {
+      email: user.email || "",
+      name: user.name || undefined,
+      language: user.language || "de", // Use user's language preference
+    };
+  }
+  // Handle SelectClient type (no name property)
+  else {
+    return {
+      email: user.email || "", // Client email is optional
+      name: undefined, // Clients don't have names for privacy
+      language: user.language || "de",
+    };
+  }
 }
 
 /**
@@ -61,19 +54,19 @@ export function createEmailRecipient(
  * @private
  */
 function createTransporter() {
-	if (!env.SMTP_HOST || !env.SMTP_PORT || !env.SMTP_USER || !env.SMTP_PASS) {
-		throw new Error("SMTP configuration is incomplete. Please check your environment variables.");
-	}
-	const config = {
-		host: env.SMTP_HOST,
-		port: parseInt(env.SMTP_PORT),
-		secure: env.SMTP_SECURE === "true",
-		auth: {
-			user: env.SMTP_USER,
-			pass: env.SMTP_PASS
-		}
-	};
-	return nodemailer.createTransport(config);
+  if (!env.SMTP_HOST || !env.SMTP_PORT || !env.SMTP_USER || !env.SMTP_PASS) {
+    throw new Error("SMTP configuration is incomplete. Please check your environment variables.");
+  }
+  const config = {
+    host: env.SMTP_HOST,
+    port: parseInt(env.SMTP_PORT),
+    secure: env.SMTP_SECURE === "true",
+    auth: {
+      user: env.SMTP_USER,
+      pass: env.SMTP_PASS,
+    },
+  };
+  return nodemailer.createTransport(config);
 }
 
 /**
@@ -86,46 +79,46 @@ function createTransporter() {
  * @returns {Promise<void>}
  */
 export async function sendEmail(
-	recipient: EmailRecipient,
-	subject: string,
-	htmlContent: string,
-	textContent: string
+  recipient: EmailRecipient,
+  subject: string,
+  htmlContent: string,
+  textContent: string,
 ): Promise<void> {
-	const transporter = createTransporter();
+  const transporter = createTransporter();
 
-	if (!recipient.email) {
-		// Recipient has not stored an email address, so no mail will be send
-		// TODO: Log this event
-		return;
-	}
+  if (!recipient.email) {
+    // Recipient has not stored an email address, so no mail will be send
+    // TODO: Log this event
+    return;
+  }
 
-	const from_address = env.SMTP_FROM_EMAIL || env.SMTP_USER;
+  const from_address = env.SMTP_FROM_EMAIL || env.SMTP_USER;
 
-	if (!from_address) {
-		throw new Error("From address is required");
-	}
+  if (!from_address) {
+    throw new Error("From address is required");
+  }
 
-	const mailOptions: Mail.Options = {
-		from: {
-			name: env.SMTP_FROM_NAME || "Open Reception",
-			address: from_address
-		},
-		to: {
-			name: recipient.name || "",
-			address: recipient.email
-		},
-		subject,
-		html: htmlContent,
-		text: textContent
-	};
+  const mailOptions: Mail.Options = {
+    from: {
+      name: env.SMTP_FROM_NAME || "Open Reception",
+      address: from_address,
+    },
+    to: {
+      name: recipient.name || "",
+      address: recipient.email,
+    },
+    subject,
+    html: htmlContent,
+    text: textContent,
+  };
 
-	try {
-		await transporter.sendMail(mailOptions);
-		console.log(`Email sent successfully to ${recipient.email}`);
-	} catch (error) {
-		console.error("Failed to send email:", error);
-		throw new Error(`Failed to send email to ${recipient.email}`);
-	}
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Email sent successfully to ${recipient.email}`);
+  } catch (error) {
+    console.error("Failed to send email:", error);
+    throw new Error(`Failed to send email to ${recipient.email}`);
+  }
 }
 
 /**
@@ -133,12 +126,12 @@ export async function sendEmail(
  * @returns {Promise<boolean>} True if connection successful, false otherwise
  */
 export async function testEmailConnection(): Promise<boolean> {
-	try {
-		const transporter = createTransporter();
-		await transporter.verify();
-		return true;
-	} catch (error) {
-		console.error("SMTP connection test failed:", error);
-		return false;
-	}
+  try {
+    const transporter = createTransporter();
+    await transporter.verify();
+    return true;
+  } catch (error) {
+    console.error("SMTP connection test failed:", error);
+    return false;
+  }
 }

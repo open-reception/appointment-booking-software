@@ -11,10 +11,10 @@ if (!POSTGRES_PASSWORD) throw new Error("POSTGRES_PASSWORD is not set");
 const DATABASE_URL = `postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/${POSTGRES_DB}`;
 
 export default defineConfig({
-	schema: "./src/lib/server/db/central-schema.ts",
-	dialect: "postgresql",
-	dbCredentials: { url: DATABASE_URL },
-	out: "./migrations",
-	verbose: true,
-	strict: true
+  schema: "./src/lib/server/db/central-schema.ts",
+  dialect: "postgresql",
+  dbCredentials: { url: DATABASE_URL },
+  out: "./migrations",
+  verbose: true,
+  strict: true,
 });
