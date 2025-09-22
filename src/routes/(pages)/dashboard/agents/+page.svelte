@@ -69,6 +69,7 @@
           <List>
             {#each items as item (item.id)}
               <ListItem
+                image={item.image ?? UnknownItemIcon}
                 title={item.name}
                 actions={[
                   {

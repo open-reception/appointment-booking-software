@@ -19,11 +19,13 @@
     | { type: "divider" };
 
   let {
+    image,
     title,
     description,
     descriptionOnClick,
     actions,
   }: HTMLAttributes<HTMLLIElement> & {
+    image?: string | Component;
     title: string;
     description?: string;
     descriptionOnClick?: () => void;
@@ -37,24 +39,40 @@
 <li
   class="hover:border-light hover:bg-muted flex w-full items-center justify-between rounded-md border px-4 py-3"
 >
-  <div class="flex flex-col">
-    <Text style="md" class="font-medium">{title}</Text>
-    {#if description}
-      {#if descriptionOnClick}
-        <Button
-          variant="link"
-          size="sm"
-          onclick={descriptionOnClick}
-          class="text-muted-foreground m-0 h-auto rounded-xs p-0"
-        >
-          {description}
-        </Button>
-      {:else}
-        <Text style="sm" class="text-muted-foreground">
-          {description}
-        </Text>
+  <div class="flex gap-1">
+    {#if image}
+      {#if typeof image === "string"}
+        <img
+          src={image}
+          alt={title}
+          class="h-10 w-10 rounded-md object-cover object-center"
+          loading="lazy"
+        />
+      {:else if typeof image === "function"}
+        {@const Fallback = image as Component}
+        <Fallback class="bg-muted text-muted-foreground size-8 rounded-sm border stroke-1 p-1" />
       {/if}
     {/if}
+    <div></div>
+    <div class="flex flex-col">
+      <Text style="md" class="font-medium">{title}</Text>
+      {#if description}
+        {#if descriptionOnClick}
+          <Button
+            variant="link"
+            size="sm"
+            onclick={descriptionOnClick}
+            class="text-muted-foreground m-0 h-auto rounded-xs p-0"
+          >
+            {description}
+          </Button>
+        {:else}
+          <Text style="sm" class="text-muted-foreground">
+            {description}
+          </Text>
+        {/if}
+      {/if}
+    </div>
   </div>
   {#if actions && actions.length > 0}
     <DropdownMenu.Root bind:open>

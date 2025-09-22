@@ -72,6 +72,7 @@ export const actions: Actions = {
       body: JSON.stringify({
         name: form.data.name,
         description: form.data.description,
+        image: form.data.image,
       }),
     });
 
@@ -115,7 +116,11 @@ export const actions: Actions = {
           "Content-Type": "application/json",
         },
         credentials: "same-origin",
-        body: JSON.stringify({ name: form.data.name, description: form.data.description }),
+        body: JSON.stringify({
+          name: form.data.name,
+          description: form.data.description,
+          image: form.data.image,
+        }),
       },
     );
 

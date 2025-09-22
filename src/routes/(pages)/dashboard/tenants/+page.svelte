@@ -62,6 +62,7 @@
             {data}
             done={() => {
               invalidate(ROUTES.DASHBOARD.TENANTS);
+              tenantsStore.reload();
               closeDialog("add");
             }}
           />
@@ -138,6 +139,7 @@
                 done={() => {
                   closeDialog("delete");
                   curItem = null;
+                  tenantsStore.reload();
                   invalidate(ROUTES.DASHBOARD.TENANTS);
                 }}
               />

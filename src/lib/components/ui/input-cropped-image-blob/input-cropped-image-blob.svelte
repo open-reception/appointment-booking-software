@@ -53,6 +53,7 @@
     aspectRatio = 1,
     width = 300,
     height = 300,
+    files,
     ...restProps
   }: Props = $props();
 
@@ -237,18 +238,21 @@
 
 <div class="flex justify-start gap-3">
   <input
+    bind:this={fileInput}
     type="file"
     accept="image/jpeg, image/png, image/webp"
     class="hidden"
-    bind:this={fileInput}
     onchange={handleFileSelect}
-    {...restProps}
   />
   <div
     class="bg-muted border-lighter relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-md border-1"
   >
     {#if value}
-      <Button size="xs" class="absolute top-1 right-1 !px-1 py-1" onclick={() => (value = null)}>
+      <Button
+        size="xs"
+        class="absolute top-1 right-1 rounded-sm !px-1 py-1"
+        onclick={() => (value = null)}
+      >
         <Trash />
         <span class="sr-only">{m["components.inputCroppedImageBlob.remove"]()}</span>
       </Button>
@@ -265,7 +269,7 @@
       {m["components.inputCroppedImageBlob.description"]()}
     </Text>
   </div>
-  <Input bind:value type="text" hidden />
+  <Input type="text" bind:value hidden {...restProps} />
 </div>
 
 <Dialog bind:open={dialogOpen}>
