@@ -42,26 +42,24 @@
   type Props = Omit<HTMLInputAttributes, "type"> & {
     FallbackIcon: Component;
     value?: string | File | null;
-    onValueChange?: (value: string | File | null) => void;
     aspectRatio?: number;
-    maxWidth?: number;
-    maxHeight?: number;
+    width?: number;
+    height?: number;
   };
 
   let {
     FallbackIcon,
     value = $bindable(),
-    onValueChange,
     aspectRatio = 1,
-    maxWidth = 300,
-    maxHeight = 300,
+    width = 300,
+    height = 300,
     ...restProps
   }: Props = $props();
 
   let fileInput: HTMLInputElement;
   let imageElement: HTMLDivElement;
-  let CropperClass: any = null;
-  let cropperInstance: any = null;
+  let CropperClass: unknown = null;
+  let cropperInstance: unknown = null;
   let cropperCanvas: HTMLCanvasElement | null = null;
   let cropperImage: HTMLElement | null = null;
   let cropperSelection: HTMLElement | null = null;
@@ -86,12 +84,13 @@
         const CropperModule = await import("cropperjs");
         CropperClass = CropperModule.default;
         setTimeout(() => {
+          // @ts-expect-error types are not available
           cropperInstance = new CropperClass(imageElement, {
             template: `<cropper-canvas background class="w-full">
   <cropper-image style="width: 100%;" rotatable scalable skewable translatable></cropper-image>
   <cropper-shade theme-color="rgba(0, 0, 0, 0.35)"></cropper-shade>
   <cropper-handle action="select" plain></cropper-handle>
-  <cropper-selection width="300" height="300" initial-coverage="0.5" aspect-ratio=${aspectRatio} movable resizable keyboard>
+  <cropper-selection width="${width}" height="${height}" initial-coverage="0.5" aspect-ratio=${aspectRatio} movable resizable keyboard>
     <cropper-grid role="grid" bordered covered theme-color="rgba(0, 0, 0, 0.5)"></cropper-grid>
     <cropper-crosshair centered theme-color="rgba(0, 0, 0, 0.5)"></cropper-crosshair>
     <cropper-handle action="move" theme-color="rgba(255, 255, 255, 0)"></cropper-handle>
@@ -103,8 +102,11 @@
 </cropper-canvas>`,
           });
 
+          // @ts-expect-error types are not available
           cropperCanvas = cropperInstance.getCropperCanvas();
+          // @ts-expect-error types are not available
           cropperImage = cropperInstance.getCropperImage();
+          // @ts-expect-error types are not available
           cropperSelection = cropperInstance.getCropperSelection();
 
           setTimeout(() => {
@@ -174,10 +176,9 @@
 
   const handleCrop = async () => {
     // @ts-expect-error types are not here
-    const canvas = await cropperSelection?.$toCanvas({ width: 300, height: 300 });
+    const canvas = await cropperSelection?.$toCanvas({ width, height });
     canvas.toBlob(async (blob: Blob) => {
       if (!blob) return;
-      const file = new File([blob], "cropped", { type: "image/png", lastModified: Date.now() });
       value = await blobToBase64(blob);
       dialogOpen = false;
     });
