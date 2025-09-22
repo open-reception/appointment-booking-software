@@ -19,7 +19,7 @@ const tenantCreationSchema = z.object({
     .string()
     .min(4)
     .max(15)
-    .regex(/^[a-z][a-z-]*[a-z]$/),
+    .regex(/^[a-z0-9][a-z0-9-]*[a-z0-9]$/),
   inviteAdmin: z.email().optional(),
 });
 
