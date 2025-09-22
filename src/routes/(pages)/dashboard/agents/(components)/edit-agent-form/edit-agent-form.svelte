@@ -8,11 +8,13 @@
   import { zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from ".";
   import { Textarea } from "$lib/components/ui/textarea";
+  import { InputCroppedImageBlob } from "$lib/components/ui/input-cropped-image-blob";
+  import ItemIcon from "@lucide/svelte/icons/user-star";
 
   let { entity, done }: { entity: TAgent; done: () => void } = $props();
 
   const form = superForm(
-    { id: entity.id, name: entity.name, description: entity.description },
+    { id: entity.id, name: entity.name, description: entity.description, image: entity.image },
     {
       validators: zodClient(formSchema),
       onResult: async (event) => {
@@ -51,6 +53,15 @@
       {/snippet}
     </Form.Control>
     <Form.Description>{m["agents.add.fields.description.description"]()}</Form.Description>
+    <Form.FieldErrors />
+  </Form.Field>
+  <Form.Field {form} name="image">
+    <Form.Control>
+      {#snippet children({ props })}
+        <Form.Label>{m["agents.add.fields.image.title"]()}</Form.Label>
+        <InputCroppedImageBlob {...props} FallbackIcon={ItemIcon} />
+      {/snippet}
+    </Form.Control>
     <Form.FieldErrors />
   </Form.Field>
   <Form.Field {form} name="id" class="hidden">

@@ -5,8 +5,10 @@
   import { toast } from "svelte-sonner";
   import { type Infer, superForm, type SuperValidated } from "sveltekit-superforms";
   import { zodClient } from "sveltekit-superforms/adapters";
+  import ItemIcon from "@lucide/svelte/icons/user-star";
   import { formSchema, type FormSchema } from ".";
   import { Textarea } from "$lib/components/ui/textarea";
+  import { InputCroppedImageBlob } from "$lib/components/ui/input-cropped-image-blob";
 
   let { data, done }: { done: () => void; data: { form: SuperValidated<Infer<FormSchema>> } } =
     $props();
@@ -48,6 +50,15 @@
       {/snippet}
     </Form.Control>
     <Form.Description>{m["agents.add.fields.description.description"]()}</Form.Description>
+    <Form.FieldErrors />
+  </Form.Field>
+  <Form.Field {form} name="image">
+    <Form.Control>
+      {#snippet children({ props })}
+        <Form.Label>{m["agents.add.fields.image.title"]()}</Form.Label>
+        <InputCroppedImageBlob {...props} FallbackIcon={ItemIcon} />
+      {/snippet}
+    </Form.Control>
     <Form.FieldErrors />
   </Form.Field>
   <div class="mt-6 flex flex-col gap-4">

@@ -32,7 +32,6 @@ export const load = async (event) => {
 
       try {
         const body = await res.json();
-        console.log("Agents response body:", body);
         return body.agents as TAgent[];
       } catch (error) {
         log.error("Failed to parse agents response", { error });

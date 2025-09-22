@@ -187,7 +187,24 @@
 		}
 	},
 	"components": {
-		"openMenu": "Open menu"
+		"openMenu": "Open menu",
+		"inputCroppedImageBlob": {
+			"trigger": "Upload Image",
+			"description": "Supported formats are JPG, PNG and WEBP",
+			"remove": "Remove Image",
+			"crop": {
+				"title": "Crop Image",
+				"description": "Use your mouse to change the selection or the buttons below to adjust the image.",
+				"zoomIn": "Zoom In",
+				"zoomOut": "Zoom Out",
+				"moveLeft": "Move Left",
+				"moveRight": "Move Right",
+				"moveUp": "Move Up",
+				"moveDown": "Move Down",
+				"cancel": "Cancel",
+				"apply": "Apply"
+			}
+		}
 	},
 	"cancel": "Cancel",
 	"actions": "Actions",

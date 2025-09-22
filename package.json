@@ -84,6 +84,7 @@
     "@sveltejs/adapter-node": "^5.2.12",
     "argon2": "^0.43.0",
     "argon2-browser": "^1.18.0",
+    "cropperjs": "^2.0.1",
     "date-fns": "^4.1.0",
     "dotenv": "^16.5.0",
     "dotenv-expand": "^12.0.2",

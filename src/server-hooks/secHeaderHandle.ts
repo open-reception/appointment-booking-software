@@ -1,3 +1,4 @@
+import { dev } from "$app/environment";
 import { type Handle } from "@sveltejs/kit";
 
 /**
@@ -26,10 +27,8 @@ export const secHeaderHandle: Handle = async ({ event, resolve }) => {
   }
 
   const cspDirectives = [
-    "default-src 'self'",
     "script-src 'self' 'unsafe-inline' https://unpkg.com", // Allow inline scripts and unpkg CDN (for Swagger)
     "style-src 'self' 'unsafe-inline' https://unpkg.com",
-    "img-src 'self' data: https:",
     "font-src 'self' data: https://unpkg.com",
     "connect-src 'self'",
     "media-src 'self'",
@@ -39,6 +38,10 @@ export const secHeaderHandle: Handle = async ({ event, resolve }) => {
     "frame-ancestors 'none'",
     "upgrade-insecure-requests",
   ];
+  if (!dev) {
+    cspDirectives.unshift("default-src 'self'");
+    cspDirectives.push("img-src 'self' data: https:");
+  }
   response.headers.set("Content-Security-Policy", cspDirectives.join("; "));
 
   if (event.url.pathname.startsWith("/api/")) {

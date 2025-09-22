@@ -179,7 +179,24 @@
 		}
 	},
 	"components": {
-		"openMenu": "Menü öffnen"
+		"openMenu": "Menü öffnen",
+		"inputCroppedImageBlob": {
+			"trigger": "Bild hochladen",
+			"description": "Unterstützte Formate sind JPG, PNG, WEBP",
+			"remove": "Bild entfernen",
+			"crop": {
+				"title": "Bild zuschneiden",
+				"description": "Verwende die Maus, um die Auswahl zu verändern. Oder nutze die Buttons, um das Bild zu verändern.",
+				"zoomIn": "Reinzoomen",
+				"zoomOut": "Rauszoomen",
+				"moveLeft": "Nach links",
+				"moveRight": "Nach rechts",
+				"moveUp": "Nach oben",
+				"moveDown": "Nach unten",
+				"cancel": "Abbrechen",
+				"apply": "Übernehmen"
+			}
+		}
 	},
 	"actions": "Aktionen",
 	"edit": "Editieren",
