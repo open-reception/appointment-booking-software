@@ -39,7 +39,7 @@
     detail: Matrix;
   }>;
 
-  type Props = Omit<HTMLInputAttributes, "type"> & {
+  type Props = Omit<HTMLInputAttributes, "type" | "files"> & {
     FallbackIcon: Component;
     value?: string | File | null;
     aspectRatio?: number;
@@ -53,7 +53,6 @@
     aspectRatio = 1,
     width = 300,
     height = 300,
-    files,
     ...restProps
   }: Props = $props();
 
