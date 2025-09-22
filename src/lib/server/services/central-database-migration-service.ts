@@ -1,7 +1,6 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
-import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { UniversalLogger } from "$lib/logger";
 import { ValidationError } from "$lib/server/utils/errors";
@@ -104,91 +103,31 @@ export class CentralDatabaseMigrationService {
   }
 
   /**
-   * Get current schema version for the central database
+   * Check if migrations table exists in central database
    */
-  private static async getCentralSchemaVersion(
-    config: CentralDatabaseConfig,
-  ): Promise<string | null> {
+  private static async migrationTableExists(config: CentralDatabaseConfig): Promise<boolean> {
     const connectionString = `postgres://${config.username}:${config.password}@${config.host}:${config.port}/${config.database}`;
     const client = postgres(connectionString);
 
     try {
-      // Check if migrations table exists
       const tableExists = await client`
 				SELECT EXISTS (
-					SELECT FROM information_schema.tables 
-					WHERE table_schema = 'public' 
+					SELECT FROM information_schema.tables
+					WHERE table_schema = 'drizzle'
 					AND table_name = '__drizzle_migrations'
 				);
 			`;
 
-      if (!tableExists[0].exists) {
-        return null;
-      }
-
-      // Get the latest migration
-      const result = await client`
-				SELECT hash FROM __drizzle_migrations 
-				ORDER BY created_at DESC 
-				LIMIT 1
-			`;
-
-      return result.length > 0 ? result[0].hash : null;
+      return tableExists[0].exists;
     } catch (error) {
-      logger.error("Failed to get central schema version", {
+      logger.error("Failed to check migrations table existence", {
         database: config.database,
         error: String(error),
       });
-      return null;
+      return false;
     } finally {
       await client.end();
     }
-  }
-
-  /**
-   * Get the latest available migration hash for central database
-   */
-  private static getLatestCentralMigrationHash(): string | null {
-    try {
-      const migrationsPath = join(process.cwd(), "migrations");
-      const metaPath = join(migrationsPath, "meta", "_journal.json");
-
-      if (!existsSync(metaPath)) {
-        return null;
-      }
-
-      const journal = JSON.parse(readFileSync(metaPath, "utf-8"));
-      const entries = journal.entries || [];
-
-      if (entries.length === 0) {
-        return null;
-      }
-
-      // Get the latest entry
-      const latestEntry = entries[entries.length - 1];
-      return latestEntry.hash || null;
-    } catch (error) {
-      logger.error("Failed to get latest central migration hash", { error: String(error) });
-      return null;
-    }
-  }
-
-  /**
-   * Check if central database needs migration
-   */
-  private static async centralNeedsMigration(config: CentralDatabaseConfig): Promise<boolean> {
-    const currentVersion = await this.getCentralSchemaVersion(config);
-    const latestVersion = this.getLatestCentralMigrationHash();
-
-    if (!latestVersion) {
-      return false; // No migrations available
-    }
-
-    if (!currentVersion) {
-      return true; // Database has no schema yet
-    }
-
-    return currentVersion !== latestVersion;
   }
 
   /**
@@ -280,13 +219,15 @@ export class CentralDatabaseMigrationService {
       database: config.database,
     });
 
-    // Check if migration is needed
-    const needsMigration = await this.centralNeedsMigration(config);
-    if (needsMigration) {
-      logger.info("Central database needs migration, applying...", { database: config.database });
+    // Check if migrations table exists to determine if we need to run migrations
+    const hasSchema = await this.migrationTableExists(config);
+    if (!hasSchema) {
+      logger.info("No migrations table found, applying migrations...", { database: config.database });
       await this.migrateCentralDatabase(config);
     } else {
-      logger.info("Central database is up to date", { database: config.database });
+      logger.info("Checking for pending migrations...", { database: config.database });
+      // Always run migrate - it's idempotent and will apply only pending migrations
+      await this.migrateCentralDatabase(config);
     }
   }
 }
