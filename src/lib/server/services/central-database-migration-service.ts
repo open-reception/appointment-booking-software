@@ -222,7 +222,9 @@ export class CentralDatabaseMigrationService {
     // Check if migrations table exists to determine if we need to run migrations
     const hasSchema = await this.migrationTableExists(config);
     if (!hasSchema) {
-      logger.info("No migrations table found, applying migrations...", { database: config.database });
+      logger.info("No migrations table found, applying migrations...", {
+        database: config.database,
+      });
       await this.migrateCentralDatabase(config);
     } else {
       logger.info("Checking for pending migrations...", { database: config.database });
