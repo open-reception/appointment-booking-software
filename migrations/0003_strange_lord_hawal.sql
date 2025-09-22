@@ -1,0 +1,1 @@
+ALTER TABLE "tenant" ALTER COLUMN "logo" SET DATA TYPE varchar(100000);

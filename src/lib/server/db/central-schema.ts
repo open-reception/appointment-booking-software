@@ -9,8 +9,8 @@ import {
   timestamp,
   integer,
   index,
+  varchar,
 } from "drizzle-orm/pg-core";
-import { bytea } from "./base";
 
 /**
  * Config value type enumeration - defines the data type of configuration values
@@ -47,7 +47,7 @@ export const tenant = pgTable(
     /** Optional description of the organization */
     description: text("description"),
     /** Organization logo as binary data (PNG, JPEG, GIF, or WEBP) */
-    logo: bytea("logo"),
+    logo: varchar("logo", { length: 100_000 }),
     /** Database connection string for this tenant's isolated database */
     databaseUrl: text("database_url").notNull(),
     /** STate of tenant setup */

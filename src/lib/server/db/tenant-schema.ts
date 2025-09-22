@@ -10,8 +10,8 @@ import {
   integer,
   json,
   timestamp,
+  varchar,
 } from "drizzle-orm/pg-core";
-import { bytea } from "./base";
 
 /**
  * Database enums for tenant-specific entities
@@ -40,7 +40,7 @@ export const agent = pgTable("agent", {
   /** Optional description of the agent's role or specialties */
   description: text("description"),
   /** Optional logo/profile image for the agent (PNG, JPEG, GIF, or WEBP) */
-  image: bytea("image"),
+  image: varchar("image", { length: 100_000 }),
 });
 
 /**
