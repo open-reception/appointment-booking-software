@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { handle } from "./hooks.server";
+import { mockCookies } from "$lib/tests/const";
 
 // Mock the startup service
 vi.mock("$lib/server/services/startup-service", () => ({
@@ -61,7 +62,7 @@ describe("hooks.server", () => {
       return {
         url: new URL("http://localhost/api/health"),
         request,
-        cookies: {} as any,
+        cookies: mockCookies as any,
         fetch: {} as any,
         getClientAddress: () => ip,
         locals: {},
@@ -131,7 +132,7 @@ describe("hooks.server", () => {
           "x-forwarded-for": "192.168.2.1", // Different IP for CORS tests
         },
       }),
-      cookies: {} as any,
+      cookies: mockCookies as any,
       fetch: {} as any,
       getClientAddress: () => "192.168.2.1",
       locals: {},
@@ -178,7 +179,7 @@ describe("hooks.server", () => {
           "x-forwarded-for": "192.168.3.1", // Different IP for security tests
         },
       }),
-      cookies: {} as any,
+      cookies: mockCookies as any,
       fetch: {} as any,
       getClientAddress: () => "192.168.3.1",
       locals: {},

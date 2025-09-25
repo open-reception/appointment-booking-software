@@ -29,6 +29,7 @@ vi.mock("$env/dynamic/private", () => ({
 import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
 import { InviteService } from "$lib/server/services/invite-service";
 import { sendUserInviteEmail } from "$lib/server/email/email-service";
+import { mockCookies } from "$lib/tests/const";
 
 describe("POST /api/auth/invite", () => {
   const mockTenant = {
@@ -73,7 +74,7 @@ describe("POST /api/auth/invite", () => {
       url: new URL("http://localhost/api/auth/invite"),
       params: {},
       route: { id: "/api/auth/invite" } as any,
-      cookies: {} as any,
+      cookies: mockCookies as any,
       fetch: {} as any,
       getClientAddress: () => "127.0.0.1",
       isDataRequest: false,
