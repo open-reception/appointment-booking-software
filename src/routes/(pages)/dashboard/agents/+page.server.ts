@@ -119,7 +119,7 @@ export const actions: Actions = {
         body: JSON.stringify({
           name: form.data.name,
           description: form.data.description,
-          image: form.data.image,
+          image: form.data.image ?? null,
         }),
       },
     );

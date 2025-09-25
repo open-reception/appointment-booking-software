@@ -41,7 +41,7 @@
 
   type Props = Omit<HTMLInputAttributes, "type" | "files"> & {
     FallbackIcon: Component;
-    value?: string;
+    value: string;
     aspectRatio?: number;
     width?: number;
     height?: number;
