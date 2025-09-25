@@ -1,4 +1,5 @@
 import type { InferSelectModel } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import {
   pgTable,
   boolean,
@@ -10,8 +11,10 @@ import {
   integer,
   json,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { bytea } from "./base";
+import { user } from "./central-schema";
 
 /**
  * Database enums for tenant-specific entities
@@ -153,24 +156,36 @@ export const client = pgTable("client", {
 export const appointment = pgTable("appointment", {
   /** Primary key - unique identifier */
   id: uuid("id").primaryKey().defaultRandom(),
-  /** Foreign key to client who booked the appointment */
-  clientId: uuid("client_id")
+  /** Foreign key to client appointment tunnel */
+  tunnelId: uuid("tunnel_id")
     .notNull()
-    .references(() => client.id),
+    .references(() => clientAppointmentTunnel.id),
   /** Foreign key to channel/resource being booked */
   channelId: uuid("channel_id")
     .notNull()
     .references(() => channel.id),
   /** Date and time of the appointment */
-  appointmentDate: date("appointment_date").notNull(),
+  appointmentDate: timestamp("appointment_date").notNull(),
   /** When appointment data expires and can be auto-deleted */
-  expiryDate: date("expiry_date").notNull(),
-  /** Current status of the appointment */
-  status: appointmentStatusEnum("status").notNull().default("NEW"),
-  /** Appointment title/subject */
-  name: text("name").notNull(),
-  /** Optional detailed description of the appointment */
-  phone: text("phone"), // TODO Sensible information will be removed in future (appointment) branch since it will be stored in an encrypted blob
+  expiryDate: date("expiry_date"),
+  /** Current status of the appointment - defaults depend on channel's requiresConfirmation setting */
+  status: appointmentStatusEnum("status").notNull(),
+  /** Encrypted appointment data (name, email, phone) - Legacy field */
+  encryptedData: text("encrypted_data"),
+  /** Symmetric key for encrypting appointment data - Legacy field */
+  dataKey: text("data_key"),
+  /** Whether this appointment uses end-to-end encryption (new system) */
+  isEncrypted: boolean("is_encrypted").default(false).notNull(),
+  /** AES-encrypted payload for end-to-end encryption (new system) */
+  encryptedPayload: text("encrypted_payload"),
+  /** Initialization vector for AES encryption (new system) */
+  iv: text("iv"),
+  /** Authentication tag for AES-GCM (new system) */
+  authTag: text("auth_tag"),
+  /** Timestamp when the appointment was created */
+  createdAt: timestamp("created_at").defaultNow(),
+  /** Timestamp when the appointment was last updated */
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 /**
@@ -209,9 +224,9 @@ export const appointmentKeyShare = pgTable("appointment_key_share", {
     .notNull()
     .references(() => appointment.id),
   /** Foreign key to staff member who can decrypt */
-  staffId: uuid("staff_id")
+  userId: uuid("user_id")
     .notNull()
-    .references(() => staff.id),
+    .references(() => user.id),
   /** Symmetric key encrypted with this staff member's public key */
   encryptedKey: text("encrypted_key").notNull(),
 });
@@ -244,3 +259,119 @@ export type SelectChannelSlotTemplate = InferSelectModel<typeof channelSlotTempl
 
 /** Agent absence record type for database queries */
 export type SelectAgentAbsence = InferSelectModel<typeof agentAbsence>;
+
+/**
+ * StaffCrypto table - stores encryption keys for staff members within tenant scope
+ * Enables end-to-end encryption for appointments in tenant database
+ * @table staffCrypto
+ */
+export const staffCrypto = pgTable(
+  "staff_crypto",
+  {
+    /** Primary key - unique identifier */
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** Foreign key to central user table */
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => user.id),
+    /** ML-KEM-768 (Kyber) public key for this staff member (Base64 encoded) */
+    publicKey: text("public_key").notNull(),
+    /** Timestamp when the key was created */
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    /** Timestamp when the key was last updated */
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    /** Whether this key is currently active */
+    isActive: boolean("is_active").default(true).notNull(),
+  },
+  (table) => ({
+    /** Ensure one active key per user per tenant */
+    userKeyUnique: uniqueIndex("staff_crypto_user_active_idx")
+      .on(table.userId)
+      .where(eq(table.isActive, true)),
+  }),
+);
+
+/**
+ * ClientAppointmentTunnels table - represents encrypted appointment tunnels for clients
+ * Each tunnel represents a client and contains their encrypted appointment data
+ * @table clientAppointmentTunnel
+ */
+export const clientAppointmentTunnel = pgTable("client_appointment_tunnel", {
+  /** Primary key - unique identifier (this IS the client identifier) */
+  id: uuid("id").primaryKey().defaultRandom(),
+  /** SHA-256 hash of client email for privacy-preserving lookups */
+  emailHash: text("email_hash").notNull().unique(),
+  /** Client's ML-KEM-768 public key for this tunnel (Base64 encoded) */
+  clientPublicKey: text("client_public_key").notNull(),
+  /** Server-stored share of client's private key (encrypted, for PIN recovery) */
+  privateKeyShare: text("private_key_share").notNull(),
+  /** Tunnel encryption key encrypted with client's public key */
+  clientEncryptedTunnelKey: text("client_key_share").notNull(),
+  /** Timestamp when the tunnel was created */
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  /** Timestamp when the tunnel was last updated */
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  /** Whether this tunnel is currently active */
+  isActive: boolean("is_active").default(true).notNull(),
+});
+
+/**
+ * ClientTunnelStaffKeyShares table - stores tunnel keys encrypted for each staff member
+ * Allows staff to decrypt appointments in client tunnels
+ * @table clientTunnelStaffKeyShare
+ */
+export const clientTunnelStaffKeyShare = pgTable(
+  "client_tunnel_staff_key_share",
+  {
+    /** Primary key - unique identifier */
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** Foreign key to client appointment tunnel */
+    tunnelId: uuid("tunnel_id")
+      .notNull()
+      .references(() => clientAppointmentTunnel.id),
+    /** Foreign key to staff user */
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => user.id),
+    /** Tunnel key encrypted with staff member's public key */
+    encryptedTunnelKey: text("encrypted_tunnel_key").notNull(),
+    /** Timestamp when this key share was created */
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    /** Ensure one key share per tunnel per staff member */
+    tunnelStaffUnique: uniqueIndex("client_tunnel_staff_key_unique_idx").on(
+      table.tunnelId,
+      table.userId,
+    ),
+  }),
+);
+
+/**
+ * AuthChallenge table - stores temporary authentication challenges
+ * Used for client authentication during tunnel access
+ * @table authChallenge
+ */
+export const authChallenge = pgTable("auth_challenge", {
+  /** Primary key - challenge ID */
+  id: text("id").primaryKey(),
+  /** The challenge value (base64 encoded) */
+  challenge: text("challenge").notNull(),
+  /** Email hash of the client this challenge is for */
+  emailHash: text("email_hash").notNull(),
+  /** When this challenge was created */
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  /** When this challenge expires */
+  expiresAt: timestamp("expires_at").notNull(),
+  /** Whether this challenge has been consumed (one-time use) */
+  consumed: boolean("consumed").default(false).notNull(),
+});
+
+/** StaffCrypto record type for database queries */
+export type SelectStaffCrypto = InferSelectModel<typeof staffCrypto>;
+
+/** ClientAppointmentTunnel record type for database queries */
+export type SelectClientAppointmentTunnel = InferSelectModel<typeof clientAppointmentTunnel>;
+
+/** ClientTunnelStaffKeyShare record type for database queries */
+export type SelectClientTunnelStaffKeyShare = InferSelectModel<typeof clientTunnelStaffKeyShare>;
