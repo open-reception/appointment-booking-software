@@ -1,7 +1,7 @@
 import { json, type RequestHandler } from "@sveltejs/kit";
 import { z } from "zod";
 import { centralDb } from "$lib/server/db";
-import { tenant } from "$lib/server/db/central-schema";
+import { tenant, userSession } from "$lib/server/db/central-schema";
 import { eq } from "drizzle-orm";
 import {
   BackendError,
@@ -80,6 +80,15 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
       updatedUser,
       (locals.user?.sessionId as string) || "temp-session",
     );
+
+    // Update session with new access token
+    await centralDb
+      .update(userSession)
+      .set({
+        accessToken: newAccessToken,
+        lastUsedAt: new Date(),
+      })
+      .where(eq(userSession.id, locals.user?.sessionId as string));
 
     // Set new access token cookie
     cookies.set("access_token", newAccessToken, {
