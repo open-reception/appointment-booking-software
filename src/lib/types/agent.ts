@@ -1,7 +1,3 @@
-// TODO: Proper type definition
-export type TAgent = {
-  id: string;
-  name: string;
-  description?: string;
-  image?: string;
-};
+import type { SelectAgent } from "$lib/server/db/tenant-schema";
+
+export type TAgent = SelectAgent;
