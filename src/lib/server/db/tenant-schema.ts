@@ -276,6 +276,10 @@ export const staffCrypto = pgTable(
       .references(() => user.id),
     /** ML-KEM-768 (Kyber) public key for this staff member (Base64 encoded) */
     publicKey: text("public_key").notNull(),
+    /** Database-stored shard of the private key (Base64 encoded) */
+    privateKeyShare: text("private_key_share").notNull(),
+    /** Associated passkey ID for key derivation */
+    passkeyId: text("passkey_id").notNull(),
     /** Timestamp when the key was created */
     createdAt: timestamp("created_at").defaultNow().notNull(),
     /** Timestamp when the key was last updated */
