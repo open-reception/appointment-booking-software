@@ -27,7 +27,7 @@
             toast.error(m["tenants.add.errors.nameTaken"]());
             break;
           default:
-            toast.error(m["tenants.add.errors.unkonwn"]());
+            toast.error(m["tenants.add.errors.unknown"]());
         }
       }
       isSubmitting = false;

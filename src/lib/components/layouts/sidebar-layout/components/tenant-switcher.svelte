@@ -79,46 +79,50 @@
             </Sidebar.MenuButton>
           {/snippet}
         </DropdownMenu.Trigger>
-        <DropdownMenu.Content
-          class="w-(--bits-dropdown-menu-anchor-width) min-w-56 rounded-lg"
-          align="start"
-          side={sidebar.isMobile ? "bottom" : "right"}
-          sideOffset={4}
-        >
-          <DropdownMenu.Label class="text-muted-foreground text-xs"
-            >{m["nav.tenants"]()}</DropdownMenu.Label
+        {#if $tenants?.tenants.length > 0}
+          <DropdownMenu.Content
+            class="w-(--bits-dropdown-menu-anchor-width) min-w-56 rounded-lg"
+            align="start"
+            side={sidebar.isMobile ? "bottom" : "right"}
+            sideOffset={4}
           >
-          {#each $tenants?.tenants.slice(0, maxTenantsToShow) as tenant (tenant.id)}
-            <DropdownMenu.Item
-              onSelect={() => tenants.setCurrentTenant(tenant.id)}
-              class="gap-2 p-2"
+            <DropdownMenu.Label class="text-muted-foreground text-xs"
+              >{m["nav.tenants"]()}</DropdownMenu.Label
             >
-              <div class="flex size-6 items-center justify-center rounded-md border">
-                <UnknownTenantIcon class="size-3.5 shrink-0" />
-              </div>
-              {tenant.shortName}
-            </DropdownMenu.Item>
-          {/each}
-          {#if $tenants?.tenants.length > maxTenantsToShow}
-            <DropdownMenu.Separator />
-            <DropdownMenu.Item class="gap-2 p-2" onclick={() => goto(ROUTES.DASHBOARD.TENANTS)}>
-              <div class="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                <EllipsisIcon class="size-4" />
-              </div>
-              <div class="text-muted-foreground font-medium">{m["tenants.allTenants"]()}</div>
-            </DropdownMenu.Item>
-          {/if}
-          <!-- {#if activeTenant}
-            Will be available once the api supports unplugging a tenant
-            <DropdownMenu.Separator />
-            <DropdownMenu.Item class="gap-2 p-2" onclick={() => tenants.setCurrentTenant(null)}>
-              <div class="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                <UnplugIcon class="size-4" />
+            {#each $tenants?.tenants.slice(0, maxTenantsToShow) as tenant (tenant.id)}
+              <DropdownMenu.Item
+                onSelect={() => tenants.setCurrentTenant(tenant.id)}
+                class="gap-2 p-2"
+              >
+                <div class="flex size-6 items-center justify-center rounded-md border">
+                  <UnknownTenantIcon class="size-3.5 shrink-0" />
+                </div>
+                {tenant.shortName}
+              </DropdownMenu.Item>
+            {/each}
+            {#if $tenants?.tenants.length > maxTenantsToShow}
+              <DropdownMenu.Separator />
+              <DropdownMenu.Item class="gap-2 p-2" onclick={() => goto(ROUTES.DASHBOARD.TENANTS)}>
+                <div
+                  class="flex size-6 items-center justify-center rounded-md border bg-transparent"
+                >
+                  <EllipsisIcon class="size-4" />
+                </div>
+                <div class="text-muted-foreground font-medium">{m["tenants.allTenants"]()}</div>
+              </DropdownMenu.Item>
+            {/if}
+            <!-- {#if activeTenant}
+          Will be available once the api supports unplugging a tenant
+          <DropdownMenu.Separator />
+          <DropdownMenu.Item class="gap-2 p-2" onclick={() => tenants.setCurrentTenant(null)}>
+            <div class="flex size-6 items-center justify-center rounded-md border bg-transparent">
+              <UnplugIcon class="size-4" />
               </div>
               <div class="text-muted-foreground font-medium">{m["tenants.unselectTenant"]()}</div>
-            </DropdownMenu.Item>
-          {/if} -->
-        </DropdownMenu.Content>
+              </DropdownMenu.Item>
+              {/if} -->
+          </DropdownMenu.Content>
+        {/if}
       </DropdownMenu.Root>
     </Sidebar.MenuItem>
   {/if}

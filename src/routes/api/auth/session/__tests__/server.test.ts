@@ -2,6 +2,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { GET } from "../+server";
 import type { RequestEvent } from "@sveltejs/kit";
+import { mockCookies } from "$lib/tests/const";
 
 // Mock the logger
 vi.mock("$lib/logger", () => ({
@@ -25,7 +26,7 @@ const createMockRequestEvent = (locals: any): RequestEvent =>
     url: new URL("http://localhost/api/auth/session"),
     params: {},
     route: { id: "/api/auth/session" },
-    cookies: {} as any,
+    cookies: mockCookies as any,
     fetch: fetch,
     getClientAddress: () => "127.0.0.1",
     isDataRequest: false,

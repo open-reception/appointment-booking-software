@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "./+server.js";
 import { GET } from "./config/defaults/+server.js";
 import { ERRORS } from "$lib/errors.js";
+import { mockCookies } from "$lib/tests/const.js";
 
 // Mock the TenantAdminService
 vi.mock("$lib/server/services/tenant-admin-service", () => ({
@@ -67,7 +68,7 @@ describe("/api/tenants", () => {
         url: new URL("http://localhost"),
         params: {},
         route: { id: "" },
-        cookies: {} as any,
+        cookies: mockCookies as any,
         fetch: {} as any,
         getClientAddress: () => "",
         isDataRequest: false,
@@ -118,7 +119,7 @@ describe("/api/tenants", () => {
         url: new URL("http://localhost"),
         params: {},
         route: { id: "" },
-        cookies: {} as any,
+        cookies: mockCookies as any,
         fetch: {} as any,
         getClientAddress: () => "",
         isDataRequest: false,
@@ -167,7 +168,7 @@ describe("/api/tenants", () => {
         url: new URL("http://localhost"),
         params: {},
         route: { id: "" },
-        cookies: {} as any,
+        cookies: mockCookies as any,
         fetch: {} as any,
         getClientAddress: () => "",
         isDataRequest: false,
@@ -207,7 +208,7 @@ describe("/api/tenants", () => {
         url: new URL("http://localhost"),
         params: {},
         route: { id: "" },
-        cookies: {} as any,
+        cookies: mockCookies as any,
         fetch: {} as any,
         getClientAddress: () => "",
         isDataRequest: false,
@@ -247,7 +248,7 @@ describe("/api/tenants", () => {
         url: new URL("http://localhost"),
         params: {},
         route: { id: "" },
-        cookies: {} as any,
+        cookies: mockCookies as any,
         fetch: {} as any,
         getClientAddress: () => "",
         isDataRequest: false,
@@ -293,7 +294,7 @@ describe("/api/tenants", () => {
         url: new URL("http://localhost"),
         params: {},
         route: { id: "" },
-        cookies: {} as any,
+        cookies: mockCookies as any,
         fetch: {} as any,
         getClientAddress: () => "",
         isDataRequest: false,
@@ -321,7 +322,7 @@ describe("/api/tenants", () => {
         url: new URL("http://localhost"),
         params: {},
         route: { id: "" },
-        cookies: {} as any,
+        cookies: mockCookies as any,
         fetch: {} as any,
         getClientAddress: () => "",
         isDataRequest: false,

@@ -18,7 +18,7 @@
   <AppSidebar />
   <Sidebar.Inset>
     <PageWithClaim>
-      <HorizontalPagePadding>
+      <HorizontalPagePadding class="pb-5">
         <header
           class="mb-3 flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12"
         >

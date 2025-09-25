@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export const formSchema = z.object({
   shortname: z.string().min(4, m["form.errors.shortname"]()).max(20, m["form.errors.shortname"]()),
-  tenantId: z.string(),
+  id: z.string(),
 });
 
 export type FormSchema = typeof formSchema;

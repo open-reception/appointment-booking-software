@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { handle } from "./hooks.server";
+import { mockCookies } from "$lib/tests/const";
 
 // Mock the startup service
 vi.mock("$lib/server/services/startup-service", () => ({
@@ -61,7 +62,7 @@ describe("hooks.server", () => {
       return {
         url: new URL("http://localhost/api/health"),
         request,
-        cookies: {} as any,
+        cookies: mockCookies as any,
         fetch: {} as any,
         getClientAddress: () => ip,
         locals: {},
@@ -131,7 +132,7 @@ describe("hooks.server", () => {
           "x-forwarded-for": "192.168.2.1", // Different IP for CORS tests
         },
       }),
-      cookies: {} as any,
+      cookies: mockCookies as any,
       fetch: {} as any,
       getClientAddress: () => "192.168.2.1",
       locals: {},
@@ -178,7 +179,7 @@ describe("hooks.server", () => {
           "x-forwarded-for": "192.168.3.1", // Different IP for security tests
         },
       }),
-      cookies: {} as any,
+      cookies: mockCookies as any,
       fetch: {} as any,
       getClientAddress: () => "192.168.3.1",
       locals: {},
@@ -203,7 +204,9 @@ describe("hooks.server", () => {
       expect(response.headers.get("X-Content-Type-Options")).toBe("nosniff");
       expect(response.headers.get("X-XSS-Protection")).toBe("1; mode=block");
       expect(response.headers.get("Referrer-Policy")).toBe("strict-origin-when-cross-origin");
-      expect(response.headers.get("Content-Security-Policy")).toContain("default-src 'self'");
+      expect(response.headers.get("Content-Security-Policy")).toContain(
+        "script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; font-src 'self' data: https://unpkg.com; connect-src 'self'; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+      );
     });
 
     it("should add HSTS header for HTTPS requests", async () => {

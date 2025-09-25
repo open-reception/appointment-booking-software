@@ -14,7 +14,7 @@
 			"description": "We’ll start by adding your admin account. It will be used to manage this instance.",
 			"action": "Send Verification E-Mail",
 			"success": "Account created!",
-			"error": "An unkonwn error occured."
+			"error": "An unknown error occured."
 		},
 		"verify_email": {
 			"title": "Check your E-Mail",
@@ -150,7 +150,7 @@
 			"success": "Tenant added",
 			"errors": {
 				"nameTaken": "Could not add tenant. This name is already taken.",
-				"unkonwn": "Could not add tenant",
+				"unknown": "Could not add tenant",
 				"emailTaken": "Could not add tenant. This E-Mail Address is already in use.",
 				"startEndDash": "Cannot start or end with a dash"
 			}
@@ -187,7 +187,24 @@
 		}
 	},
 	"components": {
-		"openMenu": "Open menu"
+		"openMenu": "Open menu",
+		"inputCroppedImageBlob": {
+			"trigger": "Upload Image",
+			"description": "Supported formats are JPG, PNG, GIF and WEBP",
+			"remove": "Remove Image",
+			"crop": {
+				"title": "Crop Image",
+				"description": "Use your mouse to change the selection or the buttons below to adjust the image.",
+				"zoomIn": "Zoom In",
+				"zoomOut": "Zoom Out",
+				"moveLeft": "Move Left",
+				"moveRight": "Move Right",
+				"moveUp": "Move Up",
+				"moveDown": "Move Down",
+				"cancel": "Cancel",
+				"apply": "Apply"
+			}
+		}
 	},
 	"cancel": "Cancel",
 	"actions": "Actions",
@@ -215,5 +232,57 @@
 			"description": "Tippe {name} um die Seitenleiste umzustellen"
 		}
 	},
-	"close": "Schließen"
+	"close": "Schließen",
+	"agents": {
+		"title": "Agents",
+		"empty": {
+			"title": "No agents yet",
+			"description": "Agents are required participants in appointments."
+		},
+		"add": {
+			"title": "Add Agent",
+			"description": "Agents can be people, teams or working groups. This information is public.",
+			"fields": {
+				"name": {
+					"title": "Name",
+					"errors": {
+						"length": "Must be between 2 and 50 characters"
+					}
+				},
+				"description": {
+					"title": "Description (optinal)",
+					"description": "Can be titles, roles or other information that will help clients to choose the right agent."
+				},
+				"image": {
+					"title": "Image (optional)"
+				}
+			},
+			"action": "Add Agent",
+			"success": "Agent added",
+			"errors": {
+				"unknown": "Could not add agent"
+			}
+		},
+		"list": {
+			"empty": {
+				"title": "No agents yet",
+				"description": "Agents are required participants in appointments."
+			}
+		},
+		"delete": {
+			"title": "Delete Agent",
+			"description": "Type {name} to confirm.",
+			"action": "Delete Agent",
+			"success": "Agent deleted",
+			"error": "Could not delete agent."
+		},
+		"loading": "Loading agents",
+		"edit": {
+			"title": "Edit Agent",
+			"description": "Update the agent's public details.",
+			"success": "Agent updated",
+			"error": "Could not update agent.",
+			"action": "Edit Agent"
+		}
+	}
 }
