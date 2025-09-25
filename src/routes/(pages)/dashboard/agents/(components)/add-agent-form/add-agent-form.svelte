@@ -56,7 +56,7 @@
     <Form.Control>
       {#snippet children({ props })}
         <Form.Label>{m["agents.add.fields.image.title"]()}</Form.Label>
-        <InputCroppedImageBlob {...props} FallbackIcon={ItemIcon} />
+        <InputCroppedImageBlob {...props} bind:value={$formData.image} FallbackIcon={ItemIcon} />
       {/snippet}
     </Form.Control>
     <Form.FieldErrors />
