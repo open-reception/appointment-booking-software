@@ -77,7 +77,7 @@ export class UnifiedAppointmentCrypto {
   private tunnelId: string | null = null;
   private clientAuthenticated: boolean = false;
 
-  // Staff-specific properties  
+  // Staff-specific properties
   private staffKeyPair: StaffKeyPair | null = null;
   private staffId: string | null = null;
   private tenantId: string | null = null;
@@ -116,7 +116,7 @@ export class UnifiedAppointmentCrypto {
       const staffPublicKeys = await this.fetchStaffPublicKeys();
 
       // 7. Encrypt tunnel key for all staff members
-      // Note: staffKeyShares will be used during actual appointment creation  
+      // Note: staffKeyShares will be used during actual appointment creation
       await this.encryptTunnelKeyForStaff(staffPublicKeys);
 
       // 8. Encrypt tunnel key for client (for later use)
@@ -360,7 +360,9 @@ export class UnifiedAppointmentCrypto {
       console.log("✅ Staff authentication successful");
     } catch (error) {
       console.error("❌ Staff authentication failed:", error);
-      throw new Error(`Staff authentication failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Staff authentication failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -382,7 +384,10 @@ export class UnifiedAppointmentCrypto {
     try {
       // 1. Decrypt the symmetric key using staff's private key
       const encapsulatedSecret = this.hexToUint8Array(encryptedData.staffKeyShare);
-      const sharedSecret = KyberCrypto.decapsulate(this.staffKeyPair.privateKey, encapsulatedSecret);
+      const sharedSecret = KyberCrypto.decapsulate(
+        this.staffKeyPair.privateKey,
+        encapsulatedSecret,
+      );
 
       // 2. Import the symmetric key
       const symmetricKey = await crypto.subtle.importKey(
@@ -390,7 +395,7 @@ export class UnifiedAppointmentCrypto {
         new Uint8Array(sharedSecret),
         { name: "AES-GCM" },
         false,
-        ["decrypt"]
+        ["decrypt"],
       );
 
       // 3. Decrypt the appointment data
@@ -406,16 +411,17 @@ export class UnifiedAppointmentCrypto {
       const decrypted = await crypto.subtle.decrypt(
         { name: "AES-GCM", iv: new Uint8Array(iv) },
         symmetricKey,
-        encrypted
+        encrypted,
       );
 
       const decoder = new TextDecoder();
       const plaintext = decoder.decode(decrypted);
       return JSON.parse(plaintext);
-
     } catch (error) {
       console.error("❌ Failed to decrypt staff appointment:", error);
-      throw new Error(`Decryption failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Decryption failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -516,7 +522,7 @@ export class UnifiedAppointmentCrypto {
     const options = await optionsResponse.json();
 
     // 2. Perform WebAuthn authentication
-    const credential = await navigator.credentials.get({
+    const credential = (await navigator.credentials.get({
       publicKey: {
         challenge: new Uint8Array(this.base64ToUint8Array(options.challenge)),
         allowCredentials: options.allowCredentials?.map((cred: { id: string; type: string }) => ({
@@ -526,7 +532,7 @@ export class UnifiedAppointmentCrypto {
         timeout: options.timeout,
         userVerification: options.userVerification,
       },
-    }) as PublicKeyCredential;
+    })) as PublicKeyCredential;
 
     if (!credential) {
       throw new Error("WebAuthn authentication failed");
@@ -546,19 +552,15 @@ export class UnifiedAppointmentCrypto {
    */
   private async derivePasskeyBasedShard(
     passkeyId: string,
-    authenticatorData: ArrayBuffer
+    authenticatorData: ArrayBuffer,
   ): Promise<Uint8Array> {
     // Extract randomness from authenticator data
     const inputKeyMaterial = new Uint8Array(authenticatorData);
 
     // Import the IKM as a CryptoKey for HKDF
-    const ikmKey = await crypto.subtle.importKey(
-      "raw",
-      inputKeyMaterial,
-      "HKDF",
-      false,
-      ["deriveBits"]
-    );
+    const ikmKey = await crypto.subtle.importKey("raw", inputKeyMaterial, "HKDF", false, [
+      "deriveBits",
+    ]);
 
     // Salt for HKDF
     const salt = new TextEncoder().encode("staff-crypto-shard-v1");
@@ -575,7 +577,7 @@ export class UnifiedAppointmentCrypto {
         info: info,
       },
       ikmKey,
-      2400 * 8 // 2400 bytes * 8 bits
+      2400 * 8, // 2400 bytes * 8 bits
     );
 
     return new Uint8Array(keyMaterial);
@@ -692,10 +694,7 @@ export class UnifiedAppointmentCrypto {
     // One share is PIN-encrypted and stored on client
     const clientShare = shares[0].y;
     const pinHash = await OptimizedArgon2.deriveKeyFromPIN(pin, this.emailHash || "");
-    const encryptedShare = await AESCrypto.encrypt(
-      this.uint8ArrayToHex(clientShare),
-      pinHash,
-    );
+    const encryptedShare = await AESCrypto.encrypt(this.uint8ArrayToHex(clientShare), pinHash);
 
     return this.uint8ArrayToHex(encryptedShare.encrypted);
   }
@@ -763,7 +762,7 @@ export class UnifiedAppointmentCrypto {
     // TODO: Implement proper Shamir reconstruction with PIN-derived decryption
     const serverShareBytes = this.hexToUint8Array(serverShare);
     const clientShareBytes = serverShareBytes; // Simplified for now
-    
+
     // In future: derive pinHash and use it to decrypt the client share
     // const pinHash = await OptimizedArgon2.deriveKeyFromPIN(pin, this.emailHash || "");
 
@@ -835,9 +834,7 @@ export class UnifiedAppointmentCrypto {
   }
 
   private base64ToUint8Array(base64: string): Uint8Array {
-    return new Uint8Array(
-      Array.from(atob(base64)).map(c => c.charCodeAt(0))
-    );
+    return new Uint8Array(Array.from(atob(base64)).map((c) => c.charCodeAt(0)));
   }
 }
 
