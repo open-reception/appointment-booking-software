@@ -20,7 +20,7 @@
         toast.success(m["agents.add.success"]());
         done();
       } else if (event.result.type === "failure") {
-        toast.error(m["agents.add.errors.unkonwn"]());
+        toast.error(m["agents.add.errors.unknown"]());
       }
       isSubmitting = false;
     },

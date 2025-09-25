@@ -142,7 +142,7 @@
 			"success": "Mandant hinzugefügt",
 			"errors": {
 				"nameTaken": "Konnte Mandant nicht hinzufügen. Dieser Name ist bereits vergeben.",
-				"unkonwn": "Konnte Mandant nicht hinzufügen",
+				"unknown": "Konnte Mandant nicht hinzufügen",
 				"emailTaken": "Konnte Mandant nicht hinzufügen. Diese E-Mail Adresse wird bereits verwendet."
 			},
 			"hint": "Make sure DNS is already pointing to this server. Changes may take some time to spread."
@@ -251,7 +251,7 @@
 			"action": "Akteur:in hinzufügen",
 			"success": "Akteur:in hinzugefügt",
 			"errors": {
-				"unkonwn": "Konnte Akteur:in nicht hinzufügen"
+				"unknown": "Konnte Akteur:in nicht hinzufügen"
 			}
 		},
 		"list": {

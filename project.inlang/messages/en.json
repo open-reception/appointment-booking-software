@@ -14,7 +14,7 @@
 			"description": "We’ll start by adding your admin account. It will be used to manage this instance.",
 			"action": "Send Verification E-Mail",
 			"success": "Account created!",
-			"error": "An unkonwn error occured."
+			"error": "An unknown error occured."
 		},
 		"verify_email": {
 			"title": "Check your E-Mail",
@@ -150,7 +150,7 @@
 			"success": "Tenant added",
 			"errors": {
 				"nameTaken": "Could not add tenant. This name is already taken.",
-				"unkonwn": "Could not add tenant",
+				"unknown": "Could not add tenant",
 				"emailTaken": "Could not add tenant. This E-Mail Address is already in use.",
 				"startEndDash": "Cannot start or end with a dash"
 			}
@@ -260,7 +260,7 @@
 			"action": "Add Agent",
 			"success": "Agent added",
 			"errors": {
-				"unkonwn": "Could not add agent"
+				"unknown": "Could not add agent"
 			}
 		},
 		"list": {
