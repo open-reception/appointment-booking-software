@@ -1,9 +1,4 @@
-import {
-  extractLocaleFromCookie,
-  extractLocaleFromHeader,
-  setLocale,
-  type Locale,
-} from "$i18n/runtime";
+import { cookieName, extractLocaleFromHeader, setLocale, type Locale } from "$i18n/runtime";
 import { paraglideMiddleware } from "$i18n/server";
 import type { Handle } from "@sveltejs/kit";
 
@@ -17,7 +12,7 @@ import type { Handle } from "@sveltejs/kit";
  */
 export const i18nHandle: Handle = ({ event, resolve }) => {
   // Determine browser locale and use it
-  const cookieLocale = extractLocaleFromCookie();
+  const cookieLocale = event.cookies.get(cookieName);
   let locale: Locale | undefined = cookieLocale as Locale;
 
   if (!locale) {
