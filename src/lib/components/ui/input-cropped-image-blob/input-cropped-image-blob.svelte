@@ -41,7 +41,7 @@
 
   type Props = Omit<HTMLInputAttributes, "type" | "files"> & {
     FallbackIcon: Component;
-    value?: string | File | null;
+    value?: string;
     aspectRatio?: number;
     width?: number;
     height?: number;
@@ -250,7 +250,7 @@
       <Button
         size="xs"
         class="absolute top-1 right-1 cursor-pointer rounded-sm !px-1 py-1"
-        onclick={() => (value = null)}
+        onclick={() => (value = "")}
       >
         <Trash />
         <span class="sr-only">{m["components.inputCroppedImageBlob.remove"]()}</span>
