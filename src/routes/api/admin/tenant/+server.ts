@@ -35,6 +35,10 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
     const body = await request.json();
     const validation = tenantSwitchSchema.safeParse(body);
 
+    if (!locals.user?.sessionId) {
+      throw new ValidationError(ERRORS.SECURITY.SESSION_MISSING);
+    }
+
     if (!validation.success) {
       logger.warn("Invalid tenant switch request", {
         userId: locals.user?.id,
@@ -69,17 +73,14 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 
     if (!updatedUser) {
       logger.error("Failed to update user tenant", {
-        userId: locals.user?.userId,
+        userId: locals.user.userId,
         tenantId,
       });
       throw new InternalError(ERRORS.USERS.FAILED_TO_UPDATE);
     }
 
     // Generate new access token with updated tenant context
-    const newAccessToken = await generateAccessToken(
-      updatedUser,
-      (locals.user?.sessionId as string) || "temp-session",
-    );
+    const newAccessToken = await generateAccessToken(updatedUser, locals.user.sessionId);
 
     // Update session with new access token
     await centralDb
@@ -88,7 +89,7 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
         accessToken: newAccessToken,
         lastUsedAt: new Date(),
       })
-      .where(eq(userSession.id, locals.user?.sessionId as string));
+      .where(eq(userSession.id, locals.user.sessionId));
 
     // Set new access token cookie
     cookies.set("access_token", newAccessToken, {

@@ -12,6 +12,7 @@ export const ERRORS = {
       "Invalid passkey registration. Please request a new challenge first.",
     EITHER_PASSKEY_OR_PHRASE: "Either passkey or passphrase must be provided",
     BOTH_PASSKEY_AND_PHRASE: "Cannot provide both passkey and passphrase",
+    SESSION_MISSING: "No session found",
   },
   TENANTS: {
     NAME_EXISTS: "A tenant with this short name already exists",
