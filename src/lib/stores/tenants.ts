@@ -42,6 +42,32 @@ const createTenantsStore = () => {
         return { ...state, currentTenant };
       });
     },
+    reload: async () => {
+      store.update((state) => {
+        return { ...state, isLoading: true };
+      });
+      try {
+        const res = await fetch(`/api/tenants`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "same-origin",
+        });
+
+        const body = await res.json();
+        const tenants = body.tenants ?? ([] as TTenant[]);
+
+        store.update((state) => {
+          return { ...state, tenants, isLoading: false };
+        });
+      } catch (error) {
+        store.update((state) => {
+          return { ...state, isLoading: false };
+        });
+        console.error("Failed to parse tenants response", { error });
+      }
+    },
   };
 };
 

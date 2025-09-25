@@ -10,13 +10,13 @@ import { ValidationError, NotFoundError, ConflictError } from "../utils/errors";
 const agentCreationSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().optional(),
-  image: z.instanceof(Buffer).optional().nullable(),
+  image: z.string().optional().nullable(),
 });
 
 const agentUpdateSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   description: z.string().optional(),
-  image: z.instanceof(Buffer).optional().nullable(),
+  image: z.string().optional().nullable(),
 });
 
 const absenceCreationSchema = z.object({

@@ -36,7 +36,7 @@
   ];
 </script>
 
-<Sidebar.Group>
+<Sidebar.Group class="gap-0.5">
   {#each items as item (item.title)}
     {#if item.isTenantOnly === false || $auth.user?.tenantId}
       {#if $auth.user && item.roles.includes($auth.user?.role)}

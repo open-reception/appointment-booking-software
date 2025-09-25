@@ -14,7 +14,7 @@
   import EditIcon from "@lucide/svelte/icons/pencil";
   import SelectIcon from "@lucide/svelte/icons/plug-zap";
   import PlusIcon from "@lucide/svelte/icons/plus";
-  import UnknownTenantIcon from "@lucide/svelte/icons/ticket-x";
+  import UnknownItemIcon from "@lucide/svelte/icons/ticket-x";
   import DeleteIcon from "@lucide/svelte/icons/trash-2";
   import { onMount } from "svelte";
   import { AddTenantForm } from "./(components)/add-tenant-form";
@@ -22,7 +22,7 @@
   import EditTenantForm from "./(components)/edit-tenant-form/edit-tenant-form.svelte";
 
   const { data } = $props();
-  let curTenant: TTenant | null = $state(null);
+  let curItem: TTenant | null = $state(null);
 
   onMount(() => {
     if (history.state["sveltekit:states"]?.action === "add") {
@@ -47,13 +47,13 @@
   <MaxPageWidth maxWidth="lg">
     {#await data.streamed.list as TTenant[]}
       <LoadingList title={m["tenants.loading"]()} />
-    {:then tenants}
+    {:then items}
       <div class="flex flex-col items-start gap-5">
         <ResponsiveDialog
           id="add"
           title={m["tenants.add.title"]()}
           description={m["tenants.add.description"]()}
-          triggerHidden={tenants.length === 0}
+          triggerHidden={items.length === 0}
         >
           {#snippet triggerLabel()}
             <PlusIcon /> {m["tenants.add.title"]()}
@@ -62,20 +62,21 @@
             {data}
             done={() => {
               invalidate(ROUTES.DASHBOARD.TENANTS);
+              tenantsStore.reload();
               closeDialog("add");
             }}
           />
         </ResponsiveDialog>
 
-        {#if tenants.length > 0}
+        {#if items.length > 0}
           <List>
-            {#each tenants as tenant (tenant.id)}
+            {#each items as item (item.id)}
               <ListItem
-                title={tenant.shortName}
-                description={`${tenant.shortName}.${window.location.hostname}`}
+                title={item.shortName}
+                description={`${item.shortName}.${window.location.hostname}`}
                 descriptionOnClick={() =>
                   window.open(
-                    `https://${tenant.shortName}.${window.location.hostname}`,
+                    `https://${item.shortName}.${window.location.hostname}`,
                     "_blank",
                     "noopener,noreferrer",
                   )}
@@ -85,7 +86,7 @@
                     icon: EditIcon,
                     label: m["edit"](),
                     onClick: () => {
-                      curTenant = tenant;
+                      curItem = item;
                       openDialog("edit");
                     },
                   },
@@ -93,7 +94,7 @@
                     type: "action",
                     icon: SelectIcon,
                     label: m["select"](),
-                    onClick: () => tenantsStore.setCurrentTenant(tenant.id, true),
+                    onClick: () => tenantsStore.setCurrentTenant(item.id, true),
                   },
                   {
                     type: "divider",
@@ -104,13 +105,13 @@
                     label: m["delete"](),
                     isDestructive: true,
                     onClick: () => {
-                      curTenant = tenant;
+                      curItem = item;
                       openDialog("delete");
                     },
                   },
                 ]}
               >
-                {tenant.shortName}
+                {item.shortName}
               </ListItem>
             {/each}
           </List>
@@ -120,24 +121,25 @@
             description={m["tenants.edit.description"]()}
             triggerHidden={true}
           >
-            {#if curTenant}
+            {#if curItem}
               <EditTenantForm
-                entity={curTenant}
+                entity={curItem}
                 done={() => {
                   closeDialog("edit");
-                  curTenant = null;
+                  curItem = null;
                   invalidate(ROUTES.DASHBOARD.TENANTS);
                 }}
               />
             {/if}
           </ResponsiveDialog>
           <ResponsiveDialog id="delete" title={m["tenants.delete.title"]()} triggerHidden={true}>
-            {#if curTenant}
+            {#if curItem}
               <DeleteTenantForm
-                entity={curTenant}
+                entity={curItem}
                 done={() => {
                   closeDialog("delete");
-                  curTenant = null;
+                  curItem = null;
+                  tenantsStore.reload();
                   invalidate(ROUTES.DASHBOARD.TENANTS);
                 }}
               />
@@ -146,8 +148,8 @@
         {:else}
           <div class="flex w-full flex-col items-center">
             <EmptyState
-              Icon={UnknownTenantIcon}
-              headline="No tenants yet"
+              Icon={UnknownItemIcon}
+              headline={m["tenants.empty.title"]()}
               description={m["tenants.empty.description"]()}
             />
             <Button size="lg" onclick={() => openDialog("add")}>
