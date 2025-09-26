@@ -5,6 +5,8 @@ import { toast } from "svelte-sonner";
 import { writable } from "svelte/store";
 import { auth } from "./auth";
 import { m } from "$i18n/messages";
+import { goto } from "$app/navigation";
+import { ROUTES } from "$lib/const/routes";
 
 const log = logger.setContext("TenantsStore");
 
@@ -41,6 +43,7 @@ const createTenantsStore = () => {
         auth.setTenantId(tenantId);
         return { ...state, currentTenant };
       });
+      goto(ROUTES.DASHBOARD.MAIN);
     },
     reload: async () => {
       store.update((state) => {
