@@ -237,7 +237,7 @@ export class TenantAdminService {
   }
 
   /**
-   * Update tenant data (longName, shortName, description, logo)
+   * Update tenant data (longName, shortName, descriptions, languages, logo)
    */
   async updateTenantData(
     updateData: Partial<
