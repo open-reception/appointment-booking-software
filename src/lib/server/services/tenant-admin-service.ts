@@ -98,7 +98,13 @@ export class TenantAdminService {
     const urlParts = env.DATABASE_URL?.split("/") ?? [];
     urlParts.pop();
 
-    const newTenant: InsertTenant = { ...request, longName: "", databaseUrl: "", description: [] };
+    const newTenant: InsertTenant = {
+      ...request,
+      longName: "",
+      databaseUrl: "",
+      descriptions: [""],
+      languages: ["en"],
+    };
     newTenant.databaseUrl = urlParts.join("/") + "/" + newTenant.shortName;
 
     try {
@@ -234,7 +240,9 @@ export class TenantAdminService {
    * Update tenant data (longName, shortName, description, logo)
    */
   async updateTenantData(
-    updateData: Partial<Pick<InsertTenant, "longName" | "shortName" | "description" | "logo">>,
+    updateData: Partial<
+      Pick<InsertTenant, "longName" | "shortName" | "descriptions" | "languages" | "logo">
+    >,
   ) {
     const log = logger.setContext("TenantAdminService");
     log.debug("Updating tenant data", {

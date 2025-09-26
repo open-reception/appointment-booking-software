@@ -21,6 +21,7 @@
     "db:studio": "drizzle-kit studio",
     "db:generate": "drizzle-kit generate",
     "db:tenant:generate": "drizzle-kit generate --config=drizzle.tenant.config.ts",
+    "db:drop": "docker volume ls -q | grep '^open-reception_' | xargs -r docker volume rm",
     "docker:dev:up": "docker compose -f docker-compose.dev.yml up -d",
     "docker:dev:down": "docker compose -f docker-compose.dev.yml down",
     "docker:dev:logs": "docker compose -f docker-compose.dev.yml logs -f",

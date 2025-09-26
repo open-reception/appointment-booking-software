@@ -46,7 +46,9 @@ export const tenant = pgTable(
     /** Full organization name displayed to users */
     longName: text("long_name").notNull(),
     /** Optional description of the organization */
-    description: json("description").$type<string[]>().notNull(),
+    descriptions: json("description").$type<string[]>().notNull(),
+    /** Active languages for this tenant (array of language codes) */
+    languages: json("languages").$type<string[]>().notNull(),
     /** Organization logo as binary data (PNG, JPEG, GIF, or WEBP) */
     logo: varchar("logo", { length: 100_000 }),
     /** Database connection string for this tenant's isolated database */
