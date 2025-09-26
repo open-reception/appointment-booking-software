@@ -119,7 +119,11 @@ export class ScheduleService {
         .from(tenantSchema.appointment)
         .where(
           and(
-            between(tenantSchema.appointment.appointmentDate, request.startDate, request.endDate),
+            between(
+              tenantSchema.appointment.appointmentDate,
+              new Date(request.startDate),
+              new Date(request.endDate),
+            ),
             or(
               eq(tenantSchema.appointment.status, "NEW"),
               eq(tenantSchema.appointment.status, "CONFIRMED"),
@@ -236,7 +240,7 @@ export class ScheduleService {
         const dayAppointments = appointments.filter(
           (appointment) =>
             appointment.channelId === channel.id &&
-            appointment.appointmentDate.startsWith(dateString),
+            appointment.appointmentDate.toISOString().startsWith(dateString),
         );
 
         // Get slot templates for this channel that apply to this weekday
