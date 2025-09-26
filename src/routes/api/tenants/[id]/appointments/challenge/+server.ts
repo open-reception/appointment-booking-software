@@ -9,9 +9,99 @@ import { randomBytes } from "crypto";
 import { KyberCrypto, BufferUtils } from "$lib/crypto/utils";
 import { challengeStore } from "$lib/server/services/challenge-store";
 import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
+import { registerOpenAPIRoute } from "$lib/server/openapi";
 
 const requestSchema = z.object({
   emailHash: z.string(),
+});
+
+// Register OpenAPI documentation for POST
+registerOpenAPIRoute("/tenants/{id}/appointments/challenge", "POST", {
+  summary: "Create authentication challenge",
+  description:
+    "Creates a cryptographic challenge for client authentication. Used to verify client identity before accessing appointments.",
+  tags: ["Appointments", "Authentication"],
+  parameters: [
+    {
+      name: "id",
+      in: "path",
+      required: true,
+      schema: { type: "string", format: "uuid" },
+      description: "Tenant ID",
+    },
+  ],
+  requestBody: {
+    description: "Challenge request data",
+    content: {
+      "application/json": {
+        schema: {
+          type: "object",
+          properties: {
+            emailHash: {
+              type: "string",
+              description: "SHA-256 hash of client email address",
+              example: "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+            },
+          },
+          required: ["emailHash"],
+        },
+      },
+    },
+  },
+  responses: {
+    "200": {
+      description: "Challenge created successfully",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              challengeId: {
+                type: "string",
+                description: "Unique identifier for this challenge",
+                example: "a1b2c3d4e5f6789012345678",
+              },
+              encryptedChallenge: {
+                type: "string",
+                description: "Challenge encrypted with client's public key (hex encoded)",
+                example: "deadbeef123456789abcdef...",
+              },
+              privateKeyShare: {
+                type: "string",
+                description: "Server-stored share of client's private key",
+                example: "fedcba9876543210fedcba98...",
+              },
+            },
+            required: ["challengeId", "encryptedChallenge", "privateKeyShare"],
+          },
+        },
+      },
+    },
+    "400": {
+      description: "Invalid request data",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "404": {
+      description: "Client not found",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "500": {
+      description: "Internal server error",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+  },
 });
 
 /**

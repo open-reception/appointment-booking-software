@@ -14,10 +14,106 @@ import {
   NotFoundError,
   ValidationError,
 } from "$lib/server/utils/errors";
+import { registerOpenAPIRoute } from "$lib/server/openapi";
 
 const requestSchema = z.object({
   challengeId: z.string(),
   challengeResponse: z.string(),
+});
+
+// Register OpenAPI documentation for POST
+registerOpenAPIRoute("/tenants/{id}/appointments/verify-challenge", "POST", {
+  summary: "Verify authentication challenge",
+  description:
+    "Verifies a client's response to a cryptographic challenge and returns access credentials for appointment data.",
+  tags: ["Appointments", "Authentication"],
+  parameters: [
+    {
+      name: "id",
+      in: "path",
+      required: true,
+      schema: { type: "string", format: "uuid" },
+      description: "Tenant ID",
+    },
+  ],
+  requestBody: {
+    description: "Challenge verification data",
+    content: {
+      "application/json": {
+        schema: {
+          type: "object",
+          properties: {
+            challengeId: {
+              type: "string",
+              description: "Challenge ID received from challenge creation",
+              example: "a1b2c3d4e5f6789012345678",
+            },
+            challengeResponse: {
+              type: "string",
+              description: "Decrypted challenge response (base64 encoded)",
+              example: "SGVsbG8gV29ybGQ=",
+            },
+          },
+          required: ["challengeId", "challengeResponse"],
+        },
+      },
+    },
+  },
+  responses: {
+    "200": {
+      description: "Challenge verified successfully",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              valid: {
+                type: "boolean",
+                description: "Whether the challenge verification was successful",
+                example: true,
+              },
+              encryptedTunnelKey: {
+                type: "string",
+                description: "Tunnel key encrypted with client's public key",
+                example: "deadbeef123456789abcdef...",
+              },
+              tunnelId: {
+                type: "string",
+                format: "uuid",
+                description: "Client tunnel identifier for accessing appointments",
+                example: "550e8400-e29b-41d4-a716-446655440000",
+              },
+            },
+            required: ["valid", "encryptedTunnelKey", "tunnelId"],
+          },
+        },
+      },
+    },
+    "400": {
+      description: "Invalid request data or challenge response",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "404": {
+      description: "Challenge not found or expired",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "500": {
+      description: "Internal server error",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+  },
 });
 
 /**

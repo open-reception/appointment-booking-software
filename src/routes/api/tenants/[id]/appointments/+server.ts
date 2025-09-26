@@ -2,8 +2,168 @@ import { json } from "@sveltejs/kit";
 import { AppointmentService } from "$lib/server/services/appointment-service";
 import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
+import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 import { checkPermission } from "$lib/server/utils/permissions";
+
+// Register OpenAPI documentation for GET
+registerOpenAPIRoute("/tenants/{id}/appointments", "GET", {
+  summary: "Get appointments by time range",
+  description:
+    "Retrieves all appointments within a specified time range for a tenant. Only staff and tenant admins can access appointments.",
+  tags: ["Appointments"],
+  parameters: [
+    {
+      name: "id",
+      in: "path",
+      required: true,
+      schema: { type: "string", format: "uuid" },
+      description: "Tenant ID",
+    },
+    {
+      name: "startDate",
+      in: "query",
+      required: true,
+      schema: { type: "string", format: "date-time" },
+      description: "Start date for the time range (ISO 8601 format: 2024-01-01T00:00:00.000Z)",
+    },
+    {
+      name: "endDate",
+      in: "query",
+      required: true,
+      schema: { type: "string", format: "date-time" },
+      description: "End date for the time range (ISO 8601 format: 2024-12-31T23:59:59.999Z)",
+    },
+  ],
+  responses: {
+    "200": {
+      description: "Appointments retrieved successfully",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              appointments: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string", format: "uuid", description: "Appointment ID" },
+                    tunnelId: { type: "string", format: "uuid", description: "Client tunnel ID" },
+                    channelId: { type: "string", format: "uuid", description: "Channel ID" },
+                    appointmentDate: {
+                      type: "string",
+                      format: "date-time",
+                      description: "Appointment date and time",
+                    },
+                    expiryDate: {
+                      type: "string",
+                      format: "date",
+                      description: "Data expiry date (nullable)",
+                    },
+                    status: {
+                      type: "string",
+                      enum: ["NEW", "CONFIRMED", "HELD", "REJECTED", "NO_SHOW"],
+                      description: "Appointment status",
+                    },
+                    isEncrypted: {
+                      type: "boolean",
+                      description: "Whether appointment uses end-to-end encryption",
+                    },
+                    encryptedPayload: {
+                      type: "string",
+                      description: "Encrypted appointment data (nullable)",
+                    },
+                    iv: {
+                      type: "string",
+                      description: "Initialization vector for encryption (nullable)",
+                    },
+                    authTag: {
+                      type: "string",
+                      description: "Authentication tag for encryption (nullable)",
+                    },
+                    createdAt: {
+                      type: "string",
+                      format: "date-time",
+                      description: "Creation timestamp (nullable)",
+                    },
+                    updatedAt: {
+                      type: "string",
+                      format: "date-time",
+                      description: "Last update timestamp (nullable)",
+                    },
+                  },
+                  required: [
+                    "id",
+                    "tunnelId",
+                    "channelId",
+                    "appointmentDate",
+                    "status",
+                    "isEncrypted",
+                  ],
+                },
+              },
+              meta: {
+                type: "object",
+                properties: {
+                  count: { type: "number", description: "Number of appointments found" },
+                  startDate: {
+                    type: "string",
+                    format: "date-time",
+                    description: "Query start date",
+                  },
+                  endDate: { type: "string", format: "date-time", description: "Query end date" },
+                },
+                required: ["count", "startDate", "endDate"],
+              },
+            },
+            required: ["appointments", "meta"],
+          },
+        },
+      },
+    },
+    "400": {
+      description: "Invalid input data",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "401": {
+      description: "Authentication required",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "403": {
+      description: "Insufficient permissions",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "404": {
+      description: "Tenant not found",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "500": {
+      description: "Internal server error",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+  },
+});
 
 export const GET: RequestHandler = async ({ params, url, locals }) => {
   const log = logger.setContext("API");

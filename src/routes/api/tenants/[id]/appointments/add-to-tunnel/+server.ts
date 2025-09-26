@@ -12,6 +12,7 @@ import {
   NotFoundError,
   logError,
 } from "$lib/server/utils/errors";
+import { registerOpenAPIRoute } from "$lib/server/openapi";
 
 const requestSchema = z.object({
   emailHash: z.string(),
@@ -23,6 +24,144 @@ const requestSchema = z.object({
     iv: z.string(),
     authTag: z.string(),
   }),
+});
+
+// Register OpenAPI documentation for POST
+registerOpenAPIRoute("/tenants/{id}/appointments/add-to-tunnel", "POST", {
+  summary: "Add appointment to existing tunnel",
+  description:
+    "Adds a new appointment to an existing client tunnel. For clients who already have appointments and want to book another one.",
+  tags: ["Appointments", "Clients"],
+  parameters: [
+    {
+      name: "id",
+      in: "path",
+      required: true,
+      schema: { type: "string", format: "uuid" },
+      description: "Tenant ID",
+    },
+  ],
+  requestBody: {
+    description: "Appointment data for existing tunnel",
+    content: {
+      "application/json": {
+        schema: {
+          type: "object",
+          properties: {
+            emailHash: {
+              type: "string",
+              description: "SHA-256 hash of client email for verification",
+              example: "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+            },
+            tunnelId: {
+              type: "string",
+              format: "uuid",
+              description: "Existing client tunnel identifier",
+              example: "550e8400-e29b-41d4-a716-446655440000",
+            },
+            channelId: {
+              type: "string",
+              format: "uuid",
+              description: "Channel ID for the appointment",
+              example: "550e8400-e29b-41d4-a716-446655440001",
+            },
+            appointmentDate: {
+              type: "string",
+              format: "date-time",
+              description: "Appointment date and time (ISO 8601)",
+              example: "2024-12-31T14:30:00.000Z",
+            },
+            encryptedAppointment: {
+              type: "object",
+              properties: {
+                encryptedPayload: {
+                  type: "string",
+                  description: "AES-encrypted appointment data",
+                  example: "deadbeef123456789abcdef...",
+                },
+                iv: {
+                  type: "string",
+                  description: "Initialization vector for AES encryption",
+                  example: "123456789abcdef...",
+                },
+                authTag: {
+                  type: "string",
+                  description: "Authentication tag for AES-GCM",
+                  example: "fedcba9876543210...",
+                },
+              },
+              required: ["encryptedPayload", "iv", "authTag"],
+              description: "Encrypted appointment data",
+            },
+          },
+          required: [
+            "emailHash",
+            "tunnelId",
+            "channelId",
+            "appointmentDate",
+            "encryptedAppointment",
+          ],
+        },
+      },
+    },
+  },
+  responses: {
+    "200": {
+      description: "Appointment added to tunnel successfully",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              id: {
+                type: "string",
+                format: "uuid",
+                description: "Created appointment ID",
+                example: "550e8400-e29b-41d4-a716-446655440002",
+              },
+              appointmentDate: {
+                type: "string",
+                format: "date-time",
+                description: "Appointment date and time",
+                example: "2024-12-31T14:30:00.000Z",
+              },
+              status: {
+                type: "string",
+                enum: ["NEW", "CONFIRMED"],
+                description: "Initial appointment status (depends on channel configuration)",
+                example: "NEW",
+              },
+            },
+            required: ["id", "appointmentDate", "status"],
+          },
+        },
+      },
+    },
+    "400": {
+      description: "Invalid request data",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "404": {
+      description: "Tunnel or channel not found",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "500": {
+      description: "Internal server error",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+  },
 });
 
 /**
