@@ -39,7 +39,7 @@ export const agent = pgTable("agent", {
   name: text("name").notNull(),
   /** Optional description of the agent's role or specialties */
   description: json("description").$type<string[]>(),
-  /** Active languages for this channel (array of language codes) */
+  /** Active languages for this agent (array of language codes) */
   languages: json("languages").$type<string[]>().notNull(),
   /** Optional logo/profile image for the agent (PNG, JPEG, GIF, or WEBP) */
   image: varchar("image", { length: 100_000 }),
