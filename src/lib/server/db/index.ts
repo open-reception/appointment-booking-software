@@ -55,17 +55,17 @@ export async function getTenantDb(
  * @returns Promise<SelectTenant> - The tenant object
  */
 export async function getTenant(tenantId: string): Promise<centralSchema.SelectTenant> {
-	const tenant = await centralDb
-		.select()
-		.from(centralSchema.tenant)
-		.where(eq(centralSchema.tenant.id, tenantId))
-		.limit(1);
+  const tenant = await centralDb
+    .select()
+    .from(centralSchema.tenant)
+    .where(eq(centralSchema.tenant.id, tenantId))
+    .limit(1);
 
-	if (tenant.length === 0) {
-		throw new Error(`Tenant with ID ${tenantId} not found`);
-	}
+  if (tenant.length === 0) {
+    throw new Error(`Tenant with ID ${tenantId} not found`);
+  }
 
-	return tenant[0];
+  return tenant[0];
 }
 
 /**
