@@ -50,6 +50,25 @@ export async function getTenantDb(
 }
 
 /**
+ * Get tenant information by ID
+ * @param tenantId - The tenant's UUID
+ * @returns Promise<SelectTenant> - The tenant object
+ */
+export async function getTenant(tenantId: string): Promise<centralSchema.SelectTenant> {
+  const tenant = await centralDb
+    .select()
+    .from(centralSchema.tenant)
+    .where(eq(centralSchema.tenant.id, tenantId))
+    .limit(1);
+
+  if (tenant.length === 0) {
+    throw new Error(`Tenant with ID ${tenantId} not found`);
+  }
+
+  return tenant[0];
+}
+
+/**
  * Clear cached database connections (useful for testing or tenant updates)
  */
 export function clearTenantDbCache(): void {

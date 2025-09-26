@@ -486,20 +486,28 @@ export class UserService {
   }
 
   /**
-   * Add a passkey for a uaer
+   * Add a passkey for a user
+   * For staff users, this will also generate crypto keypairs for their tenants
    */
   static async addPasskey(
     userId: string,
     passkeyData: Omit<InsertUserPasskey, "userId" | "createdAt" | "updatedAt">,
+    options?: {
+      authenticatorData?: ArrayBuffer;
+      tenantIds?: string[];
+    },
   ) {
     const log = logger.setContext("UserService");
     log.debug("Adding passkey for user", {
       userId,
       passkeyId: passkeyData.id,
       deviceName: passkeyData.deviceName,
+      withCryptoKeys: !!options?.authenticatorData,
+      tenantCount: options?.tenantIds?.length || 0,
     });
 
     try {
+      // Add the passkey to the database
       const result = await centralDb
         .insert(centralSchema.userPasskey)
         .values({
@@ -507,6 +515,51 @@ export class UserService {
           userId,
         })
         .returning();
+
+      // If authenticatorData is provided, generate crypto keypairs for staff
+      if (options?.authenticatorData && options?.tenantIds?.length) {
+        log.debug("Generating crypto keypairs for staff user", {
+          userId,
+          passkeyId: passkeyData.id,
+          tenantCount: options.tenantIds.length,
+        });
+
+        // Import StaffCryptoService dynamically to avoid circular imports
+        const { StaffCryptoService } = await import("./staff-crypto.service");
+        const staffCryptoService = new StaffCryptoService();
+
+        // Generate keypairs for each tenant this staff member has access to
+        for (const tenantId of options.tenantIds) {
+          try {
+            await staffCryptoService.generateStaffKeypair(
+              tenantId,
+              userId,
+              passkeyData.id,
+              options.authenticatorData,
+            );
+
+            log.debug("Generated staff keypair for tenant", {
+              userId,
+              tenantId,
+              passkeyId: passkeyData.id,
+            });
+          } catch (error) {
+            log.error("Failed to generate staff keypair for tenant", {
+              userId,
+              tenantId,
+              passkeyId: passkeyData.id,
+              error: String(error),
+            });
+            // Continue with other tenants even if one fails
+          }
+        }
+
+        log.info("Staff crypto keys setup completed", {
+          userId,
+          passkeyId: result[0].id,
+          tenantsProcessed: options.tenantIds.length,
+        });
+      }
 
       log.debug("Passkey added successfully", {
         userId,
