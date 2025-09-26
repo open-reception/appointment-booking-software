@@ -92,7 +92,7 @@ export const actions: Actions = {
       });
     }
 
-    const resp = await event.fetch(`/api/tenants/${form.data.tenantId}`, {
+    const resp = await event.fetch(`/api/tenants/${form.data.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -128,7 +128,7 @@ export const actions: Actions = {
       });
     }
 
-    const resp = await event.fetch(`/api/tenants/${form.data.tenantId}`, {
+    const resp = await event.fetch(`/api/tenants/${form.data.id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",

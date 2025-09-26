@@ -238,7 +238,7 @@ describe("TenantAdminService", () => {
       const updateData = {
         longName: "Updated Clinic Name",
         description: "Updated description",
-        logo: Buffer.from("logo data"),
+        logo: "logo data",
       };
 
       const mockUpdatedTenant = {

@@ -1,7 +1,7 @@
 import { json, type RequestHandler } from "@sveltejs/kit";
 import { z } from "zod";
 import { centralDb } from "$lib/server/db";
-import { tenant } from "$lib/server/db/central-schema";
+import { tenant, userSession } from "$lib/server/db/central-schema";
 import { eq } from "drizzle-orm";
 import {
   BackendError,
@@ -34,6 +34,10 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 
     const body = await request.json();
     const validation = tenantSwitchSchema.safeParse(body);
+
+    if (!locals.user?.sessionId) {
+      throw new ValidationError(ERRORS.SECURITY.SESSION_MISSING);
+    }
 
     if (!validation.success) {
       logger.warn("Invalid tenant switch request", {
@@ -69,17 +73,23 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 
     if (!updatedUser) {
       logger.error("Failed to update user tenant", {
-        userId: locals.user?.userId,
+        userId: locals.user.userId,
         tenantId,
       });
       throw new InternalError(ERRORS.USERS.FAILED_TO_UPDATE);
     }
 
     // Generate new access token with updated tenant context
-    const newAccessToken = await generateAccessToken(
-      updatedUser,
-      (locals.user?.sessionId as string) || "temp-session",
-    );
+    const newAccessToken = await generateAccessToken(updatedUser, locals.user.sessionId);
+
+    // Update session with new access token
+    await centralDb
+      .update(userSession)
+      .set({
+        accessToken: newAccessToken,
+        lastUsedAt: new Date(),
+      })
+      .where(eq(userSession.id, locals.user.sessionId));
 
     // Set new access token cookie
     cookies.set("access_token", newAccessToken, {

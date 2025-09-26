@@ -15,6 +15,13 @@
       "when": 1758021994040,
       "tag": "0001_equal_king_bedlam",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1758555647097,
+      "tag": "0002_typical_the_twelve",
+      "breakpoints": true
     }
   ]
 }
