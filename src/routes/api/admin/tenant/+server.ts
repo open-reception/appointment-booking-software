@@ -32,12 +32,12 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
     // Verify user is authenticated and is global admin
     checkPermission(locals, null, true);
 
-    const body = await request.json();
-    const validation = tenantSwitchSchema.safeParse(body);
-
     if (!locals.user?.sessionId) {
       throw new ValidationError(ERRORS.SECURITY.SESSION_MISSING);
     }
+
+    const body = await request.json();
+    const validation = tenantSwitchSchema.safeParse(body);
 
     if (!validation.success) {
       logger.warn("Invalid tenant switch request", {

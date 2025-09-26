@@ -339,6 +339,7 @@ export class ChannelService {
               id: tenantSchema.agent.id,
               name: tenantSchema.agent.name,
               description: tenantSchema.agent.description,
+              languages: tenantSchema.agent.languages,
               image: tenantSchema.agent.image,
             })
             .from(tenantSchema.agent)
@@ -516,6 +517,7 @@ export class ChannelService {
           id: tenantSchema.agent.id,
           name: tenantSchema.agent.name,
           description: tenantSchema.agent.description,
+          languages: tenantSchema.agent.languages,
           image: tenantSchema.agent.image,
         })
         .from(tenantSchema.agent)
