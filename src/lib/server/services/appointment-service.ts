@@ -3,7 +3,7 @@ import * as tenantSchema from "../db/tenant-schema";
 import { type SelectAppointment } from "../db/tenant-schema";
 import logger from "$lib/logger";
 import { ValidationError } from "../utils/errors";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gte, lte, asc } from "drizzle-orm";
 
 export class AppointmentService {
   #db: Awaited<ReturnType<typeof getTenantDb>> | null = null;
@@ -133,6 +133,39 @@ export class AppointmentService {
     }
 
     return true;
+  }
+
+  public async getAppointmentsByTimeRange(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<SelectAppointment[]> {
+    const log = logger.setContext("AppointmentService");
+    log.debug("Fetching appointments by time range", {
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      tenantId: this.tenantId,
+    });
+    const db = await this.getDb();
+
+    const result = await db
+      .select()
+      .from(tenantSchema.appointment)
+      .where(
+        and(
+          gte(tenantSchema.appointment.appointmentDate, startDate),
+          lte(tenantSchema.appointment.appointmentDate, endDate),
+        ),
+      )
+      .orderBy(asc(tenantSchema.appointment.appointmentDate));
+
+    log.debug("Appointments retrieved successfully", {
+      count: result.length,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      tenantId: this.tenantId,
+    });
+
+    return result;
   }
 
   /**
