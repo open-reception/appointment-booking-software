@@ -9,13 +9,13 @@ import { ValidationError, NotFoundError, ConflictError } from "../utils/errors";
 
 const agentCreationSchema = z.object({
   name: z.string().min(1).max(100),
-  description: z.string().optional(),
+  description: z.array(z.string()).optional(),
   image: z.string().optional().nullable(),
 });
 
 const agentUpdateSchema = z.object({
   name: z.string().min(1).max(100).optional(),
-  description: z.string().optional(),
+  description: z.array(z.string()).optional(),
   image: z.string().optional().nullable(),
 });
 
@@ -96,7 +96,7 @@ export class AgentService {
         .insert(tenantSchema.agent)
         .values({
           name: request.name,
-          description: request.description,
+          description: request.description ?? [],
           image: request.image,
         })
         .returning();

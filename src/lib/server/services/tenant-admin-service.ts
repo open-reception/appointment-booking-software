@@ -98,7 +98,7 @@ export class TenantAdminService {
     const urlParts = env.DATABASE_URL?.split("/") ?? [];
     urlParts.pop();
 
-    const newTenant: InsertTenant = { ...request, longName: "", databaseUrl: "" };
+    const newTenant: InsertTenant = { ...request, longName: "", databaseUrl: "", description: [] };
     newTenant.databaseUrl = urlParts.join("/") + "/" + newTenant.shortName;
 
     try {

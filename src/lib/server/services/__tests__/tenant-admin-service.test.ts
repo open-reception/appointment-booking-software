@@ -237,7 +237,7 @@ describe("TenantAdminService", () => {
       const tenantId = "tenant-123";
       const updateData = {
         longName: "Updated Clinic Name",
-        description: "Updated description",
+        description: ["Updated description"],
         logo: "logo data",
       };
 

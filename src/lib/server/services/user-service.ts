@@ -41,7 +41,7 @@ function createSystemTenant(): SelectTenant {
     id: "system",
     shortName: "open-reception",
     longName: "Open Reception",
-    description: "Secure appointment booking platform",
+    description: ["Secure appointment booking platform"],
     logo: null,
     databaseUrl: "",
     setupState: "FIRST_CHANNEL_CREATED",

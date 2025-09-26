@@ -100,7 +100,7 @@ describe("AgentService", () => {
 
       const request = {
         name: "Test Agent",
-        description: "Test description",
+        description: ["Test description"],
         image: "test",
       };
 
@@ -118,7 +118,7 @@ describe("AgentService", () => {
     it("should handle validation error for invalid name", async () => {
       const request = {
         name: "",
-        description: "Test description",
+        description: ["Test description"],
       };
 
       await expect(service.createAgent(request)).rejects.toThrow(ValidationError);

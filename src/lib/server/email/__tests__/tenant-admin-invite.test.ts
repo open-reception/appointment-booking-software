@@ -6,7 +6,7 @@ describe("sendTenantAdminInviteEmail", () => {
     id: "test-tenant-id",
     shortName: "testcorp",
     longName: "Test Corporation GmbH",
-    description: "A test corporation",
+    description: ["A test corporation"],
     databaseUrl: "postgresql://test",
     setupState: "NEW" as const,
     createdAt: new Date(),
