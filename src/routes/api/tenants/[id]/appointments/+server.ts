@@ -201,7 +201,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
     }
 
     // Limit the time range to prevent excessive queries (max 1 year)
-    const maxRangeMs = 365 * 24 * 60 * 60 * 1000; // 1 year in milliseconds
+    const maxRangeMs = 366 * 24 * 60 * 60 * 1000; // 1 year in milliseconds (accounting for leap years)
     if (endDate.getTime() - startDate.getTime() > maxRangeMs) {
       throw new ValidationError("Date range cannot exceed 1 year");
     }

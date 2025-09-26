@@ -240,7 +240,9 @@ export class ScheduleService {
         const dayAppointments = appointments.filter(
           (appointment) =>
             appointment.channelId === channel.id &&
-            appointment.appointmentDate.toISOString().startsWith(dateString),
+            (typeof appointment.appointmentDate === "string"
+              ? (appointment.appointmentDate as string).startsWith(dateString)
+              : appointment.appointmentDate.toISOString().startsWith(dateString)),
         );
 
         // Get slot templates for this channel that apply to this weekday

@@ -142,8 +142,8 @@ export const GET: RequestHandler = async ({ params, url }) => {
     }
 
     // Limit the time range to prevent excessive queries (max 3 months)
-    const maxRangeMs = 90 * 24 * 60 * 60 * 1000; // 90 days in milliseconds
-    if (endDate.getTime() - startDate.getTime() > maxRangeMs) {
+    const maxRangeMs = 91 * 24 * 60 * 60 * 1000; // ~3 months in milliseconds (91 days to be safe)
+    if (endDate.getTime() - startDate.getTime() >= maxRangeMs) {
       throw new ValidationError("Date range cannot exceed 90 days");
     }
 
