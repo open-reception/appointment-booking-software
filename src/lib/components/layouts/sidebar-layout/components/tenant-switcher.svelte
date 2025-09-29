@@ -18,12 +18,8 @@
   const sidebar = useSidebar();
 
   const maxTenantsToShow = 5;
-  let activeTenantId = $state($auth.user?.tenantId);
+  let activeTenantId = $derived($auth.user?.tenantId);
   let activeTenant = $derived($tenants.tenants.find((t) => t.id === activeTenantId));
-
-  $effect(() => {
-    activeTenantId = $auth.user?.tenantId;
-  });
 </script>
 
 <Sidebar.Menu>
