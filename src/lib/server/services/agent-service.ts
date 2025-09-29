@@ -10,14 +10,14 @@ import { supportedLocales } from "$lib/const/locales";
 
 const agentCreationSchema = z.object({
   name: z.string().min(1).max(100),
-  descriptions: z.partialRecord(z.enum(supportedLocales), z.string()).optional(),
+  descriptions: z.partialRecord(z.enum(supportedLocales), z.string().min(1)).optional(),
   image: z.string().optional().nullable(),
   languages: z.array(z.string()).optional(),
 });
 
 const agentUpdateSchema = z.object({
   name: z.string().min(1).max(100).optional(),
-  descriptions: z.partialRecord(z.enum(supportedLocales), z.string()).optional(),
+  descriptions: z.partialRecord(z.enum(supportedLocales), z.string().min(1)).optional(),
   image: z.string().optional().nullable(),
   languages: z.array(z.string()).optional(),
 });

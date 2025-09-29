@@ -23,7 +23,7 @@ const slotTemplateSchema = z.object({
 const channelCreationSchema = z.object({
   names: z.partialRecord(z.enum(supportedLocales), z.string().min(1).max(100)),
   color: z.string().optional(),
-  descriptions: z.partialRecord(z.enum(supportedLocales), z.string().min(1).max(100)).optional(),
+  descriptions: z.partialRecord(z.enum(supportedLocales), z.string().min(1)).optional(),
   isPublic: z.boolean().optional(),
   requiresConfirmation: z.boolean().optional(),
   agentIds: z.array(z.string().uuid()).optional().default([]),
@@ -33,7 +33,7 @@ const channelCreationSchema = z.object({
 const channelUpdateSchema = z.object({
   names: z.partialRecord(z.enum(supportedLocales), z.string().min(1).max(100)),
   color: z.string().optional(),
-  descriptions: z.partialRecord(z.enum(supportedLocales), z.string().min(1).max(100)).optional(),
+  descriptions: z.partialRecord(z.enum(supportedLocales), z.string().min(1)).optional(),
   isPublic: z.boolean().optional(),
   requiresConfirmation: z.boolean().optional(),
   agentIds: z.array(z.string().uuid()).optional(),
