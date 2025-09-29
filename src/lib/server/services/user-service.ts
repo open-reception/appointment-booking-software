@@ -106,7 +106,7 @@ export class UserService {
       token: userData.token,
       tokenValidUntil: userData.tokenValidUntil,
       language: userData.language || "de",
-      confirmed: false,
+      confirmationState: "INVITED",
       isActive: false,
     };
 
@@ -259,7 +259,7 @@ export class UserService {
       const result = await centralDb
         .update(centralSchema.user)
         .set({
-          confirmed: true,
+          confirmationState: "CONFIRMED",
           isActive: true,
           recoveryPassphrase: null, // Clear it after showing it once
         })
@@ -302,7 +302,10 @@ export class UserService {
     try {
       // Check if user exists and is active
       const user = await centralDb
-        .select({ id: centralSchema.user.id, confirmed: centralSchema.user.confirmed })
+        .select({
+          id: centralSchema.user.id,
+          confirmationState: centralSchema.user.confirmationState,
+        })
         .from(centralSchema.user)
         .where(eq(centralSchema.user.id, userId))
         .limit(1);
@@ -311,7 +314,7 @@ export class UserService {
         throw new NotFoundError("User not found");
       }
 
-      if (!user[0].confirmed) {
+      if (user[0].confirmationState === "INVITED") {
         throw new ValidationError(
           "User account must be confirmed before adding additional passkeys",
         );
@@ -321,9 +324,10 @@ export class UserService {
       await centralDb.insert(centralSchema.userPasskey).values({
         ...passkeyData,
         userId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
+
+      // Note: Crypto keypairs for STAFF/TENANT_ADMIN are generated in the browser
+      // and stored via separate API calls, not automatically here
 
       log.debug("Additional passkey added successfully", { userId, passkeyId: passkeyData.id });
     } catch (error) {
@@ -355,7 +359,7 @@ export class UserService {
       log.debug("User found by email", {
         email,
         userId: result[0].id,
-        confirmed: result[0].confirmed,
+        confirmationState: result[0].confirmationState,
       });
       return result[0];
     } catch (error) {
@@ -487,26 +491,30 @@ export class UserService {
 
   /**
    * Add a passkey for a user
-   * For staff users, this will also generate crypto keypairs for their tenants
    */
   static async addPasskey(
     userId: string,
     passkeyData: Omit<InsertUserPasskey, "userId" | "createdAt" | "updatedAt">,
-    options?: {
-      authenticatorData?: ArrayBuffer;
-      tenantIds?: string[];
-    },
   ) {
     const log = logger.setContext("UserService");
     log.debug("Adding passkey for user", {
       userId,
       passkeyId: passkeyData.id,
       deviceName: passkeyData.deviceName,
-      withCryptoKeys: !!options?.authenticatorData,
-      tenantCount: options?.tenantIds?.length || 0,
     });
 
     try {
+      // Verify user exists
+      const user = await centralDb
+        .select({ id: centralSchema.user.id })
+        .from(centralSchema.user)
+        .where(eq(centralSchema.user.id, userId))
+        .limit(1);
+
+      if (user.length === 0) {
+        throw new NotFoundError("User not found");
+      }
+
       // Add the passkey to the database
       const result = await centralDb
         .insert(centralSchema.userPasskey)
@@ -516,50 +524,8 @@ export class UserService {
         })
         .returning();
 
-      // If authenticatorData is provided, generate crypto keypairs for staff
-      if (options?.authenticatorData && options?.tenantIds?.length) {
-        log.debug("Generating crypto keypairs for staff user", {
-          userId,
-          passkeyId: passkeyData.id,
-          tenantCount: options.tenantIds.length,
-        });
-
-        // Import StaffCryptoService dynamically to avoid circular imports
-        const { StaffCryptoService } = await import("./staff-crypto.service");
-        const staffCryptoService = new StaffCryptoService();
-
-        // Generate keypairs for each tenant this staff member has access to
-        for (const tenantId of options.tenantIds) {
-          try {
-            await staffCryptoService.generateStaffKeypair(
-              tenantId,
-              userId,
-              passkeyData.id,
-              options.authenticatorData,
-            );
-
-            log.debug("Generated staff keypair for tenant", {
-              userId,
-              tenantId,
-              passkeyId: passkeyData.id,
-            });
-          } catch (error) {
-            log.error("Failed to generate staff keypair for tenant", {
-              userId,
-              tenantId,
-              passkeyId: passkeyData.id,
-              error: String(error),
-            });
-            // Continue with other tenants even if one fails
-          }
-        }
-
-        log.info("Staff crypto keys setup completed", {
-          userId,
-          passkeyId: result[0].id,
-          tenantsProcessed: options.tenantIds.length,
-        });
-      }
+      // Note: Crypto keypairs for STAFF/TENANT_ADMIN are generated in the browser
+      // and stored via separate API calls, not automatically here
 
       log.debug("Passkey added successfully", {
         userId,

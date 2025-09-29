@@ -21,6 +21,11 @@ export const configTypeEnum = pgEnum("config_type", ["BOOLEAN", "NUMBER", "STRIN
  * User role enumeration - defines the different user roles in the system
  */
 export const userRoleEnum = pgEnum("user_role", ["GLOBAL_ADMIN", "TENANT_ADMIN", "STAFF"]);
+export const confirmationStateEnum = pgEnum("confirmation_state", [
+  "INVITED",
+  "CONFIRMED",
+  "ACCESS_GRANTED",
+]);
 
 export const tenantSetupState = pgEnum("setup_state", [
   "NEW", // newly created
@@ -102,7 +107,7 @@ export const user = pgTable(
     updatedAt: timestamp("updated_at").defaultNow(),
     lastLoginAt: timestamp("last_login_at"),
     isActive: boolean("is_active").default(true),
-    confirmed: boolean("confirmed").default(false),
+    confirmationState: confirmationStateEnum("confirmation_state").default("INVITED"),
     token: text("token"),
     tokenValidUntil: timestamp("token_valid_until"),
     /** Hashed passphrase for password authentication (optional, alternative to WebAuthn) */

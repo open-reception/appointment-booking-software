@@ -1,65 +1,196 @@
-# Staff Crypto Worker Documentation
+# Staff Crypto Management Documentation
 
 ## Overview
 
-The Staff Crypto Worker provides secure, isolated cryptographic operations for staff members accessing encrypted appointment data. By running cryptographic operations in a Web Worker, sensitive private keys are kept isolated from the main thread, providing protection against XSS attacks and other web-based vulnerabilities.
+The Staff Crypto system implements browser-based end-to-end encryption for staff members accessing patient appointment data. All cryptographic operations happen in the browser using WebAuthn-backed key derivation with split-key architecture for maximum security.
 
 ## Architecture
 
 ```
-Main Thread (UI) ↔ Crypto Worker ↔ WebAuthn/Hardware Keys
+Browser (Staff App) ↔ StaffCryptoService API ↔ Tenant Database
+       ↓
+   WebAuthn Passkeys ↔ Hardware Keys
 ```
 
-- **Main Thread**: Handles UI and business logic, never sees private keys
-- **Crypto Worker**: Isolated context for all cryptographic operations
-- **WebAuthn**: Hardware-backed authentication for key derivation
+- **Browser**: Generates Kyber keys, performs encryption/decryption
+- **StaffCryptoService**: Stores/retrieves key shards and public keys
+- **WebAuthn**: Hardware-backed authentication for deterministic key derivation
+- **Split-Key Storage**: Private keys split between database and passkey-derived shards
 
 ## Key Features
 
-- **Memory Isolation**: Private keys never leave the worker context
-- **XSS Protection**: Main thread cannot access cryptographic keys
-- **Automatic Cleanup**: Keys are automatically cleared after inactivity
-- **Session Management**: 10-minute session timeout with extension on use
-- **WebAuthn Integration**: Hardware-backed authentication for key derivation
+- **Browser-Based Cryptography**: All key generation and crypto operations in browser
+- **Split-Key Architecture**: Private keys split using XOR between database and passkey shards
+- **WebAuthn Integration**: Hardware-backed deterministic key derivation from passkey data
+- **Zero-Knowledge Server**: Server never sees complete private keys
+- **Per-Passkey Keys**: Each staff passkey has its own unique keypair
+- **ML-KEM-768 Encryption**: Post-quantum cryptography using Kyber
 
-## Installation
+## Browser Integration Workflow
 
-1. Copy the worker files to your project:
+### 1. Staff Passkey Registration & Key Generation
 
-   - `src/lib/crypto-worker.js` - The Web Worker implementation
-   - `src/lib/crypto-worker-client.js` - Main thread client interface
-
-2. Ensure your web server serves the worker file with proper MIME type:
-   ```javascript
-   // Make sure crypto-worker.js is accessible at /src/lib/crypto-worker.js
-   ```
-
-## Basic Usage
-
-### Initialize the Worker
+When a staff member registers a new passkey, the browser automatically generates crypto keys:
 
 ```javascript
-import { cryptoWorker } from "./crypto-worker-client.js";
+import { UnifiedAppointmentCrypto } from "$lib/client/appointment-crypto";
 
-// Initialize the worker
-await cryptoWorker.initialize();
+async function registerStaffPasskey(userId, tenantId) {
+  // 1. Complete WebAuthn passkey registration
+  const credential = await navigator.credentials.create({
+    publicKey: registrationOptions,
+  });
+
+  // 2. Generate Kyber keypair in browser
+  const keyPair = KyberCrypto.generateKeyPair();
+
+  // 3. Derive deterministic shard from WebAuthn authenticatorData
+  const crypto = new UnifiedAppointmentCrypto();
+  const passkeyBasedShard = await crypto.derivePasskeyBasedShard(
+    credential.id,
+    credential.response.authenticatorData,
+  );
+
+  // 4. Create database shard using XOR
+  const dbShard = new Uint8Array(keyPair.privateKey.length);
+  for (let i = 0; i < keyPair.privateKey.length; i++) {
+    dbShard[i] = keyPair.privateKey[i] ^ passkeyBasedShard[i];
+  }
+
+  // 5. Store via StaffCryptoService API
+  await fetch(`/api/tenants/${tenantId}/staff/${userId}/crypto`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      passkeyId: credential.id,
+      publicKey: bufferToBase64(keyPair.publicKey),
+      privateKeyShare: bufferToBase64(dbShard),
+    }),
+  });
+
+  console.log("Staff crypto keys generated and stored");
+}
 ```
 
-### Authenticate Staff Member
+### 2. Staff Authentication & Key Reconstruction
+
+When a staff member authenticates, their private key is reconstructed from shards:
 
 ```javascript
-try {
-  const authResult = await cryptoWorker.authenticate("staff-id-uuid");
-  console.log("Authenticated until:", new Date(authResult.expiresAt));
+async function authenticateStaff(userId, tenantId) {
+  // 1. Perform WebAuthn authentication
+  const assertion = await navigator.credentials.get({
+    publicKey: authenticationOptions,
+  });
 
-  // authResult contains:
-  // {
-  //   authenticated: true,
-  //   expiresAt: timestamp,
-  //   staffId: 'staff-id-uuid'
-  // }
-} catch (error) {
-  console.error("Authentication failed:", error.message);
+  // 2. Get database shard from API
+  const response = await fetch(`/api/tenants/${tenantId}/staff/${userId}/key-shard`);
+  const { publicKey, privateKeyShare, passkeyId } = await response.json();
+
+  // 3. Derive same passkey-based shard
+  const crypto = new UnifiedAppointmentCrypto();
+  const passkeyBasedShard = await crypto.derivePasskeyBasedShard(
+    passkeyId,
+    assertion.response.authenticatorData,
+  );
+
+  // 4. Reconstruct private key using XOR
+  const dbShard = base64ToBuffer(privateKeyShare);
+  const privateKey = new Uint8Array(dbShard.length);
+  for (let i = 0; i < dbShard.length; i++) {
+    privateKey[i] = dbShard[i] ^ passkeyBasedShard[i];
+  }
+
+  // 5. Store reconstructed keypair for session
+  crypto.staffKeyPair = {
+    publicKey: base64ToBuffer(publicKey),
+    privateKey: privateKey,
+  };
+
+  console.log("Staff authenticated and keys reconstructed");
+  return crypto;
+}
+```
+
+## StaffCryptoService API
+
+The backend API provides these endpoints for managing staff cryptographic keys:
+
+### Store Staff Keypair
+
+```
+POST /api/tenants/{tenantId}/staff/{userId}/crypto
+```
+
+**Body:**
+
+```json
+{
+  "passkeyId": "credential-id-from-webauthn",
+  "publicKey": "base64-encoded-kyber-public-key",
+  "privateKeyShare": "base64-encoded-database-shard"
+}
+```
+
+### Get Staff Key Shard
+
+```
+GET /api/tenants/{tenantId}/staff/{userId}/key-shard
+```
+
+**Response:**
+
+```json
+{
+  "publicKey": "base64-encoded-kyber-public-key",
+  "privateKeyShare": "base64-encoded-database-shard",
+  "passkeyId": "associated-passkey-id"
+}
+```
+
+### Get All Staff Public Keys
+
+```
+GET /api/tenants/{tenantId}/appointments/staff-public-keys
+```
+
+**Response:**
+
+```json
+{
+  "staffPublicKeys": [
+    {
+      "userId": "staff-user-id",
+      "publicKey": "base64-encoded-kyber-public-key"
+    }
+  ]
+}
+```
+
+## Browser Implementation
+
+### Initialize Crypto System
+
+```javascript
+import { UnifiedAppointmentCrypto } from "$lib/client/appointment-crypto";
+
+const crypto = new UnifiedAppointmentCrypto();
+```
+
+### Staff Authentication
+
+```javascript
+async function authenticateStaff(staffId, tenantId) {
+  try {
+    await crypto.authenticateStaff(staffId, tenantId);
+    console.log("Staff authenticated successfully");
+
+    // Crypto system is now ready for encryption/decryption
+    return crypto;
+  } catch (error) {
+    console.error("Authentication failed:", error);
+    throw error;
+  }
 }
 ```
 

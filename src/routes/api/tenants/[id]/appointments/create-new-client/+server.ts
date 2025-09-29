@@ -1,14 +1,15 @@
 import { json, type RequestHandler } from "@sveltejs/kit";
 import { z } from "zod";
 import { logger } from "$lib/logger";
-import { getTenantDb } from "$lib/server/db";
-import { eq } from "drizzle-orm";
+import { getTenantDb, centralDb } from "$lib/server/db";
+import { eq, and } from "drizzle-orm";
 import {
   clientAppointmentTunnel,
   clientTunnelStaffKeyShare,
   appointment,
   channel,
 } from "$lib/server/db/tenant-schema";
+import { user } from "$lib/server/db/central-schema";
 import type { AppointmentResponse } from "$lib/types/appointment";
 import {
   BackendError,
@@ -16,6 +17,7 @@ import {
   logError,
   NotFoundError,
   ValidationError,
+  ConflictError,
 } from "$lib/server/utils/errors";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 
@@ -191,6 +193,14 @@ registerOpenAPIRoute("/tenants/{id}/appointments/create-new-client", "POST", {
         },
       },
     },
+    "409": {
+      description: "No authorized users in tenant - cannot create client appointments",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
     "500": {
       description: "Internal server error",
       content: {
@@ -226,6 +236,23 @@ export const POST: RequestHandler = async ({ request, params }) => {
     });
 
     const db = await getTenantDb(tenantId);
+
+    // Check if there are any authorized users (ACCESS_GRANTED) in this tenant
+    const authorizedUsers = await centralDb
+      .select({ count: user.id })
+      .from(user)
+      .where(and(eq(user.tenantId, tenantId), eq(user.confirmationState, "ACCESS_GRANTED")))
+      .limit(1);
+
+    if (authorizedUsers.length === 0) {
+      logger.warn("Client creation blocked: No authorized users in tenant", {
+        tenantId,
+        tunnelId: validatedData.tunnelId,
+      });
+      throw new ConflictError(
+        "Cannot create client appointments: No authorized users found in tenant. At least one user must have ACCESS_GRANTED status.",
+      );
+    }
 
     // Transactional: Create tunnel and appointment
     const result = await db.transaction(async (tx) => {

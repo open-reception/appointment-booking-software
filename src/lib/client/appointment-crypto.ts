@@ -4,20 +4,47 @@
  * This class implements browser-side cryptography for both clients and staff members.
  * All sensitive operations happen in the browser with zero-knowledge architecture.
  *
- * Usage:
- *
- * // Client (Patient) Usage
+ * ## Client (Patient) Usage:
+ * ```javascript
  * const crypto = new UnifiedAppointmentCrypto();
- * await crypto.initNewClient(email, pin);
- * await crypto.loginExistingClient(email, pin);
- * const appointment = await crypto.createAppointment(appointmentData);
- * const myAppointments = await crypto.getMyAppointments();
+ * await crypto.initNewClient(email, pin, tenantId);
+ * await crypto.loginExistingClient(email, pin, tenantId);
+ * const appointment = await crypto.createAppointment(appointmentData, appointmentDate, channelId, tenantId);
+ * const myAppointments = await crypto.getMyAppointments(tenantId);
+ * ```
  *
- * // Staff Usage
+ * ## Staff Usage:
+ * ```javascript
  * const crypto = new UnifiedAppointmentCrypto();
  * await crypto.authenticateStaff(staffId, tenantId);
  * const appointments = await crypto.getStaffAppointments(tenantId);
  * const decrypted = await crypto.decryptStaffAppointment(encryptedData);
+ * ```
+ *
+ * ## Staff Key Management (during Passkey Registration):
+ * ```javascript
+ * // 1. Generate Kyber keypair in browser
+ * const keyPair = KyberCrypto.generateKeyPair();
+ *
+ * // 2. Derive passkey-based shard from WebAuthn authenticatorData
+ * const passkeyBasedShard = await this.derivePasskeyBasedShard(passkeyId, authenticatorData);
+ *
+ * // 3. Create database shard using XOR split
+ * const dbShard = new Uint8Array(keyPair.privateKey.length);
+ * for (let i = 0; i < keyPair.privateKey.length; i++) {
+ *   dbShard[i] = keyPair.privateKey[i] ^ passkeyBasedShard[i];
+ * }
+ *
+ * // 4. Store keys via StaffCryptoService API
+ * await fetch(`/api/tenants/${tenantId}/staff/${userId}/crypto`, {
+ *   method: 'POST',
+ *   body: JSON.stringify({
+ *     passkeyId,
+ *     publicKey: this.uint8ArrayToBase64(keyPair.publicKey),
+ *     privateKeyShare: this.uint8ArrayToBase64(dbShard)
+ *   })
+ * });
+ * ```
  */
 
 import { OptimizedArgon2 } from "$lib/crypto/hashing";
@@ -94,7 +121,7 @@ export class UnifiedAppointmentCrypto {
   /**
    * Initializes a new client with E2E encryption
    */
-  async initNewClient(email: string, pin: string): Promise<void> {
+  async initNewClient(email: string, pin: string, tenantId: string): Promise<void> {
     try {
       // 1. Generate email hash for privacy-preserving lookup
       this.emailHash = await this.hashEmail(email);
@@ -113,7 +140,7 @@ export class UnifiedAppointmentCrypto {
       await this.createPrivateKeyShare(this.clientKeyPair.privateKey, pin);
 
       // 6. Fetch staff public keys from server
-      const staffPublicKeys = await this.fetchStaffPublicKeys();
+      const staffPublicKeys = await this.fetchStaffPublicKeys(tenantId);
 
       // 7. Encrypt tunnel key for all staff members
       // Note: staffKeyShares will be used during actual appointment creation
@@ -229,7 +256,7 @@ export class UnifiedAppointmentCrypto {
             clientPublicKey: this.clientKeyPair?.publicKey,
             privateKeyShare: await this.getPrivateKeyShare(),
             encryptedAppointment,
-            staffKeyShares: await this.getStaffKeyShares(),
+            staffKeyShares: await this.getStaffKeyShares(tenantId),
             clientKeyShare: await this.getClientKeyShare(),
           }
         : {
@@ -549,6 +576,19 @@ export class UnifiedAppointmentCrypto {
 
   /**
    * Derive a deterministic shard from passkey authentication data
+   *
+   * This method creates a consistent private key shard from WebAuthn authenticatorData.
+   * The same passkey will always produce the same shard, enabling key reconstruction.
+   *
+   * Used in Staff Key Management:
+   * - During registration: Create shard to XOR with private key for database storage
+   * - During authentication: Recreate same shard to reconstruct private key
+   *
+   * Uses HKDF (HMAC-based Key Derivation Function) with:
+   * - IKM: WebAuthn authenticatorData (contains randomness from authenticator)
+   * - Salt: "staff-crypto-shard-v1" (version-specific salt)
+   * - Info: "passkey:{passkeyId}" (domain separation per passkey)
+   * - Length: 2400 bytes (ML-KEM-768 private key size)
    */
   private async derivePasskeyBasedShard(
     passkeyId: string,
@@ -699,9 +739,7 @@ export class UnifiedAppointmentCrypto {
     return this.uint8ArrayToHex(encryptedShare.encrypted);
   }
 
-  private async fetchStaffPublicKeys(): Promise<StaffPublicKey[]> {
-    const tenantId = this.getTenantId();
-
+  private async fetchStaffPublicKeys(tenantId: string): Promise<StaffPublicKey[]> {
     const response = await fetch(`/api/tenants/${tenantId}/appointments/staff-public-keys`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
@@ -715,17 +753,7 @@ export class UnifiedAppointmentCrypto {
     return data.staffPublicKeys;
   }
 
-  private getTenantId(): string {
-    // Try to get tenant ID from current URL path
-    const pathParts = window.location.pathname.split("/");
-    const tenantIndex = pathParts.indexOf("tenants");
-
-    if (tenantIndex !== -1 && pathParts[tenantIndex + 1]) {
-      return pathParts[tenantIndex + 1];
-    }
-
-    throw new Error("Could not determine tenant ID from current URL");
-  }
+  // getTenantId method removed - tenantId is now always passed explicitly
 
   private async encryptTunnelKeyForStaff(
     staffKeys: StaffPublicKey[],
@@ -809,11 +837,11 @@ export class UnifiedAppointmentCrypto {
     return this.clientKeyPair.privateKey; // Simplified for now
   }
 
-  private async getStaffKeyShares(): Promise<
-    Array<{ userId: string; encryptedTunnelKey: string }>
-  > {
+  private async getStaffKeyShares(
+    tenantId: string,
+  ): Promise<Array<{ userId: string; encryptedTunnelKey: string }>> {
     // Fetch and encrypt tunnel key for all staff members
-    const staffPublicKeys = await this.fetchStaffPublicKeys();
+    const staffPublicKeys = await this.fetchStaffPublicKeys(tenantId);
     return await this.encryptTunnelKeyForStaff(staffPublicKeys);
   }
 
@@ -837,71 +865,3 @@ export class UnifiedAppointmentCrypto {
     return new Uint8Array(Array.from(atob(base64)).map((c) => c.charCodeAt(0)));
   }
 }
-
-// ===== USAGE EXAMPLES =====
-
-/*
-// Example 1: New client creates first appointment
-async function newClientExample() {
-  const crypto = new UnifiedAppointmentCrypto();
-  
-  // Initialize client
-  await crypto.initNewClient('patient@example.com', '1234');
-  
-  // Create appointment
-  const appointmentId = await crypto.createAppointment({
-    name: 'Max Mustermann',
-    email: 'patient@example.com',
-    phone: '+49 123 456789'
-  }, '2024-01-15T10:00:00Z', 'channel-uuid', 'tenant-uuid', true);
-  
-  console.log('Appointment created:', appointmentId);
-}
-
-// Example 2: Existing client logs in and views appointments
-async function existingClientExample() {
-  const crypto = new UnifiedAppointmentCrypto();
-  
-  // Authenticate client
-  await crypto.loginExistingClient('patient@example.com', '1234', 'tenant-uuid');
-  
-  // Get appointments
-  const appointments = await crypto.getMyAppointments('tenant-uuid');
-  console.log('My appointments:', appointments);
-  
-  // Create new appointment
-  const newAppointmentId = await crypto.createAppointment({
-    name: 'Max Mustermann',
-    email: 'patient@example.com',
-    phone: '+49 123 456789'
-  }, '2024-01-20T14:00:00Z', 'channel-uuid', 'tenant-uuid');
-  
-  console.log('New appointment created:', newAppointmentId);
-}
-
-// Example 3: Staff member authenticates and views appointments
-async function staffExample() {
-  const crypto = new UnifiedAppointmentCrypto();
-  
-  // Authenticate staff
-  await crypto.authenticateStaff('staff-uuid', 'tenant-uuid');
-  
-  // Get all appointments for this tenant
-  const appointments = await crypto.getStaffAppointments('tenant-uuid');
-  console.log('Staff appointments:', appointments);
-  
-  // Decrypt individual appointment
-  const decrypted = await crypto.decryptStaffAppointment({
-    encryptedAppointment: {
-      encryptedPayload: 'hex-data',
-      iv: 'hex-iv',
-      authTag: 'hex-tag'
-    },
-    staffKeyShare: 'hex-encoded-key'
-  });
-  console.log('Decrypted appointment:', decrypted);
-  
-  // Logout when done
-  crypto.logoutStaff();
-}
-*/

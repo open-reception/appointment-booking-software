@@ -1,71 +1,108 @@
 /**
  * Staff Crypto Service
  *
- * Manages cryptographic keys for staff members with split-key architecture:
- * - Public keys are stored in tenant database
- * - Private keys are split into two shards:
- *   - One shard stored in database (encrypted)
- *   - One shard derived from passkey authentication
+ * Manages cryptographic keys for staff members with browser-based split-key architecture:
+ *
+ * ## Architecture Overview:
+ * - **Kyber Key Generation**: Happens entirely in the browser using KyberCrypto.generateKeyPair()
+ * - **Split-Key Storage**: Private keys are split into two shards using XOR:
+ *   - Passkey-based shard: Derived in browser from WebAuthn authenticatorData
+ *   - Database shard: Stored encrypted in tenant database
+ * - **Public Keys**: Stored in tenant database for client-side encryption
+ *
+ * ## Browser Integration Workflow:
+ *
+ * ### 1. Staff Passkey Registration (in browser):
+ * ```javascript
+ * // Generate Kyber keypair in browser
+ * const keyPair = KyberCrypto.generateKeyPair();
+ *
+ * // Derive passkey-based shard from WebAuthn
+ * const passkeyBasedShard = await derivePasskeyBasedShard(passkeyId, authenticatorData);
+ *
+ * // Create database shard using XOR
+ * const dbShard = new Uint8Array(keyPair.privateKey.length);
+ * for (let i = 0; i < keyPair.privateKey.length; i++) {
+ *   dbShard[i] = keyPair.privateKey[i] ^ passkeyBasedShard[i];
+ * }
+ *
+ * // Store via API
+ * await fetch(`/api/tenants/${tenantId}/staff/${userId}/crypto`, {
+ *   method: 'POST',
+ *   body: JSON.stringify({
+ *     passkeyId,
+ *     publicKey: bufferToBase64(keyPair.publicKey),
+ *     privateKeyShare: bufferToBase64(dbShard)
+ *   })
+ * });
+ * ```
+ *
+ * ### 2. Staff Authentication & Key Reconstruction (in browser):
+ * ```javascript
+ * // Get database shard from API
+ * const response = await fetch(`/api/tenants/${tenantId}/staff/${userId}/key-shard`);
+ * const { publicKey, privateKeyShare, passkeyId } = await response.json();
+ *
+ * // Derive same passkey-based shard from WebAuthn
+ * const passkeyBasedShard = await derivePasskeyBasedShard(passkeyId, authenticatorData);
+ *
+ * // Reconstruct private key using XOR
+ * const dbShard = base64ToBuffer(privateKeyShare);
+ * const privateKey = new Uint8Array(dbShard.length);
+ * for (let i = 0; i < dbShard.length; i++) {
+ *   privateKey[i] = dbShard[i] ^ passkeyBasedShard[i];
+ * }
+ * ```
+ *
+ * ## API Methods:
+ * - `storeStaffKeypair()`: Store browser-generated keys (called after passkey registration)
+ * - `getStaffCryptoForPasskey()`: Get specific passkey's crypto data for reconstruction
+ * - `getAllStaffCryptoData()`: Get all crypto entries for a staff member (multiple passkeys)
+ * - `deleteStaffCryptoForPasskey()`: Delete crypto data when passkey is removed
+ * - `getStaffPublicKeys()`: Get all staff public keys for client-side encryption
  */
 
 import { logger } from "$lib/logger";
 import { getTenantDb } from "$lib/server/db";
 import { staffCrypto } from "$lib/server/db/tenant-schema";
-import { eq } from "drizzle-orm";
-import { KyberCrypto } from "$lib/crypto/utils";
-import crypto from "node:crypto";
+import { eq, and } from "drizzle-orm";
 
 export class StaffCryptoService {
   /**
-   * Generate keypair for new staff member and store split private key
-   * This should be called when a staff member is created
+   * Store keypair for staff member (generated in browser)
+   * Keys are already split - we just store the database shard and public key
    */
-  async generateStaffKeypair(
+  async storeStaffKeypair(
     tenantId: string,
     userId: string,
     passkeyId: string,
-    authenticatorData: ArrayBuffer,
+    publicKey: string, // Base64 encoded public key from browser
+    privateKeyShare: string, // Base64 encoded database shard from browser
   ): Promise<void> {
-    const log = logger.setContext("StaffCryptoService.generateStaffKeypair");
+    const log = logger.setContext("StaffCryptoService.storeStaffKeypair");
 
     try {
-      log.debug("Generating staff keypair", { tenantId, userId, passkeyId });
-
-      // Generate Kyber keypair
-      const keyPair = KyberCrypto.generateKeyPair();
-
-      // Create deterministic shard from passkey data
-      const passkeyBasedShard = await this.derivePasskeyBasedShard(passkeyId, authenticatorData);
-
-      // Split private key using XOR (simple but effective for two shards)
-      const privateKeyBytes = keyPair.privateKey;
-      const dbShard = this.generateRandomShard(privateKeyBytes.length);
-
-      // XOR the private key with the passkey-based shard to get the database shard
-      // This ensures: privateKey = dbShard ⊕ passkeyBasedShard
-      for (let i = 0; i < privateKeyBytes.length; i++) {
-        dbShard[i] = privateKeyBytes[i] ^ passkeyBasedShard[i];
-      }
+      log.debug("Storing staff keypair", { tenantId, userId, passkeyId });
 
       // Store in database
       const db = await getTenantDb(tenantId);
       await db.insert(staffCrypto).values({
         userId,
-        publicKey: this.bufferToBase64(keyPair.publicKey),
-        privateKeyShare: this.bufferToBase64(dbShard),
+        publicKey,
+        privateKeyShare,
         passkeyId,
         isActive: true,
       });
 
-      log.info("Staff keypair generated and stored", {
+      log.info("Staff keypair stored successfully", {
         tenantId,
         userId,
         passkeyId,
-        publicKeyLength: keyPair.publicKey.length,
-        privateShardLength: dbShard.length,
+        hasPublicKey: !!publicKey,
+        hasPrivateKeyShare: !!privateKeyShare,
       });
     } catch (error) {
-      log.error("Failed to generate staff keypair", {
+      log.error("Failed to store staff keypair", {
         tenantId,
         userId,
         passkeyId,
@@ -76,60 +113,54 @@ export class StaffCryptoService {
   }
 
   /**
-   * Reconstruct private key from database shard and passkey authentication
+   * Get crypto data for specific staff member and passkey combination
    */
-  async reconstructPrivateKey(
+  async getStaffCryptoForPasskey(
     tenantId: string,
     userId: string,
     passkeyId: string,
-    authenticatorData: ArrayBuffer,
-  ): Promise<Uint8Array> {
-    const log = logger.setContext("StaffCryptoService.reconstructPrivateKey");
+  ): Promise<{
+    publicKey: string;
+    privateKeyShare: string;
+    passkeyId: string;
+  } | null> {
+    const log = logger.setContext("StaffCryptoService.getStaffCryptoForPasskey");
 
     try {
-      log.debug("Reconstructing private key", { tenantId, userId, passkeyId });
+      log.debug("Getting staff crypto for passkey", { tenantId, userId, passkeyId });
 
-      // Get database shard
       const db = await getTenantDb(tenantId);
       const result = await db
         .select({
+          publicKey: staffCrypto.publicKey,
           privateKeyShare: staffCrypto.privateKeyShare,
           passkeyId: staffCrypto.passkeyId,
         })
         .from(staffCrypto)
-        .where(eq(staffCrypto.userId, userId))
+        .where(and(eq(staffCrypto.userId, userId), eq(staffCrypto.passkeyId, passkeyId)))
         .limit(1);
 
       if (result.length === 0) {
-        throw new Error("Staff crypto not found");
+        log.warn("Staff crypto not found for passkey", { tenantId, userId, passkeyId });
+        return null;
       }
 
-      const dbShard = this.base64ToBuffer(result[0].privateKeyShare);
-      const storedPasskeyId = result[0].passkeyId;
-
-      // Verify passkey ID matches
-      if (storedPasskeyId !== passkeyId) {
-        throw new Error("Passkey ID mismatch");
-      }
-
-      // Derive passkey-based shard
-      const passkeyBasedShard = await this.derivePasskeyBasedShard(passkeyId, authenticatorData);
-
-      // Reconstruct private key using XOR
-      const privateKey = new Uint8Array(dbShard.length);
-      for (let i = 0; i < dbShard.length; i++) {
-        privateKey[i] = dbShard[i] ^ passkeyBasedShard[i];
-      }
-
-      log.debug("Private key reconstructed successfully", {
+      const data = result[0];
+      log.debug("Staff crypto retrieved for passkey", {
         tenantId,
         userId,
-        keyLength: privateKey.length,
+        passkeyId,
+        hasPublicKey: !!data.publicKey,
+        hasPrivateKeyShare: !!data.privateKeyShare,
       });
 
-      return privateKey;
+      return {
+        publicKey: data.publicKey,
+        privateKeyShare: data.privateKeyShare,
+        passkeyId: data.passkeyId,
+      };
     } catch (error) {
-      log.error("Failed to reconstruct private key", {
+      log.error("Failed to get staff crypto for passkey", {
         tenantId,
         userId,
         passkeyId,
@@ -217,7 +248,55 @@ export class StaffCryptoService {
   }
 
   /**
-   * Get complete staff crypto data (for key reconstruction)
+   * Get all crypto data entries for a staff member (multiple passkeys)
+   */
+  async getAllStaffCryptoData(
+    tenantId: string,
+    userId: string,
+  ): Promise<
+    Array<{
+      publicKey: string;
+      privateKeyShare: string;
+      passkeyId: string;
+    }>
+  > {
+    const log = logger.setContext("StaffCryptoService.getAllStaffCryptoData");
+
+    try {
+      const db = await getTenantDb(tenantId);
+      const results = await db
+        .select({
+          publicKey: staffCrypto.publicKey,
+          privateKeyShare: staffCrypto.privateKeyShare,
+          passkeyId: staffCrypto.passkeyId,
+        })
+        .from(staffCrypto)
+        .where(eq(staffCrypto.userId, userId));
+
+      log.debug("Retrieved all staff crypto data", {
+        tenantId,
+        userId,
+        entryCount: results.length,
+      });
+
+      return results.map((data) => ({
+        publicKey: data.publicKey,
+        privateKeyShare: data.privateKeyShare,
+        passkeyId: data.passkeyId,
+      }));
+    } catch (error) {
+      log.error("Failed to retrieve all staff crypto data", {
+        tenantId,
+        userId,
+        error: String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get complete staff crypto data (for key reconstruction) - legacy method
+   * @deprecated Use getStaffCryptoForPasskey or getAllStaffCryptoData instead
    */
   async getStaffCryptoData(
     tenantId: string,
@@ -271,46 +350,41 @@ export class StaffCryptoService {
   }
 
   /**
-   * Derive a deterministic shard from passkey authentication data
-   * This shard will be the same every time the user authenticates with the same passkey
+   * Delete crypto data for a specific passkey
    */
-  private async derivePasskeyBasedShard(
+  async deleteStaffCryptoForPasskey(
+    tenantId: string,
+    userId: string,
     passkeyId: string,
-    authenticatorData: ArrayBuffer,
-  ): Promise<Uint8Array> {
-    // Use HKDF to derive a deterministic shard from passkey data
-    const salt = Buffer.from("staff-crypto-shard-v1", "utf-8");
-    const info = Buffer.from(`passkey:${passkeyId}`, "utf-8");
+  ): Promise<boolean> {
+    const log = logger.setContext("StaffCryptoService.deleteStaffCryptoForPasskey");
 
-    // Extract randomness from authenticator data
-    const inputKeyMaterial = new Uint8Array(authenticatorData);
+    try {
+      log.debug("Deleting staff crypto for passkey", { tenantId, userId, passkeyId });
 
-    // HKDF-Extract
-    const prk = crypto.createHmac("sha256", salt).update(Buffer.from(inputKeyMaterial)).digest();
+      const db = await getTenantDb(tenantId);
+      const result = await db
+        .delete(staffCrypto)
+        .where(and(eq(staffCrypto.userId, userId), eq(staffCrypto.passkeyId, passkeyId)));
 
-    // HKDF-Expand to get the needed length for Kyber private key (2400 bytes for ML-KEM-768)
-    const keyLength = 2400; // ML-KEM-768 private key length
-    const expandLength = Math.ceil(keyLength / 32); // SHA256 output length is 32 bytes
-    const okm = new Uint8Array(keyLength);
+      const deleted = result.count > 0;
+      log.info("Staff crypto deletion completed", {
+        tenantId,
+        userId,
+        passkeyId,
+        deleted,
+      });
 
-    for (let i = 0; i < expandLength; i++) {
-      const hmac = crypto.createHmac("sha256", prk);
-      hmac.update(info);
-      hmac.update(Buffer.from([i + 1]));
-      const t = hmac.digest();
-
-      const copyLength = Math.min(32, keyLength - i * 32);
-      okm.set(t.subarray(0, copyLength), i * 32);
+      return deleted;
+    } catch (error) {
+      log.error("Failed to delete staff crypto for passkey", {
+        tenantId,
+        userId,
+        passkeyId,
+        error: String(error),
+      });
+      throw error;
     }
-
-    return okm;
-  }
-
-  /**
-   * Generate a random shard for database storage
-   */
-  private generateRandomShard(length: number): Uint8Array {
-    return crypto.randomBytes(length);
   }
 
   /**
