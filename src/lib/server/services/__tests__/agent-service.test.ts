@@ -58,8 +58,9 @@ const mockDb = {
 const mockAgent = {
   id: "agent-123",
   name: "Test Agent",
-  description: "Test description",
-  logo: Buffer.from("test"),
+  descriptions: ["Test description"],
+  languages: ["en"],
+  image: Buffer.from("test"),
 };
 
 describe("AgentService", () => {
@@ -100,7 +101,8 @@ describe("AgentService", () => {
 
       const request = {
         name: "Test Agent",
-        description: ["Test description"],
+        descriptions: { en: "Test description" },
+        languages: ["en"],
         image: "test",
       };
 
@@ -110,7 +112,7 @@ describe("AgentService", () => {
       expect(mockDb.insert).toHaveBeenCalled();
       expect(insertChain.values).toHaveBeenCalledWith({
         name: "Test Agent",
-        description: "Test description",
+        descriptions: { en: "Test description" },
         image: "test",
       });
     });

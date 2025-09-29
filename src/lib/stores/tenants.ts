@@ -28,8 +28,9 @@ const createTenantsStore = () => {
     init: (tenants: TTenant[]) => {
       store.set({ tenants, isLoading: false, currentTenant: null });
     },
-    setCurrentTenant: (tenantId: string | null, updateApi: boolean = true) => {
-      if (updateApi) {
+    setCurrentTenant: (tenantId: string | null) => {
+      const curTenant = auth.getTenant();
+      if (tenantId !== curTenant) {
         const success = changeTenantUsingApi(tenantId);
         if (!success) {
           log.error("Failed to change tenant via API", { tenantId });
@@ -37,7 +38,6 @@ const createTenantsStore = () => {
           return;
         }
       }
-
       store.update((state) => {
         const currentTenant = state.tenants.find((t) => t.id === tenantId) || null;
         auth.setTenantId(tenantId);

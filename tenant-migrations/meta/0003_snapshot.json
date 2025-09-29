@@ -1,5 +1,5 @@
 {
-  "id": "b8bd2faa-5305-496e-b79c-6a0642d06312",
+  "id": "71a71648-32b1-483e-b395-949a63f93f7d",
   "prevId": "b4773ec9-f77f-40ec-8da0-b6f3a4498ca7",
   "version": "7",
   "dialect": "postgresql",
@@ -21,21 +21,15 @@
           "primaryKey": false,
           "notNull": true
         },
-        "description": {
-          "name": "description",
-          "type": "json",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "languages": {
-          "name": "languages",
+        "descriptions": {
+          "name": "descriptions",
           "type": "json",
           "primaryKey": false,
           "notNull": true
         },
         "image": {
           "name": "image",
-          "type": "varchar(100000)",
+          "type": "varchar(250000)",
           "primaryKey": false,
           "notNull": false
         }
@@ -97,8 +91,12 @@
           "name": "agent_absence_agent_id_agent_id_fk",
           "tableFrom": "agent_absence",
           "tableTo": "agent",
-          "columnsFrom": ["agent_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -171,8 +169,12 @@
           "name": "appointment_client_id_client_id_fk",
           "tableFrom": "appointment",
           "tableTo": "client",
-          "columnsFrom": ["client_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -180,8 +182,12 @@
           "name": "appointment_channel_id_channel_id_fk",
           "tableFrom": "appointment",
           "tableTo": "channel",
-          "columnsFrom": ["channel_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "channel_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -224,12 +230,6 @@
         },
         "descriptions": {
           "name": "descriptions",
-          "type": "json",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "languages": {
-          "name": "languages",
           "type": "json",
           "primaryKey": false,
           "notNull": true
@@ -278,8 +278,12 @@
           "name": "channel_agent_channel_id_channel_id_fk",
           "tableFrom": "channel_agent",
           "tableTo": "channel",
-          "columnsFrom": ["channel_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "channel_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -287,8 +291,12 @@
           "name": "channel_agent_agent_id_agent_id_fk",
           "tableFrom": "channel_agent",
           "tableTo": "agent",
-          "columnsFrom": ["agent_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -322,8 +330,12 @@
           "name": "channel_slot_template_channel_id_channel_id_fk",
           "tableFrom": "channel_slot_template",
           "tableTo": "channel",
-          "columnsFrom": ["channel_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "channel_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -331,8 +343,12 @@
           "name": "channel_slot_template_slot_template_id_slotTemplate_id_fk",
           "tableFrom": "channel_slot_template",
           "tableTo": "slotTemplate",
-          "columnsFrom": ["slot_template_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "slot_template_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -392,7 +408,9 @@
         "client_hash_key_unique": {
           "name": "client_hash_key_unique",
           "nullsNotDistinct": false,
-          "columns": ["hash_key"]
+          "columns": [
+            "hash_key"
+          ]
         }
       },
       "policies": {},
@@ -448,7 +466,13 @@
     "public.appointment_status": {
       "name": "appointment_status",
       "schema": "public",
-      "values": ["NEW", "CONFIRMED", "HELD", "REJECTED", "NO_SHOW"]
+      "values": [
+        "NEW",
+        "CONFIRMED",
+        "HELD",
+        "REJECTED",
+        "NO_SHOW"
+      ]
     }
   },
   "schemas": {},

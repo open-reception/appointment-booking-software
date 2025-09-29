@@ -1,5 +1,5 @@
 {
-  "id": "48f5c3af-6a23-44fb-81e5-26f4c422c77d",
+  "id": "805d1d9a-094d-4a4d-a998-2f74ca7dde8d",
   "prevId": "a1a8c8d8-96ed-4dfa-9fa4-047ff0a02d7e",
   "version": "7",
   "dialect": "postgresql",
@@ -27,8 +27,14 @@
           "primaryKey": false,
           "notNull": true
         },
-        "description": {
-          "name": "description",
+        "descriptions": {
+          "name": "descriptions",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "languages": {
+          "name": "languages",
           "type": "json",
           "primaryKey": false,
           "notNull": true
@@ -91,7 +97,9 @@
         "tenant_short_name_unique": {
           "name": "tenant_short_name_unique",
           "nullsNotDistinct": false,
-          "columns": ["short_name"]
+          "columns": [
+            "short_name"
+          ]
         }
       },
       "policies": {},
@@ -177,8 +185,12 @@
           "name": "tenant_config_tenant_id_tenant_id_fk",
           "tableFrom": "tenant_config",
           "tableTo": "tenant",
-          "columnsFrom": ["tenant_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -314,8 +326,12 @@
           "name": "user_tenant_id_tenant_id_fk",
           "tableFrom": "user",
           "tableTo": "tenant",
-          "columnsFrom": ["tenant_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -325,7 +341,9 @@
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": ["email"]
+          "columns": [
+            "email"
+          ]
         }
       },
       "policies": {},
@@ -480,8 +498,12 @@
           "name": "user_invite_tenant_id_tenant_id_fk",
           "tableFrom": "user_invite",
           "tableTo": "tenant",
-          "columnsFrom": ["tenant_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -489,8 +511,12 @@
           "name": "user_invite_invited_by_user_id_fk",
           "tableFrom": "user_invite",
           "tableTo": "user",
-          "columnsFrom": ["invited_by"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "invited_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -498,8 +524,12 @@
           "name": "user_invite_created_user_id_user_id_fk",
           "tableFrom": "user_invite",
           "tableTo": "user",
-          "columnsFrom": ["created_user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "created_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -509,7 +539,9 @@
         "user_invite_invite_code_unique": {
           "name": "user_invite_invite_code_unique",
           "nullsNotDistinct": false,
-          "columns": ["invite_code"]
+          "columns": [
+            "invite_code"
+          ]
         }
       },
       "policies": {},
@@ -594,8 +626,12 @@
           "name": "user_passkey_user_id_user_id_fk",
           "tableFrom": "user_passkey",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -718,8 +754,12 @@
           "name": "user_session_user_id_user_id_fk",
           "tableFrom": "user_session",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -729,7 +769,9 @@
         "user_session_session_token_unique": {
           "name": "user_session_session_token_unique",
           "nullsNotDistinct": false,
-          "columns": ["session_token"]
+          "columns": [
+            "session_token"
+          ]
         }
       },
       "policies": {},
@@ -741,17 +783,30 @@
     "public.config_type": {
       "name": "config_type",
       "schema": "public",
-      "values": ["BOOLEAN", "NUMBER", "STRING"]
+      "values": [
+        "BOOLEAN",
+        "NUMBER",
+        "STRING"
+      ]
     },
     "public.setup_state": {
       "name": "setup_state",
       "schema": "public",
-      "values": ["NEW", "SETTINGS_CREATED", "AGENTS_SET_UP", "FIRST_CHANNEL_CREATED"]
+      "values": [
+        "NEW",
+        "SETTINGS_CREATED",
+        "AGENTS_SET_UP",
+        "FIRST_CHANNEL_CREATED"
+      ]
     },
     "public.user_role": {
       "name": "user_role",
       "schema": "public",
-      "values": ["GLOBAL_ADMIN", "TENANT_ADMIN", "STAFF"]
+      "values": [
+        "GLOBAL_ADMIN",
+        "TENANT_ADMIN",
+        "STAFF"
+      ]
     }
   },
   "schemas": {},

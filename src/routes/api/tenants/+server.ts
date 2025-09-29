@@ -211,7 +211,7 @@ export const GET: RequestHandler = async ({ locals }) => {
       .select({
         id: tenant.id,
         shortName: tenant.shortName,
-        longName: tenant.longName,
+        languages: tenant.languages,
         setupState: tenant.setupState,
         logo: tenant.logo,
       })

@@ -6,4 +6,5 @@ USING CASE
     WHEN description::text = '' THEN NULL
     ELSE description::json 
 END;--> statement-breakpoint
-ALTER TABLE "tenant" ALTER COLUMN "description" SET NOT NULL;
+ALTER TABLE "tenant" RENAME COLUMN "description" TO "descriptions";--> statement-breakpoint
+ALTER TABLE "tenant" ADD COLUMN "languages" json NOT NULL;

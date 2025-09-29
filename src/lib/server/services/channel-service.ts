@@ -7,6 +7,7 @@ import logger from "$lib/logger";
 import z from "zod/v4";
 import { ValidationError, NotFoundError } from "../utils/errors";
 import { TenantConfig } from "../db/tenant-config";
+import { supportedLocales } from "$lib/const/locales";
 
 const CHANNEL_COLORS = ["#FF0000", "#00FF00", "#0000FF"] as const;
 const NEXT_COLOR_KEY = "nextChannelColor";
@@ -19,56 +20,31 @@ const slotTemplateSchema = z.object({
   duration: z.number().int().min(1).max(1440),
 });
 
-const channelCreationSchema = z
-  .object({
-    names: z.array(z.string().min(1).max(100)).min(1),
-    color: z.string().optional(),
-    descriptions: z.array(z.string()).optional(),
-    languages: z.array(z.string().min(2).max(5)).min(1),
-    isPublic: z.boolean().optional(),
-    requiresConfirmation: z.boolean().optional(),
-    agentIds: z.array(z.string().uuid()).optional().default([]),
-    slotTemplates: z.array(slotTemplateSchema).optional().default([]),
-  })
-  .refine(
-    (data) =>
-      !data.descriptions ||
-      data.descriptions.length === 0 ||
-      data.descriptions.length === data.languages.length,
-    { message: "descriptions array must have same length as languages array" },
-  )
-  .refine((data) => data.names.length === data.languages.length, {
-    message: "names array must have same length as languages array",
-  });
+const channelCreationSchema = z.object({
+  names: z.partialRecord(z.enum(supportedLocales), z.string().min(1).max(100)),
+  color: z.string().optional(),
+  descriptions: z.partialRecord(z.enum(supportedLocales), z.string().min(1).max(100)).optional(),
+  isPublic: z.boolean().optional(),
+  requiresConfirmation: z.boolean().optional(),
+  agentIds: z.array(z.string().uuid()).optional().default([]),
+  slotTemplates: z.array(slotTemplateSchema).optional().default([]),
+});
 
-const channelUpdateSchema = z
-  .object({
-    names: z.array(z.string().min(1).max(100)).optional(),
-    color: z.string().optional(),
-    descriptions: z.array(z.string()).optional(),
-    languages: z.array(z.string().min(2).max(5)).optional(),
-    isPublic: z.boolean().optional(),
-    requiresConfirmation: z.boolean().optional(),
-    agentIds: z.array(z.string().uuid()).optional(),
-    slotTemplates: z
-      .array(
-        slotTemplateSchema.extend({
-          id: z.string().uuid().optional(),
-        }),
-      )
-      .optional(),
-  })
-  .refine(
-    (data) =>
-      !data.descriptions ||
-      !data.languages ||
-      data.descriptions.length === 0 ||
-      data.descriptions.length === data.languages.length,
-    { message: "descriptions array must have same length as languages array" },
-  )
-  .refine((data) => !data.names || !data.languages || data.names.length === data.languages.length, {
-    message: "names array must have same length as languages array",
-  });
+const channelUpdateSchema = z.object({
+  names: z.partialRecord(z.enum(supportedLocales), z.string().min(1).max(100)),
+  color: z.string().optional(),
+  descriptions: z.partialRecord(z.enum(supportedLocales), z.string().min(1).max(100)).optional(),
+  isPublic: z.boolean().optional(),
+  requiresConfirmation: z.boolean().optional(),
+  agentIds: z.array(z.string().uuid()).optional(),
+  slotTemplates: z
+    .array(
+      slotTemplateSchema.extend({
+        id: z.string().uuid().optional(),
+      }),
+    )
+    .optional(),
+});
 
 export type ChannelCreationRequest = z.infer<typeof channelCreationSchema>;
 export type ChannelUpdateRequest = z.infer<typeof channelUpdateSchema>;
@@ -133,7 +109,6 @@ export class ChannelService {
     log.debug("Creating new channel", {
       tenantId: this.tenantId,
       names: request.names,
-      languages: request.languages,
       agentCount: request.agentIds?.length || 0,
       slotTemplateCount: request.slotTemplates?.length || 0,
     });
@@ -149,8 +124,7 @@ export class ChannelService {
           .values({
             names: request.names,
             color: request.color,
-            descriptions: request.descriptions || [],
-            languages: request.languages,
+            descriptions: request.descriptions || {},
             isPublic: request.isPublic,
             requiresConfirmation: request.requiresConfirmation,
           })
@@ -218,7 +192,6 @@ export class ChannelService {
         tenantId: this.tenantId,
         channelId: result.id,
         names: result.names,
-        languages: result.languages,
         agentCount: result.agents.length,
         slotTemplateCount: result.slotTemplates.length,
       });
@@ -266,7 +239,6 @@ export class ChannelService {
           names: updateData.names,
           color: updateData.color,
           descriptions: updateData.descriptions,
-          languages: updateData.languages,
           isPublic: updateData.isPublic,
           requiresConfirmation: updateData.requiresConfirmation,
         };
@@ -338,8 +310,7 @@ export class ChannelService {
             .select({
               id: tenantSchema.agent.id,
               name: tenantSchema.agent.name,
-              description: tenantSchema.agent.description,
-              languages: tenantSchema.agent.languages,
+              descriptions: tenantSchema.agent.descriptions,
               image: tenantSchema.agent.image,
             })
             .from(tenantSchema.agent)
@@ -516,8 +487,7 @@ export class ChannelService {
         .select({
           id: tenantSchema.agent.id,
           name: tenantSchema.agent.name,
-          description: tenantSchema.agent.description,
-          languages: tenantSchema.agent.languages,
+          descriptions: tenantSchema.agent.descriptions,
           image: tenantSchema.agent.image,
         })
         .from(tenantSchema.agent)

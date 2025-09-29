@@ -57,7 +57,6 @@
             <PlusIcon /> {m["agents.add.title"]()}
           {/snippet}
           <AddAgentForm
-            {data}
             done={() => {
               invalidate(ROUTES.DASHBOARD.AGENTS);
               closeDialog("add");

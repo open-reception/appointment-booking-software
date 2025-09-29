@@ -102,7 +102,7 @@ export class TenantAdminService {
       ...request,
       longName: "",
       databaseUrl: "",
-      descriptions: [""],
+      descriptions: { en: "" },
       languages: ["en"],
     };
     newTenant.databaseUrl = urlParts.join("/") + "/" + newTenant.shortName;

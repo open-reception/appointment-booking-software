@@ -275,5 +275,9 @@
 			"error": "Konnte Akteur:in nicht aktualisieren.",
 			"action": "Übernehmen"
 		}
+	},
+	"locales": {
+		"en": "Englisch",
+		"de": "Deutsch"
 	}
 }

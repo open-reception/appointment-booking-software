@@ -34,7 +34,8 @@
     "docker:prod:down": "docker compose -f docker-compose.prod.yml down",
     "docker:prod:logs": "docker compose -f docker-compose.prod.yml logs -f",
     "docker:prod:clean": "docker compose -f docker-compose.prod.yml down -v --remove-orphans",
-    "i18n:compile": "npx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/i18n"
+    "i18n:compile": "npx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/i18n",
+    "db:clean": "npm run docker:dev:down && npm run db:drop && npm run docker:dev:up"
   },
   "devDependencies": {
     "@eslint/compat": "^1.3.0",
@@ -53,7 +54,7 @@
     "@types/dotenv": "^6.1.1",
     "@types/node": "^24",
     "@types/nodemailer": "^6.4.17",
-    "bits-ui": "^2.8.13",
+    "bits-ui": "^2.11.4",
     "clsx": "^2.1.1",
     "drizzle-kit": "^0.31.1",
     "eslint": "^9.29.0",
