@@ -30,6 +30,7 @@ export const actions: Actions = {
       {
         name: "Admin",
         email: form.data.email,
+        role: "GLOBAL_ADMIN",
         passphrase:
           form.data.type === "passphrase" && form.data.passphrase
             ? form.data.passphrase
