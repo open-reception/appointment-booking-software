@@ -17,18 +17,20 @@
   let { children }: Props = $props();
 </script>
 
-<Tabs.Root value={tenantLanguages[0]?.key}>
-  {#if tenantLanguages.length > 1}
+{#if tenantLanguages.length > 1}
+  <Tabs.Root value={tenantLanguages[0]?.key}>
     <Tabs.List>
       {#each tenantLanguages as language (language.key)}
         <Tabs.Trigger value={language.key}>{language.label}</Tabs.Trigger>
       {/each}
     </Tabs.List>
-  {/if}
-  {#each tenantLanguages as language (language.key)}
-    <Tabs.Content value={language.key}>
-      {@render children({ locale: language.key })}
-    </Tabs.Content>
-  {/each}
-</Tabs.Root>
+    {#each tenantLanguages as language (language.key)}
+      <Tabs.Content value={language.key}>
+        {@render children({ locale: language.key })}
+      </Tabs.Content>
+    {/each}
+  </Tabs.Root>
+{:else if tenantLanguages.length === 1}
+  {@render children({ locale: tenantLanguages[0].key })}
+{/if}
 <Separator class="mb-3" />
