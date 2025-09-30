@@ -43,7 +43,9 @@ const createTenantsStore = () => {
         auth.setTenantId(tenantId);
         return { ...state, currentTenant };
       });
-      goto(ROUTES.DASHBOARD.MAIN);
+      if (tenantId !== curTenant) {
+        goto(ROUTES.DASHBOARD.MAIN);
+      }
     },
     reload: async () => {
       store.update((state) => {
