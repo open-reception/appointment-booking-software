@@ -5,19 +5,21 @@
   import { InputCroppedImageBlob } from "$lib/components/ui/input-cropped-image-blob";
   import { LanguageTabs } from "$lib/components/ui/language-tabs";
   import { Textarea } from "$lib/components/ui/textarea";
-  import { supportedLocales } from "$lib/const/locales";
   import ItemIcon from "@lucide/svelte/icons/user-star";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
   import { zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from ".";
+  import { tenants } from "$lib/stores/tenants";
+  import { get } from "svelte/store";
 
   let { done }: { done: () => void } = $props();
 
+  const tenantLocales = get(tenants).currentTenant?.languages ?? [];
   const form = superForm(
     {
       name: "",
-      descriptions: supportedLocales.reduce(
+      descriptions: tenantLocales.reduce(
         (acc, locale) => ({ ...acc, [locale]: "" }),
         {} as { [key: string]: string },
       ),

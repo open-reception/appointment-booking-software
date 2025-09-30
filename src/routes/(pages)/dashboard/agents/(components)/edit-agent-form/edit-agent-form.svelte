@@ -11,14 +11,20 @@
   import { superForm } from "sveltekit-superforms";
   import { zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from ".";
+  import { tenants } from "$lib/stores/tenants";
+  import { get } from "svelte/store";
 
   let { entity, done }: { entity: TAgent; done: () => void } = $props();
 
+  const tenantLocales = get(tenants).currentTenant?.languages ?? [];
   const form = superForm(
     {
       id: entity.id,
       name: entity.name,
-      descriptions: entity.descriptions,
+      descriptions: tenantLocales.reduce(
+        (acc, locale) => ({ ...acc, [locale]: entity.descriptions[locale] ?? "" }),
+        {} as { [key: string]: string },
+      ),
       image: entity.image ?? "",
     },
     {
