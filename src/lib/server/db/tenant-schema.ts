@@ -316,8 +316,6 @@ export const clientAppointmentTunnel = pgTable("client_appointment_tunnel", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   /** Timestamp when the tunnel was last updated */
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  /** Whether this tunnel is currently active */
-  isActive: boolean("is_active").default(true).notNull(),
 });
 
 /**
