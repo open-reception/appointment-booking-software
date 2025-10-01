@@ -42,9 +42,9 @@ export const agent = pgTable("agent", {
   /** Agent's display name */
   name: text("name").notNull(),
   /** Optional description of the agent's role or specialties */
-  description: text("description"),
+  descriptions: json("descriptions").$type<{ [key: string]: string }>().notNull(),
   /** Optional logo/profile image for the agent (PNG, JPEG, GIF, or WEBP) */
-  image: varchar("image", { length: 100_000 }),
+  image: varchar("image", { length: 250_000 }),
 });
 
 /**
@@ -58,15 +58,13 @@ export const channel = pgTable("channel", {
   /** Primary key - unique identifier */
   id: uuid("id").primaryKey().defaultRandom(),
   /** Channel display names in multiple languages (array of strings in same order as languages) */
-  names: json("names").$type<string[]>().notNull(),
+  names: json("names").$type<{ [key: string]: string }>().notNull(),
   /** Optional color for UI display (hex code) */
   color: text("color"),
   /** Whether the channel is paused and does not offer nor accept new appointments */
   pause: boolean("paused").notNull().default(false),
   /** Optional descriptions in multiple languages (array of strings in same order as languages) */
-  descriptions: json("descriptions").$type<string[]>(),
-  /** Active languages for this channel (array of language codes) */
-  languages: json("languages").$type<string[]>().notNull(),
+  descriptions: json("descriptions").$type<{ [key: string]: string }>().notNull(),
   /** Whether channel is publicly bookable or requires internal access */
   isPublic: boolean("is_public"),
   /** Whether appointments must be explicitly confirmed by staff */

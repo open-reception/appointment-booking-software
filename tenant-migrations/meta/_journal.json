@@ -22,6 +22,13 @@
       "when": 1758555647097,
       "tag": "0002_typical_the_twelve",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1759144219626,
+      "tag": "0003_big_boomerang",
+      "breakpoints": true
     }
   ]
 }

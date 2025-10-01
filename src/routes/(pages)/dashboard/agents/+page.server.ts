@@ -39,7 +39,6 @@ export const load = async (event) => {
     });
 
   return {
-    form: await superValidate(zod(addFormSchema)),
     streamed: {
       list,
     },
@@ -71,7 +70,7 @@ export const actions: Actions = {
       credentials: "same-origin",
       body: JSON.stringify({
         name: form.data.name,
-        description: form.data.description,
+        descriptions: form.data.descriptions,
         image: form.data.image,
       }),
     });
@@ -118,7 +117,7 @@ export const actions: Actions = {
         credentials: "same-origin",
         body: JSON.stringify({
           name: form.data.name,
-          description: form.data.description,
+          descriptions: form.data.descriptions,
           image: form.data.image ?? null,
         }),
       },

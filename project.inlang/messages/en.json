@@ -284,5 +284,9 @@
 			"error": "Could not update agent.",
 			"action": "Edit Agent"
 		}
+	},
+	"locales": {
+		"en": "English",
+		"de": "German"
 	}
 }

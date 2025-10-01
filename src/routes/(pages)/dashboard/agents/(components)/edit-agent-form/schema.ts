@@ -7,7 +7,7 @@ export const formSchema = z.object({
     .string()
     .min(2, m["agents.add.fields.name.errors.length"]())
     .max(50, m["agents.add.fields.name.errors.length"]()),
-  description: z.string().optional().or(z.literal("")),
+  descriptions: z.record(z.string(), z.string()).optional(),
   image: z.string().optional().or(z.literal("")),
 });
 

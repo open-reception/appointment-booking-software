@@ -57,7 +57,6 @@
             <PlusIcon /> {m["agents.add.title"]()}
           {/snippet}
           <AddAgentForm
-            {data}
             done={() => {
               invalidate(ROUTES.DASHBOARD.AGENTS);
               closeDialog("add");
@@ -69,7 +68,7 @@
           <List>
             {#each items as item (item.id)}
               <ListItem
-                image={item.image ?? UnknownItemIcon}
+                image={item.image || UnknownItemIcon}
                 title={item.name}
                 actions={[
                   {
