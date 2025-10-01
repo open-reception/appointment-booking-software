@@ -1,9 +1,38 @@
-import { getTenantDb } from "../db";
+import { getTenantDb, centralDb } from "../db";
 import * as tenantSchema from "../db/tenant-schema";
 import { type SelectAppointment } from "../db/tenant-schema";
+import { user } from "../db/central-schema";
 import logger from "$lib/logger";
-import { ValidationError } from "../utils/errors";
+import { ValidationError, NotFoundError, InternalError, ConflictError } from "../utils/errors";
 import { and, eq, gte, lte, asc } from "drizzle-orm";
+import type { AppointmentResponse } from "$lib/types/appointment";
+
+export interface ClientTunnelData {
+  tunnelId: string;
+  channelId: string;
+  appointmentDate: string;
+  emailHash: string;
+  clientPublicKey: string;
+  privateKeyShare: string;
+  encryptedAppointment: {
+    encryptedPayload: string;
+    iv: string;
+    authTag: string;
+  };
+  staffKeyShares: {
+    userId: string;
+    encryptedTunnelKey: string;
+  }[];
+  clientEncryptedTunnelKey: string;
+}
+
+export interface ClientTunnelResponse {
+  id: string;
+  emailHash: string;
+  clientPublicKey: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 export class AppointmentService {
   #db: Awaited<ReturnType<typeof getTenantDb>> | null = null;
@@ -128,11 +157,166 @@ export class AppointmentService {
       .returning();
 
     if (result.length === 0) {
-      log.warn("Appointment not found", { appointmentId: id, tenantId: this.tenantId });
-      throw new ValidationError("Appointment not found");
+      log.debug("Appointment not found for deletion", {
+        appointmentId: id,
+        tenantId: this.tenantId,
+      });
+      return false;
     }
 
+    log.debug("Appointment deleted successfully", { appointmentId: id, tenantId: this.tenantId });
     return true;
+  }
+
+  /**
+   * Get all client tunnels for the tenant
+   */
+  public async getClientTunnels(): Promise<ClientTunnelResponse[]> {
+    const log = logger.setContext("AppointmentService");
+    log.debug("Fetching client tunnels", { tenantId: this.tenantId });
+    const db = await this.getDb();
+
+    const tunnels = await db
+      .select({
+        id: tenantSchema.clientAppointmentTunnel.id,
+        emailHash: tenantSchema.clientAppointmentTunnel.emailHash,
+        clientPublicKey: tenantSchema.clientAppointmentTunnel.clientPublicKey,
+        createdAt: tenantSchema.clientAppointmentTunnel.createdAt,
+        updatedAt: tenantSchema.clientAppointmentTunnel.updatedAt,
+      })
+      .from(tenantSchema.clientAppointmentTunnel)
+      .orderBy(tenantSchema.clientAppointmentTunnel.createdAt);
+
+    log.debug("Client tunnels retrieved successfully", {
+      tenantId: this.tenantId,
+      tunnelCount: tunnels.length,
+    });
+
+    return tunnels.map((tunnel) => ({
+      id: tunnel.id,
+      emailHash: tunnel.emailHash,
+      clientPublicKey: tunnel.clientPublicKey,
+      createdAt: tunnel.createdAt?.toISOString(),
+      updatedAt: tunnel.updatedAt?.toISOString(),
+    }));
+  }
+
+  /**
+   * Create a new client tunnel with their first appointment
+   */
+  public async createNewClientWithAppointment(
+    clientData: ClientTunnelData,
+  ): Promise<AppointmentResponse> {
+    const log = logger.setContext("AppointmentService");
+
+    log.info("Creating new client appointment tunnel", {
+      tenantId: this.tenantId,
+      tunnelId: clientData.tunnelId,
+      appointmentDate: clientData.appointmentDate,
+      emailHashPrefix: clientData.emailHash.slice(0, 8),
+    });
+
+    // Check if there are any authorized users (ACCESS_GRANTED) in this tenant
+    const authorizedUsers = await centralDb
+      .select({ count: user.id })
+      .from(user)
+      .where(and(eq(user.tenantId, this.tenantId), eq(user.confirmationState, "ACCESS_GRANTED")))
+      .limit(1);
+
+    if (authorizedUsers.length === 0) {
+      log.warn("Client creation blocked: No authorized users in tenant", {
+        tenantId: this.tenantId,
+        tunnelId: clientData.tunnelId,
+      });
+      throw new ConflictError(
+        "Cannot create client appointments: No authorized users found in tenant. At least one user must have ACCESS_GRANTED status.",
+      );
+    }
+
+    const db = await this.getDb();
+
+    // Transactional: Create tunnel and appointment
+    const result = await db.transaction(async (tx) => {
+      // 1. Create client appointment tunnel
+      const tunnelResult = await tx
+        .insert(tenantSchema.clientAppointmentTunnel)
+        .values({
+          id: clientData.tunnelId,
+          emailHash: clientData.emailHash,
+          clientPublicKey: clientData.clientPublicKey,
+          privateKeyShare: clientData.privateKeyShare,
+          clientEncryptedTunnelKey: clientData.clientEncryptedTunnelKey,
+        })
+        .returning({ id: tenantSchema.clientAppointmentTunnel.id });
+
+      if (tunnelResult.length === 0) {
+        throw new InternalError("Failed to create client appointment tunnel");
+      }
+
+      // 2. Store staff key shares for the tunnel
+      if (clientData.staffKeyShares.length > 0) {
+        await tx.insert(tenantSchema.clientTunnelStaffKeyShare).values(
+          clientData.staffKeyShares.map((share) => ({
+            tunnelId: clientData.tunnelId,
+            userId: share.userId,
+            encryptedTunnelKey: share.encryptedTunnelKey,
+          })),
+        );
+      }
+
+      // 3. Get channel configuration to determine initial status
+      const channelResult = await tx
+        .select({ requiresConfirmation: tenantSchema.channel.requiresConfirmation })
+        .from(tenantSchema.channel)
+        .where(eq(tenantSchema.channel.id, clientData.channelId))
+        .limit(1);
+
+      if (channelResult.length === 0) {
+        throw new NotFoundError("Channel not found");
+      }
+
+      const initialStatus = channelResult[0].requiresConfirmation ? "NEW" : "CONFIRMED";
+
+      // 4. Create encrypted appointment
+      const appointmentResult = await tx
+        .insert(tenantSchema.appointment)
+        .values({
+          tunnelId: clientData.tunnelId,
+          channelId: clientData.channelId,
+          appointmentDate: new Date(clientData.appointmentDate),
+          encryptedPayload: clientData.encryptedAppointment.encryptedPayload,
+          iv: clientData.encryptedAppointment.iv,
+          authTag: clientData.encryptedAppointment.authTag,
+          status: initialStatus,
+          isEncrypted: true,
+        })
+        .returning({
+          id: tenantSchema.appointment.id,
+          appointmentDate: tenantSchema.appointment.appointmentDate,
+          status: tenantSchema.appointment.status,
+        });
+
+      if (appointmentResult.length === 0) {
+        throw new InternalError("Failed to create appointment");
+      }
+
+      return appointmentResult[0];
+    });
+
+    const response: AppointmentResponse = {
+      id: result.id,
+      appointmentDate: result.appointmentDate.toISOString(),
+      status: result.status,
+    };
+
+    log.info("Successfully created new client appointment tunnel", {
+      tenantId: this.tenantId,
+      tunnelId: clientData.tunnelId,
+      appointmentId: result.id,
+      staffSharesCount: clientData.staffKeyShares.length,
+    });
+
+    return response;
   }
 
   public async getAppointmentsByTimeRange(

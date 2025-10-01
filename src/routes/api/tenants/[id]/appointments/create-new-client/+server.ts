@@ -1,24 +1,8 @@
 import { json, type RequestHandler } from "@sveltejs/kit";
 import { z } from "zod";
 import { logger } from "$lib/logger";
-import { getTenantDb, centralDb } from "$lib/server/db";
-import { eq, and } from "drizzle-orm";
-import {
-  clientAppointmentTunnel,
-  clientTunnelStaffKeyShare,
-  appointment,
-  channel,
-} from "$lib/server/db/tenant-schema";
-import { user } from "$lib/server/db/central-schema";
-import type { AppointmentResponse } from "$lib/types/appointment";
-import {
-  BackendError,
-  InternalError,
-  logError,
-  NotFoundError,
-  ValidationError,
-  ConflictError,
-} from "$lib/server/utils/errors";
+import { AppointmentService } from "$lib/server/services/appointment-service";
+import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 
 const requestSchema = z.object({
@@ -235,106 +219,8 @@ export const POST: RequestHandler = async ({ request, params }) => {
       emailHashPrefix: validatedData.emailHash.slice(0, 8),
     });
 
-    // Check if there are any authorized users (ACCESS_GRANTED) in this tenant
-    const authorizedUsers = await centralDb
-      .select({ count: user.id })
-      .from(user)
-      .where(and(eq(user.tenantId, tenantId), eq(user.confirmationState, "ACCESS_GRANTED")))
-      .limit(1);
-
-    if (authorizedUsers.length === 0) {
-      logger.warn("Client creation blocked: No authorized users in tenant", {
-        tenantId,
-        tunnelId: validatedData.tunnelId,
-      });
-      throw new ConflictError(
-        "Cannot create client appointments: No authorized users found in tenant. At least one user must have ACCESS_GRANTED status.",
-      );
-    }
-
-    // Now get the tenant database after authorization check
-    const db = await getTenantDb(tenantId);
-
-    // Transactional: Create tunnel and appointment
-    const result = await db.transaction(async (tx) => {
-      // 1. Create client appointment tunnel
-      const tunnelResult = await tx
-        .insert(clientAppointmentTunnel)
-        .values({
-          id: validatedData.tunnelId,
-          emailHash: validatedData.emailHash,
-          clientPublicKey: validatedData.clientPublicKey,
-          privateKeyShare: validatedData.privateKeyShare,
-          clientEncryptedTunnelKey: validatedData.clientEncryptedTunnelKey,
-        })
-        .returning({ id: clientAppointmentTunnel.id });
-
-      if (tunnelResult.length === 0) {
-        throw new InternalError("Failed to create client appointment tunnel");
-      }
-
-      // 2. Store staff key shares for the tunnel
-      if (validatedData.staffKeyShares.length > 0) {
-        await tx.insert(clientTunnelStaffKeyShare).values(
-          validatedData.staffKeyShares.map((share) => ({
-            tunnelId: validatedData.tunnelId,
-            userId: share.userId,
-            encryptedTunnelKey: share.encryptedTunnelKey,
-          })),
-        );
-      }
-
-      // 3. Get channel configuration to determine initial status
-      const channelResult = await tx
-        .select({ requiresConfirmation: channel.requiresConfirmation })
-        .from(channel)
-        .where(eq(channel.id, validatedData.channelId))
-        .limit(1);
-
-      if (channelResult.length === 0) {
-        throw new NotFoundError("Channel not found");
-      }
-
-      const initialStatus = channelResult[0].requiresConfirmation ? "NEW" : "CONFIRMED";
-
-      // 4. Create encrypted appointment
-      const appointmentResult = await tx
-        .insert(appointment)
-        .values({
-          tunnelId: validatedData.tunnelId,
-          channelId: validatedData.channelId,
-          appointmentDate: new Date(validatedData.appointmentDate),
-          encryptedPayload: validatedData.encryptedAppointment.encryptedPayload,
-          iv: validatedData.encryptedAppointment.iv,
-          authTag: validatedData.encryptedAppointment.authTag,
-          status: initialStatus,
-          isEncrypted: true,
-        })
-        .returning({
-          id: appointment.id,
-          appointmentDate: appointment.appointmentDate,
-          status: appointment.status,
-        });
-
-      if (appointmentResult.length === 0) {
-        throw new InternalError("Failed to create appointment");
-      }
-
-      return appointmentResult[0];
-    });
-
-    const response: AppointmentResponse = {
-      id: result.id,
-      appointmentDate: result.appointmentDate.toISOString(),
-      status: result.status,
-    };
-
-    logger.info("Successfully created new client appointment tunnel", {
-      tenantId,
-      tunnelId: validatedData.tunnelId,
-      appointmentId: result.id,
-      staffSharesCount: validatedData.staffKeyShares.length,
-    });
+    const appointmentService = await AppointmentService.forTenant(tenantId);
+    const response = await appointmentService.createNewClientWithAppointment(validatedData);
 
     return json(response);
   } catch (error) {

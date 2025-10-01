@@ -11,8 +11,7 @@ import { json } from "@sveltejs/kit";
 import { logger } from "$lib/logger";
 import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
 import { checkPermission } from "$lib/server/utils/permissions";
-import { getTenantDb } from "$lib/server/db";
-import { clientAppointmentTunnel } from "$lib/server/db/tenant-schema";
+import { AppointmentService } from "$lib/server/services/appointment-service";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 
 // Register OpenAPI documentation for GET
@@ -118,18 +117,8 @@ export const GET: RequestHandler = async ({ params, locals }) => {
   try {
     log.debug("Fetching client tunnels", { tenantId, requesterId: locals.user?.userId });
 
-    const db = await getTenantDb(tenantId);
-
-    const tunnels = await db
-      .select({
-        id: clientAppointmentTunnel.id,
-        emailHash: clientAppointmentTunnel.emailHash,
-        clientPublicKey: clientAppointmentTunnel.clientPublicKey,
-        createdAt: clientAppointmentTunnel.createdAt,
-        updatedAt: clientAppointmentTunnel.updatedAt,
-      })
-      .from(clientAppointmentTunnel)
-      .orderBy(clientAppointmentTunnel.createdAt);
+    const appointmentService = await AppointmentService.forTenant(tenantId);
+    const tunnels = await appointmentService.getClientTunnels();
 
     log.debug("Client tunnels retrieved successfully", {
       tenantId,
@@ -137,15 +126,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
       tunnelCount: tunnels.length,
     });
 
-    return json({
-      tunnels: tunnels.map((tunnel) => ({
-        id: tunnel.id,
-        emailHash: tunnel.emailHash,
-        clientPublicKey: tunnel.clientPublicKey,
-        createdAt: tunnel.createdAt?.toISOString(),
-        updatedAt: tunnel.updatedAt?.toISOString(),
-      })),
-    });
+    return json({ tunnels });
   } catch (error) {
     logError(log)("Error fetching client tunnels", error, locals.user?.userId, tenantId);
 
