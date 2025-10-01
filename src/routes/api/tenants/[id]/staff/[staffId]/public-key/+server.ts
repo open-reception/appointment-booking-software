@@ -11,10 +11,7 @@ import { json } from "@sveltejs/kit";
 import { logger } from "$lib/logger";
 import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
 import { checkPermission } from "$lib/server/utils/permissions";
-import { StaffCryptoService } from "$lib/server/services/staff-crypto.service";
-import { centralDb } from "$lib/server/db";
-import { user } from "$lib/server/db/central-schema";
-import { eq } from "drizzle-orm";
+import { StaffService } from "$lib/server/services/staff-service";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 
 // Register OpenAPI documentation for GET
@@ -113,55 +110,16 @@ export const GET: RequestHandler = async ({ params, locals }) => {
   try {
     log.debug("Fetching staff public key", { tenantId, staffId, requesterId: locals.user?.userId });
 
-    // Prüfen, ob der angeforderte Staff-Benutzer zum Tenant gehört
-    const staffUser = await centralDb
-      .select({
-        id: user.id,
-        tenantId: user.tenantId,
-        isActive: user.isActive,
-      })
-      .from(user)
-      .where(eq(user.id, staffId))
-      .limit(1);
-
-    if (staffUser.length === 0) {
-      log.warn("Staff user not found", { tenantId, staffId });
-      throw new ValidationError("Staff user not found");
-    }
-
-    if (staffUser[0].tenantId !== tenantId) {
-      log.warn("Staff user does not belong to tenant", {
-        tenantId,
-        staffId,
-        staffTenantId: staffUser[0].tenantId,
-      });
-      throw new ValidationError("Staff user does not belong to this tenant");
-    }
-
-    if (!staffUser[0].isActive) {
-      log.warn("Staff user is inactive", { tenantId, staffId });
-      throw new ValidationError("Staff user is inactive");
-    }
-
-    const staffCryptoService = new StaffCryptoService();
-    const publicKey = await staffCryptoService.getStaffPublicKey(tenantId, staffId);
-
-    if (!publicKey) {
-      log.warn("Staff public key not found", { tenantId, staffId });
-      throw new ValidationError("Staff public key not found");
-    }
+    const result = await StaffService.getStaffPublicKey(tenantId, staffId);
 
     log.debug("Staff public key retrieved successfully", {
       tenantId,
       staffId,
       requesterId: locals.user?.userId,
-      hasPublicKey: !!publicKey,
+      hasPublicKey: !!result.publicKey,
     });
 
-    return json({
-      userId: staffId,
-      publicKey: publicKey,
-    });
+    return json(result);
   } catch (error) {
     logError(log)("Error fetching staff public key", error, locals.user?.userId, tenantId);
 

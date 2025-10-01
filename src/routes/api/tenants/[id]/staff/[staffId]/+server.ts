@@ -1,20 +1,10 @@
 import type { RequestHandler } from "@sveltejs/kit";
 import { json } from "@sveltejs/kit";
 import { logger } from "$lib/logger";
-import {
-  BackendError,
-  InternalError,
-  logError,
-  ValidationError,
-  NotFoundError,
-} from "$lib/server/utils/errors";
+import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
 import { ERRORS } from "$lib/errors";
 import { checkPermission } from "$lib/server/utils/permissions";
-import { centralDb } from "$lib/server/db";
-import { user, userPasskey } from "$lib/server/db/central-schema";
-import { getTenantDb } from "$lib/server/db";
-import { clientTunnelStaffKeyShare } from "$lib/server/db/tenant-schema";
-import { eq, and } from "drizzle-orm";
+import { StaffService } from "$lib/server/services/staff-service";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 
 // Register OpenAPI documentation for DELETE
@@ -132,95 +122,8 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
   // Require administrative permissions
   checkPermission(locals, tenantId, true);
 
-  // Prevent self-deletion
-  if (locals.user?.userId === staffId) {
-    throw new ValidationError("You cannot delete your own account");
-  }
-
   try {
-    // Use transaction to ensure all related data is deleted consistently
-    const result = await centralDb.transaction(async (tx) => {
-      // First, verify the user exists and belongs to this tenant
-      const userToDelete = await tx
-        .select({
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          tenantId: user.tenantId,
-        })
-        .from(user)
-        .where(and(eq(user.id, staffId), eq(user.tenantId, tenantId)))
-        .limit(1);
-
-      if (userToDelete.length === 0) {
-        throw new NotFoundError("Staff member not found in this tenant");
-      }
-
-      // Delete associated passkeys from central database
-      const passkeyDeletionResult = await tx
-        .delete(userPasskey)
-        .where(eq(userPasskey.userId, staffId));
-
-      const deletedPasskeysCount = passkeyDeletionResult.count || 0;
-
-      log.debug("Deleted user passkeys", {
-        staffId,
-        tenantId,
-        deletedCount: deletedPasskeysCount,
-      });
-
-      // Delete client tunnel key shares from tenant database
-      let deletedKeySharesCount = 0;
-      try {
-        const tenantDb = await getTenantDb(tenantId);
-        const keyShareDeletionResult = await tenantDb
-          .delete(clientTunnelStaffKeyShare)
-          .where(eq(clientTunnelStaffKeyShare.userId, staffId));
-
-        deletedKeySharesCount = keyShareDeletionResult.count || 0;
-
-        log.debug("Deleted client tunnel key shares", {
-          staffId,
-          tenantId,
-          deletedCount: deletedKeySharesCount,
-        });
-      } catch (error) {
-        log.warn("Failed to delete client tunnel key shares", {
-          staffId,
-          tenantId,
-          error: String(error),
-        });
-        // Continue with user deletion even if key share deletion fails
-      }
-
-      // Finally, delete the user account from central database
-      const deletedUsers = await tx.delete(user).where(eq(user.id, staffId)).returning({
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      });
-
-      if (deletedUsers.length === 0) {
-        throw new InternalError("Failed to delete user account");
-      }
-
-      log.info("Staff member deleted successfully", {
-        staffId,
-        tenantId,
-        deletedUser: deletedUsers[0],
-        deletedPasskeysCount,
-        deletedKeySharesCount,
-      });
-
-      return {
-        success: true,
-        deletedUser: deletedUsers[0],
-        deletedPasskeysCount,
-        deletedKeySharesCount,
-      };
-    });
+    const result = await StaffService.deleteStaffMember(tenantId, staffId, locals.user?.userId);
 
     return json(result);
   } catch (error) {

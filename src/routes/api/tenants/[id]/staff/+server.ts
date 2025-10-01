@@ -4,9 +4,7 @@ import { logger } from "$lib/logger";
 import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
 import { ERRORS } from "$lib/errors";
 import { checkPermission } from "$lib/server/utils/permissions";
-import { centralDb } from "$lib/server/db";
-import { user } from "$lib/server/db/central-schema";
-import { eq, and } from "drizzle-orm";
+import { StaffService } from "$lib/server/services/staff-service";
 import { z } from "zod";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 
@@ -236,17 +234,7 @@ registerOpenAPIRoute("/tenants/{id}/staff", "PUT", {
   },
 });
 
-export interface UserData {
-  id: string;
-  email: string;
-  name: string;
-  role: "GLOBAL_ADMIN" | "TENANT_ADMIN" | "STAFF";
-  isActive: boolean | null;
-  confirmationState: "INVITED" | "CONFIRMED" | "ACCESS_GRANTED" | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-  lastLoginAt: Date | null;
-}
+// UserData interface is now provided by StaffService as StaffMember
 
 const userUpdateSchema = z.object({
   userId: z.string().uuid("Invalid user ID format"),
@@ -270,20 +258,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
   checkPermission(locals, tenantId, false);
 
   try {
-    const staff: UserData[] = await centralDb
-      .select({
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        isActive: user.isActive,
-        confirmationState: user.confirmationState,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        lastLoginAt: user.lastLoginAt,
-      })
-      .from(user)
-      .where(eq(user.tenantId, tenantId));
+    const staff = await StaffService.getStaffMembers(tenantId);
     return json(staff);
   } catch (error) {
     logError(log)("Error fetching staff data", error, locals.user?.userId, params.id);
@@ -317,34 +292,14 @@ export const PUT: RequestHandler = async ({ params, locals, request }) => {
 
     const { userId, ...updateData } = validation.data;
 
-    if (updateData.isActive === false && locals.user?.userId === userId) {
-      throw new ValidationError("You cannot deactivate your own account");
-    }
+    const updatedUser = await StaffService.updateStaffMember(
+      tenantId,
+      userId,
+      updateData,
+      locals.user?.userId,
+    );
 
-    const updatedUser = await centralDb
-      .update(user)
-      .set({
-        ...updateData,
-        updatedAt: new Date(),
-      })
-      .where(and(eq(user.id, userId), eq(user.tenantId, tenantId)))
-      .returning({
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        isActive: user.isActive,
-        confirmationState: user.confirmationState,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        lastLoginAt: user.lastLoginAt,
-      });
-
-    if (updatedUser.length === 0) {
-      throw new InternalError("Failed to update user");
-    }
-
-    return json(updatedUser[0]);
+    return json(updatedUser);
   } catch (error) {
     logError(log)("Error updating staff member", error, locals.user?.userId, params.id);
 
