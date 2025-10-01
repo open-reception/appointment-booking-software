@@ -235,8 +235,6 @@ export const POST: RequestHandler = async ({ request, params }) => {
       emailHashPrefix: validatedData.emailHash.slice(0, 8),
     });
 
-    const db = await getTenantDb(tenantId);
-
     // Check if there are any authorized users (ACCESS_GRANTED) in this tenant
     const authorizedUsers = await centralDb
       .select({ count: user.id })
@@ -253,6 +251,9 @@ export const POST: RequestHandler = async ({ request, params }) => {
         "Cannot create client appointments: No authorized users found in tenant. At least one user must have ACCESS_GRANTED status.",
       );
     }
+
+    // Now get the tenant database after authorization check
+    const db = await getTenantDb(tenantId);
 
     // Transactional: Create tunnel and appointment
     const result = await db.transaction(async (tx) => {

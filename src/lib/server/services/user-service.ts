@@ -110,6 +110,11 @@ export class UserService {
       isActive: false,
     };
 
+    if (userData.role === "GLOBAL_ADMIN") {
+      userDataForDb.confirmationState = "ACCESS_GRANTED"; // Admin account is active immediately after email confirmation
+      userDataForDb.isActive = true;
+    }
+
     // Handle passphrase or generate recovery passphrase
     if (userData.passphrase) {
       // User provided a passphrase, hash it
@@ -236,6 +241,7 @@ export class UserService {
         .select({
           id: centralSchema.user.id,
           recoveryPassphrase: centralSchema.user.recoveryPassphrase,
+          tenantId: centralSchema.user.tenantId,
         })
         .from(centralSchema.user)
         .where(
@@ -255,11 +261,28 @@ export class UserService {
 
       const user = userData[0];
 
+      // Check if this is the first tenant admin for the tenant
+      let shouldGrantAccess = false;
+      if (user.tenantId) {
+        const existingTenantAdmins = await centralDb
+          .select({ count: count() })
+          .from(centralSchema.user)
+          .where(
+            and(
+              eq(centralSchema.user.tenantId, user.tenantId),
+              eq(centralSchema.user.role, "TENANT_ADMIN"),
+            ),
+          );
+
+        shouldGrantAccess = existingTenantAdmins[0].count === 0;
+      }
+
+      const confirmationState = shouldGrantAccess ? "ACCESS_GRANTED" : "CONFIRMED";
       // Update the user to confirmed and active, and clear the recovery passphrase
       const result = await centralDb
         .update(centralSchema.user)
         .set({
-          confirmationState: "CONFIRMED",
+          confirmationState,
           isActive: true,
           recoveryPassphrase: null, // Clear it after showing it once
         })

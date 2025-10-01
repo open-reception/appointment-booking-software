@@ -56,8 +56,8 @@ export class SessionService {
       throw new ValidationError("User account is inactive");
     }
 
-    if (!userData.confirmed) {
-      throw new ValidationError("User account is not confirmed");
+    if (userData.confirmationState !== "ACCESS_GRANTED") {
+      throw new ValidationError("User account is not fully confirmed");
     }
 
     // Create session entry first to get the ID
@@ -143,8 +143,8 @@ export class SessionService {
         return null;
       }
 
-      if (!session.user.confirmed) {
-        logger.debug("User account is not confirmed");
+      if (session.user.confirmationState !== "ACCESS_GRANTED") {
+        logger.debug("User account is not fully confirmed");
         return null;
       }
 
