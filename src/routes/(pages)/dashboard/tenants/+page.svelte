@@ -94,7 +94,7 @@
                     type: "action",
                     icon: SelectIcon,
                     label: m["select"](),
-                    onClick: () => tenantsStore.setCurrentTenant(item.id, true),
+                    onClick: () => tenantsStore.setCurrentTenant(item.id),
                   },
                   {
                     type: "divider",

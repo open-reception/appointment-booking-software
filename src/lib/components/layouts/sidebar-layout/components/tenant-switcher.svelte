@@ -18,12 +18,8 @@
   const sidebar = useSidebar();
 
   const maxTenantsToShow = 5;
-  let activeTenantId = $auth.user?.tenantId;
+  let activeTenantId = $derived($auth.user?.tenantId);
   let activeTenant = $derived($tenants.tenants.find((t) => t.id === activeTenantId));
-
-  $effect(() => {
-    activeTenantId = $auth.user?.tenantId;
-  });
 </script>
 
 <Sidebar.Menu>
@@ -86,9 +82,9 @@
             side={sidebar.isMobile ? "bottom" : "right"}
             sideOffset={4}
           >
-            <DropdownMenu.Label class="text-muted-foreground text-xs"
-              >{m["nav.tenants"]()}</DropdownMenu.Label
-            >
+            <DropdownMenu.Label class="text-muted-foreground text-xs">
+              {m["nav.tenants"]()}
+            </DropdownMenu.Label>
             {#each $tenants?.tenants.slice(0, maxTenantsToShow) as tenant (tenant.id)}
               <DropdownMenu.Item
                 onSelect={() => tenants.setCurrentTenant(tenant.id)}

@@ -45,10 +45,9 @@ import { getTenantDb } from "../../db";
 // Mock data with valid UUIDs
 const mockChannel = {
   id: "550e8400-e29b-41d4-a716-446655440000",
-  names: ["Test Channel"],
+  names: { en: "Test Channel" },
   color: "#FF0000",
-  descriptions: ["Test description"],
-  languages: ["de"],
+  descriptions: { en: "Test description" },
   isPublic: true,
   requiresConfirmation: false,
   pause: false,
@@ -57,7 +56,7 @@ const mockChannel = {
 const mockAgent = {
   id: "550e8400-e29b-41d4-a716-446655440001",
   name: "Test Agent",
-  description: "Test description",
+  descriptions: { en: "Test description" },
   image: null,
 };
 
@@ -118,8 +117,7 @@ describe("ChannelService", () => {
 
       // Use minimal valid request that matches schema exactly
       const request = {
-        names: ["Test Channel"],
-        languages: ["de"],
+        names: { en: "Test Channel" },
       };
 
       const result = await service.createChannel(request as any);
@@ -138,8 +136,7 @@ describe("ChannelService", () => {
       mockDb.transaction.mockResolvedValue(expectedResult);
 
       const request = {
-        names: ["Test Channel"],
-        languages: ["de"],
+        names: { en: "Test Channel" },
         agentIds: ["550e8400-e29b-41d4-a716-446655440001"],
         slotTemplates: [
           {
@@ -159,8 +156,7 @@ describe("ChannelService", () => {
 
     it("should handle validation error for invalid name", async () => {
       const request = {
-        names: [""],
-        languages: ["de"],
+        names: { en: "" },
         agentIds: [],
         slotTemplates: [],
       };
@@ -170,8 +166,7 @@ describe("ChannelService", () => {
 
     it("should handle validation error for invalid time format", async () => {
       const request = {
-        names: ["Test Channel"],
-        languages: ["de"],
+        names: { en: "Test Channel" },
         agentIds: [],
         slotTemplates: [
           {
@@ -190,8 +185,7 @@ describe("ChannelService", () => {
       mockDb.transaction.mockRejectedValue(new Error("Transaction failed"));
 
       const request = {
-        names: ["Test Channel"],
-        languages: ["de"],
+        names: { en: "Test Channel" },
         agentIds: [],
         slotTemplates: [],
       };
@@ -210,7 +204,7 @@ describe("ChannelService", () => {
     it("should update channel successfully", async () => {
       const expectedResult = {
         ...mockChannel,
-        names: ["Updated Channel"],
+        names: { en: "Updated Channel" },
         agents: [],
         slotTemplates: [],
       };
@@ -218,7 +212,7 @@ describe("ChannelService", () => {
       mockDb.transaction.mockResolvedValue(expectedResult);
 
       const updateData = {
-        names: ["Updated Channel"],
+        names: { en: "Updated Channel" },
       };
 
       const result = await service.updateChannel(
@@ -231,7 +225,7 @@ describe("ChannelService", () => {
     });
 
     it("should handle validation error for invalid name", async () => {
-      const updateData = { names: [""], languages: ["de"] };
+      const updateData = { names: { en: "" } };
 
       await expect(
         service.updateChannel("550e8400-e29b-41d4-a716-446655440000", updateData),
@@ -241,7 +235,7 @@ describe("ChannelService", () => {
     it("should handle transaction error", async () => {
       mockDb.transaction.mockRejectedValue(new Error("Transaction failed"));
 
-      const updateData = { names: ["Updated Channel"], languages: ["de"] };
+      const updateData = { names: { en: "Updated Channel" } };
 
       await expect(
         service.updateChannel("550e8400-e29b-41d4-a716-446655440000", updateData),

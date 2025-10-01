@@ -6,17 +6,20 @@ import { eq, and, between, or, lte, gte, ne } from "drizzle-orm";
 import logger from "$lib/logger";
 import z from "zod/v4";
 import { ValidationError, NotFoundError, ConflictError } from "../utils/errors";
+import { supportedLocales } from "$lib/const/locales";
 
 const agentCreationSchema = z.object({
   name: z.string().min(1).max(100),
-  description: z.string().optional(),
+  descriptions: z.partialRecord(z.enum(supportedLocales), z.string().min(1)).optional(),
   image: z.string().optional().nullable(),
+  languages: z.array(z.string()).optional(),
 });
 
 const agentUpdateSchema = z.object({
   name: z.string().min(1).max(100).optional(),
-  description: z.string().optional(),
+  descriptions: z.partialRecord(z.enum(supportedLocales), z.string().min(1)).optional(),
   image: z.string().optional().nullable(),
+  languages: z.array(z.string()).optional(),
 });
 
 const absenceCreationSchema = z.object({
@@ -96,7 +99,7 @@ export class AgentService {
         .insert(tenantSchema.agent)
         .values({
           name: request.name,
-          description: request.description,
+          descriptions: request.descriptions ?? {},
           image: request.image,
         })
         .returning();
@@ -295,7 +298,7 @@ export class AgentService {
         .select({
           id: tenantSchema.agent.id,
           name: tenantSchema.agent.name,
-          description: tenantSchema.agent.description,
+          descriptions: tenantSchema.agent.descriptions,
           image: tenantSchema.agent.image,
         })
         .from(tenantSchema.agent)

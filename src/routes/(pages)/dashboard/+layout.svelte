@@ -40,7 +40,7 @@
     if (data?.tenants) {
       tenants.init(await data.tenants);
       if ($auth.user?.tenantId) {
-        tenants.setCurrentTenant($auth.user.tenantId, false);
+        tenants.setCurrentTenant($auth.user.tenantId);
       }
     }
   };

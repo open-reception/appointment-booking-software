@@ -52,6 +52,14 @@ function createAuthStore() {
       unsubscribe();
       return authState!.isAuthenticated;
     },
+    getTenant: () => {
+      let authState: AuthState;
+      const unsubscribe = store.subscribe((state) => {
+        authState = state;
+      });
+      unsubscribe();
+      return authState!.user?.tenantId || null;
+    },
   };
 }
 

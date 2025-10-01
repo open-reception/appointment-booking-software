@@ -67,6 +67,8 @@ describe("TenantAdminService", () => {
       const newTenant = {
         shortName: "test-clinic",
         longName: "",
+        descriptions: { en: "" },
+        languages: ["en"],
         description: "A test clinic",
       };
 
@@ -118,8 +120,7 @@ describe("TenantAdminService", () => {
     it("should rollback tenant creation if database initialization fails", async () => {
       const newTenant = {
         shortName: "test-clinic",
-        longName: "",
-        description: "A test clinic",
+        descriptions: "A test clinic",
       };
 
       const mockCreatedTenant = {
@@ -237,7 +238,7 @@ describe("TenantAdminService", () => {
       const tenantId = "tenant-123";
       const updateData = {
         longName: "Updated Clinic Name",
-        description: "Updated description",
+        description: ["Updated description"],
         logo: "logo data",
       };
 

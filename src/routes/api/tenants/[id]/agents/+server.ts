@@ -36,15 +36,15 @@ registerOpenAPIRoute("/tenants/{id}/agents", "POST", {
               description: "Agent name",
               example: "Support Agent",
             },
-            description: {
-              type: "string",
-              description: "Agent description",
-              example: "Handles customer support requests",
+            descriptions: {
+              type: "object",
+              description: "Localized agent descriptions. Keys are locale codes.",
+              additionalProperties: true,
+              example: { en: "Support Agent", de: "Service-Mitarbeiterin" },
             },
-            logo: {
+            image: {
               type: "string",
-              format: "byte",
-              description: "Base64 encoded agent logo",
+              description: "Base64 encoded agent image",
             },
           },
           required: ["name"],
@@ -66,8 +66,8 @@ registerOpenAPIRoute("/tenants/{id}/agents", "POST", {
                 properties: {
                   id: { type: "string", format: "uuid", description: "Agent ID" },
                   name: { type: "string", description: "Agent name" },
-                  description: { type: "string", description: "Agent description" },
-                  logo: { type: "string", format: "byte", description: "Agent logo" },
+                  descriptions: { type: "object", description: "Localized Agent descriptions" },
+                  image: { type: "string", description: "Agent image" },
                 },
                 required: ["id", "name"],
               },
@@ -150,8 +150,8 @@ registerOpenAPIRoute("/tenants/{id}/agents", "GET", {
                   properties: {
                     id: { type: "string", format: "uuid", description: "Agent ID" },
                     name: { type: "string", description: "Agent name" },
-                    description: { type: "string", description: "Agent description" },
-                    logo: { type: "string", format: "byte", description: "Agent logo" },
+                    descriptions: { type: "object", description: "Localized Agent descriptions" },
+                    image: { type: "string", description: "Agent image" },
                   },
                   required: ["id", "name"],
                 },
