@@ -295,61 +295,6 @@ export class StaffCryptoService {
   }
 
   /**
-   * Get complete staff crypto data (for key reconstruction) - legacy method
-   * @deprecated Use getStaffCryptoForPasskey or getAllStaffCryptoData instead
-   */
-  async getStaffCryptoData(
-    tenantId: string,
-    userId: string,
-  ): Promise<{
-    publicKey: string;
-    privateKeyShare: string;
-    passkeyId: string;
-  } | null> {
-    const log = logger.setContext("StaffCryptoService.getStaffCryptoData");
-
-    try {
-      const db = await getTenantDb(tenantId);
-      const result = await db
-        .select({
-          publicKey: staffCrypto.publicKey,
-          privateKeyShare: staffCrypto.privateKeyShare,
-          passkeyId: staffCrypto.passkeyId,
-        })
-        .from(staffCrypto)
-        .where(eq(staffCrypto.userId, userId))
-        .limit(1);
-
-      if (result.length === 0) {
-        log.warn("Staff crypto data not found", { tenantId, userId });
-        return null;
-      }
-
-      const data = result[0];
-      log.debug("Retrieved staff crypto data", {
-        tenantId,
-        userId,
-        hasPublicKey: !!data.publicKey,
-        hasPrivateKeyShare: !!data.privateKeyShare,
-        passkeyId: data.passkeyId,
-      });
-
-      return {
-        publicKey: data.publicKey,
-        privateKeyShare: data.privateKeyShare,
-        passkeyId: data.passkeyId,
-      };
-    } catch (error) {
-      log.error("Failed to retrieve staff crypto data", {
-        tenantId,
-        userId,
-        error: String(error),
-      });
-      throw error;
-    }
-  }
-
-  /**
    * Delete crypto data for a specific passkey
    */
   async deleteStaffCryptoForPasskey(
