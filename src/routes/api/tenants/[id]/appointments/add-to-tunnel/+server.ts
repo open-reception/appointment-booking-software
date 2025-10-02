@@ -4,7 +4,7 @@ import { logger } from "$lib/logger";
 import { getTenantDb } from "$lib/server/db";
 import { clientAppointmentTunnel, appointment, channel } from "$lib/server/db/tenant-schema.js";
 import type { AppointmentResponse } from "$lib/types/appointment";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import {
   ValidationError,
   InternalError,
@@ -211,11 +211,11 @@ export const POST: RequestHandler = async ({ request, params }) => {
     const channelResult = await db
       .select({ requiresConfirmation: channel.requiresConfirmation })
       .from(channel)
-      .where(eq(channel.id, validatedData.channelId))
+      .where(and(eq(channel.id, validatedData.channelId), eq(channel.isPublic, true)))
       .limit(1);
 
     if (channelResult.length === 0) {
-      throw new NotFoundError("Channel not found");
+      throw new NotFoundError("Active channel not found");
     }
 
     const initialStatus = channelResult[0].requiresConfirmation ? "NEW" : "CONFIRMED";

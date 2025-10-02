@@ -48,7 +48,7 @@ describe("Schedule API Route", () => {
   }
 
   describe("GET /api/tenants/[id]/schedule", () => {
-    it("should return schedule for valid date range", async () => {
+    it("should return schedule for valid date range (client-friendly format)", async () => {
       const mockSchedule = {
         period: {
           startDate: "2024-01-01T00:00:00.000Z",
@@ -61,17 +61,51 @@ describe("Schedule API Route", () => {
               "channel-1": {
                 channel: {
                   id: "channel-1",
-                  names: ["Support"],
-                  languages: ["en"],
+                  names: { en: "Support", de: "Unterstützung" },
+                  descriptions: { en: "Support Channel", de: "Support Kanal" },
                   pause: false,
+                  requiresConfirmation: false,
                 },
-                appointments: [],
+                appointments: [
+                  { id: "appointment-1", appointmentDate: "2024-01-01T10:00:00.000Z" },
+                ],
                 availableSlots: [
                   {
                     from: "09:00",
                     to: "09:30",
                     duration: 30,
                     availableAgents: [{ id: "agent-1", name: "Agent 1" }],
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      };
+
+      const expectedClientResponse = {
+        period: {
+          startDate: "2024-01-01T00:00:00.000Z",
+          endDate: "2024-01-07T23:59:59.999Z",
+        },
+        schedule: [
+          {
+            date: "2024-01-01",
+            channels: {
+              "channel-1": {
+                channel: {
+                  id: "channel-1",
+                  names: { en: "Support", de: "Unterstützung" },
+                  descriptions: { en: "Support Channel", de: "Support Kanal" },
+                  pause: false,
+                  requiresConfirmation: false,
+                },
+                availableSlots: [
+                  {
+                    from: "09:00",
+                    to: "09:30",
+                    duration: 30,
+                    availableAgentCount: 1,
                   },
                 ],
               },
@@ -87,7 +121,7 @@ describe("Schedule API Route", () => {
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data).toEqual(mockSchedule);
+      expect(data).toEqual(expectedClientResponse);
       expect(mockScheduleService.getSchedule).toHaveBeenCalledWith({
         tenantId: mockTenantId,
         startDate: "2024-01-01T00:00:00.000Z",

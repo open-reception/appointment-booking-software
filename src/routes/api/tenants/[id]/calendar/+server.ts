@@ -6,11 +6,11 @@ import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 
 // Register OpenAPI documentation for GET
-registerOpenAPIRoute("/tenants/{id}/schedule", "GET", {
-  summary: "Get tenant schedule (available slots only)",
+registerOpenAPIRoute("/tenants/{id}/calendar", "GET", {
+  summary: "Get tenant calendar",
   description:
-    "Retrieves available appointment slots for a specific tenant within a date range. This endpoint is designed for client-facing booking interfaces and only shows available time slots without existing appointments. This is a public endpoint that doesn't require authentication.",
-  tags: ["Schedule", "Public", "Booking"],
+    "Retrieves the appointment calendar for a specific tenant within a date range. Shows available time slots, existing appointments, and agent availability. This is a public endpoint that doesn't require authentication.",
+  tags: ["Calendar", "Public"],
   parameters: [
     {
       name: "id",
@@ -24,19 +24,19 @@ registerOpenAPIRoute("/tenants/{id}/schedule", "GET", {
       in: "query",
       required: true,
       schema: { type: "string", format: "date-time" },
-      description: "Start date for the schedule range (ISO 8601 format with timezone)",
+      description: "Start date for the calendar range (ISO 8601 format with timezone)",
     },
     {
       name: "endDate",
       in: "query",
       required: true,
       schema: { type: "string", format: "date-time" },
-      description: "End date for the schedule range (ISO 8601 format with timezone)",
+      description: "End date for the calendar range (ISO 8601 format with timezone)",
     },
   ],
   responses: {
     "200": {
-      description: "Schedule retrieved successfully",
+      description: "Calendar retrieved successfully",
       content: {
         "application/json": {
           schema: {
@@ -58,7 +58,7 @@ registerOpenAPIRoute("/tenants/{id}/schedule", "GET", {
                 },
                 required: ["startDate", "endDate"],
               },
-              schedule: {
+              calendar: {
                 type: "array",
                 items: {
                   type: "object",
@@ -71,14 +71,14 @@ registerOpenAPIRoute("/tenants/{id}/schedule", "GET", {
                     channels: {
                       type: "object",
                       description:
-                        "Available slots organized by channel ID (key-value pairs where key is channel UUID and value contains channel info and available slots only)",
+                        "Calendar data organized by channel ID (key-value pairs where key is channel UUID and value contains channel info, appointments, and available slots)",
                     },
                   },
-                  required: ["date", "channels"],
                 },
-                description: "Daily schedule data with available slots only",
+                description: "Daily calendar data",
               },
             },
+            required: ["period", "calendar"],
           },
         },
       },
@@ -111,7 +111,7 @@ registerOpenAPIRoute("/tenants/{id}/schedule", "GET", {
 });
 
 export const GET: RequestHandler = async ({ params, url }) => {
-  const log = logger.setContext("ScheduleAPI");
+  const log = logger.setContext("CalendarAPI");
 
   try {
     const tenantId = params.id;
@@ -148,7 +148,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
       throw new ValidationError("Date range cannot exceed 90 days");
     }
 
-    log.debug("Getting schedule for tenant", {
+    log.debug("Getting calendar for tenant", {
       tenantId,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
@@ -161,55 +161,22 @@ export const GET: RequestHandler = async ({ params, url }) => {
       endDate: endDateParam,
     });
 
-    // Transform schedule to client-friendly format (remove appointments, simplify available slots)
-    const clientSchedule = schedule.schedule.map((daySchedule) => ({
-      date: daySchedule.date,
-      channels: Object.fromEntries(
-        Object.entries(daySchedule.channels).map(([channelId, channelData]) => [
-          channelId,
-          {
-            channel: {
-              id: channelData.channel.id,
-              names: channelData.channel.names,
-              descriptions: channelData.channel.descriptions,
-              requiresConfirmation: channelData.channel.requiresConfirmation,
-              pause: channelData.channel.pause,
-            },
-            availableSlots: channelData.availableSlots.map((slot) => ({
-              from: slot.from,
-              to: slot.to,
-              duration: slot.duration,
-              availableAgentCount: slot.availableAgents.length,
-            })),
-          },
-        ]),
-      ),
-    }));
-
+    // Return full calendar data (including appointments and detailed agent info)
     const result = {
       period: schedule.period,
-      schedule: clientSchedule,
+      calendar: schedule.schedule,
     };
 
-    log.debug("Schedule retrieved successfully", {
+    log.debug("Calendar retrieved successfully", {
       tenantId,
-      daysCount: clientSchedule.length,
-      totalSlots: clientSchedule.reduce(
-        (total, day) =>
-          total +
-          Object.values(day.channels).reduce(
-            (dayTotal, channel) => dayTotal + channel.availableSlots.length,
-            0,
-          ),
-        0,
-      ),
+      daysCount: schedule.schedule.length,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
     });
 
     return json(result);
   } catch (error) {
-    logError(log)("Error getting schedule", error, undefined, params.id);
+    logError(log)("Error getting calendar", error, undefined, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();
