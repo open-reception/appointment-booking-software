@@ -192,7 +192,7 @@ export const GET: RequestHandler = async ({ locals, params }) => {
     checkPermission(locals, tenantId, true);
 
     const tenantService = await TenantAdminService.getTenantById(tenantId);
-    const config = await tenantService.configuration;
+    const config = await tenantService.configuration.configuration;
 
     log.debug("Tenant configuration retrieved successfully", {
       tenantId,
