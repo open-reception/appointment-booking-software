@@ -28,8 +28,7 @@ describe("Staff Public Key API", () => {
     it("should validate ML-KEM-768 public key format", () => {
       // ML-KEM-768 public keys are typically base64 encoded and have a specific length
       // ML-KEM-768 public keys are 1184 bytes, base64-encoded to ~1579 chars
-      const mockPublicKey =
-        "A".repeat(1579); // Simulate a valid base64 string of correct length
+      const mockPublicKey = "A".repeat(1579); // Simulate a valid base64 string of correct length
 
       // Base64 validation - should contain only valid base64 characters
       const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
