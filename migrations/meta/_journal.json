@@ -36,6 +36,13 @@
       "when": 1759144205727,
       "tag": "0004_mixed_caretaker",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1759421310945,
+      "tag": "0005_confused_rockslide",
+      "breakpoints": true
     }
   ]
 }

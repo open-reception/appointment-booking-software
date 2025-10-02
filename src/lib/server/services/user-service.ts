@@ -107,9 +107,14 @@ export class UserService {
       token: userData.token,
       tokenValidUntil: userData.tokenValidUntil,
       language: userData.language || "de",
-      confirmed: false,
+      confirmationState: "INVITED",
       isActive: false,
     };
+
+    if (userData.role === "GLOBAL_ADMIN") {
+      userDataForDb.confirmationState = "ACCESS_GRANTED"; // Admin account is active immediately after email confirmation
+      userDataForDb.isActive = true;
+    }
 
     // Handle passphrase or generate recovery passphrase
     if (userData.passphrase) {
@@ -237,6 +242,7 @@ export class UserService {
         .select({
           id: centralSchema.user.id,
           recoveryPassphrase: centralSchema.user.recoveryPassphrase,
+          tenantId: centralSchema.user.tenantId,
         })
         .from(centralSchema.user)
         .where(
@@ -256,11 +262,28 @@ export class UserService {
 
       const user = userData[0];
 
+      // Check if this is the first tenant admin for the tenant
+      let shouldGrantAccess = false;
+      if (user.tenantId) {
+        const existingTenantAdmins = await centralDb
+          .select({ count: count() })
+          .from(centralSchema.user)
+          .where(
+            and(
+              eq(centralSchema.user.tenantId, user.tenantId),
+              eq(centralSchema.user.role, "TENANT_ADMIN"),
+            ),
+          );
+
+        shouldGrantAccess = existingTenantAdmins[0].count === 0;
+      }
+
+      const confirmationState = shouldGrantAccess ? "ACCESS_GRANTED" : "CONFIRMED";
       // Update the user to confirmed and active, and clear the recovery passphrase
       const result = await centralDb
         .update(centralSchema.user)
         .set({
-          confirmed: true,
+          confirmationState,
           isActive: true,
           recoveryPassphrase: null, // Clear it after showing it once
         })
@@ -303,7 +326,10 @@ export class UserService {
     try {
       // Check if user exists and is active
       const user = await centralDb
-        .select({ id: centralSchema.user.id, confirmed: centralSchema.user.confirmed })
+        .select({
+          id: centralSchema.user.id,
+          confirmationState: centralSchema.user.confirmationState,
+        })
         .from(centralSchema.user)
         .where(eq(centralSchema.user.id, userId))
         .limit(1);
@@ -312,7 +338,7 @@ export class UserService {
         throw new NotFoundError("User not found");
       }
 
-      if (!user[0].confirmed) {
+      if (user[0].confirmationState === "INVITED") {
         throw new ValidationError(
           "User account must be confirmed before adding additional passkeys",
         );
@@ -322,9 +348,10 @@ export class UserService {
       await centralDb.insert(centralSchema.userPasskey).values({
         ...passkeyData,
         userId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
+
+      // Note: Crypto keypairs for STAFF/TENANT_ADMIN are generated in the browser
+      // and stored via separate API calls, not automatically here
 
       log.debug("Additional passkey added successfully", { userId, passkeyId: passkeyData.id });
     } catch (error) {
@@ -356,7 +383,7 @@ export class UserService {
       log.debug("User found by email", {
         email,
         userId: result[0].id,
-        confirmed: result[0].confirmed,
+        confirmationState: result[0].confirmationState,
       });
       return result[0];
     } catch (error) {
@@ -487,7 +514,7 @@ export class UserService {
   }
 
   /**
-   * Add a passkey for a uaer
+   * Add a passkey for a user
    */
   static async addPasskey(
     userId: string,
@@ -501,6 +528,18 @@ export class UserService {
     });
 
     try {
+      // Verify user exists
+      const user = await centralDb
+        .select({ id: centralSchema.user.id })
+        .from(centralSchema.user)
+        .where(eq(centralSchema.user.id, userId))
+        .limit(1);
+
+      if (user.length === 0) {
+        throw new NotFoundError("User not found");
+      }
+
+      // Add the passkey to the database
       const result = await centralDb
         .insert(centralSchema.userPasskey)
         .values({
@@ -508,6 +547,9 @@ export class UserService {
           userId,
         })
         .returning();
+
+      // Note: Crypto keypairs for STAFF/TENANT_ADMIN are generated in the browser
+      // and stored via separate API calls, not automatically here
 
       log.debug("Passkey added successfully", {
         userId,
