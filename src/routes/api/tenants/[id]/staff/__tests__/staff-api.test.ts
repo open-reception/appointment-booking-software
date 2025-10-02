@@ -64,9 +64,9 @@ describe("Staff API Routes", () => {
       expect(shouldAllowSelfUpdate).toBe(true);
 
       // Test case: deactivating own account (should be prevented)
-      const isDeactivating = false;
+      const isDeactivating = true;
       const shouldPreventSelfDeactivation =
-        currentUserId === targetUserId && isDeactivating === false;
+        currentUserId === targetUserId && isDeactivating === true;
       expect(shouldPreventSelfDeactivation).toBe(true);
     });
   });
