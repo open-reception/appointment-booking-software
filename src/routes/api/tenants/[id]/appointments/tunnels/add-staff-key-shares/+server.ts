@@ -158,7 +158,7 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
     throw new ValidationError("Tenant ID is required");
   }
 
-  checkPermission(locals, tenantId, false); // Administrative Rechte erforderlich
+  checkPermission(locals, tenantId, false); // Administrative rights required
 
   try {
     const requestData = await request.json();
