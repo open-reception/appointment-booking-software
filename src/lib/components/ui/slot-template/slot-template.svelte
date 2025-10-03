@@ -21,7 +21,7 @@
     onRemove,
     ...restProps
   }: HTMLAttributes<HTMLDivElement> & {
-    form: FsSuperForm<any>;
+    form: FsSuperForm<Record<string, unknown>>;
     index: number;
     value: (TSlotTemplate | TNewSlotTemplate) & { id?: string }; // Fixes type issue
     onRemove: (index: number) => void;

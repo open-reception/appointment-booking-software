@@ -166,7 +166,7 @@
       {m["channels.add.fields.slotTemplates.description"]()}
     </Text>
     <div class="flex flex-col gap-2 pt-2">
-      {#each $formData.slotTemplates as _, i (i)}
+      {#each $formData.slotTemplates as template, i (`${template.name}-${i}`)}
         <SlotTemplate
           index={i}
           {form}
