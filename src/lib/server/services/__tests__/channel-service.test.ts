@@ -141,8 +141,8 @@ describe("ChannelService", () => {
         slotTemplates: [
           {
             name: "Test Slot",
-            from: "09:00",
-            to: "17:00",
+            from: "09:00:00",
+            to: "17:00:00",
             duration: 30,
           },
         ],
@@ -172,7 +172,7 @@ describe("ChannelService", () => {
           {
             name: "Test Slot",
             from: "invalid-time",
-            to: "17:00",
+            to: "17:00:00",
             duration: 30,
           },
         ],

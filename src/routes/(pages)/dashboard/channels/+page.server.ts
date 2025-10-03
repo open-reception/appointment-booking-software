@@ -3,22 +3,23 @@ import logger from "$lib/logger";
 import { fail, redirect, type Actions } from "@sveltejs/kit";
 import { superValidate } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
-import { formSchema as addFormSchema } from "./(components)/add-agent-form";
-import { formSchema as editFormSchema } from "./(components)/edit-agent-form";
-import { formSchema as deleteFormSchema } from "./(components)/delete-agent-form";
-import type { TAgent } from "$lib/types/agent";
+import { formSchema as addFormSchema } from "./(components)/add-channel-form";
+import { formSchema as editFormSchema } from "./(components)/edit-channel-form";
+import { formSchema as deleteFormSchema } from "./(components)/delete-channel-form";
+import { formSchema as pauseFormSchema } from "./(components)/pause-channel-form";
+import type { TChannel } from "$lib/types/channel";
 import { removeEmptyTranslations } from "$lib/utils/localizations";
 
 const log = logger.setContext(import.meta.filename);
 
 export const load = async (event) => {
   if (!event.locals.user?.tenantId) {
-    log.error("User trying to access agents, but has no tenantId");
+    log.error("User trying to access channels, but has no tenantId");
     redirect(302, ROUTES.LOGOUT);
   }
 
   const list = event
-    .fetch(`/api/tenants/${event.locals.user?.tenantId}/agents`, {
+    .fetch(`/api/tenants/${event.locals.user?.tenantId}/channels`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -33,9 +34,9 @@ export const load = async (event) => {
 
       try {
         const body = await res.json();
-        return body.agents as TAgent[];
+        return body.channels as TChannel[];
       } catch (error) {
-        log.error("Failed to parse agents response", { error });
+        log.error("Failed to parse channels response", { error });
       }
     });
 
@@ -51,7 +52,7 @@ export const actions: Actions = {
     const form = await superValidate(event, zod(addFormSchema));
 
     if (!form.valid) {
-      log.error("Add agent form is not valid", { errors: form.errors });
+      log.error("Add channel form is not valid", { errors: form.errors });
       return fail(400, {
         form: { ...form, data: { ...form.data } },
         error: "Form is not valid",
@@ -59,20 +60,23 @@ export const actions: Actions = {
     }
 
     if (!event.locals.user?.tenantId) {
-      log.error("User trying to add an agent, but has no tenantId");
+      log.error("User trying to add a channel, but has no tenantId");
       redirect(302, ROUTES.LOGOUT);
     }
 
-    const resp = await event.fetch(`/api/tenants/${event.locals.user?.tenantId}/agents`, {
+    const resp = await event.fetch(`/api/tenants/${event.locals.user?.tenantId}/channels`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       credentials: "same-origin",
       body: JSON.stringify({
-        name: form.data.name,
+        names: form.data.names,
         descriptions: removeEmptyTranslations(form.data.descriptions),
-        image: form.data.image,
+        agentIds: form.data.agentIds,
+        isPublic: form.data.isPublic,
+        requiresConfirmation: form.data.requiresConfirmation,
+        slotTemplates: form.data.slotTemplates,
       }),
     });
 
@@ -84,7 +88,7 @@ export const actions: Actions = {
         const body = await resp.json();
         error = body.error;
       } catch (e) {
-        log.error("Failed to parse add agent error response", { error: e });
+        log.error("Failed to parse add channel error response", { error: e });
       }
       return fail(400, {
         form,
@@ -96,7 +100,7 @@ export const actions: Actions = {
     const form = await superValidate(event, zod(editFormSchema));
 
     if (!form.valid) {
-      log.error("Edit agent form is not valid", { errors: form.errors });
+      log.error("Edit channel form is not valid", { errors: form.errors });
       return fail(400, {
         form: { ...form, data: { ...form.data } },
         error: "Form is not valid",
@@ -104,12 +108,12 @@ export const actions: Actions = {
     }
 
     if (!event.locals.user?.tenantId) {
-      log.error("User trying to edit an agent, but has no tenantId");
+      log.error("User trying to edit a channel, but has no tenantId");
       redirect(302, ROUTES.LOGOUT);
     }
 
     const resp = await event.fetch(
-      `/api/tenants/${event.locals.user?.tenantId}/agents/${form.data.id}`,
+      `/api/tenants/${event.locals.user?.tenantId}/channels/${form.data.id}`,
       {
         method: "PUT",
         headers: {
@@ -117,9 +121,12 @@ export const actions: Actions = {
         },
         credentials: "same-origin",
         body: JSON.stringify({
-          name: form.data.name,
+          names: form.data.names,
           descriptions: removeEmptyTranslations(form.data.descriptions),
-          image: form.data.image ?? null,
+          agentIds: form.data.agentIds,
+          isPublic: form.data.isPublic,
+          requiresConfirmation: form.data.requiresConfirmation,
+          slotTemplates: form.data.slotTemplates,
         }),
       },
     );
@@ -132,7 +139,7 @@ export const actions: Actions = {
         const body = await resp.json();
         error = body.error;
       } catch (e) {
-        log.error("Failed to parse edit agent error response", { error: e });
+        log.error("Failed to parse edit channels error response", { error: e });
       }
       return fail(400, {
         form: { ...form, data: { ...form.data } },
@@ -144,7 +151,7 @@ export const actions: Actions = {
     const form = await superValidate(event, zod(deleteFormSchema));
 
     if (!form.valid) {
-      log.error("Delete agent form is not valid", { errors: form.errors });
+      log.error("Delete channel form is not valid", { errors: form.errors });
       return fail(400, {
         form: { ...form, data: { ...form.data } },
         error: "Form is not valid",
@@ -152,12 +159,12 @@ export const actions: Actions = {
     }
 
     if (!event.locals.user?.tenantId) {
-      log.error("User trying to delete an agent, but has no tenantId");
+      log.error("User trying to delete a channel, but has no tenantId");
       redirect(302, ROUTES.LOGOUT);
     }
 
     const resp = await event.fetch(
-      `/api/tenants/${event.locals.user?.tenantId}/agents/${form.data.id}`,
+      `/api/tenants/${event.locals.user?.tenantId}/channels/${form.data.id}`,
       {
         method: "DELETE",
         headers: {
@@ -175,7 +182,53 @@ export const actions: Actions = {
         const body = await resp.json();
         error = body.error;
       } catch (e) {
-        log.error("Failed to parse delete agent error response", { error: e });
+        log.error("Failed to parse delete channel error response", { error: e });
+      }
+      return fail(400, {
+        form,
+        error,
+      });
+    }
+  },
+  pause: async (event) => {
+    const form = await superValidate(event, zod(pauseFormSchema));
+
+    if (!form.valid) {
+      log.error("Pause/unpause channel form is not valid", { errors: form.errors });
+      return fail(400, {
+        form: { ...form, data: { ...form.data } },
+        error: "Form is not valid",
+      });
+    }
+
+    if (!event.locals.user?.tenantId) {
+      log.error("User trying to pause/unpause a channel, but has no tenantId");
+      redirect(302, ROUTES.LOGOUT);
+    }
+
+    const resp = await event.fetch(
+      `/api/tenants/${event.locals.user?.tenantId}/channels/${form.data.id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          pause: form.data.pause,
+        }),
+      },
+    );
+
+    if (resp.status < 400) {
+      return { form };
+    } else {
+      let error = "Unknown error";
+      try {
+        const body = await resp.json();
+        error = body.error;
+      } catch (e) {
+        log.error("Failed to parse pause/unpause channel error response", { error: e });
       }
       return fail(400, {
         form,

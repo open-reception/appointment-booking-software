@@ -1,5 +1,6 @@
 <script lang="ts">
   import { m } from "$i18n/messages";
+  import { Badge, type BadgeVariant } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button/index.js";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
   import { Text } from "$lib/components/ui/typography";
@@ -18,18 +19,25 @@
       }
     | { type: "divider" };
 
+  export type ListItemBadge = {
+    label: string;
+    variant?: BadgeVariant;
+  };
+
   let {
     image,
     title,
     description,
     descriptionOnClick,
     actions,
+    badges,
   }: HTMLAttributes<HTMLLIElement> & {
     image?: string | Component;
     title: string;
     description?: string;
     descriptionOnClick?: () => void;
     actions?: ListItemAction[];
+    badges?: ListItemBadge[];
   } = $props();
 
   let open = $state(false);
@@ -71,6 +79,13 @@
             {description}
           </Text>
         {/if}
+      {/if}
+      {#if badges && badges.length > 0}
+        <div class="flex flex-wrap gap-1 py-1">
+          {#each badges as badge, index (`${badge.label}-${index}`)}
+            <Badge variant={badge.variant} class="uppercase">{badge.label}</Badge>
+          {/each}
+        </div>
       {/if}
     </div>
   </div>

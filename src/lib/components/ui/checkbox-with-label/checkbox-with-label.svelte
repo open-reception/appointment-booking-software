@@ -19,7 +19,13 @@
   } = $props();
 </script>
 
-<label class={cn("flex items-center gap-2", className)}>
-  <Checkbox {...restProps} checked={value} value={value ? "true" : "false"} {onCheckedChange} />
+<label class={cn("flex items-start gap-2", className)}>
+  <Checkbox
+    {...restProps}
+    checked={value}
+    value={value ? "true" : "false"}
+    {onCheckedChange}
+    class="mt-0.5"
+  />
   <Text style="sm" class="font-normal">{label}</Text>
 </label>
