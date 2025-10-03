@@ -1,13 +1,12 @@
-import { getTenantDb } from "../db";
-import * as tenantSchema from "../db/tenant-schema";
-import { type SelectChannel, type SelectSlotTemplate, type SelectAgent } from "../db/tenant-schema";
-
-import { eq, inArray } from "drizzle-orm";
-import logger from "$lib/logger";
-import z from "zod/v4";
-import { ValidationError, NotFoundError } from "../utils/errors";
-import { TenantConfig } from "../db/tenant-config";
 import { supportedLocales } from "$lib/const/locales";
+import logger from "$lib/logger";
+import { asc, eq, inArray, sql } from "drizzle-orm";
+import z from "zod/v4";
+import { getTenantDb } from "../db";
+import { TenantConfig } from "../db/tenant-config";
+import * as tenantSchema from "../db/tenant-schema";
+import { type SelectAgent, type SelectChannel, type SelectSlotTemplate } from "../db/tenant-schema";
+import { NotFoundError, ValidationError } from "../utils/errors";
 
 const CHANNEL_COLORS = ["#FF0000", "#00FF00", "#0000FF"] as const;
 const NEXT_COLOR_KEY = "nextChannelColor";
@@ -15,8 +14,8 @@ const NEXT_COLOR_KEY = "nextChannelColor";
 const slotTemplateSchema = z.object({
   name: z.string().min(1).max(100),
   weekdays: z.number().int().min(0).max(127).optional(),
-  from: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
-  to: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+  from: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/),
+  to: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/),
   duration: z.number().int().min(1).max(1440),
 });
 
@@ -549,10 +548,12 @@ export class ChannelService {
       const db = await this.getDb();
 
       // Get all channels
+      // TODO: What should be the locale used here? Ideally it should be the users locale
+      const language = supportedLocales[0];
       const channels = await db
         .select()
         .from(tenantSchema.channel)
-        .orderBy(tenantSchema.channel.names);
+        .orderBy(asc(sql`${tenantSchema.channel.names}->>${language}`));
 
       // Get relations for each channel
       const result: ChannelWithRelations[] = [];

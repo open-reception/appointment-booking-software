@@ -14,7 +14,7 @@
 <FormPrimitive.Description
   bind:ref
   data-slot="form-description"
-  class={cn("text-muted-foreground -mt-1 ml-1 text-sm", className)}
+  class={cn("text-muted-foreground -mt-1 text-sm", className)}
   {...restProps}
 >
   <Text style="xs" color="medium" class="text-medium">
