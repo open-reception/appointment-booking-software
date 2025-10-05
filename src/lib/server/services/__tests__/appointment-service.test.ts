@@ -17,7 +17,6 @@ const mockAppointment = {
   channelId: "channel-123",
   appointmentDate: new Date("2024-01-15T10:00:00Z"),
   status: "NEW" as const,
-  isEncrypted: true,
   encryptedPayload: "encrypted-data",
   iv: "iv-data",
   authTag: "auth-tag",

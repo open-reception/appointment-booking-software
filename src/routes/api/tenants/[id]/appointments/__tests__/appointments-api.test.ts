@@ -63,7 +63,6 @@ describe("Appointments API Route", () => {
           channelId: "channel-1",
           appointmentDate: "2024-01-01T10:00:00.000Z",
           status: "CONFIRMED",
-          isEncrypted: true,
           encryptedPayload: "encrypted-data",
           iv: "iv-data",
           authTag: "auth-tag",

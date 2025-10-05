@@ -231,7 +231,6 @@ export const POST: RequestHandler = async ({ request, params }) => {
         iv: validatedData.encryptedAppointment.iv,
         authTag: validatedData.encryptedAppointment.authTag,
         status: initialStatus,
-        isEncrypted: true,
       })
       .returning({
         id: appointment.id,

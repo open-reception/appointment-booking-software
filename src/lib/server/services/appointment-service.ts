@@ -288,7 +288,6 @@ export class AppointmentService {
           iv: clientData.encryptedAppointment.iv,
           authTag: clientData.encryptedAppointment.authTag,
           status: initialStatus,
-          isEncrypted: true,
         })
         .returning({
           id: tenantSchema.appointment.id,

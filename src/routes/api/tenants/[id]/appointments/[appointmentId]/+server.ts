@@ -63,10 +63,6 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "GET", {
                     enum: ["NEW", "CONFIRMED", "HELD", "REJECTED", "NO_SHOW"],
                     description: "Appointment status",
                   },
-                  isEncrypted: {
-                    type: "boolean",
-                    description: "Whether appointment uses end-to-end encryption",
-                  },
                   encryptedPayload: {
                     type: "string",
                     description: "Encrypted appointment data (nullable)",
@@ -90,14 +86,7 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "GET", {
                     description: "Last update timestamp (nullable)",
                   },
                 },
-                required: [
-                  "id",
-                  "tunnelId",
-                  "channelId",
-                  "appointmentDate",
-                  "status",
-                  "isEncrypted",
-                ],
+                required: ["id", "tunnelId", "channelId", "appointmentDate", "status"],
               },
             },
             required: ["appointment"],

@@ -59,10 +59,6 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}/confirm", "PUT"
                     description:
                       "Appointment status (will be CONFIRMED after successful operation)",
                   },
-                  isEncrypted: {
-                    type: "boolean",
-                    description: "Whether appointment uses end-to-end encryption",
-                  },
                   encryptedPayload: {
                     type: "string",
                     description: "Encrypted appointment data (nullable)",
@@ -86,14 +82,7 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}/confirm", "PUT"
                     description: "Last update timestamp (nullable)",
                   },
                 },
-                required: [
-                  "id",
-                  "tunnelId",
-                  "channelId",
-                  "appointmentDate",
-                  "status",
-                  "isEncrypted",
-                ],
+                required: ["id", "tunnelId", "channelId", "appointmentDate", "status"],
               },
             },
             required: ["message", "appointment"],

@@ -173,8 +173,6 @@ export const appointment = pgTable("appointment", {
   encryptedData: text("encrypted_data"),
   /** Symmetric key for encrypting appointment data - Legacy field */
   dataKey: text("data_key"),
-  /** Whether this appointment uses end-to-end encryption (new system) */
-  isEncrypted: boolean("is_encrypted").default(false).notNull(),
   /** AES-encrypted payload for end-to-end encryption (new system) */
   encryptedPayload: text("encrypted_payload"),
   /** Initialization vector for AES encryption (new system) */

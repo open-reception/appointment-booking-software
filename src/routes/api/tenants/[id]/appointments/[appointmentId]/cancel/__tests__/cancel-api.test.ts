@@ -57,7 +57,6 @@ describe("Appointment Cancel API Route", () => {
     status: "REJECTED",
     encryptedData: null,
     dataKey: null,
-    isEncrypted: true,
     encryptedPayload: "encrypted-payload",
     iv: "iv-data",
     authTag: "auth-tag",

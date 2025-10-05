@@ -58,7 +58,6 @@ describe("Appointment Detail API Routes", () => {
     status: "CONFIRMED",
     encryptedData: null,
     dataKey: null,
-    isEncrypted: true,
     encryptedPayload: "encrypted-payload",
     iv: "iv-data",
     authTag: "auth-tag",

@@ -104,7 +104,6 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     throw new ValidationError("Tenant ID and Staff ID are required");
   }
 
-  // Berechtigungsprüfung - Benutzer muss eingeloggt sein und zum Tenant gehören
   checkPermission(locals, tenantId, false);
 
   try {
