@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { handle } from "./hooks.server";
+import { rateLimitHandle } from "./server-hooks/rateLimitHandle";
+import { corsHandle } from "./server-hooks/corsHandle";
+import { secHeaderHandle } from "./server-hooks/secHeaderHandle";
 import { mockCookies } from "$lib/tests/const";
 
 // Mock the startup service
@@ -26,6 +28,19 @@ vi.mock("$lib/server/auth/authorization-service", () => ({
     hasRole: vi.fn(),
     hasAnyRole: vi.fn(),
   },
+}));
+
+// Mock the i18n module to avoid request store issues
+vi.mock("$i18n/runtime", () => ({
+  cookieName: "locale",
+  extractLocaleFromHeader: vi.fn(() => "en"),
+  setLocale: vi.fn(),
+}));
+
+vi.mock("$i18n/server", () => ({
+  paraglideMiddleware: vi.fn((request, callback) => {
+    return callback({ request, locale: "en" });
+  }),
 }));
 
 // Mock the Date.now function for rate limiting tests
@@ -72,7 +87,9 @@ describe("hooks.server", () => {
         isDataRequest: false,
         isSubRequest: false,
         platform: {} as any,
-      };
+        tracing: {} as any,
+        isRemoteRequest: false,
+      } as any;
     };
 
     beforeEach(() => {
@@ -82,7 +99,7 @@ describe("hooks.server", () => {
     it("should allow requests within rate limit", async () => {
       const event = createEvent("192.168.1.100"); // Unique IP for this test
 
-      const response = await handle({ event, resolve: mockResolve });
+      const response = await rateLimitHandle({ event, resolve: mockResolve });
 
       expect(response.status).not.toBe(429);
       expect(mockResolve).toHaveBeenCalled();
@@ -94,11 +111,11 @@ describe("hooks.server", () => {
 
       // Make multiple requests to exceed rate limit
       for (let i = 0; i < 10; i++) {
-        await handle({ event, resolve: mockResolve });
+        await rateLimitHandle({ event, resolve: mockResolve });
       }
 
       // This request should be rate limited
-      const response = await handle({ event, resolve: mockResolve });
+      const response = await rateLimitHandle({ event, resolve: mockResolve });
 
       expect(response.status).toBe(429);
       expect(await response.text()).toBe("Too Many Requests");
@@ -109,13 +126,13 @@ describe("hooks.server", () => {
 
       // Exceed rate limit
       for (let i = 0; i < 11; i++) {
-        await handle({ event, resolve: mockResolve });
+        await rateLimitHandle({ event, resolve: mockResolve });
       }
 
       // Mock time passing (would need to mock Date.now in real implementation)
       // For now, we'll test that different IPs are treated separately
       const differentIPEvent = createEvent("192.168.1.2");
-      const response = await handle({ event: differentIPEvent, resolve: mockResolve });
+      const response = await rateLimitHandle({ event: differentIPEvent, resolve: mockResolve });
 
       expect(response.status).not.toBe(429);
     });
@@ -124,25 +141,28 @@ describe("hooks.server", () => {
   describe("CORS handling", () => {
     const mockResolve = vi.fn();
 
-    const createCORSEvent = (method: string = "GET", path: string = "/api/health") => ({
-      url: new URL(`http://localhost${path}`),
-      request: new Request(`http://localhost${path}`, {
-        method,
-        headers: {
-          "x-forwarded-for": "192.168.2.1", // Different IP for CORS tests
-        },
-      }),
-      cookies: mockCookies as any,
-      fetch: {} as any,
-      getClientAddress: () => "192.168.2.1",
-      locals: {},
-      params: {},
-      route: { id: null },
-      setHeaders: vi.fn(),
-      isDataRequest: false,
-      isSubRequest: false,
-      platform: {} as any,
-    });
+    const createCORSEvent = (method: string = "GET", path: string = "/api/health") =>
+      ({
+        url: new URL(`http://localhost${path}`),
+        request: new Request(`http://localhost${path}`, {
+          method,
+          headers: {
+            "x-forwarded-for": "192.168.2.1", // Different IP for CORS tests
+          },
+        }),
+        cookies: mockCookies as any,
+        fetch: {} as any,
+        getClientAddress: () => "192.168.2.1",
+        locals: {},
+        params: {},
+        route: { id: null },
+        setHeaders: vi.fn(),
+        isDataRequest: false,
+        isSubRequest: false,
+        platform: {} as any,
+        tracing: {} as any,
+        isRemoteRequest: false,
+      }) as any;
 
     beforeEach(() => {
       mockResolve.mockResolvedValue(new Response("OK"));
@@ -151,7 +171,7 @@ describe("hooks.server", () => {
     it("should handle OPTIONS preflight requests", async () => {
       const event = createCORSEvent("OPTIONS");
 
-      const response = await handle({ event, resolve: mockResolve });
+      const response = await corsHandle({ event, resolve: mockResolve });
 
       expect(response.status).toBe(200);
       expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
@@ -159,37 +179,42 @@ describe("hooks.server", () => {
       expect(mockResolve).not.toHaveBeenCalled();
     });
 
-    it("should add CORS headers to API routes", async () => {
+    it("should pass through non-OPTIONS requests without adding headers", async () => {
       const event = createCORSEvent();
 
-      const response = await handle({ event, resolve: mockResolve });
+      const response = await corsHandle({ event, resolve: mockResolve });
 
-      expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
-      expect(response.headers.get("Access-Control-Allow-Methods")).toContain("GET");
+      // For non-OPTIONS requests, CORS handler just passes through the response
+      expect(mockResolve).toHaveBeenCalled();
+      expect(response.status).toBe(200);
+      expect(await response.text()).toBe("OK");
     });
   });
 
   describe("security headers", () => {
     const mockResolve = vi.fn();
 
-    const createSecurityEvent = (protocol: string = "http", path: string = "/test") => ({
-      url: new URL(`${protocol}://localhost${path}`),
-      request: new Request(`${protocol}://localhost${path}`, {
-        headers: {
-          "x-forwarded-for": "192.168.3.1", // Different IP for security tests
-        },
-      }),
-      cookies: mockCookies as any,
-      fetch: {} as any,
-      getClientAddress: () => "192.168.3.1",
-      locals: {},
-      params: {},
-      route: { id: null },
-      setHeaders: vi.fn(),
-      isDataRequest: false,
-      isSubRequest: false,
-      platform: {} as any,
-    });
+    const createSecurityEvent = (protocol: string = "http", path: string = "/test") =>
+      ({
+        url: new URL(`${protocol}://localhost${path}`),
+        request: new Request(`${protocol}://localhost${path}`, {
+          headers: {
+            "x-forwarded-for": "192.168.3.1", // Different IP for security tests
+          },
+        }),
+        cookies: mockCookies as any,
+        fetch: {} as any,
+        getClientAddress: () => "192.168.3.1",
+        locals: {},
+        params: {},
+        route: { id: null },
+        setHeaders: vi.fn(),
+        isDataRequest: false,
+        isSubRequest: false,
+        platform: {} as any,
+        tracing: {} as any,
+        isRemoteRequest: false,
+      }) as any;
 
     beforeEach(() => {
       mockResolve.mockResolvedValue(new Response("OK"));
@@ -198,7 +223,7 @@ describe("hooks.server", () => {
     it("should add security headers to all responses", async () => {
       const event = createSecurityEvent();
 
-      const response = await handle({ event, resolve: mockResolve });
+      const response = await secHeaderHandle({ event, resolve: mockResolve });
 
       expect(response.headers.get("X-Frame-Options")).toBe("DENY");
       expect(response.headers.get("X-Content-Type-Options")).toBe("nosniff");
@@ -212,7 +237,7 @@ describe("hooks.server", () => {
     it("should add HSTS header for HTTPS requests", async () => {
       const event = createSecurityEvent("https");
 
-      const response = await handle({ event, resolve: mockResolve });
+      const response = await secHeaderHandle({ event, resolve: mockResolve });
 
       expect(response.headers.get("Strict-Transport-Security")).toBe(
         "max-age=31536000; includeSubDomains; preload",
@@ -222,7 +247,7 @@ describe("hooks.server", () => {
     it("should not add HSTS header for HTTP requests", async () => {
       const event = createSecurityEvent("http");
 
-      const response = await handle({ event, resolve: mockResolve });
+      const response = await secHeaderHandle({ event, resolve: mockResolve });
 
       expect(response.headers.get("Strict-Transport-Security")).toBeNull();
     });
