@@ -157,7 +157,9 @@ describe("Tenant API Routes", () => {
       };
 
       const mockTenantService = {
-        configuration: mockConfig,
+        configuration: {
+          configuration: mockConfig,
+        },
       };
 
       vi.mocked(TenantAdminService.getTenantById).mockResolvedValue(mockTenantService as any);
