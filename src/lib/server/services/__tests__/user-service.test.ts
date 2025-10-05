@@ -95,7 +95,7 @@ describe("UserService", () => {
         email: "test@example.com",
         token: "018f-a1b2-c3d4-e5f6-789abcdef012",
         tokenValidUntil: new Date("2024-01-01T12:10:00Z"),
-        confirmed: false,
+        confirmationState: "INVITED" as const,
         isActive: false,
       };
 
@@ -113,7 +113,7 @@ describe("UserService", () => {
         ...adminData,
         token: "018f-a1b2-c3d4-e5f6-789abcdef012",
         tokenValidUntil: expect.any(Date),
-        confirmed: false,
+        confirmationState: "INVITED" as const,
         isActive: false,
       });
       expect(result).toEqual(mockCreatedAdmin);
@@ -197,7 +197,7 @@ describe("UserService", () => {
       expect(mockCentralDb.select).toHaveBeenCalledTimes(2);
       expect(mockCentralDb.update).toHaveBeenCalled();
       expect(mockUpdateBuilder.set).toHaveBeenCalledWith({
-        confirmed: true,
+        confirmationState: "CONFIRMED" as const,
         isActive: true,
         recoveryPassphrase: null,
       });
@@ -228,7 +228,7 @@ describe("UserService", () => {
         id: "018f-a1b2-c3d4-e5f6-789abcdef012",
         name: "Test Admin",
         email: "test@example.com",
-        confirmed: true,
+        confirmationState: "ACCESS_GRANTED" as const,
         isActive: true,
       };
 
@@ -334,15 +334,27 @@ describe("UserService", () => {
         updatedAt: new Date(),
       };
 
+      // Mock user exists check
+      const mockSelectBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([{ id: adminId }]),
+      };
+
       const mockInsertBuilder = {
         values: vi.fn().mockReturnThis(),
         returning: vi.fn().mockResolvedValue([mockCreatedPasskey]),
       };
 
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
       mockCentralDb.insert.mockReturnValue(mockInsertBuilder);
 
       const result = await UserService.addPasskey(adminId, passkeyData);
 
+      expect(mockCentralDb.select).toHaveBeenCalled();
+      expect(mockSelectBuilder.from).toHaveBeenCalled();
+      expect(mockSelectBuilder.where).toHaveBeenCalled();
+      expect(mockSelectBuilder.limit).toHaveBeenCalledWith(1);
       expect(mockCentralDb.insert).toHaveBeenCalled();
       expect(mockInsertBuilder.values).toHaveBeenCalledWith({
         ...passkeyData,

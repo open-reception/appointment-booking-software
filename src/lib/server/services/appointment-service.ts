@@ -1,47 +1,37 @@
-import { getTenantDb } from "../db";
+import { getTenantDb, centralDb } from "../db";
 import * as tenantSchema from "../db/tenant-schema";
-import { type SelectAppointment, type SelectClient, type SelectChannel } from "../db/tenant-schema";
-
-import { eq, and, between, or } from "drizzle-orm";
+import { type SelectAppointment } from "../db/tenant-schema";
+import { user } from "../db/central-schema";
 import logger from "$lib/logger";
-import z from "zod/v4";
-import { ValidationError, NotFoundError, ConflictError } from "../utils/errors";
+import { ValidationError, NotFoundError, InternalError, ConflictError } from "../utils/errors";
+import { and, eq, gte, lte, asc } from "drizzle-orm";
+import type { AppointmentResponse } from "$lib/types/appointment";
 
-const appointmentCreationSchema = z.object({
-  clientId: z.string().uuid(),
-  channelId: z.string().uuid(),
-  appointmentDate: z.string().datetime(),
-  expiryDate: z.string().date(),
-  name: z.string().min(1).max(200),
-  phone: z.string().min(1).max(200).optional().default(""),
-  description: z.string().optional(),
-  status: z.enum(["NEW", "CONFIRMED", "HELD", "REJECTED", "NO_SHOW"]).default("NEW"),
-});
+export interface ClientTunnelData {
+  tunnelId: string;
+  channelId: string;
+  appointmentDate: string;
+  emailHash: string;
+  clientPublicKey: string;
+  privateKeyShare: string;
+  encryptedAppointment: {
+    encryptedPayload: string;
+    iv: string;
+    authTag: string;
+  };
+  staffKeyShares: {
+    userId: string;
+    encryptedTunnelKey: string;
+  }[];
+  clientEncryptedTunnelKey: string;
+}
 
-const appointmentUpdateSchema = z.object({
-  appointmentDate: z.string().datetime().optional(),
-  expiryDate: z.string().date().optional(),
-  title: z.string().min(1).max(200).optional(),
-  name: z.string().optional(),
-  phone: z.string().min(1).max(200).optional(),
-  status: z.enum(["NEW", "CONFIRMED", "HELD", "REJECTED", "NO_SHOW"]).optional(),
-});
-
-const appointmentQuerySchema = z.object({
-  startDate: z.string().datetime(),
-  endDate: z.string().datetime(),
-  channelId: z.string().uuid().optional(),
-  clientId: z.string().uuid().optional(),
-  status: z.enum(["NEW", "CONFIRMED", "HELD", "REJECTED", "NO_SHOW"]).optional(),
-});
-
-export type AppointmentCreationRequest = z.infer<typeof appointmentCreationSchema>;
-export type AppointmentUpdateRequest = z.infer<typeof appointmentUpdateSchema>;
-export type AppointmentQueryRequest = z.infer<typeof appointmentQuerySchema>;
-
-export interface AppointmentWithDetails extends SelectAppointment {
-  client?: SelectClient;
-  channel?: SelectChannel;
+export interface ClientTunnelResponse {
+  id: string;
+  emailHash: string;
+  clientPublicKey: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export class AppointmentService {
@@ -71,417 +61,294 @@ export class AppointmentService {
   }
 
   /**
-   * Create a new appointment
-   * @param request Appointment creation request data
-   * @returns Created appointment
+   * Send appointment notification email
    */
-  async createAppointment(request: AppointmentCreationRequest): Promise<SelectAppointment> {
+  private async sendAppointmentNotification(
+    email: string,
+    appointment: SelectAppointment,
+    status: "NEW" | "CONFIRMED",
+  ): Promise<void> {
+    // TODO: Implement email service integration
     const log = logger.setContext("AppointmentService");
+    log.debug("Sending appointment notification", {
+      email,
+      appointmentId: appointment.id,
+      status,
+      tenantId: this.tenantId,
+    });
+  }
 
-    const validation = appointmentCreationSchema.safeParse(request);
-    if (!validation.success) {
-      throw new ValidationError("Invalid appointment creation request");
+  public async getAppointmentById(id: string): Promise<SelectAppointment> {
+    const log = logger.setContext("AppointmentService");
+    log.debug("Fetching appointment by ID", { appointmentId: id, tenantId: this.tenantId });
+    const db = await this.getDb();
+
+    const result = await db
+      .select()
+      .from(tenantSchema.appointment)
+      .where(eq(tenantSchema.appointment.id, id))
+      .limit(1);
+
+    if (result.length === 0) {
+      log.warn("Appointment not found", { appointmentId: id, tenantId: this.tenantId });
+      throw new ValidationError("Appointment not found");
     }
 
-    log.debug("Creating new appointment", {
+    const row = result[0];
+    return row;
+  }
+
+  public async confirmAppointment(id: string): Promise<SelectAppointment> {
+    const log = logger.setContext("AppointmentService");
+    log.debug("Confirming appointment by ID", { appointmentId: id, tenantId: this.tenantId });
+    const db = await this.getDb();
+
+    const result = await db
+      .update(tenantSchema.appointment)
+      .set({ status: "CONFIRMED" })
+      .where(and(eq(tenantSchema.appointment.id, id), eq(tenantSchema.appointment.status, "NEW")))
+      .returning();
+
+    if (result.length === 0) {
+      log.warn("Appointment not found or in wrong state", {
+        appointmentId: id,
+        state: result[0] ? result[0].status : undefined,
+        tenantId: this.tenantId,
+      });
+      throw new ValidationError("Appointment not found or in wrong state");
+    }
+
+    const row = result[0];
+    return row;
+  }
+
+  public async cancelAppointment(id: string): Promise<SelectAppointment> {
+    const log = logger.setContext("AppointmentService");
+    log.debug("Confirming appointment by ID", { appointmentId: id, tenantId: this.tenantId });
+    const db = await this.getDb();
+
+    const result = await db
+      .update(tenantSchema.appointment)
+      .set({ status: "REJECTED" })
+      .where(eq(tenantSchema.appointment.id, id))
+      .returning();
+
+    if (result.length === 0) {
+      log.warn("Appointment not found or in wrong state", {
+        appointmentId: id,
+        state: result[0] ? result[0].status : undefined,
+        tenantId: this.tenantId,
+      });
+      throw new ValidationError("Appointment not found or in wrong state");
+    }
+
+    const row = result[0];
+    return row;
+  }
+
+  public async deleteAppointment(id: string): Promise<boolean> {
+    const log = logger.setContext("AppointmentService");
+    log.debug("Deleting appointment by ID", { appointmentId: id, tenantId: this.tenantId });
+    const db = await this.getDb();
+
+    const result = await db
+      .delete(tenantSchema.appointment)
+      .where(eq(tenantSchema.appointment.id, id))
+      .returning();
+
+    if (result.length === 0) {
+      log.debug("Appointment not found for deletion", {
+        appointmentId: id,
+        tenantId: this.tenantId,
+      });
+      return false;
+    }
+
+    log.debug("Appointment deleted successfully", { appointmentId: id, tenantId: this.tenantId });
+    return true;
+  }
+
+  /**
+   * Get all client tunnels for the tenant
+   */
+  public async getClientTunnels(): Promise<ClientTunnelResponse[]> {
+    const log = logger.setContext("AppointmentService");
+    log.debug("Fetching client tunnels", { tenantId: this.tenantId });
+    const db = await this.getDb();
+
+    const tunnels = await db
+      .select({
+        id: tenantSchema.clientAppointmentTunnel.id,
+        emailHash: tenantSchema.clientAppointmentTunnel.emailHash,
+        clientPublicKey: tenantSchema.clientAppointmentTunnel.clientPublicKey,
+        createdAt: tenantSchema.clientAppointmentTunnel.createdAt,
+        updatedAt: tenantSchema.clientAppointmentTunnel.updatedAt,
+      })
+      .from(tenantSchema.clientAppointmentTunnel)
+      .orderBy(tenantSchema.clientAppointmentTunnel.createdAt);
+
+    log.debug("Client tunnels retrieved successfully", {
       tenantId: this.tenantId,
-      clientId: request.clientId,
-      channelId: request.channelId,
-      appointmentDate: request.appointmentDate,
+      tunnelCount: tunnels.length,
     });
 
-    try {
-      const db = await this.getDb();
+    return tunnels.map((tunnel) => ({
+      id: tunnel.id,
+      emailHash: tunnel.emailHash,
+      clientPublicKey: tunnel.clientPublicKey,
+      createdAt: tunnel.createdAt?.toISOString(),
+      updatedAt: tunnel.updatedAt?.toISOString(),
+    }));
+  }
 
-      // Check if client exists
-      const client = await db
-        .select()
-        .from(tenantSchema.client)
-        .where(eq(tenantSchema.client.id, request.clientId))
-        .limit(1);
+  /**
+   * Create a new client tunnel with their first appointment
+   */
+  public async createNewClientWithAppointment(
+    clientData: ClientTunnelData,
+  ): Promise<AppointmentResponse> {
+    const log = logger.setContext("AppointmentService");
 
-      if (client.length === 0) {
-        throw new NotFoundError(`Client with ID ${request.clientId} not found`);
+    log.info("Creating new client appointment tunnel", {
+      tenantId: this.tenantId,
+      tunnelId: clientData.tunnelId,
+      appointmentDate: clientData.appointmentDate,
+      emailHashPrefix: clientData.emailHash.slice(0, 8),
+    });
+
+    // Check if there are any authorized users (ACCESS_GRANTED) in this tenant
+    const authorizedUsers = await centralDb
+      .select({ count: user.id })
+      .from(user)
+      .where(and(eq(user.tenantId, this.tenantId), eq(user.confirmationState, "ACCESS_GRANTED")))
+      .limit(1);
+
+    if (authorizedUsers.length === 0) {
+      log.warn("Client creation blocked: No authorized users in tenant", {
+        tenantId: this.tenantId,
+        tunnelId: clientData.tunnelId,
+      });
+      throw new ConflictError(
+        "Cannot create client appointments: No authorized users found in tenant. At least one user must have ACCESS_GRANTED status.",
+      );
+    }
+
+    const db = await this.getDb();
+
+    // Transactional: Create tunnel and appointment
+    const result = await db.transaction(async (tx) => {
+      // 1. Create client appointment tunnel
+      const tunnelResult = await tx
+        .insert(tenantSchema.clientAppointmentTunnel)
+        .values({
+          id: clientData.tunnelId,
+          emailHash: clientData.emailHash,
+          clientPublicKey: clientData.clientPublicKey,
+          privateKeyShare: clientData.privateKeyShare,
+          clientEncryptedTunnelKey: clientData.clientEncryptedTunnelKey,
+        })
+        .returning({ id: tenantSchema.clientAppointmentTunnel.id });
+
+      if (tunnelResult.length === 0) {
+        throw new InternalError("Failed to create client appointment tunnel");
       }
 
-      // Check if channel exists and is not paused
-      const channel = await db
-        .select()
-        .from(tenantSchema.channel)
-        .where(eq(tenantSchema.channel.id, request.channelId))
-        .limit(1);
-
-      if (channel.length === 0) {
-        throw new NotFoundError(`Channel with ID ${request.channelId} not found`);
-      }
-
-      if (channel[0].pause) {
-        throw new ConflictError("Channel is currently paused and not accepting appointments");
-      }
-
-      // Check for conflicting appointments at the same time slot
-      const conflictingAppointments = await db
-        .select()
-        .from(tenantSchema.appointment)
-        .where(
-          and(
-            eq(tenantSchema.appointment.channelId, request.channelId),
-            eq(tenantSchema.appointment.appointmentDate, request.appointmentDate),
-            or(
-              eq(tenantSchema.appointment.status, "NEW"),
-              eq(tenantSchema.appointment.status, "CONFIRMED"),
-              eq(tenantSchema.appointment.status, "HELD"),
-            ),
-          ),
+      // 2. Store staff key shares for the tunnel
+      if (clientData.staffKeyShares.length > 0) {
+        await tx.insert(tenantSchema.clientTunnelStaffKeyShare).values(
+          clientData.staffKeyShares.map((share) => ({
+            tunnelId: clientData.tunnelId,
+            userId: share.userId,
+            encryptedTunnelKey: share.encryptedTunnelKey,
+          })),
         );
-
-      if (conflictingAppointments.length > 0) {
-        throw new ConflictError("Time slot is already booked");
       }
 
-      // Create the appointment
-      const result = await db
+      // 3. Get channel configuration to determine initial status
+      const channelResult = await tx
+        .select({ requiresConfirmation: tenantSchema.channel.requiresConfirmation })
+        .from(tenantSchema.channel)
+        .where(eq(tenantSchema.channel.id, clientData.channelId))
+        .limit(1);
+
+      if (channelResult.length === 0) {
+        throw new NotFoundError("Channel not found");
+      }
+
+      const initialStatus = channelResult[0].requiresConfirmation ? "NEW" : "CONFIRMED";
+
+      // 4. Create encrypted appointment
+      const appointmentResult = await tx
         .insert(tenantSchema.appointment)
         .values({
-          clientId: request.clientId,
-          channelId: request.channelId,
-          appointmentDate: request.appointmentDate,
-          expiryDate: request.expiryDate,
-          name: request.name,
-          phone: request.phone ?? "",
-          status: request.status,
+          tunnelId: clientData.tunnelId,
+          channelId: clientData.channelId,
+          appointmentDate: new Date(clientData.appointmentDate),
+          encryptedPayload: clientData.encryptedAppointment.encryptedPayload,
+          iv: clientData.encryptedAppointment.iv,
+          authTag: clientData.encryptedAppointment.authTag,
+          status: initialStatus,
         })
-        .returning();
+        .returning({
+          id: tenantSchema.appointment.id,
+          appointmentDate: tenantSchema.appointment.appointmentDate,
+          status: tenantSchema.appointment.status,
+        });
 
-      log.debug("Appointment created successfully", {
-        tenantId: this.tenantId,
-        appointmentId: result[0].id,
-        clientId: request.clientId,
-        channelId: request.channelId,
-      });
-
-      return result[0];
-    } catch (error) {
-      if (error instanceof NotFoundError || error instanceof ConflictError) throw error;
-      log.error("Failed to create appointment", {
-        tenantId: this.tenantId,
-        clientId: request.clientId,
-        channelId: request.channelId,
-        error: String(error),
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * Get an appointment by ID
-   * @param appointmentId Appointment ID
-   * @returns Appointment with details or null if not found
-   */
-  async getAppointmentById(appointmentId: string): Promise<AppointmentWithDetails | null> {
-    const log = logger.setContext("AppointmentService");
-    log.debug("Getting appointment by ID", { tenantId: this.tenantId, appointmentId });
-
-    try {
-      const db = await this.getDb();
-      const result = await db
-        .select({
-          appointment: tenantSchema.appointment,
-          client: tenantSchema.client,
-          channel: tenantSchema.channel,
-        })
-        .from(tenantSchema.appointment)
-        .leftJoin(
-          tenantSchema.client,
-          eq(tenantSchema.appointment.clientId, tenantSchema.client.id),
-        )
-        .leftJoin(
-          tenantSchema.channel,
-          eq(tenantSchema.appointment.channelId, tenantSchema.channel.id),
-        )
-        .where(eq(tenantSchema.appointment.id, appointmentId))
-        .limit(1);
-
-      if (result.length === 0) {
-        log.debug("Appointment not found", { tenantId: this.tenantId, appointmentId });
-        return null;
+      if (appointmentResult.length === 0) {
+        throw new InternalError("Failed to create appointment");
       }
 
-      const row = result[0];
-      log.debug("Appointment found", { tenantId: this.tenantId, appointmentId });
-
-      return {
-        ...row.appointment,
-        client: row.client || undefined,
-        channel: row.channel || undefined,
-      };
-    } catch (error) {
-      log.error("Failed to get appointment by ID", {
-        tenantId: this.tenantId,
-        appointmentId,
-        error: String(error),
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * Query appointments with filters
-   * @param query Query parameters
-   * @returns Array of appointments matching criteria
-   */
-  async queryAppointments(query: AppointmentQueryRequest): Promise<AppointmentWithDetails[]> {
-    const log = logger.setContext("AppointmentService");
-
-    const validation = appointmentQuerySchema.safeParse(query);
-    if (!validation.success) {
-      throw new ValidationError("Invalid appointment query request");
-    }
-
-    log.debug("Querying appointments", {
-      tenantId: this.tenantId,
-      startDate: query.startDate,
-      endDate: query.endDate,
-      channelId: query.channelId,
-      clientId: query.clientId,
-      status: query.status,
+      return appointmentResult[0];
     });
 
-    try {
-      const db = await this.getDb();
+    const response: AppointmentResponse = {
+      id: result.id,
+      appointmentDate: result.appointmentDate.toISOString(),
+      status: result.status,
+    };
 
-      // Build where conditions dynamically
-      const conditions = [
-        between(tenantSchema.appointment.appointmentDate, query.startDate, query.endDate),
-      ];
-
-      if (query.channelId) {
-        conditions.push(eq(tenantSchema.appointment.channelId, query.channelId));
-      }
-
-      if (query.clientId) {
-        conditions.push(eq(tenantSchema.appointment.clientId, query.clientId));
-      }
-
-      if (query.status) {
-        conditions.push(eq(tenantSchema.appointment.status, query.status));
-      }
-
-      const result = await db
-        .select({
-          appointment: tenantSchema.appointment,
-          client: tenantSchema.client,
-          channel: tenantSchema.channel,
-        })
-        .from(tenantSchema.appointment)
-        .leftJoin(
-          tenantSchema.client,
-          eq(tenantSchema.appointment.clientId, tenantSchema.client.id),
-        )
-        .leftJoin(
-          tenantSchema.channel,
-          eq(tenantSchema.appointment.channelId, tenantSchema.channel.id),
-        )
-        .where(and(...conditions))
-        .orderBy(tenantSchema.appointment.appointmentDate);
-
-      log.debug("Retrieved appointments", {
-        tenantId: this.tenantId,
-        count: result.length,
-      });
-
-      return result.map((row) => ({
-        ...row.appointment,
-        client: row.client || undefined,
-        channel: row.channel || undefined,
-      }));
-    } catch (error) {
-      log.error("Failed to query appointments", {
-        tenantId: this.tenantId,
-        error: String(error),
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * Update an existing appointment
-   * @param appointmentId Appointment ID
-   * @param updateData Appointment update data
-   * @returns Updated appointment
-   */
-  async updateAppointment(
-    appointmentId: string,
-    updateData: AppointmentUpdateRequest,
-  ): Promise<SelectAppointment> {
-    const log = logger.setContext("AppointmentService");
-
-    const validation = appointmentUpdateSchema.safeParse(updateData);
-    if (!validation.success) {
-      throw new ValidationError("Invalid appointment update request");
-    }
-
-    log.debug("Updating appointment", {
+    log.info("Successfully created new client appointment tunnel", {
       tenantId: this.tenantId,
-      appointmentId,
-      updateFields: Object.keys(updateData),
+      tunnelId: clientData.tunnelId,
+      appointmentId: result.id,
+      staffSharesCount: clientData.staffKeyShares.length,
     });
 
-    try {
-      const db = await this.getDb();
-
-      // If updating appointment date, check for conflicts
-      if (updateData.appointmentDate) {
-        const existingAppointment = await db
-          .select()
-          .from(tenantSchema.appointment)
-          .where(eq(tenantSchema.appointment.id, appointmentId))
-          .limit(1);
-
-        if (existingAppointment.length === 0) {
-          throw new NotFoundError(`Appointment with ID ${appointmentId} not found`);
-        }
-
-        // Check for conflicting appointments at the new time slot
-        const conflictingAppointments = await db
-          .select()
-          .from(tenantSchema.appointment)
-          .where(
-            and(
-              eq(tenantSchema.appointment.channelId, existingAppointment[0].channelId),
-              eq(tenantSchema.appointment.appointmentDate, updateData.appointmentDate),
-              eq(tenantSchema.appointment.id, appointmentId), // Exclude current appointment
-              or(
-                eq(tenantSchema.appointment.status, "NEW"),
-                eq(tenantSchema.appointment.status, "CONFIRMED"),
-                eq(tenantSchema.appointment.status, "HELD"),
-              ),
-            ),
-          );
-
-        if (conflictingAppointments.length > 0) {
-          throw new ConflictError("New time slot is already booked");
-        }
-      }
-
-      const result = await db
-        .update(tenantSchema.appointment)
-        .set(updateData)
-        .where(eq(tenantSchema.appointment.id, appointmentId))
-        .returning();
-
-      if (result.length === 0) {
-        log.warn("Appointment update failed: Appointment not found", {
-          tenantId: this.tenantId,
-          appointmentId,
-        });
-        throw new NotFoundError(`Appointment with ID ${appointmentId} not found`);
-      }
-
-      log.debug("Appointment updated successfully", {
-        tenantId: this.tenantId,
-        appointmentId,
-        updateFields: Object.keys(updateData),
-      });
-
-      return result[0];
-    } catch (error) {
-      if (error instanceof NotFoundError || error instanceof ConflictError) throw error;
-      log.error("Failed to update appointment", {
-        tenantId: this.tenantId,
-        appointmentId,
-        error: String(error),
-      });
-      throw error;
-    }
+    return response;
   }
 
-  /**
-   * Cancel an appointment (set status to REJECTED)
-   * @param appointmentId Appointment ID
-   * @returns Updated appointment
-   */
-  async cancelAppointment(appointmentId: string): Promise<SelectAppointment> {
+  public async getAppointmentsByTimeRange(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<SelectAppointment[]> {
     const log = logger.setContext("AppointmentService");
-    log.debug("Cancelling appointment", { tenantId: this.tenantId, appointmentId });
+    log.debug("Fetching appointments by time range", {
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      tenantId: this.tenantId,
+    });
+    const db = await this.getDb();
 
-    return this.updateAppointment(appointmentId, { status: "REJECTED" });
-  }
+    const result = await db
+      .select()
+      .from(tenantSchema.appointment)
+      .where(
+        and(
+          gte(tenantSchema.appointment.appointmentDate, startDate),
+          lte(tenantSchema.appointment.appointmentDate, endDate),
+        ),
+      )
+      .orderBy(asc(tenantSchema.appointment.appointmentDate));
 
-  /**
-   * Confirm an appointment (set status to CONFIRMED)
-   * @param appointmentId Appointment ID
-   * @returns Updated appointment
-   */
-  async confirmAppointment(appointmentId: string): Promise<SelectAppointment> {
-    const log = logger.setContext("AppointmentService");
-    log.debug("Confirming appointment", { tenantId: this.tenantId, appointmentId });
+    log.debug("Appointments retrieved successfully", {
+      count: result.length,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      tenantId: this.tenantId,
+    });
 
-    return this.updateAppointment(appointmentId, { status: "CONFIRMED" });
-  }
-
-  /**
-   * Mark appointment as completed (set status to HELD)
-   * @param appointmentId Appointment ID
-   * @returns Updated appointment
-   */
-  async completeAppointment(appointmentId: string): Promise<SelectAppointment> {
-    const log = logger.setContext("AppointmentService");
-    log.debug("Completing appointment", { tenantId: this.tenantId, appointmentId });
-
-    return this.updateAppointment(appointmentId, { status: "HELD" });
-  }
-
-  /**
-   * Mark appointment as no-show (set status to NO_SHOW)
-   * @param appointmentId Appointment ID
-   * @returns Updated appointment
-   */
-  async markNoShow(appointmentId: string): Promise<SelectAppointment> {
-    const log = logger.setContext("AppointmentService");
-    log.debug("Marking appointment as no-show", { tenantId: this.tenantId, appointmentId });
-
-    return this.updateAppointment(appointmentId, { status: "NO_SHOW" });
-  }
-
-  /**
-   * Delete an appointment
-   * @param appointmentId Appointment ID
-   * @returns true if deleted, false if not found
-   */
-  async deleteAppointment(appointmentId: string): Promise<boolean> {
-    const log = logger.setContext("AppointmentService");
-    log.debug("Deleting appointment", { tenantId: this.tenantId, appointmentId });
-
-    try {
-      const db = await this.getDb();
-      const result = await db
-        .delete(tenantSchema.appointment)
-        .where(eq(tenantSchema.appointment.id, appointmentId))
-        .returning();
-
-      if (result.length === 0) {
-        log.debug("Appointment deletion failed: Appointment not found", {
-          tenantId: this.tenantId,
-          appointmentId,
-        });
-        return false;
-      }
-
-      log.debug("Appointment deleted successfully", {
-        tenantId: this.tenantId,
-        appointmentId,
-      });
-
-      return true;
-    } catch (error) {
-      log.error("Failed to delete appointment", {
-        tenantId: this.tenantId,
-        appointmentId,
-        error: String(error),
-      });
-      throw error;
-    }
+    return result;
   }
 
   /**

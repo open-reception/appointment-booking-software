@@ -16,7 +16,7 @@ import { checkPermission } from "$lib/server/utils/permissions";
 registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "GET", {
   summary: "Get appointment by ID",
   description:
-    "Retrieves a specific appointment by ID. Global admins, tenant admins, and staff can view appointments.",
+    "Retrieves a specific appointment by its ID. Accessible to staff and tenant admins and also clients.",
   tags: ["Appointments"],
   parameters: [
     {
@@ -46,52 +46,59 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "GET", {
                 type: "object",
                 properties: {
                   id: { type: "string", format: "uuid", description: "Appointment ID" },
-                  clientId: { type: "string", format: "uuid", description: "Client ID" },
+                  tunnelId: { type: "string", format: "uuid", description: "Client tunnel ID" },
                   channelId: { type: "string", format: "uuid", description: "Channel ID" },
                   appointmentDate: {
                     type: "string",
                     format: "date-time",
-                    description: "Appointment date",
+                    description: "Appointment date and time",
                   },
-                  expiryDate: { type: "string", format: "date", description: "Expiry date" },
-                  title: { type: "string", description: "Appointment title" },
-                  description: { type: "string", description: "Appointment description" },
+                  expiryDate: {
+                    type: "string",
+                    format: "date",
+                    description: "Data expiry date (nullable)",
+                  },
                   status: {
                     type: "string",
                     enum: ["NEW", "CONFIRMED", "HELD", "REJECTED", "NO_SHOW"],
+                    description: "Appointment status",
                   },
-                  client: {
-                    type: "object",
-                    description: "Client details",
-                    properties: {
-                      id: { type: "string", format: "uuid" },
-                      hashKey: { type: "string" },
-                      email: { type: "string" },
-                    },
+                  encryptedPayload: {
+                    type: "string",
+                    description: "Encrypted appointment data (nullable)",
                   },
-                  channel: {
-                    type: "object",
-                    description: "Channel details",
-                    properties: {
-                      id: { type: "string", format: "uuid" },
-                      names: { type: "array", items: { type: "string" } },
-                      color: { type: "string" },
-                    },
+                  iv: {
+                    type: "string",
+                    description: "Initialization vector for encryption (nullable)",
+                  },
+                  authTag: {
+                    type: "string",
+                    description: "Authentication tag for encryption (nullable)",
+                  },
+                  createdAt: {
+                    type: "string",
+                    format: "date-time",
+                    description: "Creation timestamp (nullable)",
+                  },
+                  updatedAt: {
+                    type: "string",
+                    format: "date-time",
+                    description: "Last update timestamp (nullable)",
                   },
                 },
-                required: [
-                  "id",
-                  "clientId",
-                  "channelId",
-                  "appointmentDate",
-                  "expiryDate",
-                  "title",
-                  "status",
-                ],
+                required: ["id", "tunnelId", "channelId", "appointmentDate", "status"],
               },
             },
             required: ["appointment"],
           },
+        },
+      },
+    },
+    "400": {
+      description: "Invalid input data",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
         },
       },
     },
@@ -112,7 +119,7 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "GET", {
       },
     },
     "404": {
-      description: "Tenant or appointment not found",
+      description: "Appointment not found",
       content: {
         "application/json": {
           schema: { $ref: "#/components/schemas/Error" },
@@ -133,8 +140,7 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "GET", {
 // Register OpenAPI documentation for DELETE
 registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "DELETE", {
   summary: "Delete appointment",
-  description:
-    "Permanently deletes an appointment. Only global admins and tenant admins can delete appointments.",
+  description: "Deletes a specific appointment. Only tenant admins can delete appointments.",
   tags: ["Appointments"],
   parameters: [
     {
@@ -167,6 +173,14 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "DELETE", {
         },
       },
     },
+    "400": {
+      description: "Invalid input data",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
     "401": {
       description: "Authentication required",
       content: {
@@ -184,7 +198,7 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "DELETE", {
       },
     },
     "404": {
-      description: "Tenant or appointment not found",
+      description: "Appointment not found",
       content: {
         "application/json": {
           schema: { $ref: "#/components/schemas/Error" },
@@ -212,8 +226,6 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     if (!tenantId || !appointmentId) {
       throw new ValidationError("Tenant ID and appointment ID are required");
     }
-
-    checkPermission(locals, tenantId);
 
     log.debug("Getting appointment by ID", {
       tenantId,

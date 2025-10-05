@@ -9,6 +9,10 @@ vi.mock("$lib/server/db", () => ({
     select: vi.fn(),
     update: vi.fn(),
   },
+  centralDb: {
+    select: vi.fn(),
+    update: vi.fn(),
+  },
 }));
 vi.mock("../jwt-utils");
 
@@ -19,7 +23,7 @@ const mockUser = {
   role: "STAFF" as const,
   tenantId: "tenant-123",
   isActive: true,
-  confirmed: true,
+  confirmationState: "ACCESS_GRANTED" as const,
   createdAt: new Date(),
   updatedAt: new Date(),
   lastLoginAt: null,
@@ -174,7 +178,7 @@ describe("SessionService.validateTokenWithDB", () => {
 
     const unconfirmedUser = {
       ...mockUser,
-      confirmed: false,
+      confirmationState: "PENDING_CONFIRMATION" as const,
     };
 
     const mockQuery = vi.fn().mockResolvedValue([
