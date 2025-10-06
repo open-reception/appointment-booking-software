@@ -34,6 +34,7 @@ const channelUpdateSchema = z.object({
   color: z.string().optional(),
   descriptions: z.partialRecord(z.enum(supportedLocales), z.string().min(1)).optional(),
   isPublic: z.boolean().optional(),
+  pause: z.boolean().optional(),
   requiresConfirmation: z.boolean().optional(),
   agentIds: z.array(z.string().uuid()).optional(),
   slotTemplates: z
@@ -124,7 +125,8 @@ export class ChannelService {
             names: request.names,
             color: request.color,
             descriptions: request.descriptions || {},
-            isPublic: request.isPublic,
+            isPublic: request.isPublic ?? false,
+            pause: false,
             requiresConfirmation: request.requiresConfirmation,
           })
           .returning();
@@ -239,6 +241,7 @@ export class ChannelService {
           color: updateData.color,
           descriptions: updateData.descriptions,
           isPublic: updateData.isPublic,
+          pause: updateData.pause,
           requiresConfirmation: updateData.requiresConfirmation,
         };
 

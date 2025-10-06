@@ -10,7 +10,7 @@ import { checkPermission } from "$lib/server/utils/permissions";
 registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}/confirm", "PUT", {
   summary: "Confirm appointment",
   description:
-    "Confirms an appointment by setting its status to CONFIRMED. Global admins, tenant admins, and staff can confirm appointments.",
+    "Confirms a pending appointment, changing its status from NEW to CONFIRMED. Accessible to staff and tenant admins.",
   tags: ["Appointments"],
   parameters: [
     {
@@ -41,34 +41,60 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}/confirm", "PUT"
                 type: "object",
                 properties: {
                   id: { type: "string", format: "uuid", description: "Appointment ID" },
-                  clientId: { type: "string", format: "uuid", description: "Client ID" },
+                  tunnelId: { type: "string", format: "uuid", description: "Client tunnel ID" },
                   channelId: { type: "string", format: "uuid", description: "Channel ID" },
                   appointmentDate: {
                     type: "string",
                     format: "date-time",
-                    description: "Appointment date",
+                    description: "Appointment date and time",
                   },
-                  expiryDate: { type: "string", format: "date", description: "Expiry date" },
-                  title: { type: "string", description: "Appointment title" },
-                  description: { type: "string", description: "Appointment description" },
+                  expiryDate: {
+                    type: "string",
+                    format: "date",
+                    description: "Data expiry date (nullable)",
+                  },
                   status: {
                     type: "string",
-                    enum: ["NEW", "CONFIRMED", "HELD", "REJECTED", "NO_SHOW"],
+                    enum: ["CONFIRMED"],
+                    description:
+                      "Appointment status (will be CONFIRMED after successful operation)",
+                  },
+                  encryptedPayload: {
+                    type: "string",
+                    description: "Encrypted appointment data (nullable)",
+                  },
+                  iv: {
+                    type: "string",
+                    description: "Initialization vector for encryption (nullable)",
+                  },
+                  authTag: {
+                    type: "string",
+                    description: "Authentication tag for encryption (nullable)",
+                  },
+                  createdAt: {
+                    type: "string",
+                    format: "date-time",
+                    description: "Creation timestamp (nullable)",
+                  },
+                  updatedAt: {
+                    type: "string",
+                    format: "date-time",
+                    description: "Last update timestamp (nullable)",
                   },
                 },
-                required: [
-                  "id",
-                  "clientId",
-                  "channelId",
-                  "appointmentDate",
-                  "expiryDate",
-                  "title",
-                  "status",
-                ],
+                required: ["id", "tunnelId", "channelId", "appointmentDate", "status"],
               },
             },
             required: ["message", "appointment"],
           },
+        },
+      },
+    },
+    "400": {
+      description: "Invalid input data or appointment not in NEW status",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
         },
       },
     },
@@ -89,7 +115,7 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}/confirm", "PUT"
       },
     },
     "404": {
-      description: "Tenant or appointment not found",
+      description: "Appointment not found",
       content: {
         "application/json": {
           schema: { $ref: "#/components/schemas/Error" },

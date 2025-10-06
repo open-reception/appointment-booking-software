@@ -1,6 +1,6 @@
 import { centralDb as db } from "$lib/server/db";
 import { userPasskey } from "$lib/server/db/central-schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { randomBytes, createHash } from "node:crypto";
 import { UniversalLogger } from "$lib/logger";
 
@@ -273,6 +273,32 @@ export class WebAuthnService {
    */
   static async getUserPasskeys(userId: string) {
     return await db.select().from(userPasskey).where(eq(userPasskey.userId, userId));
+  }
+
+  /**
+   * Get the most recently used passkey for a user
+   * Used when we need to determine which passkey was used for authentication
+   * but the session doesn't store this information directly
+   */
+  static async getMostRecentPasskey(userId: string): Promise<{
+    id: string;
+    lastUsedAt: Date | null;
+  } | null> {
+    const passkeys = await db
+      .select({
+        id: userPasskey.id,
+        lastUsedAt: userPasskey.lastUsedAt,
+      })
+      .from(userPasskey)
+      .where(eq(userPasskey.userId, userId))
+      .orderBy(desc(userPasskey.lastUsedAt))
+      .limit(1);
+
+    if (passkeys.length === 0) {
+      return null;
+    }
+
+    return passkeys[0];
   }
 
   /**

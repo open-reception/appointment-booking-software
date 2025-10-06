@@ -20,11 +20,11 @@ vi.mock("$lib/logger", () => ({
 }));
 
 import { AppointmentService } from "$lib/server/services/appointment-service";
-import { NotFoundError } from "$lib/server/utils/errors";
+import { NotFoundError, ValidationError } from "$lib/server/utils/errors";
 
 describe("Appointment Detail API Routes", () => {
   const mockTenantId = "123e4567-e89b-12d3-a456-426614174000";
-  const mockAppointmentId = "123e4567-e89b-12d3-a456-426614174003";
+  const mockAppointmentId = "456e7890-e12b-34d5-a678-901234567890";
   const mockAppointmentService = {
     getAppointmentById: vi.fn(),
     deleteAppointment: vi.fn(),
@@ -41,163 +41,197 @@ describe("Appointment Detail API Routes", () => {
       locals: {
         user: {
           userId: "user123",
-          sessionId: "session123",
           role: "TENANT_ADMIN",
           tenantId: mockTenantId,
         },
-      },
+      } as any,
       ...overrides,
     } as RequestEvent;
   }
 
-  describe("GET /api/tenants/{id}/appointments/{appointmentId}", () => {
-    it("should get appointment by ID successfully", async () => {
-      const mockAppointment = {
-        id: mockAppointmentId,
-        clientId: "client123",
-        channelId: "channel123",
-        appointmentDate: "2024-12-01T10:00:00Z",
-        expiryDate: "2024-12-31",
-        title: "Test Appointment",
-        status: "NEW",
-        client: { id: "client123", email: "test@example.com" },
-        channel: { id: "channel123", names: ["Room 1"] },
-      };
+  const mockAppointment = {
+    id: mockAppointmentId,
+    tunnelId: "tunnel-123",
+    channelId: "channel-123",
+    appointmentDate: "2024-01-01T10:00:00.000Z",
+    expiryDate: null,
+    status: "CONFIRMED",
+    encryptedData: null,
+    dataKey: null,
+    encryptedPayload: "encrypted-payload",
+    iv: "iv-data",
+    authTag: "auth-tag",
+    createdAt: "2024-01-01T09:00:00.000Z",
+    updatedAt: "2024-01-01T09:00:00.000Z",
+  } as any;
 
+  describe("GET /api/tenants/[id]/appointments/[appointmentId]", () => {
+    it("should return appointment for authenticated user", async () => {
       mockAppointmentService.getAppointmentById.mockResolvedValue(mockAppointment);
 
       const event = createMockRequestEvent();
       const response = await GET(event);
-      const result = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(result.appointment).toEqual(mockAppointment);
+      expect(data.appointment).toEqual(mockAppointment);
       expect(mockAppointmentService.getAppointmentById).toHaveBeenCalledWith(mockAppointmentId);
     });
 
-    it("should return 404 if appointment not found", async () => {
-      mockAppointmentService.getAppointmentById.mockResolvedValue(null);
-      const event = createMockRequestEvent();
-      const response = await GET(event);
-      const result = await response.json();
+    it("should allow staff to view appointments", async () => {
+      mockAppointmentService.getAppointmentById.mockResolvedValue(mockAppointment);
 
-      expect(response.status).toBe(404);
-      expect(result.error).toBe("Appointment not found");
-    });
-
-    it("should return 401 if user is not authenticated", async () => {
-      const event = createMockRequestEvent({ locals: {} });
-      const response = await GET(event);
-      const result = await response.json();
-
-      expect(response.status).toBe(401);
-      expect(result.error).toBe("Authentication required");
-    });
-
-    it("should return 403 if user has insufficient permissions", async () => {
       const event = createMockRequestEvent({
         locals: {
           user: {
             userId: "user123",
-            sessionId: "session456",
-            role: "CLIENT",
-            tenantId: "different-tenant",
-          } as any,
-        },
-      });
-      const response = await GET(event);
-      const result = await response.json();
-
-      expect(response.status).toBe(403);
-      expect(result.error).toBe("Insufficient permissions");
-    });
-
-    it("should allow global admin to view appointments for any tenant", async () => {
-      const mockAppointment = {
-        id: mockAppointmentId,
-        clientId: "client123",
-        channelId: "channel123",
-        appointmentDate: "2024-12-01T10:00:00Z",
-        expiryDate: "2024-12-31",
-        title: "Test Appointment",
-        status: "NEW",
-      };
-
-      mockAppointmentService.getAppointmentById.mockResolvedValue(mockAppointment);
-
-      const event = createMockRequestEvent({
-        locals: {
-          user: {
-            userId: "admin123",
-            sessionId: "session789",
-            role: "GLOBAL_ADMIN",
-            tenantId: "different-tenant",
-          } as any,
-        },
-      });
-
-      const response = await GET(event);
-      expect(response.status).toBe(200);
-    });
-
-    it("should allow staff to view appointments for their tenant", async () => {
-      const mockAppointment = {
-        id: mockAppointmentId,
-        clientId: "client123",
-        channelId: "channel123",
-        appointmentDate: "2024-12-01T10:00:00Z",
-        expiryDate: "2024-12-31",
-        title: "Test Appointment",
-        status: "NEW",
-      };
-
-      mockAppointmentService.getAppointmentById.mockResolvedValue(mockAppointment);
-
-      const event = createMockRequestEvent({
-        locals: {
-          user: {
-            userId: "staff123",
-            sessionId: "session101",
             role: "STAFF",
             tenantId: mockTenantId,
-          } as any,
-        },
+          },
+        } as any,
       });
 
       const response = await GET(event);
+      const data = await response.json();
+
       expect(response.status).toBe(200);
+      expect(data.appointment).toEqual(mockAppointment);
+    });
+
+    it("should allow global admin to view any tenant's appointments", async () => {
+      mockAppointmentService.getAppointmentById.mockResolvedValue(mockAppointment);
+
+      const event = createMockRequestEvent({
+        locals: {
+          user: {
+            userId: "user123",
+            role: "GLOBAL_ADMIN",
+            tenantId: "different-tenant",
+          },
+        } as any,
+      });
+
+      const response = await GET(event);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.appointment).toEqual(mockAppointment);
+    });
+
+    it("should handle missing tenant ID", async () => {
+      const event = createMockRequestEvent({
+        params: { id: undefined, appointmentId: mockAppointmentId },
+      });
+
+      const response = await GET(event);
+      const data = await response.json();
+
+      expect(response.status).toBe(422);
+      expect(data.error).toBe("Tenant ID and appointment ID are required");
+    });
+
+    it("should handle missing appointment ID", async () => {
+      const event = createMockRequestEvent({
+        params: { id: mockTenantId, appointmentId: undefined },
+      });
+
+      const response = await GET(event);
+      const data = await response.json();
+
+      expect(response.status).toBe(422);
+      expect(data.error).toBe("Tenant ID and appointment ID are required");
+    });
+
+    it("should handle appointment not found", async () => {
+      mockAppointmentService.getAppointmentById.mockResolvedValue(null);
+
+      const event = createMockRequestEvent();
+      const response = await GET(event);
+      const data = await response.json();
+
+      expect(response.status).toBe(404);
+      expect(data.error).toBe("Appointment not found");
+    });
+
+    it("should handle service errors", async () => {
+      mockAppointmentService.getAppointmentById.mockRejectedValue(
+        new ValidationError("Invalid appointment ID"),
+      );
+
+      const event = createMockRequestEvent();
+      const response = await GET(event);
+      const data = await response.json();
+
+      expect(response.status).toBe(422);
+      expect(data.error).toBe("Invalid appointment ID");
+    });
+
+    it("should handle internal server errors", async () => {
+      mockAppointmentService.getAppointmentById.mockRejectedValue(new Error("Database error"));
+
+      const event = createMockRequestEvent();
+      const response = await GET(event);
+      const data = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(data.error).toBe("Internal server error");
     });
   });
 
-  describe("DELETE /api/tenants/{id}/appointments/{appointmentId}", () => {
-    it("should delete appointment successfully", async () => {
+  describe("DELETE /api/tenants/[id]/appointments/[appointmentId]", () => {
+    it("should delete appointment for tenant admin", async () => {
       mockAppointmentService.deleteAppointment.mockResolvedValue(true);
 
       const event = createMockRequestEvent();
       const response = await DELETE(event);
-      const result = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(result.message).toBe("Appointment deleted successfully");
+      expect(data.message).toBe("Appointment deleted successfully");
       expect(mockAppointmentService.deleteAppointment).toHaveBeenCalledWith(mockAppointmentId);
     });
 
-    it("should return 404 if appointment not found for deletion", async () => {
-      mockAppointmentService.deleteAppointment.mockResolvedValue(false);
+    it("should allow global admin to delete any tenant's appointments", async () => {
+      mockAppointmentService.deleteAppointment.mockResolvedValue(true);
 
-      const event = createMockRequestEvent();
+      const event = createMockRequestEvent({
+        locals: {
+          user: {
+            userId: "user123",
+            role: "GLOBAL_ADMIN",
+            tenantId: "different-tenant",
+          },
+        } as any,
+      });
+
+      const response = await DELETE(event);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.message).toBe("Appointment deleted successfully");
+    });
+
+    it("should return 403 for staff users trying to delete appointments", async () => {
+      const event = createMockRequestEvent({
+        locals: {
+          user: {
+            userId: "user123",
+            role: "STAFF",
+            tenantId: mockTenantId,
+          },
+        } as any,
+      });
+
       const response = await DELETE(event);
       const result = await response.json();
 
-      expect(response.status).toBe(404);
-      expect(result.error).toBe("Appointment not found");
+      expect(response.status).toBe(403);
+      expect(result.error).toBe("Insufficient permissions");
+      expect(mockAppointmentService.deleteAppointment).not.toHaveBeenCalled();
     });
 
-    it("should return 401 if user is not authenticated", async () => {
-      const event = createMockRequestEvent({
-        locals: {},
-      });
-
+    it("should return 401 for unauthenticated requests", async () => {
+      const event = createMockRequestEvent({ locals: { user: null } as any });
       const response = await DELETE(event);
       const result = await response.json();
 
@@ -205,84 +239,63 @@ describe("Appointment Detail API Routes", () => {
       expect(result.error).toBe("Authentication required");
     });
 
-    it("should return 403 if user has insufficient permissions (staff cannot delete)", async () => {
+    it("should handle missing tenant ID", async () => {
       const event = createMockRequestEvent({
-        locals: {
-          user: {
-            userId: "staff123",
-            sessionId: "session102",
-            role: "STAFF",
-            tenantId: mockTenantId,
-          } as any,
-        },
+        params: { id: undefined, appointmentId: mockAppointmentId },
       });
 
       const response = await DELETE(event);
-      const result = await response.json();
-
-      expect(response.status).toBe(403);
-      expect(result.error).toBe("Insufficient permissions");
-    });
-
-    it("should allow global admin to delete appointments for any tenant", async () => {
-      mockAppointmentService.deleteAppointment.mockResolvedValue(true);
-
-      const event = createMockRequestEvent({
-        locals: {
-          user: {
-            userId: "admin123",
-            sessionId: "session103",
-            role: "GLOBAL_ADMIN",
-            tenantId: "different-tenant",
-          } as any,
-        },
-      });
-
-      const response = await DELETE(event);
-      expect(response.status).toBe(200);
-    });
-
-    it("should allow tenant admin to delete appointments for their tenant", async () => {
-      mockAppointmentService.deleteAppointment.mockResolvedValue(true);
-
-      const event = createMockRequestEvent({
-        locals: {
-          user: {
-            userId: "admin123",
-            sessionId: "session104",
-            role: "TENANT_ADMIN",
-            tenantId: mockTenantId,
-          } as any,
-        },
-      });
-
-      const response = await DELETE(event);
-      expect(response.status).toBe(200);
-    });
-
-    it("should return 422 if tenant ID or appointment ID is missing", async () => {
-      const event = createMockRequestEvent({
-        params: { id: mockTenantId },
-      });
-
-      const response = await DELETE(event);
-      const result = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(422);
-      expect(result.error).toBe("Tenant ID and appointment ID are required");
+      expect(data.error).toBe("Tenant ID and appointment ID are required");
     });
 
-    it("should return 404 for not found errors", async () => {
+    it("should handle missing appointment ID", async () => {
+      const event = createMockRequestEvent({
+        params: { id: mockTenantId, appointmentId: undefined },
+      });
+
+      const response = await DELETE(event);
+      const data = await response.json();
+
+      expect(response.status).toBe(422);
+      expect(data.error).toBe("Tenant ID and appointment ID are required");
+    });
+
+    it("should handle appointment not found", async () => {
+      mockAppointmentService.deleteAppointment.mockResolvedValue(false);
+
+      const event = createMockRequestEvent();
+      const response = await DELETE(event);
+      const data = await response.json();
+
+      expect(response.status).toBe(404);
+      expect(data.error).toBe("Appointment not found");
+    });
+
+    it("should handle service errors", async () => {
       mockAppointmentService.deleteAppointment.mockRejectedValue(
-        new NotFoundError("Tenant not found"),
+        new NotFoundError("Appointment not found"),
       );
 
       const event = createMockRequestEvent();
       const response = await DELETE(event);
-      const result = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(404);
-      expect(result.error).toBe("Tenant not found");
+      expect(data.error).toBe("Appointment not found");
+    });
+
+    it("should handle internal server errors", async () => {
+      mockAppointmentService.deleteAppointment.mockRejectedValue(new Error("Database error"));
+
+      const event = createMockRequestEvent();
+      const response = await DELETE(event);
+      const data = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(data.error).toBe("Internal server error");
     });
   });
 });

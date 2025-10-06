@@ -1,604 +1,381 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ValidationError, NotFoundError, ConflictError } from "../../utils/errors";
+import { AppointmentService } from "../appointment-service";
+import { NotFoundError, ConflictError } from "../../utils/errors";
 
-// Mock dependencies before imports
+// Mock dependencies
 vi.mock("../../db", () => ({
   getTenantDb: vi.fn(),
-}));
-
-vi.mock("$lib/logger", () => ({
-  default: {
-    setContext: vi.fn(() => ({
-      debug: vi.fn(),
-      error: vi.fn(),
-      warn: vi.fn(),
-    })),
+  centralDb: {
+    select: vi.fn(),
   },
 }));
 
-// Import after mocking
-import { AppointmentService, type AppointmentCreationRequest } from "../appointment-service";
-import { getTenantDb } from "../../db";
+const mockAppointment = {
+  id: "appointment-123",
+  tunnelId: "tunnel-123",
+  channelId: "channel-123",
+  appointmentDate: new Date("2024-01-15T10:00:00Z"),
+  status: "NEW" as const,
+  encryptedPayload: "encrypted-data",
+  iv: "iv-data",
+  authTag: "auth-tag",
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  expiryDate: null,
+};
 
-// Mock database operations
-const mockDb = {
-  insert: vi.fn(() => ({
-    values: vi.fn(() => ({
-      returning: vi.fn(),
-    })),
-  })),
-  select: vi.fn(() => ({
-    from: vi.fn(() => ({
-      where: vi.fn(() => ({
-        limit: vi.fn(),
-      })),
-      leftJoin: vi.fn(() => ({
-        leftJoin: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn(),
-          })),
-        })),
-        where: vi.fn(() => ({
-          orderBy: vi.fn(),
-        })),
-      })),
-      orderBy: vi.fn(),
-    })),
-  })),
-  update: vi.fn(() => ({
-    set: vi.fn(() => ({
-      where: vi.fn(() => ({
-        returning: vi.fn(),
-      })),
-    })),
-  })),
-  delete: vi.fn(() => ({
-    where: vi.fn(() => ({
-      returning: vi.fn(),
-    })),
-  })),
+const mockClientTunnel = {
+  id: "tunnel-123",
+  emailHash: "email-hash-123",
+  clientPublicKey: "client-public-key",
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
+const mockClientTunnelData = {
+  tunnelId: "tunnel-123",
+  channelId: "channel-123",
+  appointmentDate: "2024-01-15T10:00:00Z",
+  emailHash: "email-hash-123",
+  clientPublicKey: "client-public-key",
+  privateKeyShare: "private-key-share",
+  encryptedAppointment: {
+    encryptedPayload: "encrypted-data",
+    iv: "iv-data",
+    authTag: "auth-tag",
+  },
+  staffKeyShares: [
+    {
+      userId: "staff-123",
+      encryptedTunnelKey: "encrypted-tunnel-key",
+    },
+  ],
+  clientEncryptedTunnelKey: "client-encrypted-tunnel-key",
 };
 
 describe("AppointmentService", () => {
-  const mockTenantId = "123e4567-e89b-12d3-a456-426614174000";
-
   beforeEach(() => {
     vi.clearAllMocks();
-    (getTenantDb as any).mockResolvedValue(mockDb);
   });
 
   describe("forTenant", () => {
-    it("should create an appointment service instance", async () => {
-      const service = await AppointmentService.forTenant(mockTenantId);
+    it("should create service for valid tenant", async () => {
+      const { getTenantDb } = await import("../../db");
+      const mockDb = { select: vi.fn() };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
 
-      expect(service).toBeInstanceOf(AppointmentService);
-      expect(service.tenantId).toBe(mockTenantId);
-      expect(getTenantDb).toHaveBeenCalledWith(mockTenantId);
+      const service = await AppointmentService.forTenant("tenant-123");
+
+      expect(service.tenantId).toBe("tenant-123");
+      expect(getTenantDb).toHaveBeenCalledWith("tenant-123");
     });
 
-    it("should throw error if database connection fails", async () => {
-      (getTenantDb as any).mockRejectedValue(new Error("Database connection failed"));
+    it("should handle database connection errors", async () => {
+      const { getTenantDb } = await import("../../db");
+      vi.mocked(getTenantDb).mockRejectedValue(new Error("Database connection failed"));
 
-      await expect(AppointmentService.forTenant(mockTenantId)).rejects.toThrow(
-        "Database connection failed",
-      );
-    });
-  });
-
-  describe("createAppointment", () => {
-    let service: AppointmentService;
-
-    beforeEach(async () => {
-      service = await AppointmentService.forTenant(mockTenantId);
-    });
-
-    it("should validate appointment creation request", async () => {
-      const invalidRequest = {
-        clientId: "invalid-uuid",
-        channelId: "123e4567-e89b-12d3-a456-426614174001",
-        appointmentDate: "invalid-date",
-        expiryDate: "2024-01-02",
-        phone: "",
-        name: "",
-      };
-
-      await expect(
-        service.createAppointment(invalidRequest as AppointmentCreationRequest),
-      ).rejects.toThrow(ValidationError);
-    });
-
-    it("should create appointment successfully", async () => {
-      const validRequest: AppointmentCreationRequest = {
-        clientId: "123e4567-e89b-12d3-a456-426614174001",
-        channelId: "123e4567-e89b-12d3-a456-426614174002",
-        appointmentDate: "2024-01-01T10:00:00.000Z",
-        expiryDate: "2024-01-31",
-        name: "Test Appointment",
-        phone: "123-456-7890",
-        description: "Test Description",
-        status: "NEW",
-      };
-
-      // Mock database responses
-      const mockClient = [
-        {
-          id: validRequest.clientId,
-          hashKey: "test",
-          publicKey: "test",
-          privateKeyShare: "test",
-          email: "test@test.com",
-          language: "de",
-        },
-      ];
-      const mockChannel = [
-        {
-          id: validRequest.channelId,
-          names: ["Test Channel"],
-          pause: false,
-          descriptions: ["Test"],
-          languages: ["de"],
-          isPublic: true,
-          requiresConfirmation: false,
-          color: null,
-        },
-      ];
-      const mockConflictingAppointments: any[] = [];
-      const mockCreatedAppointment = {
-        id: "appointment-id",
-        ...validRequest,
-        status: "NEW",
-      };
-
-      let selectCallCount = 0;
-      (mockDb.select as any).mockImplementation(() => ({
-        from: () => ({
-          where: () => ({
-            limit: () => {
-              selectCallCount++;
-              switch (selectCallCount) {
-                case 1:
-                  return mockClient;
-                case 2:
-                  return mockChannel;
-                case 3:
-                  return mockConflictingAppointments;
-                default:
-                  return [];
-              }
-            },
-          }),
-        }),
-      }));
-
-      (mockDb.insert as any).mockImplementation(() => ({
-        values: () => ({
-          returning: () => [mockCreatedAppointment],
-        }),
-      }));
-
-      const result = await service.createAppointment(validRequest);
-
-      expect(result).toEqual(mockCreatedAppointment);
-    });
-
-    it("should throw NotFoundError if client does not exist", async () => {
-      const validRequest: AppointmentCreationRequest = {
-        clientId: "123e4567-e89b-12d3-a456-426614174099", // Valid UUID format
-        channelId: "123e4567-e89b-12d3-a456-426614174002",
-        appointmentDate: "2024-01-01T10:00:00.000Z",
-        expiryDate: "2024-01-31",
-        name: "Test Appointment",
-        phone: "123-456-7890",
-        status: "NEW",
-      };
-
-      (mockDb.select as any).mockImplementation(() => ({
-        from: () => ({
-          where: () => ({
-            limit: () => [], // No client found
-          }),
-        }),
-      }));
-
-      await expect(service.createAppointment(validRequest)).rejects.toThrow(NotFoundError);
-    });
-
-    it("should throw ConflictError if channel is paused", async () => {
-      const validRequest: AppointmentCreationRequest = {
-        clientId: "123e4567-e89b-12d3-a456-426614174001",
-        channelId: "123e4567-e89b-12d3-a456-426614174002",
-        appointmentDate: "2024-01-01T10:00:00.000Z",
-        expiryDate: "2024-01-31",
-        name: "Test Appointment",
-        phone: "123-456-7890",
-        status: "NEW",
-      };
-
-      const mockClient = [{ id: validRequest.clientId }];
-      const mockPausedChannel = [{ id: validRequest.channelId, pause: true }];
-
-      let selectCallCount = 0;
-      (mockDb.select as any).mockImplementation(() => ({
-        from: () => ({
-          where: () => ({
-            limit: () => {
-              selectCallCount++;
-              return selectCallCount === 1 ? mockClient : mockPausedChannel;
-            },
-          }),
-        }),
-      }));
-
-      await expect(service.createAppointment(validRequest)).rejects.toThrow(ConflictError);
-    });
-
-    it("should throw ConflictError if time slot is already booked", async () => {
-      const validRequest: AppointmentCreationRequest = {
-        clientId: "123e4567-e89b-12d3-a456-426614174001",
-        channelId: "123e4567-e89b-12d3-a456-426614174002",
-        appointmentDate: "2024-01-01T10:00:00.000Z",
-        expiryDate: "2024-01-31",
-        name: "Test Appointment",
-        phone: "123-456-7890",
-        status: "NEW",
-      };
-
-      const mockClient = [{ id: validRequest.clientId }];
-      const mockChannel = [{ id: validRequest.channelId, pause: false }];
-      const mockConflictingAppointment = [
-        { id: "existing-appointment", appointmentDate: validRequest.appointmentDate },
-      ];
-
-      let selectCallCount = 0;
-      (mockDb.select as any).mockImplementation(() => ({
-        from: () => ({
-          where: () => {
-            selectCallCount++;
-            switch (selectCallCount) {
-              case 1:
-                return { limit: () => mockClient }; // client check
-              case 2:
-                return { limit: () => mockChannel }; // channel check
-              case 3:
-                return mockConflictingAppointment; // conflict check (no limit)
-              default:
-                return { limit: () => [] };
-            }
-          },
-        }),
-      }));
-
-      await expect(service.createAppointment(validRequest)).rejects.toThrow(ConflictError);
+      await expect(AppointmentService.forTenant("tenant-123")).rejects.toThrow();
     });
   });
 
-  describe("getAppointmentById", () => {
-    let service: AppointmentService;
+  describe("getClientTunnels", () => {
+    it("should return client tunnels", async () => {
+      const { getTenantDb } = await import("../../db");
+      const mockDb = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockResolvedValue([mockClientTunnel]),
+          }),
+        }),
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
 
-    beforeEach(async () => {
-      service = await AppointmentService.forTenant(mockTenantId);
+      const service = await AppointmentService.forTenant("tenant-123");
+      const result = await service.getClientTunnels();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe("tunnel-123");
+      expect(result[0].emailHash).toBe("email-hash-123");
+      expect(result[0].clientPublicKey).toBe("client-public-key");
+      expect(result[0].createdAt).toBeDefined();
     });
 
-    it("should return appointment with details", async () => {
-      const appointmentId = "123e4567-e89b-12d3-a456-426614174003";
-      const mockResult = [
-        {
-          appointment: {
-            id: appointmentId,
-            clientId: "client-id",
-            channelId: "channel-id",
-            appointmentDate: "2024-01-01T10:00:00.000Z",
-            expiryDate: "2024-01-31",
-            title: "Test Appointment",
-            description: null,
-            status: "NEW",
-          },
-          client: {
-            id: "client-id",
-            hashKey: "test",
-            publicKey: "test",
-            privateKeyShare: "test",
-            email: "test@test.com",
-            language: "de",
-          },
-          channel: {
-            id: "channel-id",
-            names: ["Test Channel"],
-            pause: false,
-            descriptions: ["Test"],
-            languages: ["de"],
-            isPublic: true,
-            requiresConfirmation: false,
-            color: null,
-          },
-        },
-      ];
+    it("should return empty array when no tunnels exist", async () => {
+      const { getTenantDb } = await import("../../db");
+      const mockDb = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
 
-      (mockDb.select as any).mockImplementation(() => ({
-        from: () => ({
-          leftJoin: () => ({
-            leftJoin: () => ({
-              where: () => ({
-                limit: () => mockResult,
+      const service = await AppointmentService.forTenant("tenant-123");
+      const result = await service.getClientTunnels();
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe("createNewClientWithAppointment", () => {
+    it("should create client tunnel and appointment successfully", async () => {
+      const { getTenantDb, centralDb } = await import("../../db");
+
+      // Mock authorization check - users exist
+      const mockAuthBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([{ count: "1" }]),
+      };
+      vi.mocked(centralDb.select).mockReturnValue(mockAuthBuilder as any);
+
+      // Mock tenant database transaction
+      const mockTransaction = vi.fn().mockImplementation(async (callback) => {
+        const tx = {
+          insert: vi
+            .fn()
+            .mockReturnValueOnce({
+              values: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([{ id: "tunnel-123" }]),
+              }),
+            })
+            .mockReturnValueOnce({
+              values: vi.fn().mockResolvedValue(undefined),
+            })
+            .mockReturnValueOnce({
+              values: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([
+                  {
+                    id: "appointment-123",
+                    appointmentDate: new Date("2024-01-15T10:00:00Z"),
+                    status: "NEW",
+                  },
+                ]),
+              }),
+            }),
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue([{ requiresConfirmation: true }]),
               }),
             }),
           }),
-        }),
-      }));
-
-      const result = await service.getAppointmentById(appointmentId);
-
-      expect(result).toEqual({
-        ...mockResult[0].appointment,
-        client: mockResult[0].client,
-        channel: mockResult[0].channel,
+        };
+        return await callback(tx);
       });
+
+      const mockDb = { transaction: mockTransaction };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+      const result = await service.createNewClientWithAppointment(mockClientTunnelData);
+
+      expect(result.id).toBe("appointment-123");
+      expect(result.status).toBe("NEW");
+      expect(result.appointmentDate).toBe("2024-01-15T10:00:00.000Z");
     });
 
-    it("should return null if appointment not found", async () => {
-      const appointmentId = "non-existent";
+    it("should block creation when no authorized users exist", async () => {
+      const { centralDb } = await import("../../db");
 
-      (mockDb.select as any).mockImplementation(() => ({
-        from: () => ({
-          leftJoin: () => ({
-            leftJoin: () => ({
-              where: () => ({
-                limit: () => [],
-              }),
-            }),
-          }),
-        }),
-      }));
-
-      const result = await service.getAppointmentById(appointmentId);
-      expect(result).toBeNull();
-    });
-  });
-
-  describe("updateAppointment", () => {
-    let service: AppointmentService;
-
-    beforeEach(async () => {
-      service = await AppointmentService.forTenant(mockTenantId);
-    });
-
-    it("should validate update request", async () => {
-      const appointmentId = "123e4567-e89b-12d3-a456-426614174003";
-      const invalidUpdate = {
-        title: "", // Invalid empty title
-        status: "INVALID_STATUS" as any,
+      // Mock authorization check - no users exist
+      const mockAuthBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([]),
       };
+      vi.mocked(centralDb.select).mockReturnValue(mockAuthBuilder as any);
 
-      await expect(service.updateAppointment(appointmentId, invalidUpdate)).rejects.toThrow(
-        ValidationError,
+      const service = await AppointmentService.forTenant("tenant-123");
+
+      await expect(service.createNewClientWithAppointment(mockClientTunnelData)).rejects.toThrow(
+        ConflictError,
       );
     });
 
-    it("should update appointment successfully", async () => {
-      const appointmentId = "123e4567-e89b-12d3-a456-426614174003";
-      const updateData = {
-        title: "Updated Title",
-        status: "CONFIRMED" as const,
+    it("should throw NotFoundError when channel not found", async () => {
+      const { getTenantDb, centralDb } = await import("../../db");
+
+      // Mock authorization check - users exist
+      const mockAuthBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([{ count: "1" }]),
       };
+      vi.mocked(centralDb.select).mockReturnValue(mockAuthBuilder as any);
 
-      const mockUpdatedAppointment = {
-        id: appointmentId,
-        clientId: "client-id",
-        channelId: "channel-id",
-        appointmentDate: "2024-01-01T10:00:00.000Z",
-        expiryDate: "2024-01-31",
-        title: updateData.title,
-        description: null,
-        status: updateData.status,
-      };
-
-      (mockDb.update as any).mockImplementation(() => ({
-        set: () => ({
-          where: () => ({
-            returning: () => [mockUpdatedAppointment],
+      // Mock tenant database transaction with channel not found
+      const mockTransaction = vi.fn().mockImplementation(async (callback) => {
+        const tx = {
+          insert: vi
+            .fn()
+            .mockReturnValueOnce({
+              values: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([{ id: "tunnel-123" }]),
+              }),
+            })
+            .mockReturnValueOnce({
+              values: vi.fn().mockResolvedValue(undefined),
+            }),
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue([]), // Channel not found
+              }),
+            }),
           }),
-        }),
-      }));
+        };
+        return await callback(tx);
+      });
 
-      const result = await service.updateAppointment(appointmentId, updateData);
-      expect(result).toEqual(mockUpdatedAppointment);
-    });
+      const mockDb = { transaction: mockTransaction };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
 
-    it("should throw NotFoundError if appointment does not exist", async () => {
-      const appointmentId = "non-existent";
-      const updateData = { title: "Updated Title" };
+      const service = await AppointmentService.forTenant("tenant-123");
 
-      (mockDb.update as any).mockImplementation(() => ({
-        set: () => ({
-          where: () => ({
-            returning: () => [], // No rows updated
-          }),
-        }),
-      }));
-
-      await expect(service.updateAppointment(appointmentId, updateData)).rejects.toThrow(
+      await expect(service.createNewClientWithAppointment(mockClientTunnelData)).rejects.toThrow(
         NotFoundError,
       );
     });
-  });
 
-  describe("status update methods", () => {
-    let service: AppointmentService;
+    it("should create appointment with CONFIRMED status when channel doesn't require confirmation", async () => {
+      const { getTenantDb, centralDb } = await import("../../db");
 
-    beforeEach(async () => {
-      service = await AppointmentService.forTenant(mockTenantId);
-    });
-
-    it("should cancel appointment", async () => {
-      const appointmentId = "123e4567-e89b-12d3-a456-426614174003";
-      const mockUpdatedAppointment = {
-        id: appointmentId,
-        status: "REJECTED",
+      // Mock authorization check - users exist
+      const mockAuthBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([{ count: "1" }]),
       };
+      vi.mocked(centralDb.select).mockReturnValue(mockAuthBuilder as any);
 
-      (mockDb.update as any).mockImplementation(() => ({
-        set: () => ({
-          where: () => ({
-            returning: () => [mockUpdatedAppointment],
+      // Mock tenant database transaction with channel that doesn't require confirmation
+      const mockTransaction = vi.fn().mockImplementation(async (callback) => {
+        const tx = {
+          insert: vi
+            .fn()
+            .mockReturnValueOnce({
+              values: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([{ id: "tunnel-123" }]),
+              }),
+            })
+            .mockReturnValueOnce({
+              values: vi.fn().mockResolvedValue(undefined),
+            })
+            .mockReturnValueOnce({
+              values: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([
+                  {
+                    id: "appointment-123",
+                    appointmentDate: new Date("2024-01-15T10:00:00Z"),
+                    status: "CONFIRMED",
+                  },
+                ]),
+              }),
+            }),
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue([{ requiresConfirmation: false }]),
+              }),
+            }),
           }),
-        }),
-      }));
+        };
+        return await callback(tx);
+      });
 
-      const result = await service.cancelAppointment(appointmentId);
-      expect(result.status).toBe("REJECTED");
-    });
+      const mockDb = { transaction: mockTransaction };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
 
-    it("should confirm appointment", async () => {
-      const appointmentId = "123e4567-e89b-12d3-a456-426614174003";
-      const mockUpdatedAppointment = {
-        id: appointmentId,
-        status: "CONFIRMED",
-      };
+      const service = await AppointmentService.forTenant("tenant-123");
+      const result = await service.createNewClientWithAppointment(mockClientTunnelData);
 
-      (mockDb.update as any).mockImplementation(() => ({
-        set: () => ({
-          where: () => ({
-            returning: () => [mockUpdatedAppointment],
-          }),
-        }),
-      }));
-
-      const result = await service.confirmAppointment(appointmentId);
       expect(result.status).toBe("CONFIRMED");
     });
+  });
 
-    it("should complete appointment", async () => {
-      const appointmentId = "123e4567-e89b-12d3-a456-426614174003";
-      const mockUpdatedAppointment = {
-        id: appointmentId,
-        status: "HELD",
-      };
-
-      (mockDb.update as any).mockImplementation(() => ({
-        set: () => ({
-          where: () => ({
-            returning: () => [mockUpdatedAppointment],
+  describe("getAppointmentsByTimeRange", () => {
+    it("should return appointments within time range", async () => {
+      const { getTenantDb } = await import("../../db");
+      const mockDb = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockResolvedValue([mockAppointment]),
+            }),
           }),
         }),
-      }));
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
 
-      const result = await service.completeAppointment(appointmentId);
-      expect(result.status).toBe("HELD");
+      const service = await AppointmentService.forTenant("tenant-123");
+      const startDate = new Date("2024-01-01T00:00:00Z");
+      const endDate = new Date("2024-01-31T23:59:59Z");
+
+      const result = await service.getAppointmentsByTimeRange(startDate, endDate);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe("appointment-123");
     });
 
-    it("should mark as no-show", async () => {
-      const appointmentId = "123e4567-e89b-12d3-a456-426614174003";
-      const mockUpdatedAppointment = {
-        id: appointmentId,
-        status: "NO_SHOW",
-      };
-
-      (mockDb.update as any).mockImplementation(() => ({
-        set: () => ({
-          where: () => ({
-            returning: () => [mockUpdatedAppointment],
+    it("should return empty array when no appointments in range", async () => {
+      const { getTenantDb } = await import("../../db");
+      const mockDb = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockResolvedValue([]),
+            }),
           }),
         }),
-      }));
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
 
-      const result = await service.markNoShow(appointmentId);
-      expect(result.status).toBe("NO_SHOW");
+      const service = await AppointmentService.forTenant("tenant-123");
+      const startDate = new Date("2024-01-01T00:00:00Z");
+      const endDate = new Date("2024-01-31T23:59:59Z");
+
+      const result = await service.getAppointmentsByTimeRange(startDate, endDate);
+
+      expect(result).toEqual([]);
     });
   });
 
   describe("deleteAppointment", () => {
-    let service: AppointmentService;
-
-    beforeEach(async () => {
-      service = await AppointmentService.forTenant(mockTenantId);
-    });
-
     it("should delete appointment successfully", async () => {
-      const appointmentId = "123e4567-e89b-12d3-a456-426614174003";
-
-      (mockDb.delete as any).mockImplementation(() => ({
-        where: () => ({
-          returning: () => [{ id: appointmentId }], // Appointment was deleted
+      const { getTenantDb } = await import("../../db");
+      const mockDb = {
+        delete: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([mockAppointment]),
+          }),
         }),
-      }));
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
 
-      const result = await service.deleteAppointment(appointmentId);
+      const service = await AppointmentService.forTenant("tenant-123");
+      const result = await service.deleteAppointment("appointment-123");
+
       expect(result).toBe(true);
     });
 
-    it("should return false if appointment not found", async () => {
-      const appointmentId = "non-existent";
-
-      (mockDb.delete as any).mockImplementation(() => ({
-        where: () => ({
-          returning: () => [], // No rows deleted
-        }),
-      }));
-
-      const result = await service.deleteAppointment(appointmentId);
-      expect(result).toBe(false);
-    });
-  });
-
-  describe("queryAppointments", () => {
-    let service: AppointmentService;
-
-    beforeEach(async () => {
-      service = await AppointmentService.forTenant(mockTenantId);
-    });
-
-    it("should validate query request", async () => {
-      const invalidQuery = {
-        startDate: "invalid-date",
-        endDate: "2024-01-02T00:00:00.000Z",
-      };
-
-      await expect(service.queryAppointments(invalidQuery as any)).rejects.toThrow(ValidationError);
-    });
-
-    it("should query appointments with filters", async () => {
-      const validQuery = {
-        startDate: "2024-01-01T00:00:00.000Z",
-        endDate: "2024-01-31T23:59:59.999Z",
-        channelId: "123e4567-e89b-12d3-a456-426614174002",
-        status: "NEW" as const,
-      };
-
-      const mockResults = [
-        {
-          appointment: {
-            id: "appointment-id",
-            clientId: "client-id",
-            channelId: validQuery.channelId,
-            appointmentDate: "2024-01-15T10:00:00.000Z",
-            expiryDate: "2024-01-31",
-            title: "Test Appointment",
-            description: null,
-            status: validQuery.status,
-          },
-          client: { id: "client-id" },
-          channel: { id: validQuery.channelId },
-        },
-      ];
-
-      (mockDb.select as any).mockImplementation(() => ({
-        from: () => ({
-          leftJoin: () => ({
-            leftJoin: () => ({
-              where: () => ({
-                orderBy: () => mockResults,
-              }),
-            }),
+    it("should return false when appointment not found", async () => {
+      const { getTenantDb } = await import("../../db");
+      const mockDb = {
+        delete: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([]),
           }),
         }),
-      }));
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
 
-      const result = await service.queryAppointments(validQuery);
+      const service = await AppointmentService.forTenant("tenant-123");
+      const result = await service.deleteAppointment("appointment-123");
 
-      expect(result).toHaveLength(1);
-      expect(result[0].channelId).toBe(validQuery.channelId);
-      expect(result[0].status).toBe(validQuery.status);
+      expect(result).toBe(false);
     });
   });
 });

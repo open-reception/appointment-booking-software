@@ -23,6 +23,18 @@ const PUBLIC_PATHS = [
   "/api/admin/exists",
   "/api/auth/refresh", // Must be public since the access token might already be invalid when this gets called
 ];
+
+// Client booking routes that need public access (no authentication required)
+const CLIENT_BOOKING_PATHS = [
+  "/schedule", // Available time slots for clients
+  "/appointments/challenge", // Create authentication challenge for existing clients
+  "/appointments/verify-challenge", // Verify challenge response
+  "/appointments/create-new-client", // Create new client with first appointment
+  "/appointments/add-to-tunnel", // Add appointment to existing client tunnel
+  "/appointments/staff-public-keys", // Get staff public keys for encryption
+  "/appointments/", // Individual appointment details (for clients to view their own appointments)
+];
+
 const GLOBAL_ADMIN_PATHS = ["/api/admin", "/api/tenants"];
 const ADMIN_PATHS = ["/api/tenant-admin"];
 
@@ -42,15 +54,20 @@ export const apiAuthHandle: Handle = async ({ event, resolve }) => {
     return resolve(event);
   }
 
+  // Check for tenant client booking routes (public for clients)
+  const isTenantClientBookingRoute =
+    path.match(/^\/api\/tenants\/[^/]+\//) &&
+    CLIENT_BOOKING_PATHS.some((clientPath) => path.includes(clientPath));
+
   const isProtectedPath = PROTECTED_PATHS.some((protectedPath) => path.startsWith(protectedPath));
   const isPublicPath = PUBLIC_PATHS.some((publicPath) => path.startsWith(publicPath));
   const isProtectedAuthPath = PROTECTED_AUTH_PATHS.some((authPath) => path.startsWith(authPath));
   const isGlobalAdminPath = GLOBAL_ADMIN_PATHS.some((gadPath) => path.startsWith(gadPath));
   const isAdminPath = ADMIN_PATHS.some((gadPath) => path.startsWith(gadPath));
 
-  // Allow public paths
+  // Allow public paths and tenant client booking routes
   if (
-    isPublicPath &&
+    (isPublicPath || isTenantClientBookingRoute) &&
     !isProtectedAuthPath &&
     !isProtectedPath &&
     !isAdminPath &&

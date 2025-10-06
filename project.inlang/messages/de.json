@@ -470,5 +470,13 @@
 			"error": "Konnte Kanal nicht reaktivieren."
 		}
 	},
-	"unpause": "Aktivieren"
+	"unpause": "Aktivieren",
+	"errorPages": {
+		"title": "Da ist was schiefgelaufen",
+		"descriptions": {
+			"500": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.",
+			"404": "Die Seite, die Du suchst, existiert nicht."
+		},
+		"action": "Zur Startseite"
+	}
 }

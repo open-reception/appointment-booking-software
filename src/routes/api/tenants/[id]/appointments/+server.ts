@@ -1,182 +1,16 @@
 import { json } from "@sveltejs/kit";
 import { AppointmentService } from "$lib/server/services/appointment-service";
-import {
-  BackendError,
-  ConflictError,
-  InternalError,
-  logError,
-  ValidationError,
-} from "$lib/server/utils/errors";
+import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 import { checkPermission } from "$lib/server/utils/permissions";
-import { ERRORS } from "$lib/errors";
-
-// Register OpenAPI documentation for POST
-registerOpenAPIRoute("/tenants/{id}/appointments", "POST", {
-  summary: "Create a new appointment",
-  description:
-    "Creates a new appointment for a specific tenant. Only global admins, tenant admins, and staff can create appointments for existing clients.",
-  tags: ["Appointments"],
-  parameters: [
-    {
-      name: "id",
-      in: "path",
-      required: true,
-      schema: { type: "string", format: "uuid" },
-      description: "Tenant ID",
-    },
-  ],
-  requestBody: {
-    description: "Appointment creation data",
-    content: {
-      "application/json": {
-        schema: {
-          type: "object",
-          properties: {
-            clientId: {
-              type: "string",
-              format: "uuid",
-              description: "Client ID (client must already exist)",
-            },
-            channelId: {
-              type: "string",
-              format: "uuid",
-              description: "Channel ID",
-            },
-            appointmentDate: {
-              type: "string",
-              format: "date-time",
-              description: "Appointment date and time",
-            },
-            expiryDate: {
-              type: "string",
-              format: "date",
-              description: "When appointment data expires",
-            },
-            title: {
-              type: "string",
-              minLength: 1,
-              maxLength: 200,
-              description: "Appointment title",
-            },
-            description: {
-              type: "string",
-              description: "Appointment description",
-            },
-            status: {
-              type: "string",
-              enum: ["NEW", "CONFIRMED", "HELD", "REJECTED", "NO_SHOW"],
-              description: "Appointment status",
-              default: "NEW",
-            },
-          },
-          required: ["clientId", "channelId", "appointmentDate", "expiryDate", "title"],
-        },
-      },
-    },
-  },
-  responses: {
-    "201": {
-      description: "Appointment created successfully",
-      content: {
-        "application/json": {
-          schema: {
-            type: "object",
-            properties: {
-              message: { type: "string", description: "Success message" },
-              appointment: {
-                type: "object",
-                properties: {
-                  id: { type: "string", format: "uuid", description: "Appointment ID" },
-                  clientId: { type: "string", format: "uuid", description: "Client ID" },
-                  channelId: { type: "string", format: "uuid", description: "Channel ID" },
-                  appointmentDate: {
-                    type: "string",
-                    format: "date-time",
-                    description: "Appointment date",
-                  },
-                  expiryDate: { type: "string", format: "date", description: "Expiry date" },
-                  title: { type: "string", description: "Appointment title" },
-                  description: { type: "string", description: "Appointment description" },
-                  status: {
-                    type: "string",
-                    enum: ["NEW", "CONFIRMED", "HELD", "REJECTED", "NO_SHOW"],
-                  },
-                },
-                required: [
-                  "id",
-                  "clientId",
-                  "channelId",
-                  "appointmentDate",
-                  "expiryDate",
-                  "title",
-                  "status",
-                ],
-              },
-            },
-            required: ["message", "appointment"],
-          },
-        },
-      },
-    },
-    "400": {
-      description: "Invalid input data",
-      content: {
-        "application/json": {
-          schema: { $ref: "#/components/schemas/Error" },
-        },
-      },
-    },
-    "401": {
-      description: "Authentication required",
-      content: {
-        "application/json": {
-          schema: { $ref: "#/components/schemas/Error" },
-        },
-      },
-    },
-    "403": {
-      description: "Insufficient permissions",
-      content: {
-        "application/json": {
-          schema: { $ref: "#/components/schemas/Error" },
-        },
-      },
-    },
-    "404": {
-      description: "Tenant, client, or channel not found",
-      content: {
-        "application/json": {
-          schema: { $ref: "#/components/schemas/Error" },
-        },
-      },
-    },
-    "409": {
-      description: "Appointment conflict or channel paused",
-      content: {
-        "application/json": {
-          schema: { $ref: "#/components/schemas/Error" },
-        },
-      },
-    },
-    "500": {
-      description: "Internal server error",
-      content: {
-        "application/json": {
-          schema: { $ref: "#/components/schemas/Error" },
-        },
-      },
-    },
-  },
-});
 
 // Register OpenAPI documentation for GET
 registerOpenAPIRoute("/tenants/{id}/appointments", "GET", {
-  summary: "List appointments",
+  summary: "Get appointments by time range",
   description:
-    "Retrieves appointments for a specific tenant with optional filters. Global admins, tenant admins, and staff can view appointments.",
+    "Retrieves all appointments within a specified time range for a tenant. Only staff and tenant admins can access appointments.",
   tags: ["Appointments"],
   parameters: [
     {
@@ -191,32 +25,14 @@ registerOpenAPIRoute("/tenants/{id}/appointments", "GET", {
       in: "query",
       required: true,
       schema: { type: "string", format: "date-time" },
-      description: "Start date for appointment search",
+      description: "Start date for the time range (ISO 8601 format: 2024-01-01T00:00:00.000Z)",
     },
     {
       name: "endDate",
       in: "query",
       required: true,
       schema: { type: "string", format: "date-time" },
-      description: "End date for appointment search",
-    },
-    {
-      name: "channelId",
-      in: "query",
-      schema: { type: "string", format: "uuid" },
-      description: "Filter by channel ID",
-    },
-    {
-      name: "clientId",
-      in: "query",
-      schema: { type: "string", format: "uuid" },
-      description: "Filter by client ID",
-    },
-    {
-      name: "status",
-      in: "query",
-      schema: { type: "string", enum: ["NEW", "CONFIRMED", "HELD", "REJECTED", "NO_SHOW"] },
-      description: "Filter by appointment status",
+      description: "End date for the time range (ISO 8601 format: 2024-12-31T23:59:59.999Z)",
     },
   ],
   responses: {
@@ -233,58 +49,70 @@ registerOpenAPIRoute("/tenants/{id}/appointments", "GET", {
                   type: "object",
                   properties: {
                     id: { type: "string", format: "uuid", description: "Appointment ID" },
-                    clientId: { type: "string", format: "uuid", description: "Client ID" },
+                    tunnelId: { type: "string", format: "uuid", description: "Client tunnel ID" },
                     channelId: { type: "string", format: "uuid", description: "Channel ID" },
                     appointmentDate: {
                       type: "string",
                       format: "date-time",
-                      description: "Appointment date",
+                      description: "Appointment date and time",
                     },
-                    expiryDate: { type: "string", format: "date", description: "Expiry date" },
-                    title: { type: "string", description: "Appointment title" },
-                    description: { type: "string", description: "Appointment description" },
+                    expiryDate: {
+                      type: "string",
+                      format: "date",
+                      description: "Data expiry date (nullable)",
+                    },
                     status: {
                       type: "string",
                       enum: ["NEW", "CONFIRMED", "HELD", "REJECTED", "NO_SHOW"],
+                      description: "Appointment status",
                     },
-                    client: {
-                      type: "object",
-                      description: "Client details",
-                      properties: {
-                        id: { type: "string", format: "uuid" },
-                        hashKey: { type: "string" },
-                        email: { type: "string" },
-                      },
+                    encryptedPayload: {
+                      type: "string",
+                      description: "Encrypted appointment data (nullable)",
                     },
-                    channel: {
-                      type: "object",
-                      description: "Channel details",
-                      properties: {
-                        id: { type: "string", format: "uuid" },
-                        names: { type: "array", items: { type: "string" } },
-                        color: { type: "string" },
-                      },
+                    iv: {
+                      type: "string",
+                      description: "Initialization vector for encryption (nullable)",
+                    },
+                    authTag: {
+                      type: "string",
+                      description: "Authentication tag for encryption (nullable)",
+                    },
+                    createdAt: {
+                      type: "string",
+                      format: "date-time",
+                      description: "Creation timestamp (nullable)",
+                    },
+                    updatedAt: {
+                      type: "string",
+                      format: "date-time",
+                      description: "Last update timestamp (nullable)",
                     },
                   },
-                  required: [
-                    "id",
-                    "clientId",
-                    "channelId",
-                    "appointmentDate",
-                    "expiryDate",
-                    "title",
-                    "status",
-                  ],
+                  required: ["id", "tunnelId", "channelId", "appointmentDate", "status"],
                 },
               },
+              meta: {
+                type: "object",
+                properties: {
+                  count: { type: "number", description: "Number of appointments found" },
+                  startDate: {
+                    type: "string",
+                    format: "date-time",
+                    description: "Query start date",
+                  },
+                  endDate: { type: "string", format: "date-time", description: "Query end date" },
+                },
+                required: ["count", "startDate", "endDate"],
+              },
             },
-            required: ["appointments"],
+            required: ["appointments", "meta"],
           },
         },
       },
     },
     "400": {
-      description: "Invalid query parameters",
+      description: "Invalid input data",
       content: {
         "application/json": {
           schema: { $ref: "#/components/schemas/Error" },
@@ -326,60 +154,6 @@ registerOpenAPIRoute("/tenants/{id}/appointments", "GET", {
   },
 });
 
-export const POST: RequestHandler = async ({ params, request, locals }) => {
-  const log = logger.setContext("API");
-
-  try {
-    const tenantId = params.id;
-
-    if (!tenantId) {
-      throw new ValidationError(ERRORS.TENANTS.NO_TENANT_ID);
-    }
-
-    checkPermission(locals, tenantId);
-
-    const body = await request.json();
-
-    log.debug("Creating new appointment", {
-      tenantId,
-      requestedBy: locals.user?.userId,
-      clientId: body.clientId,
-      channelId: body.channelId,
-    });
-
-    const appointmentService = await AppointmentService.forTenant(tenantId);
-    const newAppointment = await appointmentService.createAppointment(body);
-
-    log.debug("Appointment created successfully", {
-      tenantId,
-      appointmentId: newAppointment.id,
-      requestedBy: locals.user?.userId,
-    });
-
-    return json(
-      {
-        message: "Appointment created successfully",
-        appointment: newAppointment,
-      },
-      { status: 201 },
-    );
-  } catch (error) {
-    logError(log)("Error creating appointment", error, locals.user?.userId, params.id);
-    if (error instanceof BackendError) {
-      return error.toJson();
-    }
-
-    if (
-      (error instanceof Error && error.message.includes("conflict")) ||
-      (error instanceof Error && error.message.includes("paused"))
-    ) {
-      return new ConflictError(error.message).toJson();
-    }
-
-    return new InternalError().toJson();
-  }
-};
-
 export const GET: RequestHandler = async ({ params, url, locals }) => {
   const log = logger.setContext("API");
 
@@ -387,50 +161,74 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
     const tenantId = params.id;
 
     if (!tenantId) {
-      throw new ValidationError(ERRORS.TENANTS.NO_TENANT_ID);
+      throw new ValidationError("Tenant ID is required");
     }
 
-    checkPermission(locals, tenantId);
+    // Check permissions - only STAFF and TENANT_ADMIN can access appointments
+    checkPermission(locals, tenantId, false);
 
-    // Extract query parameters
-    const startDate = url.searchParams.get("startDate");
-    const endDate = url.searchParams.get("endDate");
-    const channelId = url.searchParams.get("channelId");
-    const clientId = url.searchParams.get("clientId");
-    const status = url.searchParams.get("status");
+    // Parse query parameters for date range
+    const startDateParam = url.searchParams.get("startDate");
+    const endDateParam = url.searchParams.get("endDate");
 
-    if (!startDate || !endDate) {
-      throw new ValidationError("startDate and endDate are required");
+    if (!startDateParam || !endDateParam) {
+      throw new ValidationError("Both startDate and endDate query parameters are required");
     }
 
-    const query = {
-      startDate,
-      endDate,
-      ...(channelId && { channelId }),
-      ...(clientId && { clientId }),
-      ...(status && { status: status as "NEW" | "CONFIRMED" | "HELD" | "REJECTED" | "NO_SHOW" }),
-    };
+    const startDate = new Date(startDateParam);
+    const endDate = new Date(endDateParam);
 
-    log.debug("Getting appointments", {
+    // Validate dates
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      throw new ValidationError(
+        "Invalid date format. Use ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ)",
+      );
+    }
+
+    if (startDate >= endDate) {
+      throw new ValidationError("Start date must be before end date");
+    }
+
+    // Limit the time range to prevent excessive queries (max 1 year)
+    const maxRangeMs = 366 * 24 * 60 * 60 * 1000; // 1 year in milliseconds (accounting for leap years)
+    if (endDate.getTime() - startDate.getTime() > maxRangeMs) {
+      throw new ValidationError("Date range cannot exceed 1 year");
+    }
+
+    log.debug("Getting appointments by time range", {
       tenantId,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
       requestedBy: locals.user?.userId,
-      query,
     });
 
     const appointmentService = await AppointmentService.forTenant(tenantId);
-    const appointments = await appointmentService.queryAppointments(query);
+    const appointments = await appointmentService.getAppointmentsByTimeRange(startDate, endDate);
 
     log.debug("Appointments retrieved successfully", {
       tenantId,
       count: appointments.length,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
       requestedBy: locals.user?.userId,
     });
 
     return json({
       appointments,
+      meta: {
+        count: appointments.length,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+      },
     });
   } catch (error) {
-    logError(log)("Error getting appointments", error, locals.user?.userId, params.id);
+    logError(log)(
+      "Error getting appointments by time range",
+      error,
+      locals.user?.userId,
+      params.id,
+    );
+
     if (error instanceof BackendError) {
       return error.toJson();
     }
