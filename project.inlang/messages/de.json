@@ -196,11 +196,112 @@
 				"cancel": "Abbrechen",
 				"apply": "Übernehmen"
 			}
+		},
+		"slotTemplate": {
+			"empty_weekdays": "Wochentage auswählen",
+			"weekdays_long": {
+				"monday": "Montag",
+				"tuesday": "Dienstag",
+				"wednesday": "Mittwoch",
+				"thursday": "Donnerstag",
+				"friday": "Freitag",
+				"saturday": "Samstag",
+				"sunday": "Sonntag"
+			},
+			"weekdays_short": {
+				"monday": "Mo",
+				"tuesday": "Di",
+				"wednesday": "Mi",
+				"thursday": "Do",
+				"friday": "Fr",
+				"saturday": "Sa",
+				"sunday": "So"
+			},
+			"times": {
+				"0500": "5:00 Uhr",
+				"0515": "5:15 Uhr",
+				"0530": "5:30 Uhr",
+				"0545": "5:45 Uhr",
+				"0600": "6:00 Uhr",
+				"0615": "6:15 Uhr",
+				"0630": "6:30 Uhr",
+				"0645": "6:45 Uhr",
+				"0700": "7:00 Uhr",
+				"0715": "7:15 Uhr",
+				"0730": "7:30 Uhr",
+				"0745": "7:45 Uhr",
+				"0800": "8:00 Uhr",
+				"0815": "8:15 Uhr",
+				"0830": "8:30 Uhr",
+				"0845": "8:45 Uhr",
+				"0900": "9:00 Uhr",
+				"0915": "9:15 Uhr",
+				"0930": "9:30 Uhr",
+				"0945": "9:45 Uhr",
+				"1000": "10:00 Uhr",
+				"1015": "10:15 Uhr",
+				"1030": "10:30 Uhr",
+				"1045": "10:45 Uhr",
+				"1100": "11:00 Uhr",
+				"1115": "11:15 Uhr",
+				"1130": "11:30 Uhr",
+				"1145": "11:45 Uhr",
+				"1200": "12:00 Uhr",
+				"1215": "12:15 Uhr",
+				"1230": "12:30 Uhr",
+				"1245": "12:45 Uhr",
+				"1300": "13:00 Uhr",
+				"1315": "13:15 Uhr",
+				"1330": "13:30 Uhr",
+				"1345": "13:45 Uhr",
+				"1400": "14:00 Uhr",
+				"1415": "14:15 Uhr",
+				"1430": "14:30 Uhr",
+				"1445": "14:45 Uhr",
+				"1500": "15:00 Uhr",
+				"1515": "15:15 Uhr",
+				"1530": "15:30 Uhr",
+				"1545": "15:45 Uhr",
+				"1600": "16:00 Uhr",
+				"1615": "16:15 Uhr",
+				"1630": "16:30 Uhr",
+				"1645": "16:45 Uhr",
+				"1700": "17:00 Uhr",
+				"1715": "17:15 Uhr",
+				"1730": "17:30 Uhr",
+				"1745": "17:45 Uhr",
+				"1800": "18:00 Uhr",
+				"1815": "18:15 Uhr",
+				"1830": "18:30 Uhr",
+				"1845": "18:45 Uhr",
+				"1900": "19:00 Uhr",
+				"1915": "19:15 Uhr",
+				"1930": "19:30 Uhr",
+				"1945": "19:45 Uhr",
+				"2000": "20:00 Uhr",
+				"2015": "20:15 Uhr",
+				"2030": "20:30 Uhr",
+				"2045": "20:45 Uhr",
+				"2100": "21:00 Uhr",
+				"2115": "21:15 Uhr",
+				"2130": "21:30 Uhr",
+				"2145": "21:45 Uhr",
+				"2200": "22:00 Uhr"
+			},
+			"empty_duration": "Dauer auswählen",
+			"template": "Vorlage {no}",
+			"remove": "Vorlage {no} entfernen",
+			"from": "Von",
+			"to": "Bis",
+			"duration": "Dauer",
+			"every_n_minutes": "alle {minutes} Minuten",
+			"add_template": "Vorlage hinzufügen",
+			"weekdays": "Wochentage"
 		}
 	},
 	"actions": "Aktionen",
 	"edit": "Editieren",
-	"pause": "Pausieren",
+	"pause": "Deaktivieren",
 	"delete": "Löschen",
 	"select": "Auswählen",
 	"close": "Schließen",
@@ -280,6 +381,96 @@
 		"en": "Englisch",
 		"de": "Deutsch"
 	},
+	"staff": {
+		"title": "Personal",
+		"empty": {
+			"title": "Bisher kein Personal",
+			"description": "Personal sind die Personen, die Zugriff auf Ihre Termine haben."
+		}
+	},
+	"channels": {
+		"title": "Kanäle",
+		"empty": {
+			"title": "Bisher keine Kanäle",
+			"description": "Kanäle sind Ihre Möglichkeit, verschiedene Arten von Terminen zu sammeln"
+		},
+		"add": {
+			"title": "Kanal hinzufügen",
+			"description": "Kanäle sind Ihre Möglichkeit, verschiedene Arten von Terminen zu sammeln",
+			"fields": {
+				"name": {
+					"title": "Name",
+					"errors": {
+						"length": "Muss zwischen 1 und 100 Zeichen lang sein"
+					}
+				},
+				"description": {
+					"title": "Beschreibung (optional)"
+				},
+				"agents": {
+					"title": "Akteure",
+					"description": "Wähle die Akteure aus, die Termine in diesem Kanal entgegennehmen können.",
+					"placeholder": "Akteure auswählen"
+				},
+				"isPublic": {
+					"title": "Öffentlich",
+					"label": "Dieser Kanal kann von Kunden direkt gebucht werden"
+				},
+				"requiresConfirmation": {
+					"title": "Bestätigung erforderlich",
+					"label": "Termine müssen vom Personal bestätigt werden"
+				},
+				"slotTemplates": {
+					"title": "Zeitvorlagen",
+					"description": "Termine werden basierend auf Ihrem Zeitplan erstellt."
+				}
+			},
+			"action": "Kanal hinzufügen",
+			"success": "Kanal hinzugefügt",
+			"errors": {
+				"unknown": "Konnte Kanal nicht hinzufügen"
+			}
+		},
+		"list": {
+			"empty": {
+				"title": "Bisher keine Kanäle",
+				"description": "Kanäle sind Ihre Möglichkeit, verschiedene Arten von Terminen zu sammeln"
+			},
+			"badges": {
+				"paused": "deaktiviert"
+			}
+		},
+		"delete": {
+			"title": "Kanal löschen",
+			"description": "Evtl. willst Du diesen Kanal deaktivieren, statt ihn zu löschen. Tippe {name} um den Kanal zu löschen.",
+			"action": "Kanal löschen",
+			"success": "Kanal gelöscht",
+			"error": "Konnte Kanal nicht löschen."
+		},
+		"loading": "Lade Kanäle",
+		"edit": {
+			"title": "Kanal bearbeiten",
+			"description": "Aktualisiere die öffentlichen Informationen des Kanals.",
+			"success": "Kanal aktualisiert",
+			"error": "Konnte Kanal nicht aktualisieren.",
+			"action": "Übernehmen"
+		},
+		"pause": {
+			"title": "Kanal deaktivieren",
+			"description": "Das Deaktivieren von {name} verhindert, dass Kunden neue Termine in diesem Kanal buchen.",
+			"action": "Kanal deaktivieren",
+			"success": "Kanal deaktiviert",
+			"error": "Konnte Kanal nicht deaktivieren."
+		},
+		"unpause": {
+			"title": "Kanal reaktivieren",
+			"description": "Das Reaktivieren von {name} ermöglicht es Kunden, neue Termine in diesem Kanal zu buchen.",
+			"action": "Kanal reaktivieren",
+			"success": "Kanal reaktiviert",
+			"error": "Konnte Kanal nicht reaktivieren."
+		}
+	},
+	"unpause": "Aktivieren",
 	"errorPages": {
 		"title": "Da ist was schiefgelaufen",
 		"descriptions": {

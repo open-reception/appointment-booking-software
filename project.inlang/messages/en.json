@@ -204,12 +204,113 @@
 				"cancel": "Cancel",
 				"apply": "Apply"
 			}
+		},
+		"slotTemplate": {
+			"empty_weekdays": "Select weekdays",
+			"weekdays_long": {
+				"monday": "Monday",
+				"tuesday": "Tuesday",
+				"wednesday": "Wednesday",
+				"thursday": "Thursday",
+				"friday": "Friday",
+				"saturday": "Saturday",
+				"sunday": "Sunday"
+			},
+			"weekdays_short": {
+				"monday": "Mon",
+				"tuesday": "Tue",
+				"wednesday": "Wed",
+				"thursday": "Thu",
+				"friday": "Fri",
+				"saturday": "Sat",
+				"sunday": "Sun"
+			},
+			"times": {
+				"0500": "5:00 AM",
+				"0515": "5:15 AM",
+				"0530": "5:30 AM",
+				"0545": "5:45 AM",
+				"0600": "6:00 AM",
+				"0615": "6:15 AM",
+				"0630": "6:30 AM",
+				"0645": "6:45 AM",
+				"0700": "7:00 AM",
+				"0715": "7:15 AM",
+				"0730": "7:30 AM",
+				"0745": "7:45 AM",
+				"0800": "8:00 AM",
+				"0815": "8:15 AM",
+				"0830": "8:30 AM",
+				"0845": "8:45 AM",
+				"0900": "9:00 AM",
+				"0915": "9:15 AM",
+				"0930": "9:30 AM",
+				"0945": "9:45 AM",
+				"1000": "10:00 AM",
+				"1015": "10:15 AM",
+				"1030": "10:30 AM",
+				"1045": "10:45 AM",
+				"1100": "11:00 AM",
+				"1115": "11:15 AM",
+				"1130": "11:30 AM",
+				"1145": "11:45 AM",
+				"1200": "12:00 PM",
+				"1215": "12:15 PM",
+				"1230": "12:30 PM",
+				"1245": "12:45 PM",
+				"1300": "1:00 PM",
+				"1315": "1:15 PM",
+				"1330": "1:30 PM",
+				"1345": "1:45 PM",
+				"1400": "2:00 PM",
+				"1415": "2:15 PM",
+				"1430": "2:30 PM",
+				"1445": "2:45 PM",
+				"1500": "3:00 PM",
+				"1515": "3:15 PM",
+				"1530": "3:30 PM",
+				"1545": "3:45 PM",
+				"1600": "4:00 PM",
+				"1615": "4:15 PM",
+				"1630": "4:30 PM",
+				"1645": "4:45 PM",
+				"1700": "5:00 PM",
+				"1715": "5:15 PM",
+				"1730": "5:30 PM",
+				"1745": "5:45 PM",
+				"1800": "6:00 PM",
+				"1815": "6:15 PM",
+				"1830": "6:30 PM",
+				"1845": "6:45 PM",
+				"1900": "7:00 PM",
+				"1915": "7:15 PM",
+				"1930": "7:30 PM",
+				"1945": "7:45 PM",
+				"2000": "8:00 PM",
+				"2015": "8:15 PM",
+				"2030": "8:30 PM",
+				"2045": "8:45 PM",
+				"2100": "9:00 PM",
+				"2115": "9:15 PM",
+				"2130": "9:30 PM",
+				"2145": "9:45 PM",
+				"2200": "10:00 PM"
+			},
+			"empty_duration": "Select duration",
+			"template": "Template {no}",
+					"remove": "Remove teamplate {no}",
+					"from": "From",
+					"to": "To",
+					"duration": "Duration",
+					"every_n_minutes": "every {minutes} minutes",
+					"add_template": "Add Template",
+					"weekdays": "Weekdays"
 		}
 	},
 	"cancel": "Cancel",
 	"actions": "Actions",
 	"edit": "Edit",
-	"pause": "Pause",
+	"pause": "Deactivate",
 	"delete": "Delete",
 	"select": "Select",
 	"dashboard": {
@@ -289,6 +390,96 @@
 		"en": "English",
 		"de": "German"
 	},
+	"staff": {
+		"title": "Staff",
+		"empty": {
+			"title": "No staff members yet",
+			"description": "Staff members manage your appointments"
+		}
+	},
+	"channels": {
+		"title": "Channels",
+		"empty": {
+			"title": "No channels yet",
+			"description": "Channels are your way to collect different types of appointments"
+		},
+		"add": {
+			"title": "Add Channel",
+			"description": "Channels are your way to collect different types of appointments",
+			"fields": {
+				"name": {
+					"title": "Name",
+					"errors": {
+						"length": "Must be between 1 and 100 characters"
+					}
+				},
+				"description": {
+					"title": "Description (optional)"
+				},
+				"agents": {
+					"title": "Agents",
+					"description": "Add agents and we will manage the calendar and availability of your agents.",
+					"placeholder": "Select agents"
+				},
+				"isPublic": {
+					"title": "Public",
+					"label": "Anyone can book an appointment"
+				},
+				"requiresConfirmation": {
+					"title": "Requires Confirmation",
+					"label": "Appointments will have to be manually confirmed by staff"
+				},
+				"slotTemplates": {
+					"title": "Schedule",
+					"description": "Slots for appointments will be created based on your schedule."
+				}
+			},
+			"action": "Add Channel",
+			"success": "Channel added",
+			"errors": {
+				"unknown": "Could not add channel"
+			}
+		},
+		"list": {
+			"empty": {
+				"title": "No channels yet",
+				"description": "Channels are your way to collect different types of appointments"
+			},
+			"badges": {
+				"paused": "deactivated"
+			}
+		},
+		"delete": {
+			"title": "Delete Channel",
+			"description": "Consider deactivating the channel instead of deleting it. Type {name} to confirm.",
+			"action": "Delete Channel",
+			"success": "Channel deleted",
+			"error": "Could not delete channel."
+		},
+		"loading": "Loading channels",
+		"edit": {
+			"title": "Edit Channel",
+			"description": "Update the channels public details.",
+			"success": "Channel updated",
+			"error": "Could not update channel.",
+			"action": "Edit Channel"
+		},
+		"pause": {
+			"title": "Deactivate Channel",
+			"description": "Deactivating {name} will prevent clients from booking new appointments in this channel.",
+			"action": "Deactivate Channel",
+			"success": "Channel deactivated",
+			"error": "Could not deactivate channel."
+		},
+		"unpause": {
+			"title": "Activate Channel",
+			"description": "Activating {name} will allow clients to book new appointments in this channel.",
+			"action": "Activate Channel",
+			"success": "Channel activated",
+			"error": "Could not activate channel."
+		}
+	},
+	"unpause": "Activate",
 	"errorPages": {
 		"title": "Something went wrong",
 		"descriptions": {
