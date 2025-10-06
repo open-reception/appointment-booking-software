@@ -2,7 +2,7 @@
   import { browser } from "$app/environment";
   import { Toaster } from "$lib/components/ui/sonner/index.js";
   import { ModeWatcher, setMode } from "mode-watcher";
-  import "../../app.css";
+  import "../app.css";
   import { setLocale } from "$i18n/runtime";
 
   let { data, children } = $props();

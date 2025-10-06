@@ -279,5 +279,13 @@
 	"locales": {
 		"en": "Englisch",
 		"de": "Deutsch"
+	},
+	"errorPages": {
+		"title": "Da ist was schiefgelaufen",
+		"descriptions": {
+			"500": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.",
+			"404": "Die Seite, die Du suchst, existiert nicht."
+		},
+		"action": "Zur Startseite"
 	}
 }
