@@ -112,7 +112,7 @@ export class UserService {
       token: userData.token,
       tokenValidUntil: userData.tokenValidUntil,
       language: userData.language || "de",
-      confirmationState: "INVITED",
+      confirmationState: userData.confirmationState || "INVITED",
       isActive: false,
     };
 
