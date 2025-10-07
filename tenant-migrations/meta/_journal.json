@@ -26,22 +26,8 @@
     {
       "idx": 3,
       "version": "7",
-      "when": 1759144219626,
-      "tag": "0003_big_boomerang",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1759421338309,
-      "tag": "0004_perfect_tomorrow_man",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1759671656380,
-      "tag": "0005_complex_barracuda",
+      "when": 1759858930929,
+      "tag": "0003_complex_the_call",
       "breakpoints": true
     }
   ]

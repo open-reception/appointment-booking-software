@@ -220,10 +220,8 @@ export const appointmentKeyShare = pgTable("appointment_key_share", {
   appointmentId: uuid("appointment_id")
     .notNull()
     .references(() => appointment.id),
-  /** Foreign key to staff member who can decrypt */
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => user.id),
+  /** Foreign key to staff member who can decrypt. This is not a reference this the user is stored in another db */
+  userId: uuid("user_id").notNull(),
   /** Symmetric key encrypted with this staff member's public key */
   encryptedKey: text("encrypted_key").notNull(),
 });
@@ -262,35 +260,24 @@ export type SelectAgentAbsence = InferSelectModel<typeof agentAbsence>;
  * Enables end-to-end encryption for appointments in tenant database
  * @table staffCrypto
  */
-export const staffCrypto = pgTable(
-  "staff_crypto",
-  {
-    /** Primary key - unique identifier */
-    id: uuid("id").primaryKey().defaultRandom(),
-    /** Foreign key to central user table */
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => user.id),
-    /** ML-KEM-768 (Kyber) public key for this staff member (Base64 encoded) */
-    publicKey: text("public_key").notNull(),
-    /** Database-stored shard of the private key (Base64 encoded) */
-    privateKeyShare: text("private_key_share").notNull(),
-    /** Associated passkey ID for key derivation */
-    passkeyId: text("passkey_id").notNull(),
-    /** Timestamp when the key was created */
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    /** Timestamp when the key was last updated */
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
-    /** Whether this key is currently active */
-    isActive: boolean("is_active").default(true).notNull(),
-  },
-  (table) => ({
-    /** Ensure one active key per user per tenant */
-    userKeyUnique: uniqueIndex("staff_crypto_user_active_idx")
-      .on(table.userId)
-      .where(eq(table.isActive, true)),
-  }),
-);
+export const staffCrypto = pgTable("staff_crypto", {
+  /** Primary key - unique identifier */
+  id: uuid("id").primaryKey().defaultRandom(),
+  /** Foreign key to central user table */
+  userId: uuid("user_id").notNull(),
+  /** ML-KEM-768 (Kyber) public key for this staff member (Base64 encoded) */
+  publicKey: text("public_key").notNull(),
+  /** Database-stored shard of the private key (Base64 encoded) */
+  privateKeyShare: text("private_key_share").notNull(),
+  /** Associated passkey ID for key derivation */
+  passkeyId: text("passkey_id").notNull(),
+  /** Timestamp when the key was created */
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  /** Timestamp when the key was last updated */
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  /** Whether this key is currently active */
+  isActive: boolean("is_active").default(true).notNull(),
+});
 
 /**
  * ClientAppointmentTunnels table - represents encrypted appointment tunnels for clients
@@ -319,32 +306,20 @@ export const clientAppointmentTunnel = pgTable("client_appointment_tunnel", {
  * Allows staff to decrypt appointments in client tunnels
  * @table clientTunnelStaffKeyShare
  */
-export const clientTunnelStaffKeyShare = pgTable(
-  "client_tunnel_staff_key_share",
-  {
-    /** Primary key - unique identifier */
-    id: uuid("id").primaryKey().defaultRandom(),
-    /** Foreign key to client appointment tunnel */
-    tunnelId: uuid("tunnel_id")
-      .notNull()
-      .references(() => clientAppointmentTunnel.id),
-    /** Foreign key to staff user */
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => user.id),
-    /** Tunnel key encrypted with staff member's public key */
-    encryptedTunnelKey: text("encrypted_tunnel_key").notNull(),
-    /** Timestamp when this key share was created */
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  },
-  (table) => ({
-    /** Ensure one key share per tunnel per staff member */
-    tunnelStaffUnique: uniqueIndex("client_tunnel_staff_key_unique_idx").on(
-      table.tunnelId,
-      table.userId,
-    ),
-  }),
-);
+export const clientTunnelStaffKeyShare = pgTable("client_tunnel_staff_key_share", {
+  /** Primary key - unique identifier */
+  id: uuid("id").primaryKey().defaultRandom(),
+  /** Foreign key to client appointment tunnel */
+  tunnelId: uuid("tunnel_id")
+    .notNull()
+    .references(() => clientAppointmentTunnel.id),
+  /** Foreign key to staff user */
+  userId: uuid("user_id").notNull(),
+  /** Tunnel key encrypted with staff member's public key */
+  encryptedTunnelKey: text("encrypted_tunnel_key").notNull(),
+  /** Timestamp when this key share was created */
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
 
 /**
  * AuthChallenge table - stores temporary authentication challenges
