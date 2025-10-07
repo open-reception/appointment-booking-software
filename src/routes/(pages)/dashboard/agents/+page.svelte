@@ -18,6 +18,7 @@
   import { AddAgentForm } from "./(components)/add-agent-form";
   import DeleteAgentForm from "./(components)/delete-agent-form/delete-agent-form.svelte";
   import EditAgentForm from "./(components)/edit-agent-form/edit-agent-form.svelte";
+  import { agents } from "$lib/stores/agents";
 
   const { data } = $props();
   let curItem: TAgent | null = $state(null);
@@ -58,6 +59,7 @@
           {/snippet}
           <AddAgentForm
             done={() => {
+              agents.load();
               invalidate(ROUTES.DASHBOARD.AGENTS);
               closeDialog("add");
             }}
@@ -111,6 +113,7 @@
                 done={() => {
                   closeDialog("edit");
                   curItem = null;
+                  agents.load();
                   invalidate(ROUTES.DASHBOARD.AGENTS);
                 }}
               />
@@ -123,6 +126,7 @@
                 done={() => {
                   closeDialog("delete");
                   curItem = null;
+                  agents.load();
                   invalidate(ROUTES.DASHBOARD.AGENTS);
                 }}
               />

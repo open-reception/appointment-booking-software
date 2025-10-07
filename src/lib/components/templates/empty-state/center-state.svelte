@@ -20,12 +20,14 @@
   let {
     class: className = "",
     Icon,
+    iconBadge,
     headline,
     description,
     size,
   }: {
     class?: string;
     Icon: Component;
+    iconBadge?: string;
     headline: string;
     description: string;
     size?: VariantProps<typeof variants>["size"];
@@ -40,7 +42,18 @@
     className,
   )}
 >
-  <Icon class={cn(variants({ size }))} strokeWidth={1} />
+  <div class="relative">
+    {#if iconBadge}
+      <div
+        class="bg-secondary border-primary absolute top-1/2 left-1/2 ml-4 rounded-md border-2 px-2 pb-0.5"
+      >
+        <Text style="xs" class="font-mono font-medium">
+          {iconBadge}
+        </Text>
+      </div>
+    {/if}
+    <Icon class={cn(variants({ size }))} strokeWidth={1} />
+  </div>
   <Headline level={isSmaller ? "h3" : "h1"} style={isSmaller ? "h3" : "h2"}>
     {headline}
   </Headline>

@@ -36,6 +36,8 @@
   import type { HTMLAttributes } from "svelte/elements";
   import { MediaQuery } from "svelte/reactivity";
   import { HorizontalPagePadding } from "../page";
+  import { ScrollArea } from "../scroll-area";
+  import { cn } from "$lib/utils";
 
   let {
     id,
@@ -98,16 +100,20 @@
         {/if}
       </Dialog.Trigger>
     {/if}
-    <Dialog.Content class="sm:max-w-[425px]">
+    <Dialog.Content class="max-h-[95vh] sm:max-w-[425px]">
       <Dialog.Header>
-        <Dialog.Title>{title}</Dialog.Title>
+        <Dialog.Title class={cn(description ? "" : "-mb-1")}>{title}</Dialog.Title>
         {#if description}
           <Dialog.Description>
             {description}
           </Dialog.Description>
         {/if}
       </Dialog.Header>
-      {@render children?.()}
+      <ScrollArea class="-mx-1 max-h-[75vh]">
+        <div class="px-1 pt-2">
+          {@render children?.()}
+        </div>
+      </ScrollArea>
     </Dialog.Content>
   </Dialog.Root>
 {:else}
@@ -121,16 +127,18 @@
         {/if}
       </Drawer.Trigger>
     {/if}
-    <Drawer.Content>
+    <Drawer.Content
+      class="data-[vaul-drawer-direction=bottom]:max-h-[95vh] data-[vaul-drawer-direction=top]:max-h-[95vh]"
+    >
       <Drawer.Header class="text-left">
-        <Drawer.Title>{title}</Drawer.Title>
+        <Drawer.Title class={cn(description ? "" : "-mb-1")}>{title}</Drawer.Title>
         {#if description}
           <Drawer.Description>
             {description}
           </Drawer.Description>
         {/if}
       </Drawer.Header>
-      <HorizontalPagePadding>
+      <HorizontalPagePadding class="max-h-[95vh] overflow-y-scroll pt-2">
         {@render children?.()}
       </HorizontalPagePadding>
       <Drawer.Footer class="pt-2">

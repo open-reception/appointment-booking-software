@@ -7,6 +7,7 @@ import { auth } from "./auth";
 import { m } from "$i18n/messages";
 import { goto } from "$app/navigation";
 import { ROUTES } from "$lib/const/routes";
+import { agents } from "./agents";
 
 const log = logger.setContext("TenantsStore");
 
@@ -30,6 +31,8 @@ const createTenantsStore = () => {
     },
     setCurrentTenant: (tenantId: string | null) => {
       const curTenant = auth.getTenant();
+
+      // Switch tenant on api level
       if (tenantId !== curTenant) {
         const success = changeTenantUsingApi(tenantId);
         if (!success) {
@@ -38,11 +41,16 @@ const createTenantsStore = () => {
           return;
         }
       }
+
+      // Update store
       store.update((state) => {
         const currentTenant = state.tenants.find((t) => t.id === tenantId) || null;
         auth.setTenantId(tenantId);
         return { ...state, currentTenant };
       });
+      agents.load();
+
+      // Redirect to dashboard main if tenant changed to avaoid showing data from previous tenant
       if (tenantId !== curTenant) {
         goto(ROUTES.DASHBOARD.MAIN);
       }

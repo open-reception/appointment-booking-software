@@ -30,7 +30,7 @@
       </Tabs.Content>
     {/each}
   </Tabs.Root>
+  <Separator class="mb-3" />
 {:else if tenantLanguages.length === 1}
   {@render children({ locale: tenantLanguages[0].key })}
 {/if}
-<Separator class="mb-3" />
