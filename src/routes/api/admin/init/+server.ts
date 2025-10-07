@@ -150,6 +150,7 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
         passphrase: body.passphrase, // Will be undefined if passkey is used
         language: body.language || "de",
         role: "GLOBAL_ADMIN",
+        confirmationState: "ACCESS_GRANTED", // Admin account is active immediately
       },
       url,
     );
