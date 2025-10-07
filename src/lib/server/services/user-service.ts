@@ -248,6 +248,7 @@ export class UserService {
           id: centralSchema.user.id,
           recoveryPassphrase: centralSchema.user.recoveryPassphrase,
           tenantId: centralSchema.user.tenantId,
+          role: centralSchema.user.role,
         })
         .from(centralSchema.user)
         .where(
@@ -268,21 +269,7 @@ export class UserService {
       const user = userData[0];
 
       // Check if this is the first tenant admin for the tenant
-      let shouldGrantAccess = false;
-      if (user.tenantId) {
-        const existingTenantAdmins = await centralDb
-          .select({ count: count() })
-          .from(centralSchema.user)
-          .where(
-            and(
-              eq(centralSchema.user.tenantId, user.tenantId),
-              eq(centralSchema.user.role, "TENANT_ADMIN"),
-            ),
-          );
-
-        shouldGrantAccess = existingTenantAdmins[0].count === 0;
-      }
-
+      const shouldGrantAccess = userData[0].role === "GLOBAL_ADMIN"; // Global admins always get ACCESS_GRANTED
       const confirmationState = shouldGrantAccess ? "ACCESS_GRANTED" : "CONFIRMED";
       // Update the user to confirmed and active, and clear the recovery passphrase
       const result = await centralDb
