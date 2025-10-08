@@ -17,7 +17,7 @@ export default ts.config(
   prettier,
   ...svelte.configs.prettier,
   {
-    ignores: ["static/**"],
+    ignores: ["static/**", "src/i18n/**"],
   },
   {
     languageOptions: {
