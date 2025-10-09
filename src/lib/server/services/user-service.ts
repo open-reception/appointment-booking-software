@@ -28,10 +28,7 @@ const userCreationSchema = z.object({
   token: z.uuidv7().optional(),
   tokenValidUntil: z.date().optional(),
   language: z.enum(["de", "en"]).optional().default("de"),
-  confirmationState: z
-    .enum(["INVITED", "CONFIRMED", "ACCESS_GRANTED"])
-    .optional()
-    .default("INVITED"),
+  confirmationState: z.enum(["INVITED", "CONFIRMED", "ACCESS_GRANTED"]).optional(),
   // Note: passphraseHash and recoveryPassphrase are handled internally, not via user input
 });
 
