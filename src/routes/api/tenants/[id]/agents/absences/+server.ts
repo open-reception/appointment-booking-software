@@ -123,7 +123,8 @@ export const GET: RequestHandler = async ({ params, locals, url }) => {
     });
 
     const agentService = await AgentService.forTenant(tenantId);
-    const absences = await agentService.getAbsences(startDate || undefined, endDate || undefined);
+    const absences =
+      (await agentService.getAbsences(startDate || undefined, endDate || undefined)) || [];
 
     log.debug("All Agents absences retrieved successfully", {
       tenantId,
