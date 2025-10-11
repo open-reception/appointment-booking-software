@@ -55,7 +55,7 @@ registerOpenAPIRoute("/tenants/{id}", "PUT", {
             },
             languages: {
               type: "array",
-              description: "active languages of the tenant organization",
+              description: "Active languages of the tenant organization",
               example: `["en", "de"]`,
             },
             logo: {
