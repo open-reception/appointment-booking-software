@@ -213,7 +213,7 @@ export class TenantAdminService {
         .from(centralSchema.tenant)
         .where(eq(centralSchema.tenant.id, id))
         .limit(1);
-      if (data) {
+      if (data.length > 0) {
         tenant.#tenant = data[0];
       } else {
         throw new NotFoundError(`Tenant with ID ${id} not found`);
