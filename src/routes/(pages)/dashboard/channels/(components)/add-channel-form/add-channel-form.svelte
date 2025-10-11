@@ -15,7 +15,7 @@
   import { get } from "svelte/store";
   import { superForm } from "sveltekit-superforms";
   import { zodClient } from "sveltekit-superforms/adapters";
-  import { generateSlotTemplate } from "../utils";
+  import { DEFAULT_SLOT_TEMPLATE } from "../utils";
   import { formSchema } from "./schema";
 
   let { done }: { done: () => void } = $props();
@@ -35,7 +35,7 @@
       agentIds: [] as string[],
       isPublic: true,
       requiresConfirmation: false,
-      slotTemplates: [generateSlotTemplate(0)],
+      slotTemplates: [DEFAULT_SLOT_TEMPLATE],
     },
     {
       dataType: "json",
@@ -58,10 +58,7 @@
   const { form: formData, enhance } = form;
 
   const onAddSlotTemplate = () => {
-    $formData.slotTemplates = [
-      ...$formData.slotTemplates,
-      generateSlotTemplate($formData.slotTemplates.length),
-    ];
+    $formData.slotTemplates = [...$formData.slotTemplates, DEFAULT_SLOT_TEMPLATE];
   };
 
   const onRemoveSlotTemplate = (index: number) => {
@@ -166,7 +163,8 @@
       {m["channels.add.fields.slotTemplates.description"]()}
     </Text>
     <div class="flex flex-col gap-2 pt-2">
-      {#each $formData.slotTemplates as template, i (`${template.name}-${i}`)}
+      <!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
+      {#each $formData.slotTemplates as _, i (`template-${i}`)}
         <SlotTemplate
           index={i}
           {form}
