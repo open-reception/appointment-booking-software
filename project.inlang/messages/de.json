@@ -47,7 +47,12 @@
 			"bothPassSet": "Nur Passphrase oder Passkey darf gesetzt sein",
 			"name": "Muss mindestens 2 Zeichen lang sein",
 			"shortname": "Muss zwischen 4 und 15 Zeichen lang sein",
-			"deleteConfirmation": "Muss exakt »{expectedValue}« sein"
+			"deleteConfirmation": "Muss exakt »{expectedValue}« sein",
+			"noAgentsSelected": "Wähle einen Akteur",
+			"noStartDate": "Beginn ist erforderlich",
+			"noEndDate": "Ende ist erforderlich",
+			"endDateBeforeStartDate": "Das Ende muss nach dem Beginn sein",
+			"endDateTooEarly": "Das Ende muss in der Zukunft liegen"
 		},
 		"passkey": "Passkey",
 		"name": "Name"
@@ -478,5 +483,71 @@
 			"404": "Die Seite, die Du suchst, existiert nicht."
 		},
 		"action": "Zur Startseite"
+	},
+	"absences": {
+		"title": "Abwesenheiten",
+		"add": {
+			"title": "Abwesenheit hinzufügen",
+			"description": "Markiere Akteure als abwesend, damit sie keine Termine entgegennehmen können.",
+			"fields": {
+				"agent": {
+					"title": "Akteur:in",
+					"placeholder": "Akteur:in auswählen"
+				},
+				"absenceType": {
+					"title": "Grund (intern)",
+					"placeholder": "Grund auswählen"
+				},
+				"isAllDay": {
+					"label": "Ganztägig"
+				},
+				"startDate": {
+					"title": "Beginn"
+				},
+				"endDate": {
+					"title": "Ende"
+				}
+			},
+			"hint": "Kunden werden nicht informiert. Bereits gebuchte Termine müssen manuell abgesagt werden.",
+			"action": "Abwesenheit hinzufügen",
+			"success": "Abwesenheit hinzugefügt",
+			"errors": {
+				"unknown": "Konnte Abwesenheit nicht hinzufügen"
+			},
+			"unavailable": {
+				"title": "Keine Akteure verfügbar",
+				"description": "Du musst mindestens einen Akteur hinzufügen, bevor Du Abwesenheiten hinzufügen kannst."
+			}
+		},
+		"list": {
+			"empty": {
+				"title": "Keine aktuellen Abwesenheiten",
+				"description": "Markiere Akteure als abwesend, damit sie keine Termine entgegennehmen können."
+			}
+		},
+		"edit": {
+			"title": "Abwesenheit bearbeiten",
+			"description": "Aktualisiere die Verfügbarkeit dieses Akteurs.",
+			"success": "Abwesenheit aktualisiert",
+			"error": "Konnte Abwesenheit nicht aktualisieren.",
+			"action": "Übernehmen"
+		},
+		"delete": {
+			"title": "Abwesenheit löschen",
+			"description": "{name} wird vom {startDate} bis {endDate} wieder für Termine verfügbar sein.",
+			"description_fallback": "Diese/r Akteur:in",
+			"action": "Abwesenheit löschen",
+			"success": "Abwesenheit gelöscht",
+			"error": "Konnte Abwesenheit nicht löschen."
+		},
+		"loading": "Lade Abwesenheiten",
+		"reasons": {
+			"holiday": "Feiertag",
+			"vacation": "Urlaub",
+			"sick": "Krank",
+			"education": "Fortbildung",
+			"off.site": "Außer Haus",
+			"other": "Andere"
+		}
 	}
 }

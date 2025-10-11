@@ -21,7 +21,7 @@
 
   let { entity, done }: { entity: TChannelWithFullAgents; done: () => void } = $props();
 
-  const agents = get(agentsStore).agents ?? [];
+  const agents = $derived($agentsStore.agents ?? []);
   const tenantLocales = get(tenants).currentTenant?.languages ?? [];
   const form = superForm(
     {
