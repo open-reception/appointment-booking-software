@@ -459,7 +459,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     const tenantService = await TenantAdminService.getTenantById(tenantId);
     const tenantData = tenantService.tenantData;
 
-    console.log("Retrieved tenant data:", tenantService);
+    log.debug("Retrieved tenant data", { tenantService });
 
     if (!tenantData) {
       throw new NotFoundError(ERRORS.TENANTS.NOT_FOUND);
