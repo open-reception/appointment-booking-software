@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from "$lib/components/ui/button/button.svelte";
   import { HorizontalPagePadding, PageWithClaim } from "$lib/components/ui/page";
   import { Headline, Text } from "$lib/components/ui/typography";
 
@@ -21,6 +22,7 @@
           {isEnvOk ? "OK" : "NOT OK"}
         {/await}.
       </Text>
+      <Button href="/dashboard">Go to Dashboard</Button>
     </HorizontalPagePadding>
   </main>
 </PageWithClaim>

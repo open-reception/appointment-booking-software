@@ -208,6 +208,7 @@ export class TenantAdminService {
     try {
       const tenant = new TenantAdminService(id);
       tenant.#config = await TenantConfig.create(id);
+      console.log("tenant config >", tenant.#config);
       const data = await tenant.#db
         ?.select()
         .from(centralSchema.tenant)
@@ -215,6 +216,9 @@ export class TenantAdminService {
         .limit(1);
       if (data) {
         tenant.#tenant = data[0];
+        console.log("data >", data);
+      } else {
+        console.log("no data!!!", data);
       }
 
       log.debug("Tenant service loaded successfully", { tenantId: id });

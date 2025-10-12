@@ -48,12 +48,21 @@
 			"bothPassSet": "Only one of passphrase or passkey should be provided",
 			"name": "Must be at least 2 characters",
 			"shortname": "Must be between 4 and 15 characters",
+			"longname": "Add a name",
 			"deleteConfirmation": "Must be exactly »{expectedValue}«",
 			"noAgentsSelected": "Select an agent",
 			"noStartDate": "Start date is required",
 			"noEndDate": "End date is required",
 			"endDateBeforeStartDate": "End date must be after start date",
-			"endDateTooEarly": "End date must be in the future"
+			"endDateTooEarly": "End date must be in the future",
+			"street": "Add a street",
+			"houseNo": "Required",
+			"zip": "Add a zip code",
+			"city": "Add a city",
+			"url": "Invalid URL Format",
+			"languages": "Select at least one language",
+			"language": "Select a default language",
+			"deleteAfterDays": "Choose a point in time"
 		},
 		"noPassAtAll": "Either passphrase or passkey is required",
 		"passkey": "Passkey",
@@ -557,6 +566,87 @@
 			"education": "Training/Education",
 			"off.site": "Off-Site",
 			"other": "Other"
+		}
+	},
+	"settings": {
+		"loading": "Loading settings...",
+		"form": {
+			"sections": {
+				"general": "General",
+				"address": "Address",
+				"legal": "Legal",
+				"advanced": "Advanced"
+			},
+			"fields": {
+				"languages": {
+					"title": "Languages",
+					"description": "Define the languages your customers will see. You need to select at least one.",
+					"placeholder": "Select languages"
+				},
+				"defaultLanguage": {
+					"title": "Default Language",
+					"description": "This is the language your clients will see, if you don't support their language. Often times this should be English.",
+					"placeholder": "Select default language",
+					"errors": {
+						"notInLanguages": "Default language must be one of the selected languages"
+					}
+				},
+				"longName": {
+					"title": "Name",
+					"description": "Public name of your organization."
+				},
+				"logo": {
+					"title": "Logo (optional)"
+				},
+				"descriptions": {
+					"title": "Description (optional)",
+					"description": "Short description of your organization. Will be shown on the home page."
+				},
+				"street": {
+					"title": "Street"
+				},
+				"number": {
+					"title": "No."
+				},
+				"additionalAddressInfo": {
+					"title": "Additional Address Info (optional)",
+					"description": "Apartment, suite, unit, building, floor, etc."
+				},
+				"zip": {
+					"title": "ZIP Code"
+				},
+				"city": {
+					"title": "City"
+				},
+				"website": {
+					"title": "Website (optional)",
+					"description": "Will be shown on the home page."
+				},
+				"imprint": {
+					"title": "Imprint URL (optional)",
+					"description": "Will be linked in the footer."
+				},
+				"privacyStatement": {
+					"title": "Privacy Statement URL (optional)",
+					"description": "Will be linked in the footer."
+				},
+				"autoDeleteDays": {
+					"title": "Delete appointments",
+					"description": "Automatically delete appointments details after a certain period of time.",
+					"placeholder": "Select retention period",
+					"options": {
+						"30": "after 30 days",
+						"60": "after 60 days",
+						"90": "after 90 days",
+						"180": "after 180 days",
+						"365": "after 365 days"
+					}
+				},
+				"requirePhone": {
+					"title": "Require Phone Number",
+					"label": "Require clients to provide a phone number when booking an appointment."
+				}
+			}
 		}
 	}
 }

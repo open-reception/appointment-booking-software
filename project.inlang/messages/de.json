@@ -47,12 +47,21 @@
 			"bothPassSet": "Nur Passphrase oder Passkey darf gesetzt sein",
 			"name": "Muss mindestens 2 Zeichen lang sein",
 			"shortname": "Muss zwischen 4 und 15 Zeichen lang sein",
+			"longname": "Name hinzufügen",
 			"deleteConfirmation": "Muss exakt »{expectedValue}« sein",
 			"noAgentsSelected": "Wähle einen Akteur",
 			"noStartDate": "Beginn ist erforderlich",
 			"noEndDate": "Ende ist erforderlich",
 			"endDateBeforeStartDate": "Das Ende muss nach dem Beginn sein",
-			"endDateTooEarly": "Das Ende muss in der Zukunft liegen"
+			"endDateTooEarly": "Das Ende muss in der Zukunft liegen",
+			"street": "Straße hinzufügen",
+			"houseNo": "Pflichtfeld",
+			"zip": "Postleitzahl hinzufügen",
+			"city": "Stadt hinzufügen",
+			"url": "Ungültige URL",
+			"languages": "Wähle mindestens eine Sprache",
+			"language": "Wähle eine Sprache",
+			"deleteAfterDays": "Wähle einen Zeitpunkt"
 		},
 		"passkey": "Passkey",
 		"name": "Name"
@@ -548,6 +557,87 @@
 			"education": "Fortbildung",
 			"off.site": "Außer Haus",
 			"other": "Andere"
+		}
+	},
+	"settings": {
+		"loading": "Lade Einstellungen...",
+		"form": {
+			"sections": {
+				"general": "Allgemein",
+				"address": "Adresse",
+				"legal": "Rechtliches",
+				"advanced": "Erweitert"
+			},
+			"fields": {
+				"languages": {
+					"title": "Sprachen",
+					"description": "Wähle die Sprachen, die Kunden angezeigt bekommen sollen. Du musst mindestens Eine auswählen.",
+					"placeholder": "Sprachen auswählen"
+				},
+				"defaultLanguage": {
+					"title": "Standardsprache",
+					"description": "Diese Sprache wird angezeigt, wenn die Sprache des Kunden nicht unterstützt wird. In den meisten Fällen sollte dies Englisch sein.",
+					"placeholder": "Standardsprache auswählen",
+					"errors": {
+						"notInLanguages": "Muss eine der ausgewählten Sprachen sein"
+					}
+				},
+				"longName": {
+					"title": "Name",
+					"description": "Der öffentliche Name Deiner Organisation."
+				},
+				"logo": {
+					"title": "Logo (optional)"
+				},
+				"descriptions": {
+					"title": "Beschreibung (optional)",
+					"description": "Kurze Beschreibung deiner Organisation. Wird auf der Startseite angezeigt."
+				},
+				"street": {
+					"title": "Straße"
+				},
+				"number": {
+					"title": "Nr."
+				},
+				"additionalAddressInfo": {
+					"title": "Adresszusatz (optional)",
+					"description": "z.B. Gebäude, Stockwerk, Abteilung"
+				},
+				"zip": {
+					"title": "PLZ"
+				},
+				"city": {
+					"title": "Stadt"
+				},
+				"website": {
+					"title": "Webseite (optional)",
+					"description": "Wird auf der Homepage angezeigt."
+				},
+				"imprint": {
+					"title": "Impressum URL (optional)",
+					"description": "Wird in der Fußzeile angezeigt."
+				},
+				"privacyStatement": {
+					"title": "Datenschutzerklärung URL (optional)",
+					"description": "Wird in der Fußzeile angezeigt."
+				},
+				"autoDeleteDays": {
+					"title": "Automatisches Löschen von Termindaten",
+					"description": "Löscht Termindetails nach dem ausgewählten Zeitraum.",
+					"placeholder": "Zeitraum auswählen",
+					"options": {
+						"30": "nach 30 Tagen",
+						"60": "nach 60 Tagen",
+						"90": "nach 90 Tagen",
+						"180": "nach 180 Tagen",
+						"365": "nach 365 Tagen"
+					}
+				},
+				"requirePhone": {
+					"title": "Telefonnummer erforderlich",
+					"label": "Kunden müssen eine Telefonnummer angeben, wenn sie einen Termin buchen."
+				}
+			}
 		}
 	}
 }

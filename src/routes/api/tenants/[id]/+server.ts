@@ -439,6 +439,8 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
   try {
     const tenantId = params.id;
+    console.log("🙈🙈🙈🙈🙈🙈🙈🙈🙈🙈🙈🙈🙈🙈🙈🙈🙈🙈🙈🙈🙈");
+    console.log("tenantId", tenantId);
 
     if (!tenantId) {
       throw new ValidationError(ERRORS.TENANTS.NO_TENANT_ID);
@@ -453,6 +455,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
     const tenantService = await TenantAdminService.getTenantById(tenantId);
     const tenantData = tenantService.tenantData;
+    console.log("tenantData", tenantData);
 
     if (!tenantData) {
       throw new NotFoundError(ERRORS.TENANTS.NOT_FOUND);

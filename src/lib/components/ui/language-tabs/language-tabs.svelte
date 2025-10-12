@@ -5,16 +5,19 @@
   import type { Snippet } from "svelte";
   import { Separator } from "../separator";
 
-  const tenantLanguages = ($tenants.currentTenant?.languages || []).map((it) => ({
-    key: it,
-    label: translatedLocales[it as keyof typeof translatedLocales],
-  }));
-
   type Props = {
+    languages?: string[];
     children: Snippet<[{ locale: string }]>;
   };
 
-  let { children }: Props = $props();
+  let { languages, children }: Props = $props();
+
+  let tenantLanguages = $derived(
+    (languages ? languages : $tenants.currentTenant?.languages || []).map((it) => ({
+      key: it,
+      label: translatedLocales[it as keyof typeof translatedLocales],
+    })),
+  );
 </script>
 
 {#if tenantLanguages.length > 1}
