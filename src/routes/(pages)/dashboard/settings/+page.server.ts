@@ -15,7 +15,7 @@ export const load = async (event) => {
     throw redirect(302, ROUTES.DASHBOARD.MAIN);
   }
 
-  const item = event
+  const base = event
     .fetch(`/api/tenants/${event.locals.user?.tenantId}`, {
       method: "GET",
       headers: {
@@ -31,39 +31,67 @@ export const load = async (event) => {
 
       try {
         const body = await res.json();
-        console.log("+++++++++++++", body);
         return {
-          id: "some-id",
-          shortName: "praxisdrdoe",
-          longName: "Praxis Dr. Jane Doe",
-          logo: "",
-          descriptions: { en: "some-description" },
-          address: {
-            street: "Musterstrasse",
-            number: "1",
-            additionalAddressInfo: "Hinterhaus",
-            zip: "20000",
-            city: "Musterstadt",
-          },
+          id: body.tenant.id,
+          languages: body.tenant.languages,
+          defaultLanguage: "en", // TODO: has to be moved to base
+          shortName: body.tenant.shortName,
+          longName: body.tenant.longName,
+          logo: body.tenant.logo || "",
+          descriptions: body.tenant.descriptions,
           legal: {
-            website: "https://example.com",
-            imprint: "https://example.com/imprint",
-            privacyStatement: "https://example.com/privacy",
-          },
-          settings: {
-            languages: ["en"],
-            defaultLanguage: "en",
-            autoDeleteDays: 90,
-            requirePhone: true,
+            website: "https://example.com", // TODO: has to be moved to base
+            imprint: "https://example.com/imprint", // TODO: has to be moved to base
+            privacyStatement: "https://example.com/privacy", // TODO: has to be moved to base
           },
         };
       } catch (error) {
-        log.error("Failed to parse agents response", { error });
+        log.error("Failed to parse settings base response", { error });
       }
     });
 
+  const config = event
+    .fetch(`/api/tenants/${event.locals.user?.tenantId}/config`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "same-origin",
+    })
+    .then(async (res) => {
+      // Logout if session expired
+      if (res.status === 401) {
+        redirect(302, ROUTES.LOGOUT);
+      }
+
+      try {
+        const body = await res.json();
+        return {
+          address: {
+            street: body["address.street"] || "",
+            number: body["address.number"] || "",
+            additionalAddressInfo: body["address.additionalAddressInfo"] || "",
+            zip: body["address.zip"] || "",
+            city: body["address.city"] || "",
+          },
+          settings: {
+            autoDeleteDays: body.autoDeleteDays || 90,
+            requirePhone: body.requirePhone || false,
+          },
+        };
+      } catch (error) {
+        log.error("Failed to parse settings config response", { error });
+      }
+    });
+
+  const item = Promise.all([base, config]).then(([base, config]) => {
+    return {
+      ...base,
+      ...config,
+    };
+  });
+
   return {
-    form: await superValidate(zod(editFormSchema)),
     streamed: {
       item,
     },
@@ -82,63 +110,69 @@ export const actions: Actions = {
       });
     }
 
-    console.log("req body", {
-      languages: form.data.settings.languages,
-      defaultLanguage: form.data.settings.defaultLanguage,
-      longName: form.data.longName,
-      logo: form.data.logo,
-      descriptions: removeEmptyTranslations(form.data.descriptions),
-      street: form.data.address.street,
-      number: form.data.address.number,
-      additionalAddressInfo: form.data.address.additionalAddressInfo,
-      zip: form.data.address.zip,
-      city: form.data.address.city,
-      website: form.data.legal.website,
-      imprint: form.data.legal.imprint,
-      privacyStatement: form.data.legal.privacyStatement,
-      autoDeleteDays: form.data.settings.autoDeleteDays,
-      requirePhone: form.data.settings.requirePhone ?? false,
-    });
-    return { form };
-
-    const resp = await event.fetch(`/api/tenants/${form.data.id}/config`, {
+    const base = await event.fetch(`/api/tenants/${form.data.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
       credentials: "same-origin",
       body: JSON.stringify({
-        languages: form.data.settings.languages,
-        defaultLanguage: form.data.settings.defaultLanguage,
+        languages: form.data.languages,
+        defaultLanguage: form.data.defaultLanguage,
         longName: form.data.longName,
         logo: form.data.logo,
         descriptions: removeEmptyTranslations(form.data.descriptions),
-        street: form.data.address.street,
-        number: form.data.address.number,
-        additionalAddressInfo: form.data.address.additionalAddressInfo,
-        zip: form.data.address.zip,
-        city: form.data.address.city,
         website: form.data.legal.website,
         imprint: form.data.legal.imprint,
         privacyStatement: form.data.legal.privacyStatement,
+      }),
+    });
+
+    const config = await event.fetch(`/api/tenants/${form.data.id}/config`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "same-origin",
+      body: JSON.stringify({
+        "address.street": form.data.address.street,
+        "address.number": form.data.address.number,
+        "address.additionalAddressInfo": form.data.address.additionalAddressInfo,
+        "address.zip": form.data.address.zip,
+        "address.city": form.data.address.city,
         autoDeleteDays: form.data.settings.autoDeleteDays,
         requirePhone: form.data.settings.requirePhone ?? false,
       }),
     });
 
-    if (resp.status < 400) {
+    const resp = await Promise.all([base, config]).then(([base, config]) => {
+      if (base.status < 400 && config.status < 400) {
+        return { success: true };
+      }
+      return { success: false, bodies: { base: base, config: config } };
+    });
+
+    if (resp.success) {
       return { form };
     } else {
-      let error = "Unknown error";
+      const error = "Unknown error";
+      const errors: { [key: string]: string } = {};
       try {
-        const body = await resp.json();
-        error = body.error;
+        const base = await resp.bodies?.base?.json();
+        if (base.error) {
+          errors["base"] = base.error;
+        }
+        const config = await resp.bodies?.config?.json();
+        if (config.error) {
+          errors["config"] = config.error;
+        }
       } catch (e) {
         log.error("Failed to parse edit settings error response", { error: e });
       }
       return fail(400, {
         form: { ...form, data: { ...form.data } },
         error,
+        errors,
       });
     }
   },

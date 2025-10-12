@@ -35,6 +35,8 @@
   const form = superForm(
     {
       id: entity.id,
+      languages: entity.languages,
+      defaultLanguage: entity.defaultLanguage,
       shortName: entity.shortName,
       longName: entity.longName,
       logo: entity.logo,
@@ -45,8 +47,6 @@
       address: entity.address,
       legal: entity.legal,
       settings: {
-        languages: entity.settings.languages,
-        defaultLanguage: entity.settings.defaultLanguage,
         autoDeleteDays: entity.settings.autoDeleteDays,
         requirePhone: entity.settings.requirePhone || false,
       },
@@ -85,19 +85,19 @@
       hideTitleOnMobile={true}
       class="row-span-3"
     >
-      <Form.Field {form} name="settings.languages">
+      <Form.Field {form} name="languages">
         <Form.Control>
           {#snippet children({ props })}
             <Form.Label>{m["settings.form.fields.languages.title"]()}</Form.Label>
             <Select.Root
               type="multiple"
-              bind:value={$formData.settings.languages}
+              bind:value={$formData.languages}
               name={props.name}
-              onValueChange={(v) => ($formData.settings.languages = v)}
+              onValueChange={(v) => ($formData.languages = v)}
             >
               <Select.Trigger {...props} class="w-full">
-                {$formData.settings.languages.length > 0
-                  ? $formData.settings.languages
+                {$formData.languages.length > 0
+                  ? $formData.languages
                       .map((id) => availableLocales.find((x) => x.key === id)?.label)
                       .join(", ")
                   : m["settings.form.fields.languages.placeholder"]()}
@@ -115,24 +115,23 @@
         </Form.Control>
         <Form.FieldErrors />
       </Form.Field>
-      <Form.Field {form} name="settings.defaultLanguage">
+      <Form.Field {form} name="defaultLanguage">
         <Form.Control>
           {#snippet children({ props })}
             <Form.Label>{m["settings.form.fields.defaultLanguage.title"]()}</Form.Label>
             <Select.Root
               type="single"
-              bind:value={$formData.settings.defaultLanguage}
+              bind:value={$formData.defaultLanguage}
               name={props.name}
-              onValueChange={(v) => ($formData.settings.defaultLanguage = v)}
+              onValueChange={(v) => ($formData.defaultLanguage = v)}
             >
               <Select.Trigger {...props} class="w-full">
-                {$formData.settings.defaultLanguage
-                  ? availableLocales.find((x) => x.key === $formData.settings.defaultLanguage)
-                      ?.label
+                {$formData.defaultLanguage
+                  ? availableLocales.find((x) => x.key === $formData.defaultLanguage)?.label
                   : m["settings.form.fields.defaultLanguage.placeholder"]()}
               </Select.Trigger>
               <Select.Content>
-                {#each $formData.settings.languages as language (language)}
+                {#each $formData.defaultLanguage as language (language)}
                   <Select.Item value={language}>
                     {availableLocales.find((x) => x.key === language)?.label}
                   </Select.Item>
@@ -171,7 +170,7 @@
         </Form.Control>
         <Form.FieldErrors />
       </Form.Field>
-      <LanguageTabs languages={$formData.settings.languages}>
+      <LanguageTabs languages={$formData.languages}>
         {#snippet children({ locale })}
           <Form.Field {form} name={`descriptions.${locale}`}>
             <Form.Control>

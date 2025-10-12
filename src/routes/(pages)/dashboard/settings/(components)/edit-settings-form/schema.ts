@@ -4,6 +4,8 @@ import { z } from "zod";
 export const formSchema = z
   .object({
     id: z.string(),
+    languages: z.array(z.string()).min(1, { message: m["form.errors.languages"]() }),
+    defaultLanguage: z.string().min(1, { message: m["form.errors.language"]() }),
     shortName: z.string(),
     longName: z.string().min(1, { message: m["form.errors.longname"]() }),
     logo: z.string().optional().or(z.literal("")),
@@ -21,15 +23,12 @@ export const formSchema = z
       privacyStatement: z.string().url({ message: m["form.errors.url"]() }).optional().default(""),
     }),
     settings: z.object({
-      languages: z.array(z.string()).min(1, { message: m["form.errors.languages"]() }),
-      defaultLanguage: z.string().min(1, { message: m["form.errors.language"]() }),
       autoDeleteDays: z.number().min(30, { message: m["form.errors.deleteAfterDays"]() }),
       requirePhone: z.boolean().optional().default(false),
     }),
   })
-  .superRefine(({ settings }, ctx) => {
-    // TODO: Fix, error is not shown in the UI
-    if (!settings.languages.includes(settings.defaultLanguage)) {
+  .superRefine(({ languages, defaultLanguage }, ctx) => {
+    if (!languages.includes(defaultLanguage)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: m["settings.form.fields.defaultLanguage.errors.notInLanguages"](),

@@ -3,6 +3,8 @@ import type { SelectTenant } from "$lib/server/db/central-schema";
 export type TTenant = Pick<SelectTenant, "id" | "shortName" | "languages" | "setupState">;
 
 export type TTenantSettings = Omit<SelectTenant, "databaseUrl" | "setupState" | "logo"> & {
+  languages: string[];
+  defaultLanguage: string;
   logo: string | undefined;
   address: {
     street: string;
@@ -17,8 +19,6 @@ export type TTenantSettings = Omit<SelectTenant, "databaseUrl" | "setupState" | 
     privacyStatement?: string;
   };
   settings: {
-    languages: string[];
-    defaultLanguage: string;
     autoDeleteDays: number;
     requirePhone: boolean;
   };
