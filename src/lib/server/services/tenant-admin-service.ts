@@ -208,20 +208,18 @@ export class TenantAdminService {
     try {
       const tenant = new TenantAdminService(id);
       tenant.#config = await TenantConfig.create(id);
-      console.log("tenant config >", tenant.#config);
-      const data = await tenant.#db
-        ?.select()
+      const data = await centralDb
+        .select()
         .from(centralSchema.tenant)
         .where(eq(centralSchema.tenant.id, id))
         .limit(1);
-      if (data) {
+      if (data.length > 0) {
         tenant.#tenant = data[0];
-        console.log("data >", data);
       } else {
-        console.log("no data!!!", data);
+        throw new NotFoundError(`Tenant with ID ${id} not found`);
       }
 
-      log.debug("Tenant service loaded successfully", { tenantId: id });
+      log.debug("Tenant service loaded successfully", { tenantId: id, data: tenant.#tenant });
       return tenant;
     } catch (error) {
       log.error("Failed to get tenant by ID", { tenantId: id, error: String(error) });
