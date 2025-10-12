@@ -17,7 +17,7 @@
   import { superForm } from "sveltekit-superforms";
   import { zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from ".";
-  import { generateSlotTemplate } from "../utils";
+  import { DEFAULT_SLOT_TEMPLATE } from "../utils";
 
   let { entity, done }: { entity: TChannelWithFullAgents; done: () => void } = $props();
 
@@ -51,14 +51,7 @@
         }
         isSubmitting = false;
       },
-      // onSubmit: () => (isSubmitting = true),
-      onSubmit: ({ formData }) => {
-        // TODO: Fix editing of channels with slot templates
-        console.log("formData", formData);
-        const validation = formSchema.safeParse(formData);
-        console.log("validation", validation);
-        isSubmitting = true;
-      },
+      onSubmit: () => (isSubmitting = true),
     },
   );
 
@@ -69,7 +62,7 @@
   const onAddSlotTemplate = () => {
     $formData.slotTemplates = [
       ...$formData.slotTemplates,
-      generateSlotTemplate($formData.slotTemplates.length),
+      DEFAULT_SLOT_TEMPLATE,
     ] as TSlotTemplate[];
   };
 
@@ -182,7 +175,8 @@
       {m["channels.add.fields.slotTemplates.description"]()}
     </Text>
     <div class="flex flex-col gap-2 pt-2">
-      {#each $formData.slotTemplates as template, i (`${template.name}-${i}`)}
+      <!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
+      {#each $formData.slotTemplates as _, i (`template-${i}`)}
         <SlotTemplate
           index={i}
           {form}

@@ -20,7 +20,6 @@ export const formSchema = z.object({
     .array(
       z.object({
         id: z.string().optional(),
-        name: z.string().min(1).max(100),
         weekdays: z.number().int().min(0).max(127).default(15),
         from: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/),
         to: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/),

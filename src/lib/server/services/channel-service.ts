@@ -12,7 +12,6 @@ const CHANNEL_COLORS = ["#FF0000", "#00FF00", "#0000FF"] as const;
 const NEXT_COLOR_KEY = "nextChannelColor";
 
 const slotTemplateSchema = z.object({
-  name: z.string().min(1).max(100),
   weekdays: z.number().int().min(0).max(127).optional(),
   from: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/),
   to: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/),
