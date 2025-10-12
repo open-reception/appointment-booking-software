@@ -43,6 +43,26 @@ describe("TenantAdminService", () => {
   let mockTenantConfig: any;
   let mockTenantMigrationService: any;
 
+  // Helper function to create mock select builder for getTenantById
+  const createMockSelectBuilder = (tenantData: any[] = []) => ({
+    from: vi.fn().mockReturnThis(),
+    where: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockResolvedValue(tenantData),
+  });
+
+  // Helper function to create mock tenant data
+  const createMockTenant = (tenantId: string) => ({
+    id: tenantId,
+    shortName: "test-clinic",
+    longName: "Test Clinic",
+    descriptions: { en: "A test clinic" },
+    languages: ["en"],
+    databaseUrl: "postgresql://user:pass@localhost:5432/test-clinic",
+    setupState: "NEW",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
   beforeEach(async () => {
     vi.clearAllMocks();
 
@@ -162,24 +182,56 @@ describe("TenantAdminService", () => {
   describe("getTenantById", () => {
     it("should get tenant by ID and initialize configuration", async () => {
       const tenantId = "tenant-123";
+      const mockTenant = createMockTenant(tenantId);
+
       const mockConfig = {
         setConfig: vi.fn(),
         getConfig: vi.fn(),
       };
 
+      const mockSelectBuilder = createMockSelectBuilder([mockTenant]);
+
       mockTenantConfig.create.mockResolvedValue(mockConfig);
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
 
       const result = await TenantAdminService.getTenantById(tenantId);
 
       expect(mockTenantConfig.create).toHaveBeenCalledWith(tenantId);
+      expect(mockCentralDb.select).toHaveBeenCalled();
+      expect(mockSelectBuilder.from).toHaveBeenCalled();
+      expect(mockSelectBuilder.where).toHaveBeenCalled();
+      expect(mockSelectBuilder.limit).toHaveBeenCalledWith(1);
       expect(result).toBeInstanceOf(TenantAdminService);
       expect(result.tenantId).toBe(tenantId);
+    });
+
+    it("should throw NotFoundError when tenant does not exist", async () => {
+      const tenantId = "non-existent";
+      const mockConfig = {
+        setConfig: vi.fn(),
+        getConfig: vi.fn(),
+      };
+
+      const mockSelectBuilder = createMockSelectBuilder([]); // Empty array = no tenant found
+
+      mockTenantConfig.create.mockResolvedValue(mockConfig);
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
+
+      await expect(TenantAdminService.getTenantById(tenantId)).rejects.toThrow(
+        "Tenant with ID non-existent not found",
+      );
+
+      expect(mockCentralDb.select).toHaveBeenCalled();
+      expect(mockSelectBuilder.from).toHaveBeenCalled();
+      expect(mockSelectBuilder.where).toHaveBeenCalled();
+      expect(mockSelectBuilder.limit).toHaveBeenCalledWith(1);
     });
   });
 
   describe("getDb", () => {
     it("should return database connection", async () => {
       const tenantId = "tenant-123";
+      const mockTenant = createMockTenant(tenantId);
       const mockConfig = { setConfig: vi.fn() };
       const mockTenantDb = {
         select: vi.fn(),
@@ -187,7 +239,10 @@ describe("TenantAdminService", () => {
         update: vi.fn(),
       };
 
+      const mockSelectBuilder = createMockSelectBuilder([mockTenant]);
+
       mockTenantConfig.create.mockResolvedValue(mockConfig);
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
       mockGetTenantDb.mockResolvedValue(mockTenantDb);
 
       const service = await TenantAdminService.getTenantById(tenantId);
@@ -199,10 +254,14 @@ describe("TenantAdminService", () => {
 
     it("should cache database connection", async () => {
       const tenantId = "tenant-123";
+      const mockTenant = createMockTenant(tenantId);
       const mockConfig = { setConfig: vi.fn() };
       const mockTenantDb = { select: vi.fn() };
 
+      const mockSelectBuilder = createMockSelectBuilder([mockTenant]);
+
       mockTenantConfig.create.mockResolvedValue(mockConfig);
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
       mockGetTenantDb.mockResolvedValue(mockTenantDb);
 
       const service = await TenantAdminService.getTenantById(tenantId);
@@ -219,12 +278,16 @@ describe("TenantAdminService", () => {
   describe("configuration", () => {
     it("should provide access to tenant configuration", async () => {
       const tenantId = "tenant-123";
+      const mockTenant = createMockTenant(tenantId);
       const mockConfig = {
         setConfig: vi.fn(),
         getConfig: vi.fn().mockReturnValue("test-value"),
       };
 
+      const mockSelectBuilder = createMockSelectBuilder([mockTenant]);
+
       mockTenantConfig.create.mockResolvedValue(mockConfig);
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
 
       const service = await TenantAdminService.getTenantById(tenantId);
       const config = service.configuration;
@@ -236,6 +299,7 @@ describe("TenantAdminService", () => {
   describe("updateTenantData", () => {
     it("should update tenant data successfully", async () => {
       const tenantId = "tenant-123";
+      const mockTenant = createMockTenant(tenantId);
       const updateData = {
         longName: "Updated Clinic Name",
         description: ["Updated description"],
@@ -250,6 +314,7 @@ describe("TenantAdminService", () => {
       };
 
       const mockConfig = { setConfig: vi.fn() };
+      const mockSelectBuilder = createMockSelectBuilder([mockTenant]);
       const mockUpdateBuilder = {
         set: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
@@ -257,6 +322,7 @@ describe("TenantAdminService", () => {
       };
 
       mockTenantConfig.create.mockResolvedValue(mockConfig);
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
       mockCentralDb.update.mockReturnValue(mockUpdateBuilder);
 
       const service = await TenantAdminService.getTenantById(tenantId);
@@ -273,9 +339,11 @@ describe("TenantAdminService", () => {
 
     it("should throw NotFoundError when tenant not found", async () => {
       const tenantId = "tenant-123";
+      const mockTenant = createMockTenant(tenantId);
       const updateData = { longName: "Updated Name" };
 
       const mockConfig = { setConfig: vi.fn() };
+      const mockSelectBuilder = createMockSelectBuilder([mockTenant]);
       const mockUpdateBuilder = {
         set: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
@@ -283,6 +351,7 @@ describe("TenantAdminService", () => {
       };
 
       mockTenantConfig.create.mockResolvedValue(mockConfig);
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
       mockCentralDb.update.mockReturnValue(mockUpdateBuilder);
 
       const service = await TenantAdminService.getTenantById(tenantId);
@@ -296,6 +365,7 @@ describe("TenantAdminService", () => {
   describe("updateTenantConfig", () => {
     it("should update tenant configuration successfully", async () => {
       const tenantId = "tenant-123";
+      const mockTenant = createMockTenant(tenantId);
       const configUpdates = {
         brandColor: "#FF0000",
         maxChannels: 10,
@@ -306,7 +376,10 @@ describe("TenantAdminService", () => {
         setConfig: vi.fn().mockResolvedValue(undefined),
       };
 
+      const mockSelectBuilder = createMockSelectBuilder([mockTenant]);
+
       mockTenantConfig.create.mockResolvedValue(mockConfig);
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
 
       const service = await TenantAdminService.getTenantById(tenantId);
       const result = await service.updateTenantConfig(configUpdates);
@@ -325,13 +398,17 @@ describe("TenantAdminService", () => {
 
     it("should handle empty config updates", async () => {
       const tenantId = "tenant-123";
+      const mockTenant = createMockTenant(tenantId);
       const configUpdates = {};
 
       const mockConfig = {
         setConfig: vi.fn().mockResolvedValue(undefined),
       };
 
+      const mockSelectBuilder = createMockSelectBuilder([mockTenant]);
+
       mockTenantConfig.create.mockResolvedValue(mockConfig);
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
 
       const service = await TenantAdminService.getTenantById(tenantId);
       const result = await service.updateTenantConfig(configUpdates);
@@ -342,13 +419,17 @@ describe("TenantAdminService", () => {
 
     it("should propagate config errors", async () => {
       const tenantId = "tenant-123";
+      const mockTenant = createMockTenant(tenantId);
       const configUpdates = { brandColor: "#FF0000" };
 
       const mockConfig = {
         setConfig: vi.fn().mockRejectedValue(new Error("Config error")),
       };
 
+      const mockSelectBuilder = createMockSelectBuilder([mockTenant]);
+
       mockTenantConfig.create.mockResolvedValue(mockConfig);
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
 
       const service = await TenantAdminService.getTenantById(tenantId);
 
@@ -487,22 +568,22 @@ describe("TenantAdminService", () => {
       });
     });
 
-    it("should throw NotFoundError when tenant does not exist", async () => {
+    it("should throw NotFoundError when tenant does not exist during deletion", async () => {
       const tenantId = "non-existent";
 
-      const mockSelectBuilder = {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue([]), // Empty result
-      };
+      // For deleteTenant: create a service instance with manually set tenant ID
+      const service = new (TenantAdminService as any)(tenantId);
 
-      const mockConfig = { setConfig: vi.fn() };
-      mockTenantConfig.create.mockResolvedValue(mockConfig);
+      // Set up mock for the internal select query in deleteTenant (when #tenant is null)
+      const mockSelectBuilder = createMockSelectBuilder([]); // Empty result = tenant not found
       mockCentralDb.select.mockReturnValue(mockSelectBuilder);
 
-      const service = await TenantAdminService.getTenantById(tenantId);
-
       await expect(service.deleteTenant()).rejects.toThrow("Tenant with ID non-existent not found");
+
+      expect(mockCentralDb.select).toHaveBeenCalled();
+      expect(mockSelectBuilder.from).toHaveBeenCalled();
+      expect(mockSelectBuilder.where).toHaveBeenCalled();
+      expect(mockSelectBuilder.limit).toHaveBeenCalledWith(1);
     });
 
     it("should continue with deletion even if database drop fails", async () => {

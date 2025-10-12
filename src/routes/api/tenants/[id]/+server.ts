@@ -48,10 +48,15 @@ registerOpenAPIRoute("/tenants/{id}", "PUT", {
               description: "Short name for the tenant (4-15 characters)",
               example: "acme-corp",
             },
-            description: {
-              type: "string",
+            descriptions: {
+              type: "array",
               description: "Description of the tenant organization",
-              example: "Leading provider of innovative solutions",
+              example: `["Leading provider of innovative solutions"]`,
+            },
+            languages: {
+              type: "array",
+              description: "Active languages of the tenant organization",
+              example: `["en", "de"]`,
             },
             logo: {
               type: "string",
@@ -453,6 +458,8 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
     const tenantService = await TenantAdminService.getTenantById(tenantId);
     const tenantData = tenantService.tenantData;
+
+    log.debug("Retrieved tenant data", { tenantService });
 
     if (!tenantData) {
       throw new NotFoundError(ERRORS.TENANTS.NOT_FOUND);
