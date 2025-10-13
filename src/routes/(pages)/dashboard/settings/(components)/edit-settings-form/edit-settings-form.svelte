@@ -27,7 +27,6 @@
     { key: 180, label: m["settings.form.fields.autoDeleteDays.options.180"]() },
     { key: 365, label: m["settings.form.fields.autoDeleteDays.options.365"]() },
   ];
-  const tenantLocales = get(tenants).currentTenant?.languages ?? []; // TODO: allow update within form
   const availableLocales = supportedLocales.map((it) => ({
     key: it,
     label: translatedLocales[it as keyof typeof translatedLocales],
@@ -40,12 +39,14 @@
       shortName: entity.shortName,
       longName: entity.longName,
       logo: entity.logo,
-      descriptions: tenantLocales.reduce(
-        (acc, locale) => ({ ...acc, [locale]: "" }),
+      descriptions: supportedLocales.reduce(
+        (acc, locale) => {
+          return { ...acc, [locale]: entity.descriptions[locale] || "" };
+        },
         {} as { [key: string]: string },
       ),
       address: entity.address,
-      legal: entity.legal,
+      links: entity.links,
       settings: {
         autoDeleteDays: entity.settings.autoDeleteDays,
         requirePhone: entity.settings.requirePhone || false,
@@ -131,7 +132,7 @@
                   : m["settings.form.fields.defaultLanguage.placeholder"]()}
               </Select.Trigger>
               <Select.Content>
-                {#each $formData.defaultLanguage as language (language)}
+                {#each $formData.languages as language (language)}
                   <Select.Item value={language}>
                     {availableLocales.find((x) => x.key === language)?.label}
                   </Select.Item>
@@ -238,12 +239,12 @@
         </Form.Field>
       </div>
     </FormGridItem>
-    <FormGridItem title={m["settings.form.sections.legal"]()}>
-      <Form.Field {form} name="legal.website" class="flex-3/5">
+    <FormGridItem title={m["settings.form.sections.links"]()}>
+      <Form.Field {form} name="links.website" class="flex-3/5">
         <Form.Control>
           {#snippet children({ props })}
             <Form.Label>{m["settings.form.fields.website.title"]()}</Form.Label>
-            <Input {...props} bind:value={$formData.legal.website} type="text" />
+            <Input {...props} bind:value={$formData.links.website} type="text" />
           {/snippet}
         </Form.Control>
         <Form.Description>
@@ -251,11 +252,11 @@
         </Form.Description>
         <Form.FieldErrors />
       </Form.Field>
-      <Form.Field {form} name="legal.imprint" class="flex-3/5">
+      <Form.Field {form} name="links.imprint" class="flex-3/5">
         <Form.Control>
           {#snippet children({ props })}
             <Form.Label>{m["settings.form.fields.imprint.title"]()}</Form.Label>
-            <Input {...props} bind:value={$formData.legal.imprint} type="text" />
+            <Input {...props} bind:value={$formData.links.imprint} type="text" />
           {/snippet}
         </Form.Control>
         <Form.Description>
@@ -263,11 +264,11 @@
         </Form.Description>
         <Form.FieldErrors />
       </Form.Field>
-      <Form.Field {form} name="legal.privacyStatement" class="flex-3/5">
+      <Form.Field {form} name="links.privacyStatement" class="flex-3/5">
         <Form.Control>
           {#snippet children({ props })}
             <Form.Label>{m["settings.form.fields.privacyStatement.title"]()}</Form.Label>
-            <Input {...props} bind:value={$formData.legal.privacyStatement} type="text" />
+            <Input {...props} bind:value={$formData.links.privacyStatement} type="text" />
           {/snippet}
         </Form.Control>
         <Form.Description>

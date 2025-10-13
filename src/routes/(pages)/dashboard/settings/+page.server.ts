@@ -34,15 +34,15 @@ export const load = async (event) => {
         return {
           id: body.tenant.id,
           languages: body.tenant.languages,
-          defaultLanguage: "en", // TODO: has to be moved to base
+          defaultLanguage: body.tenant.defaultLanguage,
           shortName: body.tenant.shortName,
           longName: body.tenant.longName,
           logo: body.tenant.logo || "",
           descriptions: body.tenant.descriptions,
-          legal: {
-            website: "https://example.com", // TODO: has to be moved to base
-            imprint: "https://example.com/imprint", // TODO: has to be moved to base
-            privacyStatement: "https://example.com/privacy", // TODO: has to be moved to base
+          links: {
+            website: body.tenant.links.website || "",
+            imprint: body.tenant.links.imprint || "",
+            privacyStatement: body.tenant.links.privacyStatement || "",
           },
         };
       } catch (error) {
@@ -122,9 +122,7 @@ export const actions: Actions = {
         longName: form.data.longName,
         logo: form.data.logo,
         descriptions: removeEmptyTranslations(form.data.descriptions),
-        website: form.data.legal.website,
-        imprint: form.data.legal.imprint,
-        privacyStatement: form.data.legal.privacyStatement,
+        links: form.data.links,
       }),
     });
 

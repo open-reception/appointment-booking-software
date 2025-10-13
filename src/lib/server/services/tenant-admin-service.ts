@@ -27,16 +27,12 @@ export type TenantCreationRequest = z.infer<typeof tenantCreationSchema>;
 
 export interface TenantConfiguration extends Record<string, string | number | boolean> {
   brandColor: string;
-  defaultLanguage: string;
   maxChannels: number;
   maxTeamMembers: number;
   autoDeleteDays: number;
   requireEmail: boolean;
   requirePhone: boolean;
   nextChannelColor: number;
-  website: string;
-  imprint: string;
-  privacyStatement: string;
 }
 
 export class TenantAdminService {
@@ -49,16 +45,12 @@ export class TenantAdminService {
   static getConfigDefaults(): TenantConfiguration {
     return {
       brandColor: "#E11E15",
-      defaultLanguage: "DE",
       maxChannels: -1,
       maxTeamMembers: -1,
       autoDeleteDays: 30,
       requireEmail: true,
       requirePhone: false,
       nextChannelColor: 0,
-      website: "",
-      imprint: "",
-      privacyStatement: "",
     };
   }
 
@@ -104,6 +96,12 @@ export class TenantAdminService {
       databaseUrl: "",
       descriptions: { en: "" },
       languages: ["en"],
+      defaultLanguage: "en",
+      links: {
+        website: "",
+        imprint: "",
+        privacyStatement: "",
+      },
     };
     newTenant.databaseUrl = urlParts.join("/") + "/" + newTenant.shortName;
 
@@ -219,7 +217,11 @@ export class TenantAdminService {
         throw new NotFoundError(`Tenant with ID ${id} not found`);
       }
 
-      log.debug("Tenant service loaded successfully", { tenantId: id, data: tenant.#tenant });
+      log.debug("Tenant service loaded successfully", {
+        tenantId: id,
+        // Do not log logo to not spam logs
+        data: { ...tenant.#tenant, logo: tenant.#tenant.logo ? "removed-from-log-but-set" : null },
+      });
       return tenant;
     } catch (error) {
       log.error("Failed to get tenant by ID", { tenantId: id, error: String(error) });

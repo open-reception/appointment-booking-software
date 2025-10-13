@@ -22,11 +22,6 @@ registerOpenAPIRoute("/tenants/config/defaults", "GET", {
                 description: "Default brand color",
                 example: "#E11E15",
               },
-              defaultLanguage: {
-                type: "string",
-                description: "Default language code",
-                example: "DE",
-              },
               maxChannels: {
                 type: "number",
                 description: "Maximum channels (-1 for unlimited)",
@@ -55,7 +50,6 @@ registerOpenAPIRoute("/tenants/config/defaults", "GET", {
             },
             required: [
               "brandColor",
-              "defaultLanguage",
               "maxChannels",
               "maxTeamMembers",
               "autoDeleteDays",

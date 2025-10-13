@@ -17,7 +17,7 @@ export const formSchema = z
       zip: z.string().min(4, { message: m["form.errors.zip"]() }),
       city: z.string().min(1, { message: m["form.errors.city"]() }),
     }),
-    legal: z.object({
+    links: z.object({
       website: z.string().url({ message: m["form.errors.url"]() }).optional().default(""),
       imprint: z.string().url({ message: m["form.errors.url"]() }).optional().default(""),
       privacyStatement: z.string().url({ message: m["form.errors.url"]() }).optional().default(""),
@@ -32,7 +32,7 @@ export const formSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: m["settings.form.fields.defaultLanguage.errors.notInLanguages"](),
-        path: ["settings", "defaultLanguage"],
+        path: ["defaultLanguage"],
       });
     }
   });

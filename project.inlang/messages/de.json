@@ -565,7 +565,7 @@
 			"sections": {
 				"general": "Allgemein",
 				"address": "Adresse",
-				"legal": "Rechtliches",
+				"links": "Links",
 				"advanced": "Erweitert"
 			},
 			"fields": {
