@@ -24,7 +24,7 @@
         formSchema.merge(
           z.object({
             shortname: z.string().refine((val) => val === entity.shortName, {
-              message: m["form.errors.deleteConfirmation"]({
+              error: m["form.errors.deleteConfirmation"]({
                 expectedValue: entity.shortName,
               }),
             }),

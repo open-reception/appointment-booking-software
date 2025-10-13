@@ -7,10 +7,10 @@ export const formSchema = z.object({
     .min(4, m["form.errors.shortname"]())
     .max(15, m["form.errors.shortname"]())
     .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, {
-      message: m["tenants.add.name.errors.urlFormat"](),
+      error: m["tenants.add.name.errors.urlFormat"](),
     })
     .refine((val) => !val.startsWith("-") && !val.endsWith("-"), {
-      message: m["tenants.add.name.errors.startEndDash"](),
+      error: m["tenants.add.name.errors.startEndDash"](),
     }),
   inviteAdmin: z.boolean(),
   email: z.string().email(m["form.errors.email"]()).optional().or(z.literal("")),
