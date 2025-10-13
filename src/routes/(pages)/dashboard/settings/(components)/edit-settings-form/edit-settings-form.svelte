@@ -1,22 +1,20 @@
 <script lang="ts">
   import { m } from "$i18n/messages.js";
+  import { FormGrid, FormGridItem } from "$lib/components/templates/form-grid";
+  import { CheckboxWithLabel } from "$lib/components/ui/checkbox-with-label";
   import * as Form from "$lib/components/ui/form";
   import { Input } from "$lib/components/ui/input";
+  import { InputCroppedImageBlob } from "$lib/components/ui/input-cropped-image-blob";
+  import { LanguageTabs } from "$lib/components/ui/language-tabs";
+  import * as Select from "$lib/components/ui/select";
+  import { Textarea } from "$lib/components/ui/textarea";
+  import { supportedLocales, translatedLocales } from "$lib/const/locales";
   import type { TTenantSettings } from "$lib/types/tenant";
+  import DefaultOrgIcon from "@lucide/svelte/icons/landmark";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
   import { zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from "./schema";
-  import { FormGrid, FormGridItem } from "$lib/components/templates/form-grid";
-  import { tenants } from "$lib/stores/tenants";
-  import { get } from "svelte/store";
-  import * as Select from "$lib/components/ui/select";
-  import { supportedLocales, translatedLocales } from "$lib/const/locales";
-  import { InputCroppedImageBlob } from "$lib/components/ui/input-cropped-image-blob";
-  import DefaultOrgIcon from "@lucide/svelte/icons/landmark";
-  import { LanguageTabs } from "$lib/components/ui/language-tabs";
-  import { Textarea } from "$lib/components/ui/textarea";
-  import { CheckboxWithLabel } from "$lib/components/ui/checkbox-with-label";
 
   let { entity }: { entity: TTenantSettings } = $props();
 
