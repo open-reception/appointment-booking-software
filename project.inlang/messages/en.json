@@ -48,7 +48,12 @@
 			"bothPassSet": "Only one of passphrase or passkey should be provided",
 			"name": "Must be at least 2 characters",
 			"shortname": "Must be between 4 and 15 characters",
-			"deleteConfirmation": "Must be exactly »{expectedValue}«"
+			"deleteConfirmation": "Must be exactly »{expectedValue}«",
+			"noAgentsSelected": "Select an agent",
+			"noStartDate": "Start date is required",
+			"noEndDate": "End date is required",
+			"endDateBeforeStartDate": "End date must be after start date",
+			"endDateTooEarly": "End date must be in the future"
 		},
 		"noPassAtAll": "Either passphrase or passkey is required",
 		"passkey": "Passkey",
@@ -487,5 +492,71 @@
 			"404": "The page you are looking for does not exist."
 		},
 		"action": "Go to Homepage"
+	},
+	"absences": {
+		"title": "Absences",
+		"add": {
+			"title": "Add Anbsence",
+			"description": "Absences are a way to mark you agents as being unavailbale.",
+			"fields": {
+				"agent": {
+					"title": "Agent",
+					"placeholder": "Select agent"
+				},
+				"absenceType": {
+					"title": "Reason (internal)",
+					"placeholder": "Select a reason"
+				},
+				"isAllDay": {
+					"label": "All day"
+				},
+				"startDate": {
+					"title": "From Date"
+				},
+				"endDate": {
+					"title": "To Date"
+				}
+			},
+			"hint": "Clients are not being informed. Already booked appointments have to be canceled manually.",
+			"action": "Add Absence",
+			"success": "Absence added",
+			"errors": {
+				"unknown": "Could not add absence"
+			},
+			"unavailable": {
+				"title": "No agents available",
+				"description": "You need to add at least one agent before you can add absences."
+			}
+		},
+		"list": {
+			"empty": {
+				"title": "No future absences",
+				"description": "Absences are a way to mark you agents as being unavailbale."
+			}
+		},
+		"edit": {
+			"title": "Edit Absence",
+			"description": "Update the agents availability.",
+			"success": "Absence updated",
+			"error": "Could not update absence.",
+			"action": "Edit Absence"
+		},
+		"delete": {
+			"title": "Delete Absence",
+			"description": "{name} will be available for appointments from {startDate} to {endDate}.",
+			"description_fallback": "This agent",
+			"action": "Delete Absence",
+			"success": "Absence deleted",
+			"error": "Could not delete absence."
+		},
+		"loading": "Loading absences",
+		"reasons": {
+			"holiday": "Public Holiday",
+			"vacation": "Vacation",
+			"sick": "Sick Leave",
+			"education": "Training/Education",
+			"off.site": "Off-Site",
+			"other": "Other"
+		}
 	}
 }

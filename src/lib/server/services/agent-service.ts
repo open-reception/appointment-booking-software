@@ -419,7 +419,7 @@ export class AgentService {
     // Validate date range
     const startDate = new Date(request.startDate);
     const endDate = new Date(request.endDate);
-    if (startDate >= endDate) {
+    if (startDate > endDate) {
       throw new ValidationError("End date must be after start date");
     }
 
@@ -617,6 +617,51 @@ export class AgentService {
   }
 
   /**
+   * Get all absences for a tenant
+   * @param startDate Optional start date filter
+   * @param endDate Optional end date filter
+   * @returns Array of agent absences
+   */
+  async getAbsences(startDate?: string, endDate?: string): Promise<SelectAgentAbsence[]> {
+    const log = logger.setContext("AgentService");
+    log.debug("Getting all absences", {
+      tenantId: this.tenantId,
+      startDate,
+      endDate,
+    });
+
+    try {
+      const db = await this.getDb();
+
+      const query = db.select().from(tenantSchema.agentAbsence);
+
+      // Add date filters if provided
+      if (startDate && endDate) {
+        const result = await this.queryAbsences({
+          startDate,
+          endDate,
+        });
+        return result;
+      }
+
+      const result = await query.orderBy(tenantSchema.agentAbsence.startDate);
+
+      log.debug("Retrieved agent absences", {
+        tenantId: this.tenantId,
+        count: result.length,
+      });
+
+      return result;
+    } catch (error) {
+      log.error("Failed to get agent absences", {
+        tenantId: this.tenantId,
+        error: String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Get all absences for a specific agent
    * @param agentId Agent ID
    * @param startDate Optional start date filter
@@ -715,7 +760,7 @@ export class AgentService {
         const newStartDate = updateData.startDate || currentAbsence[0].startDate;
         const newEndDate = updateData.endDate || currentAbsence[0].endDate;
 
-        if (new Date(newStartDate) >= new Date(newEndDate)) {
+        if (new Date(newStartDate) > new Date(newEndDate)) {
           throw new ValidationError("End date must be after start date");
         }
 

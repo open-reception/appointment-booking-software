@@ -27,5 +27,5 @@
     {onCheckedChange}
     class="mt-0.5"
   />
-  <Text style="sm" class="font-normal">{label}</Text>
+  <Text style="sm" class="font-normal select-none">{label}</Text>
 </label>

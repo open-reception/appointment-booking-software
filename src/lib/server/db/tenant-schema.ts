@@ -1,15 +1,15 @@
 import type { InferSelectModel } from "drizzle-orm";
 import {
-  pgTable,
   boolean,
-  uuid,
-  text,
   date,
-  pgEnum,
-  time,
   integer,
   json,
+  pgEnum,
+  pgTable,
+  text,
+  time,
   timestamp,
+  uuid,
   varchar,
 } from "drizzle-orm/pg-core";
 
