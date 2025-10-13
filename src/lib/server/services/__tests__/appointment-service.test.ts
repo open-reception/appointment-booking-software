@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AppointmentService } from "../appointment-service";
 import { NotFoundError, ConflictError } from "../../utils/errors";
+import { agent } from "$lib/server/db/tenant-schema";
 
 // Mock dependencies
 vi.mock("../../db", () => ({
@@ -36,6 +37,7 @@ const mockClientTunnel = {
 const mockClientTunnelData = {
   tunnelId: "tunnel-123",
   channelId: "channel-123",
+  agentId: "agent-123",
   appointmentDate: "2024-01-15T10:00:00Z",
   emailHash: "email-hash-123",
   clientPublicKey: "client-public-key",
