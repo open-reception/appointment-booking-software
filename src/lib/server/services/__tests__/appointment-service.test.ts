@@ -2,7 +2,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AppointmentService } from "../appointment-service";
 import { NotFoundError, ConflictError } from "../../utils/errors";
-import { agent } from "$lib/server/db/tenant-schema";
 
 // Mock dependencies
 vi.mock("../../db", () => ({
