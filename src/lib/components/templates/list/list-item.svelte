@@ -63,7 +63,16 @@
     {/if}
     <div></div>
     <div class="flex flex-col">
-      <Text style="md" class="font-medium">{title}</Text>
+      <div class="flex items-center gap-2">
+        <Text style="md" class="font-medium">{title}</Text>
+        {#if badges && badges.length > 0}
+          <div class="flex flex-wrap gap-1 py-1">
+            {#each badges as badge, index (`${badge.label}-${index}`)}
+              <Badge variant={badge.variant} class="uppercase">{badge.label}</Badge>
+            {/each}
+          </div>
+        {/if}
+      </div>
       {#if description}
         {#if descriptionOnClick}
           <Button
@@ -79,13 +88,6 @@
             {description}
           </Text>
         {/if}
-      {/if}
-      {#if badges && badges.length > 0}
-        <div class="flex flex-wrap gap-1 py-1">
-          {#each badges as badge, index (`${badge.label}-${index}`)}
-            <Badge variant={badge.variant} class="uppercase">{badge.label}</Badge>
-          {/each}
-        </div>
       {/if}
     </div>
   </div>

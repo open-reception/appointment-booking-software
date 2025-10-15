@@ -639,5 +639,66 @@
 				}
 			}
 		}
-	}
+	},
+	"staff": {
+		"title": "Personal",
+		"roles": {
+			"GLOBAL_ADMIN": "Globaler Admin",
+			"TENANT_ADMIN": "Mandanten-Admin",
+			"STAFF": "Mitarbeiter:in"
+		},
+		"permissions": {
+			"agents": "verwaltet Akteure",
+			"channels": "verwaltet Kanäle",
+			"absences": "verwaltet Abwesenheiten",
+			"settings": "verwaltet Einstellungen",
+			"staff": "verwaltet Personal",
+			"appointments": "verwaltet Termine"
+		},
+		"form": {
+			"fields": {
+				"language": {
+					"title": "Sprache",
+					"description": "Wird in der Einlaungs-E-Mail verwendet.",
+					"placeholder": "Sprache auswählen"
+				},
+				"role": {
+					"title": "Rolle",
+					"placeholder": "Rolle auswählen"
+				}
+			}
+		},
+		"add": {
+			"title": "Mitarbeiter:in hinzufügen",
+			"description": "Mitarbeiter:innen verwalten Termine und Einstellungen. Diese Konten sind nicht öffentlich.",
+			"action": "Mitarbeiter:in hinzufügen",
+			"success": "Mitarbeiter:in hinzugefügt",
+			"errors": {
+				"unknown": "Konnte Mitarbeiter:in nicht hinzufügen"
+			}
+		},
+		"list": {
+			"empty": {
+				"title": "Bisher kein Personal",
+				"description": "Personal verwaltet Termine und Einstellungen. Diese Konten sind nicht öffentlich."
+			}
+		},
+		"edit": {
+			"title": "Konto bearbeiten",
+			"description": "Aktualisiere das Konto dieser Mitarbeiter:in.",
+			"success": "Konto aktualisiert",
+			"error": "Konnte Konto nicht aktualisieren.",
+			"action": "Übernehmen"
+		},
+		"delete": {
+			"title": "Konto entfernen",
+			"description": "Tippe {email} um dieses Konto zu entfernen. Dieser Schritt kann nicht rückgängig gemacht werden.",
+			"action": "Konto entfernen",
+			"success": "Konto entfernt",
+			"error": "Konnte Konto nicht entfernen."
+		},
+		"loading": "Lade Personal"
+	},
+	"yes": "Ja",
+	"no": "Nein"
 }

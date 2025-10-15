@@ -29,41 +29,49 @@ registerOpenAPIRoute("/tenants/{id}/staff", "GET", {
       content: {
         "application/json": {
           schema: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                id: { type: "string", format: "uuid", description: "User ID" },
-                email: { type: "string", format: "email", description: "User email" },
-                name: { type: "string", description: "User name" },
-                role: {
-                  type: "string",
-                  enum: ["GLOBAL_ADMIN", "TENANT_ADMIN", "STAFF"],
-                  description: "User role",
-                },
-                isActive: { type: "boolean", description: "Whether user is active (can be null)" },
-                confirmationState: {
-                  type: "string",
-                  enum: ["INVITED", "CONFIRMED", "ACCESS_GRANTED"],
-                  description: "User confirmation state (can be null)",
-                },
-                createdAt: {
-                  type: "string",
-                  format: "date-time",
-                  description: "Creation timestamp (can be null)",
-                },
-                updatedAt: {
-                  type: "string",
-                  format: "date-time",
-                  description: "Last update timestamp (can be null)",
-                },
-                lastLoginAt: {
-                  type: "string",
-                  format: "date-time",
-                  description: "Last login timestamp (can be null)",
+            type: "object",
+            properties: {
+              staff: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string", format: "uuid", description: "User ID" },
+                    email: { type: "string", format: "email", description: "User email" },
+                    name: { type: "string", description: "User name" },
+                    role: {
+                      type: "string",
+                      enum: ["GLOBAL_ADMIN", "TENANT_ADMIN", "STAFF"],
+                      description: "User role",
+                    },
+                    isActive: {
+                      type: "boolean",
+                      description: "Whether user is active (can be null)",
+                    },
+                    confirmationState: {
+                      type: "string",
+                      enum: ["INVITED", "CONFIRMED", "ACCESS_GRANTED"],
+                      description: "User confirmation state (can be null)",
+                    },
+                    createdAt: {
+                      type: "string",
+                      format: "date-time",
+                      description: "Creation timestamp (can be null)",
+                    },
+                    updatedAt: {
+                      type: "string",
+                      format: "date-time",
+                      description: "Last update timestamp (can be null)",
+                    },
+                    lastLoginAt: {
+                      type: "string",
+                      format: "date-time",
+                      description: "Last login timestamp (can be null)",
+                    },
+                  },
+                  required: ["id", "email", "name", "role"],
                 },
               },
-              required: ["id", "email", "name", "role"],
             },
           },
         },
@@ -259,7 +267,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
   try {
     const staff = await StaffService.getStaffMembers(tenantId);
-    return json(staff);
+    return json({ staff: staff.filter((it) => it.role !== "GLOBAL_ADMIN") });
   } catch (error) {
     logError(log)("Error fetching staff data", error, locals.user?.userId, params.id);
 
