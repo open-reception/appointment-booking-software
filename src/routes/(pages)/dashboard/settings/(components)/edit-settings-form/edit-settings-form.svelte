@@ -15,6 +15,7 @@
   import { superForm } from "sveltekit-superforms";
   import { zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from "./schema";
+  import { tenants } from "$lib/stores/tenants";
 
   let { entity }: { entity: TTenantSettings } = $props();
 
@@ -55,6 +56,7 @@
       validators: zodClient(formSchema),
       onResult: async (event) => {
         if (event.result.type === "success") {
+          tenants.reload();
           toast.success(m["tenants.edit.success"]());
         } else if (event.result.type === "failure") {
           toast.error(m["tenants.edit.error"]());
