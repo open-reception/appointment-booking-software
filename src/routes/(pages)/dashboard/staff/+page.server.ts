@@ -63,7 +63,7 @@ export const actions: Actions = {
       redirect(302, ROUTES.LOGOUT);
     }
 
-    const resp = await event.fetch(`/api/auth/register`, {
+    const resp = await event.fetch(`/api/auth/invite`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
