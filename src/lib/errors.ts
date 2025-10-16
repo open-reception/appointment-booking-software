@@ -22,6 +22,8 @@ export const ERRORS = {
   },
   CHANNELS: {
     NOT_FOUND: "Channel not found",
+    OPEN_APPOINTMENTS_CONFLICT:
+      "Channel has open appointments and cannot be deleted. Please cancel these appointments first.",
   },
   USERS: {
     ADMIN_EXISTS: "System was already initialized",
@@ -30,5 +32,7 @@ export const ERRORS = {
   },
   AGENTS: {
     NOT_FOUND: "Agent not found",
+    OPEN_APPOINTMENTS_CONFLICT:
+      "Agent has open appointments and cannot be deleted. Please reassign or cancel these appointments first.",
   },
 };

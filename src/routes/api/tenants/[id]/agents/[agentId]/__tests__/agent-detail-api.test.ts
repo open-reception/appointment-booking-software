@@ -10,6 +10,12 @@ vi.mock("$lib/server/services/agent-service", () => ({
   },
 }));
 
+vi.mock("$lib/server/services/appointment-service", () => ({
+  AppointmentService: {
+    forTenant: vi.fn(),
+  },
+}));
+
 vi.mock("$lib/logger", () => ({
   default: {
     setContext: vi.fn(() => ({
@@ -20,6 +26,7 @@ vi.mock("$lib/logger", () => ({
 }));
 
 import { AgentService } from "$lib/server/services/agent-service";
+import { AppointmentService } from "$lib/server/services/appointment-service";
 import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
 
 describe("Agent Detail API Routes", () => {
@@ -31,9 +38,17 @@ describe("Agent Detail API Routes", () => {
     deleteAgent: vi.fn(),
   };
 
+  const mockAppointmentService = {
+    getAppointmentsForAgent: vi.fn(),
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
     (AgentService.forTenant as any).mockResolvedValue(mockAgentService);
+    (AppointmentService.forTenant as any).mockResolvedValue(mockAppointmentService);
+
+    // Default mock: no open appointments
+    mockAppointmentService.getAppointmentsForAgent.mockResolvedValue([]);
   });
 
   function createMockRequestEvent(overrides: Partial<RequestEvent> = {}): RequestEvent {

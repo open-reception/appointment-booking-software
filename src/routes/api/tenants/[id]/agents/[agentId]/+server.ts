@@ -6,12 +6,14 @@ import {
   logError,
   BackendError,
   InternalError,
+  ConflictError,
 } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 import { checkPermission } from "$lib/server/utils/permissions";
 import { ERRORS } from "$lib/errors";
+import { AppointmentService } from "$lib/server/services/appointment-service";
 
 // Register OpenAPI documentation for GET
 registerOpenAPIRoute("/tenants/{id}/agents/{agentId}", "GET", {
@@ -390,6 +392,12 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
     }
 
     checkPermission(locals, tenantId, true);
+
+    const appointmentService = await AppointmentService.forTenant(tenantId);
+    const openAppointments = await appointmentService.getAppointmentsForAgent(agentId, new Date());
+    if (openAppointments.length > 0) {
+      throw new ConflictError(ERRORS.AGENTS.OPEN_APPOINTMENTS_CONFLICT);
+    }
 
     log.debug("Deleting agent", {
       tenantId,

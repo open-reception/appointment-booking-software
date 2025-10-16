@@ -8,6 +8,7 @@ import { registerOpenAPIRoute } from "$lib/server/openapi";
 const requestSchema = z.object({
   tunnelId: z.string(),
   channelId: z.string(),
+  agentId: z.string(),
   appointmentDate: z.string(),
   emailHash: z.string(),
   clientPublicKey: z.string(),

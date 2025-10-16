@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "../+server";
 import type { RequestEvent } from "@sveltejs/kit";
+import { NotFoundError, ConflictError } from "$lib/server/utils/errors";
 
 // Mock dependencies
 vi.mock("$lib/server/services/appointment-service", () => ({
@@ -26,6 +27,7 @@ describe("Create New Client API Route", () => {
   const validRequestBody = {
     tunnelId: mockTunnelId,
     channelId: mockChannelId,
+    agentId: "agent-123", // Missing field added
     appointmentDate: "2024-12-25T14:30:00.000Z",
     emailHash: "test-email-hash",
     clientPublicKey: "test-public-key",
@@ -165,16 +167,18 @@ describe("Create New Client API Route", () => {
   });
 
   describe("Service Errors", () => {
-    it("should return 500 when service throws ConflictError for no authorized users", async () => {
+    it("should return 409 when service throws ConflictError for no authorized users", async () => {
       const { AppointmentService } = await import("$lib/server/services/appointment-service");
       const { logger } = await import("$lib/logger");
 
-      // Mock service to throw error (should be caught and return 500)
+      // Mock service to throw ConflictError (should return 409)
       const mockService = {
         createNewClientWithAppointment: vi
           .fn()
           .mockRejectedValue(
-            new Error("Cannot create client appointments: No authorized users found in tenant"),
+            new ConflictError(
+              "Cannot create client appointments: No authorized users found in tenant",
+            ),
           ),
       };
       vi.mocked(AppointmentService.forTenant).mockResolvedValue(mockService as any);
@@ -183,8 +187,10 @@ describe("Create New Client API Route", () => {
       const response = await POST(event);
       const data = await response.json();
 
-      expect(response.status).toBe(500);
-      expect(data.error).toBe("Internal server error");
+      expect(response.status).toBe(409);
+      expect(data.error).toBe(
+        "Cannot create client appointments: No authorized users found in tenant",
+      );
       expect(logger.info).toHaveBeenCalledWith("Creating new client appointment tunnel", {
         tenantId: mockTenantId,
         tunnelId: mockTunnelId,
@@ -209,11 +215,13 @@ describe("Create New Client API Route", () => {
       expect(data.error).toBe("Internal server error");
     });
 
-    it("should return 500 when service throws NotFoundError", async () => {
+    it("should return 404 when service throws NotFoundError", async () => {
       const { AppointmentService } = await import("$lib/server/services/appointment-service");
 
       const mockService = {
-        createNewClientWithAppointment: vi.fn().mockRejectedValue(new Error("Channel not found")),
+        createNewClientWithAppointment: vi
+          .fn()
+          .mockRejectedValue(new NotFoundError("Channel not found")),
       };
       vi.mocked(AppointmentService.forTenant).mockResolvedValue(mockService as any);
 
@@ -221,8 +229,8 @@ describe("Create New Client API Route", () => {
       const response = await POST(event);
       const data = await response.json();
 
-      expect(response.status).toBe(500);
-      expect(data.error).toBe("Internal server error");
+      expect(data.error).toBe("Channel not found");
+      expect(response.status).toBe(404);
     });
   });
 

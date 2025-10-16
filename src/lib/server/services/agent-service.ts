@@ -248,16 +248,18 @@ export class AgentService {
     try {
       const db = await this.getDb();
 
-      // First, remove all channel-agent associations
-      await db
-        .delete(tenantSchema.channelAgent)
-        .where(eq(tenantSchema.channelAgent.agentId, agentId));
+      const result = await db.transaction(async (tx) => {
+        // First, remove all channel-agent associations
+        await tx
+          .delete(tenantSchema.channelAgent)
+          .where(eq(tenantSchema.channelAgent.agentId, agentId));
 
-      // Then delete the agent
-      const result = await db
-        .delete(tenantSchema.agent)
-        .where(eq(tenantSchema.agent.id, agentId))
-        .returning();
+        // Then delete the agent
+        return await tx
+          .delete(tenantSchema.agent)
+          .where(eq(tenantSchema.agent.id, agentId))
+          .returning();
+      });
 
       if (result.length === 0) {
         log.debug("Agent deletion failed: Agent not found", {

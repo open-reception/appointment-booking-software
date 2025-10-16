@@ -53,6 +53,17 @@ const mockDb = {
       returning: vi.fn(),
     })),
   })),
+  transaction: vi.fn(async (callback) => {
+    // Mock transaction by calling callback with a mock transaction object
+    const mockTx = {
+      delete: vi.fn(() => ({
+        where: vi.fn(() => ({
+          returning: vi.fn().mockResolvedValue([mockAgent]),
+        })),
+      })),
+    };
+    return await callback(mockTx);
+  }),
 };
 
 const mockAgent = {
@@ -314,40 +325,24 @@ describe("AgentService", () => {
     });
 
     it("should delete agent successfully", async () => {
-      // Mock channel-agent deletion
-      const channelAgentDeleteChain = {
-        where: vi.fn().mockResolvedValue([]),
-      };
-      mockDb.delete.mockReturnValueOnce(channelAgentDeleteChain);
-
-      // Mock agent deletion
-      const agentDeleteChain = {
-        where: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue([mockAgent]),
-        })),
-      };
-      mockDb.delete.mockReturnValueOnce(agentDeleteChain);
-
       const result = await service.deleteAgent("agent-123");
 
       expect(result).toBe(true);
-      expect(mockDb.delete).toHaveBeenCalledTimes(2);
+      expect(mockDb.transaction).toHaveBeenCalledTimes(1);
     });
 
     it("should return false when agent not found", async () => {
-      // Mock channel-agent deletion
-      const channelAgentDeleteChain = {
-        where: vi.fn().mockResolvedValue([]),
-      };
-      mockDb.delete.mockReturnValueOnce(channelAgentDeleteChain);
-
-      // Mock agent deletion with no results
-      const agentDeleteChain = {
-        where: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue([]),
-        })),
-      };
-      mockDb.delete.mockReturnValueOnce(agentDeleteChain);
+      // Mock transaction to return empty result for agent deletion
+      mockDb.transaction = vi.fn(async (callback) => {
+        const mockTx = {
+          delete: vi.fn(() => ({
+            where: vi.fn(() => ({
+              returning: vi.fn().mockResolvedValue([]), // No agent found
+            })),
+          })),
+        };
+        return await callback(mockTx);
+      });
 
       const result = await service.deleteAgent("nonexistent-agent");
 
@@ -355,10 +350,7 @@ describe("AgentService", () => {
     });
 
     it("should handle database error", async () => {
-      const deleteChain = {
-        where: vi.fn().mockRejectedValue(new Error("DB error")),
-      };
-      mockDb.delete.mockReturnValue(deleteChain);
+      mockDb.transaction = vi.fn().mockRejectedValue(new Error("DB error"));
 
       await expect(service.deleteAgent("agent-123")).rejects.toThrow("DB error");
     });

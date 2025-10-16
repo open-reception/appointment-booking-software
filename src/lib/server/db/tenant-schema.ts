@@ -159,6 +159,10 @@ export const appointment = pgTable("appointment", {
   channelId: uuid("channel_id")
     .notNull()
     .references(() => channel.id),
+  /** Foreign key to agent being booked */
+  agentId: uuid("agent_id")
+    .notNull()
+    .references(() => agent.id),
   /** Date and time of the appointment */
   appointmentDate: timestamp("appointment_date").notNull(),
   /** When appointment data expires and can be auto-deleted */
