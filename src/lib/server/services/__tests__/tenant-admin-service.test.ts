@@ -89,7 +89,9 @@ describe("TenantAdminService", () => {
         longName: "",
         descriptions: { en: "" },
         languages: ["en"],
+        defaultLanguage: "en",
         description: "A test clinic",
+        links: { website: "", imprint: "", privacyStatement: "" },
       };
 
       const mockCreatedTenant = {

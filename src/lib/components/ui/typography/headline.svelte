@@ -11,6 +11,7 @@
         h2: "text-3xl font-semibold transition-colors first:mt-0",
         h3: "text-2xl font-semibold",
         h4: "text-xl font-semibold",
+        h5: "text-lg font-semibold",
       },
     },
   });

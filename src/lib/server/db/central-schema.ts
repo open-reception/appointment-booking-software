@@ -54,12 +54,19 @@ export const tenant = pgTable(
     descriptions: json("descriptions").$type<{ [key: string]: string }>().notNull(),
     /** Active languages for this tenant (array of language codes) */
     languages: json("languages").$type<string[]>().notNull(),
+    /** Active languages for this tenant (array of language codes) */
+    defaultLanguage: text("defaultLanguage").notNull().default("en"),
     /** Organization logo as binary data (PNG, JPEG, GIF, or WEBP) */
     logo: varchar("logo", { length: 100_000 }),
     /** Database connection string for this tenant's isolated database */
     databaseUrl: text("database_url").notNull(),
     /** STate of tenant setup */
     setupState: tenantSetupState("setup_state").notNull().default("NEW"),
+    /** Links (object) */
+    links: json("links")
+      .$type<{ imprint?: string; privacyStatement?: string; website?: string }>()
+      .notNull()
+      .default({}),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },

@@ -276,16 +276,12 @@ describe("/api/tenants", () => {
 
       const mockDefaults = {
         brandColor: "#E11E15",
-        defaultLanguage: "DE",
         maxChannels: -1,
         maxTeamMembers: -1,
         autoDeleteDays: 30,
         requireEmail: true,
         requirePhone: false,
         nextChannelColor: 0,
-        website: "",
-        imprint: "",
-        privacyStatement: "",
       };
 
       vi.mocked(TenantAdminService.getConfigDefaults).mockReturnValue(mockDefaults);

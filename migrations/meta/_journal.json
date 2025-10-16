@@ -43,6 +43,13 @@
       "when": 1759421310945,
       "tag": "0005_confused_rockslide",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1760360156572,
+      "tag": "0006_legal_dracula",
+      "breakpoints": true
     }
   ]
 }

@@ -30,11 +30,6 @@ registerOpenAPIRoute("/tenants/{id}/config", "GET", {
             type: "object",
             properties: {
               brandColor: { type: "string", description: "Brand color", example: "#E11E15" },
-              defaultLanguage: {
-                type: "string",
-                description: "Default language code",
-                example: "DE",
-              },
               maxChannels: {
                 type: "number",
                 description: "Maximum channels (-1 for unlimited)",
@@ -108,7 +103,6 @@ registerOpenAPIRoute("/tenants/{id}/config", "PUT", {
           type: "object",
           properties: {
             brandColor: { type: "string", description: "Brand color" },
-            defaultLanguage: { type: "string", description: "Default language code" },
             maxChannels: { type: "number", description: "Maximum channels (-1 for unlimited)" },
             maxTeamMembers: {
               type: "number",
