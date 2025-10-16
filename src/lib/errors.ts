@@ -14,6 +14,11 @@ export const ERRORS = {
     BOTH_PASSKEY_AND_PHRASE: "Cannot provide both passkey and passphrase",
     SESSION_MISSING: "No session found",
   },
+  STAFF: {
+    NO_STAFF_ID: "No staff id given",
+    NOT_FOUND: "Staff member not found",
+    CANNOT_DELETE_OWN_ACCOUNT: "Users cannot delete their own account",
+  },
   TENANTS: {
     NAME_EXISTS: "A tenant with this short name already exists",
     NO_TENANT_ID: "No tenant id given",

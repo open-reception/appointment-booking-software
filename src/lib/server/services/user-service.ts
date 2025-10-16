@@ -15,6 +15,7 @@ import {
 import { sendConfirmationEmail } from "../email/email-service";
 import type { SelectTenant } from "../db/central-schema";
 import { TenantAdminService } from "./tenant-admin-service";
+import { InviteService } from "./invite-service";
 
 export type InsertUser = InferInsertModel<typeof centralSchema.user>;
 export type InsertUserPasskey = InferInsertModel<typeof centralSchema.userPasskey>;
@@ -234,20 +235,40 @@ export class UserService {
    * Confirm and activate user after confirmation link was clicked
    * @param linkToken - The token from the link
    */
-  static async confirm(
-    linkToken: string,
-  ): Promise<{ recoveryPassphrase?: string; isSetup: boolean }> {
+  static async confirm(linkToken: string): Promise<{
+    recoveryPassphrase?: string;
+    isSetup: boolean;
+    id: string;
+    email: string;
+    name?: string;
+    language?: string;
+  }> {
     const log = logger.setContext("UserService");
     log.debug("Confirming user account", { token: linkToken.substring(0, 8) + "..." });
 
     try {
-      // First, get the user data to check for recovery passphrase
+      // First, get the user data to check for recovery pass
+      // phrase
+
+      let resultData:
+        | {
+            id: string;
+            name?: string;
+            language?: string;
+            recoveryPassphrase: string | null;
+            tenantId: string | null;
+            role: "GLOBAL_ADMIN" | "TENANT_ADMIN" | "STAFF";
+            email: string;
+          }
+        | undefined = undefined;
+
       const userData = await centralDb
         .select({
           id: centralSchema.user.id,
           recoveryPassphrase: centralSchema.user.recoveryPassphrase,
           tenantId: centralSchema.user.tenantId,
           role: centralSchema.user.role,
+          email: centralSchema.user.email,
         })
         .from(centralSchema.user)
         .where(
@@ -259,17 +280,60 @@ export class UserService {
         .limit(1);
 
       if (userData.length === 0) {
-        log.warn("User confirmation failed: Invalid or expired token", {
-          token: linkToken.substring(0, 8) + "...",
-        });
-        throw new NotFoundError("Invalid or timed-out token");
+        const inviteData = await centralDb
+          .select({
+            id: centralSchema.userInvite.id,
+            tenantId: centralSchema.userInvite.tenantId,
+            role: centralSchema.userInvite.role,
+            email: centralSchema.userInvite.email,
+            name: centralSchema.userInvite.name,
+            language: centralSchema.userInvite.language,
+          })
+          .from(centralSchema.userInvite)
+          .where(
+            and(
+              eq(centralSchema.userInvite.inviteCode, linkToken),
+              gt(centralSchema.userInvite.expiresAt, new Date()),
+            ),
+          )
+          .limit(1);
+
+        if (inviteData.length === 0) {
+          log.warn("User confirmation failed: Invalid or expired token", {
+            token: linkToken.substring(0, 8) + "...",
+          });
+          throw new NotFoundError("Invalid or timed-out token");
+        } else {
+          resultData = { ...inviteData[0], recoveryPassphrase: null };
+          const userDataForDb: InsertUser = {
+            name: resultData.name!,
+            email: resultData.email,
+            role: resultData.role,
+            tenantId: resultData.tenantId,
+            language: resultData.language || "de",
+            confirmationState: "CONFIRMED",
+            isActive: true,
+          };
+          const retVal = await centralDb
+            .insert(centralSchema.user)
+            .values(userDataForDb)
+            .returning();
+          resultData.id = retVal[0].id;
+
+          await InviteService.markInviteAsUsed(linkToken, resultData.id);
+          log.debug("Invitation marked as used", {
+            inviteCode: linkToken,
+            userId: resultData.id,
+          });
+        }
+      } else {
+        resultData = userData[0];
       }
 
-      const user = userData[0];
-
       // Check if this is the first tenant admin for the tenant
-      const shouldGrantAccess = userData[0].role === "GLOBAL_ADMIN"; // Global admins always get ACCESS_GRANTED
+      const shouldGrantAccess = resultData.role === "GLOBAL_ADMIN"; // Global admins always get ACCESS_GRANTED
       const confirmationState = shouldGrantAccess ? "ACCESS_GRANTED" : "CONFIRMED";
+
       // Update the user to confirmed and active, and clear the recovery passphrase
       const result = await centralDb
         .update(centralSchema.user)
@@ -278,7 +342,7 @@ export class UserService {
           isActive: true,
           recoveryPassphrase: null, // Clear it after showing it once
         })
-        .where(eq(centralSchema.user.id, user.id))
+        .where(eq(centralSchema.user.id, resultData.id))
         .execute();
 
       if (result.count != 1) {
@@ -288,14 +352,18 @@ export class UserService {
       const countResult = await centralDb.select({ count: count() }).from(centralSchema.user);
 
       log.debug("User account confirmed successfully", {
-        userId: user.id,
+        userId: resultData.id,
         token: linkToken.substring(0, 8) + "...",
-        hadRecoveryPassphrase: !!user.recoveryPassphrase,
+        hadRecoveryPassphrase: !!resultData.recoveryPassphrase,
       });
 
       return {
-        recoveryPassphrase: user.recoveryPassphrase || undefined,
+        recoveryPassphrase: resultData.recoveryPassphrase || undefined,
         isSetup: countResult[0].count === 1,
+        id: resultData.id,
+        email: resultData.email,
+        name: resultData.name,
+        language: resultData.language,
       };
     } catch (error) {
       if (error instanceof NotFoundError) throw error;
