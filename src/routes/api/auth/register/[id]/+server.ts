@@ -1,7 +1,7 @@
 import { json } from "@sveltejs/kit";
 import { UserService } from "$lib/server/services/user-service";
 import { WebAuthnService } from "$lib/server/auth/webauthn-service";
-import { ValidationError } from "$lib/server/utils/errors";
+import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "../$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
@@ -131,12 +131,12 @@ export const POST: RequestHandler = async ({ params, cookies, request }) => {
     const userId = params.id;
 
     if (!userId) {
-      return json({ error: "User ID is required in the URL" }, { status: 400 });
+      throw new ValidationError("User ID is required in the URL");
     }
 
     // Validate that either passphrase or passkey is provided
     if (!body.passkey) {
-      return json({ error: "Either passphrase or passkey must be provided" }, { status: 400 });
+      throw new ValidationError("Passphrase must be provided");
     }
 
     // Add the passkey to the user account if provided
@@ -144,10 +144,7 @@ export const POST: RequestHandler = async ({ params, cookies, request }) => {
     const registrationEmail = cookies.get("webauthn-registration-email");
 
     if (!registrationEmail || registrationEmail !== body.email) {
-      return json(
-        { error: "Invalid passkey registration. Please request a new challenge first." },
-        { status: 400 },
-      );
+      throw new ValidationError("Invalid or missing registration challenge cookie");
     }
 
     // Clear the registration cookie after validation (challenge cookie is cleared by login route)
@@ -175,17 +172,12 @@ export const POST: RequestHandler = async ({ params, cookies, request }) => {
       { status: 201 },
     );
   } catch (error) {
-    log.error("User registration error:", JSON.stringify(error || "?"));
+    logError(log)("User registration error", error);
 
-    if (error instanceof ValidationError) {
-      return json({ error: error.message }, { status: 400 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    // Handle unique constraint violation (email already exists)
-    if (error instanceof Error && error.message.includes("unique constraint")) {
-      return json({ error: "A user with this email already exists" }, { status: 409 });
-    }
-
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };

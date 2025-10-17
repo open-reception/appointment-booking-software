@@ -1,7 +1,7 @@
 import { json } from "@sveltejs/kit";
 import { WebAuthnService } from "$lib/server/auth/webauthn-service";
 import { UserService } from "$lib/server/services/user-service";
-import { NotFoundError } from "$lib/server/utils/errors";
+import { BackendError, InternalError, logError, NotFoundError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { UniversalLogger } from "$lib/logger";
@@ -120,6 +120,9 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
 
     try {
       user = await UserService.getUserByEmail(body.email);
+      if (user.role !== "GLOBAL_ADMIN" && user.passphraseHash === null) {
+        isRegistration = true; // User exists but has no passphrase - must register
+      }
     } catch (error) {
       if (error instanceof NotFoundError) {
         // User doesn't exist yet - this is a registration flow
@@ -205,7 +208,10 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
       isRegistration,
     });
   } catch (error) {
-    logger.error("Challenge generation error", { error: String(error) });
-    return json({ error: "Internal server error" }, { status: 500 });
+    logError(logger)("Failed to generate WebAuthn challenge", error);
+    if (error instanceof BackendError) {
+      return error.toJson();
+    }
+    return new InternalError().toJson();
   }
 };
