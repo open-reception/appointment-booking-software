@@ -35,7 +35,7 @@
       interpolations={[{ param: "{name}", value: entity.name, snippet: inlineCode }]}
     />
   </Text>
-  {#if myUserRole === "GLOBAL_ADMIN" && false}
+  {#if myUserRole === "GLOBAL_ADMIN"}
     <CenterState
       headline={m["staff.access.unavailable.title"]()}
       description={m["staff.access.unavailable.description"]()}

@@ -14,7 +14,7 @@
   import EditIcon from "@lucide/svelte/icons/pencil";
   import SelectIcon from "@lucide/svelte/icons/plug-zap";
   import PlusIcon from "@lucide/svelte/icons/plus";
-  import UnknownItemIcon from "@lucide/svelte/icons/ticket-x";
+  import UnknownItemIcon from "@lucide/svelte/icons/landmark";
   import DeleteIcon from "@lucide/svelte/icons/trash-2";
   import { onMount } from "svelte";
   import { AddTenantForm } from "./(components)/add-tenant-form";
@@ -72,6 +72,7 @@
           <List>
             {#each items as item (item.id)}
               <ListItem
+                image={item.logo || UnknownItemIcon}
                 title={item.shortName}
                 description={`${item.shortName}.${window.location.hostname}`}
                 descriptionOnClick={() =>
@@ -126,6 +127,7 @@
                 entity={curItem}
                 done={() => {
                   closeDialog("edit");
+                  tenantsStore.reload();
                   curItem = null;
                   invalidate(ROUTES.DASHBOARD.TENANTS);
                 }}
