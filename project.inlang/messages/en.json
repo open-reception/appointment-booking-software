@@ -687,6 +687,7 @@
 			}
 		},
 		"list": {
+			"needsAccess": "Can't see appointments",
 			"empty": {
 				"title": "No staff members yet",
 				"description": "Staff members manage your appointments and settings"
@@ -705,6 +706,18 @@
 			"action": "Remove Member",
 			"success": "Member removed",
 			"error": "Could not remove member."
+		},
+		"access": {
+			"title": "Grant access to appointments",
+			"description": "Do you want to grant {name} access to all client data?",
+			"action": "Grant access",
+			"loading": "Granting access ({success}/{total} clients)",
+			"success": "Access granted",
+			"error": "Granting access to all clients failed. You can retry anytime.",
+			"unavailable": {
+				"title": "You can't grant access",
+				"description": "Only Appointment Managers and Tenant Admins can be granted access to client data."
+			}
 		},
 		"loading": "Loading staff members"
 	},

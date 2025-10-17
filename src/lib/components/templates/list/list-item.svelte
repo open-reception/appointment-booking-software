@@ -15,6 +15,7 @@
         icon: Component;
         label: string;
         isDestructive?: boolean;
+        isHidden?: boolean;
         onClick: () => void;
       }
     | { type: "divider" };
@@ -105,7 +106,7 @@
           <DropdownMenu.Label>{m["actions"]()}</DropdownMenu.Label>
           <DropdownMenu.Separator />
           {#each actions as action, index (`action-${index}`)}
-            {#if action.type === "action"}
+            {#if action.type === "action" && action.isHidden !== true}
               <DropdownMenu.Item
                 onSelect={action.onClick}
                 class={cn(

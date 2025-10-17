@@ -678,6 +678,7 @@
 			}
 		},
 		"list": {
+			"needsAccess": "Kann Termine nicht sehen",
 			"empty": {
 				"title": "Bisher kein Personal",
 				"description": "Personal verwaltet Termine und Einstellungen. Diese Konten sind nicht öffentlich."
@@ -696,6 +697,18 @@
 			"action": "Konto entfernen",
 			"success": "Konto entfernt",
 			"error": "Konnte Konto nicht entfernen."
+		},
+		"access": {
+			"title": "Zugriff auf Klientendaten gewähren",
+			"description": "Willst Du {name} Zugriff auf alle Kundendaten geben?",
+			"action": "Zugriff gewähren",
+			"loading": "Zugriff wird gewährt ({success}/{total} Klienten)",
+			"success": "Zugriff gewährt",
+			"error": "Konnte Zugriff nicht für alle Klienten gewähren. Bitte erneut versuchen.",
+			"unavailable": {
+				"title": "Du kannst keinen Zugriff gewähren",
+				"description": "Nur Mitarbeiter:innen und Mandanten-Admins können Zugriff gewähren."
+			}
 		},
 		"loading": "Lade Personal"
 	},

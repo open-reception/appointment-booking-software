@@ -122,7 +122,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
   try {
     const staff = await StaffService.getStaffMembers(tenantId);
-    return json({ staff: staff.filter((it) => it.role !== "GLOBAL_ADMIN") });
+    return json({ staff: staff });
   } catch (error) {
     logError(log)("Error fetching staff data", error, locals.user?.userId, params.id);
 

@@ -14,16 +14,18 @@
   import EditIcon from "@lucide/svelte/icons/pencil";
   import PlusIcon from "@lucide/svelte/icons/plus";
   import DeleteIcon from "@lucide/svelte/icons/trash-2";
+  import AccessIcon from "@lucide/svelte/icons/key-round";
   import UnknownItemIcon from "@lucide/svelte/icons/user-star";
   import { onMount } from "svelte";
   import { AddStaffMemberForm } from "./(components)/add-staff-member-form";
   import { DeleteStaffMemberForm } from "./(components)/delete-staff-member-form";
   import { EditStaffMemberForm } from "./(components)/edit-staff-member-form";
   import { roles } from "./(components)/utils";
+  import { GrantAccessForm } from "./(components)/grant-access-form";
 
   const { data } = $props();
   let curItem: TStaff | null = $state(null);
-  let myUserId = $derived($auth.user?.id);
+  const myUserId = $derived($auth.user?.id);
 
   onMount(() => {
     if (history.state["sveltekit:states"]?.action === "add") {
@@ -87,6 +89,16 @@
                         },
                       },
                       {
+                        type: "action",
+                        icon: AccessIcon,
+                        label: m["staff.access.action"](),
+                        isHidden: item.confirmationState === "ACCESS_GRANTED",
+                        onClick: () => {
+                          curItem = item;
+                          openDialog("access");
+                        },
+                      },
+                      {
                         type: "divider",
                       },
                       {
@@ -100,8 +112,8 @@
                         },
                       },
                     ]}
-                badges={item.confirmationState !== "ACCESS_GRANTED"
-                  ? [{ label: "no full appointment access", variant: "outline" }]
+                badges={item.role !== "GLOBAL_ADMIN" && item.confirmationState !== "ACCESS_GRANTED"
+                  ? [{ label: m["staff.list.needsAccess"](), variant: "outline" }]
                   : undefined}
               >
                 {item.name}
@@ -131,6 +143,18 @@
                 entity={curItem}
                 done={() => {
                   closeDialog("delete");
+                  curItem = null;
+                  invalidate(ROUTES.DASHBOARD.STAFF);
+                }}
+              />
+            {/if}
+          </ResponsiveDialog>
+          <ResponsiveDialog id="access" title={m["staff.access.title"]()} triggerHidden={true}>
+            {#if curItem}
+              <GrantAccessForm
+                entity={curItem}
+                done={() => {
+                  closeDialog("access");
                   curItem = null;
                   invalidate(ROUTES.DASHBOARD.STAFF);
                 }}
