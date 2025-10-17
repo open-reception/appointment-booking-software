@@ -2,9 +2,9 @@ import { m } from "$i18n/messages";
 import type { TStaff } from "$lib/types/users";
 
 export const roles = [
-  { label: m["staff.roles.GLOBAL_ADMIN"](), value: "GLOBAL_ADMIN" },
   { label: m["staff.roles.STAFF"](), value: "STAFF" },
   { label: m["staff.roles.TENANT_ADMIN"](), value: "TENANT_ADMIN" },
+  { label: m["staff.roles.GLOBAL_ADMIN"](), value: "GLOBAL_ADMIN" },
 ] as const;
 
 export const permissions: { label: string; roles: TStaff["role"][] }[] = [

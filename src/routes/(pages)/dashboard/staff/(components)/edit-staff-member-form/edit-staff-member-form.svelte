@@ -3,6 +3,7 @@
   import * as Form from "$lib/components/ui/form";
   import { Input } from "$lib/components/ui/input";
   import * as Select from "$lib/components/ui/select";
+  import { auth } from "$lib/stores/auth";
   import type { TStaff } from "$lib/types/users";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
@@ -13,6 +14,10 @@
 
   let { entity, done }: { entity: TStaff; done: () => void } = $props();
 
+  const userRole = $derived($auth.user?.role ?? "STAFF");
+  const availableRolesForUser = $derived(
+    userRole === "GLOBAL_ADMIN" ? roles : roles.filter((it) => it.value !== "GLOBAL_ADMIN"),
+  );
   const form = superForm(
     {
       id: entity.id,
@@ -75,7 +80,7 @@
             {value ? value : m["staff.form.fields.role.placeholder"]()}
           </Select.Trigger>
           <Select.Content>
-            {#each roles.filter((it) => it.value !== "GLOBAL_ADMIN") as role (role.value)}
+            {#each availableRolesForUser as role (role.value)}
               <Select.Item value={role.value}>
                 {role.label}
               </Select.Item>
