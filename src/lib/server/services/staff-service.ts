@@ -1,5 +1,5 @@
 import { centralDb, getTenantDb } from "../db";
-import { user, userPasskey } from "../db/central-schema";
+import { user, userInvite, userPasskey } from "../db/central-schema";
 import { clientTunnelStaffKeyShare } from "../db/tenant-schema";
 import { eq, and } from "drizzle-orm";
 import { NotFoundError, ValidationError, InternalError } from "../utils/errors";
@@ -55,7 +55,7 @@ export class StaffService {
     logger.debug("Fetching staff members", { tenantId });
 
     try {
-      const staff: StaffMember[] = await centralDb
+      let staff: StaffMember[] = await centralDb
         .select({
           id: user.id,
           email: user.email,
@@ -69,6 +69,31 @@ export class StaffService {
         })
         .from(user)
         .where(eq(user.tenantId, tenantId));
+
+      const invitedStaff = await centralDb
+        .select({
+          id: userInvite.id,
+          email: userInvite.email,
+          name: userInvite.name,
+          role: userInvite.role,
+          createdAt: userInvite.createdAt,
+        })
+        .from(userInvite)
+        .where(and(eq(userInvite.tenantId, tenantId), eq(userInvite.used, false)));
+
+      staff = staff.concat(
+        invitedStaff.map((invite) => ({
+          id: invite.id,
+          email: invite.email,
+          name: invite.name,
+          role: invite.role,
+          isActive: null,
+          confirmationState: "INVITED" as const,
+          createdAt: invite.createdAt,
+          updatedAt: null,
+          lastLoginAt: null,
+        })),
+      );
 
       logger.debug("Staff members fetched successfully", {
         tenantId,
