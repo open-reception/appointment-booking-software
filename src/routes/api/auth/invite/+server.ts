@@ -201,7 +201,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     );
 
     // Generate registration URL with secure invite code
-    const registrationUrl = `${env.PUBLIC_APP_URL || "http://localhost:5173"}/register?invite=${invitation.inviteCode}`;
+    const registrationUrl = `${env.PUBLIC_APP_URL || "http://localhost:5173"}/confirm/${invitation.inviteCode}`;
 
     // Send invitation email
     await sendUserInviteEmail(email, name, tenant, role, registrationUrl, language);

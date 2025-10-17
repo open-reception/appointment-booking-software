@@ -11,7 +11,7 @@
   import ChevronsUpDownIcon from "@lucide/svelte/icons/chevrons-up-down";
   import EllipsisIcon from "@lucide/svelte/icons/ellipsis";
   import UnplugIcon from "@lucide/svelte/icons/unplug";
-  import UnknownTenantIcon from "@lucide/svelte/icons/shield-question-mark";
+  import UnknownTenantIcon from "@lucide/svelte/icons/landmark";
   import Loader from "@lucide/svelte/icons/loader-2";
   import { cn } from "$lib/utils";
 
@@ -49,7 +49,16 @@
                 class="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg"
               >
                 {#if activeTenant}
-                  <UnknownTenantIcon class="size-4" />
+                  {#if activeTenant.logo}
+                    <img
+                      src={activeTenant.logo}
+                      alt={activeTenant.shortName}
+                      class="border-dark h-full w-full rounded-md border object-cover object-center"
+                      loading="lazy"
+                    />
+                  {:else}
+                    <UnknownTenantIcon class="size-4" />
+                  {/if}
                 {:else}
                   <UnplugIcon class="size-4" />
                 {/if}
@@ -91,7 +100,16 @@
                 class="gap-2 p-2"
               >
                 <div class="flex size-6 items-center justify-center rounded-md border">
-                  <UnknownTenantIcon class="size-3.5 shrink-0" />
+                  {#if tenant.logo}
+                    <img
+                      src={tenant.logo}
+                      alt={tenant.shortName}
+                      class="border-dark h-full w-full rounded-sm border object-cover object-center"
+                      loading="lazy"
+                    />
+                  {:else}
+                    <UnknownTenantIcon class="size-3.5 shrink-0" />
+                  {/if}
                 </div>
                 {tenant.shortName}
               </DropdownMenu.Item>

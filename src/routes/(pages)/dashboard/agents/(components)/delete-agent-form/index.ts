@@ -1,5 +1,5 @@
-import DeleteTenantForm from "./delete-agent-form.svelte";
+import DeleteAgentForm from "./delete-agent-form.svelte";
 
-export { DeleteTenantForm };
+export { DeleteAgentForm };
 export { formSchema } from "./schema";
 export type { FormSchema } from "./schema";

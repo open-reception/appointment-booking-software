@@ -1,4 +1,8 @@
 <script lang="ts">
+  /*
+    Custom Changes
+    * added empty:hidden
+  */
   import * as FormPrimitive from "formsnap";
   import { cn, type WithoutChild } from "$lib/utils.js";
   import { Text } from "../typography";
@@ -16,7 +20,7 @@
 
 <FormPrimitive.FieldErrors
   bind:ref
-  class={cn("text-destructive -mt-1 ml-1 text-sm font-medium", className)}
+  class={cn("text-destructive -mt-1 ml-1 text-sm font-medium empty:hidden", className)}
   {...restProps}
 >
   {#snippet children({ errors, errorProps })}

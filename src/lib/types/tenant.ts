@@ -1,6 +1,8 @@
 import type { SelectTenant } from "$lib/server/db/central-schema";
 
-export type TTenant = Pick<SelectTenant, "id" | "shortName" | "languages" | "setupState">;
+export type TTenant = Pick<SelectTenant, "id" | "shortName" | "languages" | "setupState"> & {
+  logo: string | null;
+};
 
 export type TTenantSettings = Omit<SelectTenant, "databaseUrl" | "setupState" | "logo"> & {
   languages: string[];
