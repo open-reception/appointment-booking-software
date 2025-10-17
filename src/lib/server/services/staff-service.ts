@@ -100,7 +100,7 @@ export class StaffService {
         count: staff.length,
       });
 
-      return staff;
+      return staff.sort((a, b) => a.name.localeCompare(b.name));
     } catch (error) {
       logger.error("Failed to fetch staff members", {
         tenantId,
