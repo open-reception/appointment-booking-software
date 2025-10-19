@@ -41,6 +41,8 @@ export const agent = pgTable("agent", {
   descriptions: json("descriptions").$type<{ [key: string]: string }>().notNull(),
   /** Optional logo/profile image for the agent (PNG, JPEG, GIF, or WEBP) */
   image: varchar("image", { length: 250_000 }),
+  /** Archived-flag */
+  archived: boolean("archived").notNull().default(false),
 });
 
 /**
@@ -65,6 +67,8 @@ export const channel = pgTable("channel", {
   isPublic: boolean("is_public"),
   /** Whether appointments must be explicitly confirmed by staff */
   requiresConfirmation: boolean("requires_confirmation"),
+  /** Archived-flag */
+  archived: boolean("archived").notNull().default(false),
 });
 
 /**

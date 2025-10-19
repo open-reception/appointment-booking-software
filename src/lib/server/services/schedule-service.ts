@@ -99,7 +99,9 @@ export class ScheduleService {
       const channels = await db
         .select()
         .from(tenantSchema.channel)
-        .where(eq(tenantSchema.channel.pause, false)); // Only active channels
+        .where(
+          and(eq(tenantSchema.channel.pause, false), eq(tenantSchema.channel.archived, false)),
+        ); // Only active channels
 
       // 2. Get all slot templates associated with channels
       const slotTemplates = await db

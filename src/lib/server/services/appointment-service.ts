@@ -269,7 +269,12 @@ export class AppointmentService {
       const channelResult = await tx
         .select({ requiresConfirmation: tenantSchema.channel.requiresConfirmation })
         .from(tenantSchema.channel)
-        .where(eq(tenantSchema.channel.id, clientData.channelId))
+        .where(
+          and(
+            eq(tenantSchema.channel.id, clientData.channelId),
+            eq(tenantSchema.channel.archived, false),
+          ),
+        )
         .limit(1);
 
       if (channelResult.length === 0) {

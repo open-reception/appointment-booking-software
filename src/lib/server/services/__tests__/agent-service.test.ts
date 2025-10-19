@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ValidationError, NotFoundError, ConflictError } from "../../utils/errors";
 
 // Mock dependencies before imports
 vi.mock("../../db", () => ({
@@ -20,18 +19,21 @@ vi.mock("$lib/logger", () => ({
 // Import after mocking
 import { AgentService, type AbsenceCreationRequest } from "../agent-service";
 import { getTenantDb } from "../../db";
+import { ValidationError, NotFoundError, ConflictError } from "../../utils/errors";
 
 // Mock database operations
 const mockDb = {
   insert: vi.fn(() => ({
     values: vi.fn(() => ({
       returning: vi.fn(),
+      onConflictDoNothing: vi.fn().mockResolvedValue([]),
     })),
   })),
   select: vi.fn(() => ({
     from: vi.fn(() => ({
       where: vi.fn(() => ({
         limit: vi.fn(),
+        orderBy: vi.fn(),
       })),
       orderBy: vi.fn(),
       innerJoin: vi.fn(() => ({
@@ -56,10 +58,15 @@ const mockDb = {
   transaction: vi.fn(async (callback) => {
     // Mock transaction by calling callback with a mock transaction object
     const mockTx = {
-      delete: vi.fn(() => ({
-        where: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue([mockAgent]),
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue([mockAgent]),
+          })),
         })),
+      })),
+      delete: vi.fn(() => ({
+        where: vi.fn().mockResolvedValue([]),
       })),
     };
     return await callback(mockTx);
@@ -216,7 +223,9 @@ describe("AgentService", () => {
       const agents = [mockAgent, { ...mockAgent, id: "agent-456", name: "Agent 2" }];
       const selectChain = {
         from: vi.fn(() => ({
-          orderBy: vi.fn().mockResolvedValue(agents),
+          where: vi.fn(() => ({
+            orderBy: vi.fn().mockResolvedValue(agents),
+          })),
         })),
       };
       mockDb.select.mockReturnValue(selectChain);
@@ -230,7 +239,9 @@ describe("AgentService", () => {
     it("should return empty array when no agents exist", async () => {
       const selectChain = {
         from: vi.fn(() => ({
-          orderBy: vi.fn().mockResolvedValue([]),
+          where: vi.fn(() => ({
+            orderBy: vi.fn().mockResolvedValue([]),
+          })),
         })),
       };
       mockDb.select.mockReturnValue(selectChain);
@@ -244,7 +255,9 @@ describe("AgentService", () => {
     it("should handle database error", async () => {
       const selectChain = {
         from: vi.fn(() => ({
-          orderBy: vi.fn().mockRejectedValue(new Error("DB error")),
+          where: vi.fn(() => ({
+            orderBy: vi.fn().mockRejectedValue(new Error("DB error")),
+          })),
         })),
       };
       mockDb.select.mockReturnValue(selectChain);
@@ -335,10 +348,15 @@ describe("AgentService", () => {
       // Mock transaction to return empty result for agent deletion
       mockDb.transaction = vi.fn(async (callback) => {
         const mockTx = {
-          delete: vi.fn(() => ({
-            where: vi.fn(() => ({
-              returning: vi.fn().mockResolvedValue([]), // No agent found
+          update: vi.fn(() => ({
+            set: vi.fn(() => ({
+              where: vi.fn(() => ({
+                returning: vi.fn().mockResolvedValue([]), // No agent found
+              })),
             })),
+          })),
+          delete: vi.fn(() => ({
+            where: vi.fn().mockResolvedValue([]),
           })),
         };
         return await callback(mockTx);
@@ -425,7 +443,6 @@ describe("AgentService", () => {
       const insertChain = {
         values: vi.fn(() => ({
           onConflictDoNothing: vi.fn().mockResolvedValue([]),
-          returning: vi.fn().mockResolvedValue([]),
         })),
       };
       mockDb.insert.mockReturnValue(insertChain);
@@ -442,7 +459,6 @@ describe("AgentService", () => {
       const insertChain = {
         values: vi.fn(() => ({
           onConflictDoNothing: vi.fn().mockRejectedValue(new Error("DB error")),
-          returning: vi.fn().mockResolvedValue([]),
         })),
       };
       mockDb.insert.mockReturnValue(insertChain);
