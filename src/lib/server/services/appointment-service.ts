@@ -357,7 +357,7 @@ export class AppointmentService {
 
   /**
    * Return appointments for a specific channel from a given date
-   * @param agentId
+   * @param channelId
    * @param from
    * @returns
    */
