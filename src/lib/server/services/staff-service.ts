@@ -248,7 +248,15 @@ export class StaffService {
           });
           // Continue with user deletion even if key share deletion fails
         }
-
+        // Remove old invites of user
+        const deletedInvites = await tx
+          .delete(userInvite)
+          .where(eq(userInvite.email, userToDelete[0].email));
+        logger.debug("Deleted user invites", {
+          staffId,
+          tenantId,
+          deletedCount: deletedInvites.count || 0,
+        });
         // Finally, delete the user account from central database
         const deletedUsers = await tx.delete(user).where(eq(user.id, staffId)).returning({
           id: user.id,
@@ -284,7 +292,6 @@ export class StaffService {
       if (error instanceof ValidationError || error instanceof NotFoundError) {
         throw error;
       }
-
       logger.error("Failed to delete staff member", {
         tenantId,
         staffId,
