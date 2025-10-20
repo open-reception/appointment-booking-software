@@ -43,7 +43,7 @@
     "@inlang/paraglide-js": "2.3.2",
     "@internationalized/date": "^3.8.2",
     "@lucide/svelte": "^0.544.0",
-    "@playwright/test": "^1.53.1",
+    "@playwright/test": "^1.56.1",
     "@sveltejs/adapter-auto": "^6.1.0",
     "@sveltejs/kit": "^2.22.0",
     "@sveltejs/vite-plugin-svelte": "^5.1.0",
