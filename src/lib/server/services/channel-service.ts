@@ -29,7 +29,7 @@ const channelCreationSchema = z.object({
 });
 
 const channelUpdateSchema = z.object({
-  names: z.partialRecord(z.enum(supportedLocales), z.string().min(1).max(100)),
+  names: z.partialRecord(z.enum(supportedLocales), z.string().min(1).max(100)).optional(),
   color: z.string().optional(),
   descriptions: z.partialRecord(z.enum(supportedLocales), z.string().min(1)).optional(),
   isPublic: z.boolean().optional(),
