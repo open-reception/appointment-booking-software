@@ -243,10 +243,16 @@ registerOpenAPIRoute("/tenants/{id}/staff/{staffId}", "PUT", {
   },
 });
 
-export const DELETE: RequestHandler = async ({ params, locals }) => {
+export const DELETE: RequestHandler = async ({ request, params, locals }) => {
   const log = logger.setContext("API");
   const tenantId = params.id;
   const staffId = params.staffId;
+  const { searchParams } = new URL(request.url);
+  const confirmationState = searchParams.get("confirmationState") as
+    | "INVITED"
+    | "CONFIRMED"
+    | "ACCESS_GRANTED"
+    | undefined;
 
   if (!tenantId) {
     throw new ValidationError(ERRORS.TENANTS.NO_TENANT_ID);
@@ -260,7 +266,12 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
   checkPermission(locals, tenantId, true);
 
   try {
-    const result = await StaffService.deleteStaffMember(tenantId, staffId, locals.user?.userId);
+    const result = await StaffService.deleteStaffMember(
+      tenantId,
+      staffId,
+      locals.user?.userId,
+      confirmationState,
+    );
 
     return json(result);
   } catch (error) {
