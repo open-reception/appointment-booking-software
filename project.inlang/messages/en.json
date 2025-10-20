@@ -35,6 +35,13 @@
 			}
 		}
 	},
+	"setupPasskey": {
+		"title": "Setup Passkey",
+		"description": "Create your passkey to secure your account.",
+		"action": "Set Passkey",
+		"success": "Passkey set. Login with it now.",
+		"error": "Passkey could not be set"
+	},
 	"slogan": "End-to-End encrypted appointment booking platform.",
 	"logo": "OpenReception Logo: A 3D pixel art with calendar that's also a lock",
 	"form": {
@@ -85,9 +92,9 @@
 	},
 	"confirm": {
 		"success": {
-			"title": "You’re all set!",
-			"description": "You’ve successfully secured your account",
-			"action": "Proceed"
+			"title": "E-Mail address confirmed!",
+			"description": "Now you just need to setup a passkey.",
+			"action": "Setup Passkey"
 		},
 		"error": {
 			"title": "Verification failed",

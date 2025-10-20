@@ -77,9 +77,9 @@
 	},
 	"confirm": {
 		"success": {
-			"title": "Du bist bereit!",
-			"description": "Du hast Dein Konto erfolgreich gesichert",
-			"action": "Weiter"
+			"title": "E-Mail Adresse bestätigt!",
+			"description": "Jetzt musst Du nur noch einen Passkey hinzufügen.",
+			"action": "Passkey hinzufügen"
 		},
 		"error": {
 			"title": "Bestätigung fehlgeschlagen",
@@ -93,6 +93,13 @@
 			"action": "E-Mail erneut senden",
 			"success": "E-Mail gesendet"
 		}
+	},
+	"setupPasskey": {
+		"title": "Passkey einrichten",
+		"description": "Erstelle Deinen Passkey, um Dein Konto zu sichern.",
+		"action": "Passkey setzen",
+		"success": "Passkey eingerichtet. Logge Dich damit jetzt ein.",
+		"error": "Passkey konnte nicht gesetzt werden"
 	},
 	"logout": {
 		"title": "Erfolgreich abgemeldet",

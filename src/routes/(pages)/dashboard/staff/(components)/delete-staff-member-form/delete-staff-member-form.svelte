@@ -15,7 +15,7 @@
   let { entity, done }: { entity: TStaff; done: () => void } = $props();
 
   const form = superForm(
-    { id: entity.id, email: "" },
+    { id: entity.id, email: "", confirmationState: entity.confirmationState },
     {
       validators: zodClient(
         formSchema.merge(
@@ -66,6 +66,13 @@
     <Form.Control>
       {#snippet children({ props })}
         <Input {...props} bind:value={$formData.id} type="hidden" />
+      {/snippet}
+    </Form.Control>
+  </Form.Field>
+  <Form.Field {form} name="confirmationState" class="hidden">
+    <Form.Control>
+      {#snippet children({ props })}
+        <Input {...props} bind:value={$formData.confirmationState} type="hidden" />
       {/snippet}
     </Form.Control>
   </Form.Field>
