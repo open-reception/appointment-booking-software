@@ -19,6 +19,7 @@ export const ERRORS = {
     NO_TENANT_ID: "No tenant id given",
     NOT_FOUND: "Tenant not found",
     MISSING_TENANT_OR_AGENT_ID: "Missing tenant or agent ID",
+    NONE_FOUND: "No Tenant found on this instance",
   },
   CHANNELS: {
     NOT_FOUND: "Channel not found",
