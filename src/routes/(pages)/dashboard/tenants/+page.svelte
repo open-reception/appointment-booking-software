@@ -82,15 +82,16 @@
                     "noopener,noreferrer",
                   )}
                 actions={[
-                  {
-                    type: "action",
-                    icon: EditIcon,
-                    label: m["edit"](),
-                    onClick: () => {
-                      curItem = item;
-                      openDialog("edit");
-                    },
-                  },
+                  // Editiing will we re-introduced, when we support custom domains
+                  // {
+                  //   type: "action",
+                  //   icon: EditIcon,
+                  //   label: m["edit"](),
+                  //   onClick: () => {
+                  //     curItem = item;
+                  //     openDialog("edit");
+                  //   },
+                  // },
                   {
                     type: "action",
                     icon: SelectIcon,

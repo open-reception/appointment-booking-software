@@ -120,7 +120,8 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
 
     try {
       user = await UserService.getUserByEmail(body.email);
-      if (user.role !== "GLOBAL_ADMIN" && user.passphraseHash === null) {
+      const passkeys = await UserService.getUserPasskeys(user.id);
+      if (passkeys.length === 0) {
         isRegistration = true; // User exists but has no passphrase - must register
       }
     } catch (error) {
