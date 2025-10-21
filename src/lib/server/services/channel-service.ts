@@ -1,6 +1,6 @@
 import { supportedLocales } from "$lib/const/locales";
 import logger from "$lib/logger";
-import { asc, eq, inArray, sql } from "drizzle-orm";
+import { asc, eq, inArray, sql, and } from "drizzle-orm";
 import z from "zod/v4";
 import { getTenantDb } from "../db";
 import { TenantConfig } from "../db/tenant-config";
@@ -164,7 +164,12 @@ export class ChannelService {
           const existingAgents = await tx
             .select()
             .from(tenantSchema.agent)
-            .where(inArray(tenantSchema.agent.id, request.agentIds));
+            .where(
+              and(
+                inArray(tenantSchema.agent.id, request.agentIds),
+                eq(tenantSchema.agent.archived, false),
+              ),
+            );
 
           if (existingAgents.length !== request.agentIds.length) {
             throw new ValidationError("One or more agents not found");
@@ -266,7 +271,9 @@ export class ChannelService {
           const existingChannel = await tx
             .select()
             .from(tenantSchema.channel)
-            .where(eq(tenantSchema.channel.id, channelId))
+            .where(
+              and(eq(tenantSchema.channel.id, channelId), eq(tenantSchema.channel.archived, false)),
+            )
             .limit(1);
 
           if (existingChannel.length === 0) {
@@ -289,7 +296,12 @@ export class ChannelService {
             const existingAgents = await tx
               .select()
               .from(tenantSchema.agent)
-              .where(inArray(tenantSchema.agent.id, updateData.agentIds));
+              .where(
+                and(
+                  inArray(tenantSchema.agent.id, updateData.agentIds),
+                  eq(tenantSchema.agent.archived, false),
+                ),
+              );
 
             if (existingAgents.length !== updateData.agentIds.length) {
               throw new ValidationError("One or more agents not found");
@@ -313,13 +325,19 @@ export class ChannelService {
               name: tenantSchema.agent.name,
               descriptions: tenantSchema.agent.descriptions,
               image: tenantSchema.agent.image,
+              archived: tenantSchema.agent.archived,
             })
             .from(tenantSchema.agent)
             .innerJoin(
               tenantSchema.channelAgent,
               eq(tenantSchema.agent.id, tenantSchema.channelAgent.agentId),
             )
-            .where(eq(tenantSchema.channelAgent.channelId, channelId));
+            .where(
+              and(
+                eq(tenantSchema.channelAgent.channelId, channelId),
+                eq(tenantSchema.agent.archived, false),
+              ),
+            );
         }
 
         // 3. Handle slot template relationships
@@ -473,7 +491,9 @@ export class ChannelService {
       const channelResult = await db
         .select()
         .from(tenantSchema.channel)
-        .where(eq(tenantSchema.channel.id, channelId))
+        .where(
+          and(eq(tenantSchema.channel.id, channelId), eq(tenantSchema.channel.archived, false)),
+        )
         .limit(1);
 
       if (channelResult.length === 0) {
@@ -490,13 +510,19 @@ export class ChannelService {
           name: tenantSchema.agent.name,
           descriptions: tenantSchema.agent.descriptions,
           image: tenantSchema.agent.image,
+          archived: tenantSchema.agent.archived,
         })
         .from(tenantSchema.agent)
         .innerJoin(
           tenantSchema.channelAgent,
           eq(tenantSchema.agent.id, tenantSchema.channelAgent.agentId),
         )
-        .where(eq(tenantSchema.channelAgent.channelId, channelId));
+        .where(
+          and(
+            eq(tenantSchema.channelAgent.channelId, channelId),
+            eq(tenantSchema.agent.archived, false),
+          ),
+        );
 
       // Get slot templates
       const slotTemplates = await db
@@ -555,6 +581,7 @@ export class ChannelService {
       const channels = await db
         .select()
         .from(tenantSchema.channel)
+        .where(eq(tenantSchema.channel.archived, false))
         .orderBy(asc(sql`${tenantSchema.channel.names}->>${language}`));
 
       // Get relations for each channel
@@ -627,9 +654,12 @@ export class ChannelService {
           }
         }
 
-        // Delete the channel
+        // Delete the channel (soft delete by setting archived flag)
         const deleteResult = await tx
-          .delete(tenantSchema.channel)
+          .update(tenantSchema.channel)
+          .set({
+            archived: true,
+          })
           .where(eq(tenantSchema.channel.id, channelId))
           .returning();
 

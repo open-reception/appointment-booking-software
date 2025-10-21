@@ -135,7 +135,7 @@ export class AgentService {
       const result = await db
         .select()
         .from(tenantSchema.agent)
-        .where(eq(tenantSchema.agent.id, agentId))
+        .where(and(eq(tenantSchema.agent.id, agentId), eq(tenantSchema.agent.archived, false)))
         .limit(1);
 
       if (result.length === 0) {
@@ -165,7 +165,11 @@ export class AgentService {
 
     try {
       const db = await this.getDb();
-      const result = await db.select().from(tenantSchema.agent).orderBy(tenantSchema.agent.name);
+      const result = await db
+        .select()
+        .from(tenantSchema.agent)
+        .where(eq(tenantSchema.agent.archived, false))
+        .orderBy(tenantSchema.agent.name);
 
       log.debug("Retrieved all agents", {
         tenantId: this.tenantId,
@@ -248,16 +252,19 @@ export class AgentService {
     try {
       const db = await this.getDb();
 
-      // First, remove all channel-agent associations
-      await db
-        .delete(tenantSchema.channelAgent)
-        .where(eq(tenantSchema.channelAgent.agentId, agentId));
+      const result = await db.transaction(async (tx) => {
+        // First, remove all channel-agent associations
+        await tx
+          .delete(tenantSchema.channelAgent)
+          .where(eq(tenantSchema.channelAgent.agentId, agentId));
 
-      // Then delete the agent
-      const result = await db
-        .delete(tenantSchema.agent)
-        .where(eq(tenantSchema.agent.id, agentId))
-        .returning();
+        // Then delete the agent (soft delete by setting archived flag)
+        return await tx
+          .update(tenantSchema.agent)
+          .set({ archived: true })
+          .where(eq(tenantSchema.agent.id, agentId))
+          .returning();
+      });
 
       if (result.length === 0) {
         log.debug("Agent deletion failed: Agent not found", {
@@ -300,13 +307,19 @@ export class AgentService {
           name: tenantSchema.agent.name,
           descriptions: tenantSchema.agent.descriptions,
           image: tenantSchema.agent.image,
+          archived: tenantSchema.agent.archived,
         })
         .from(tenantSchema.agent)
         .innerJoin(
           tenantSchema.channelAgent,
           eq(tenantSchema.agent.id, tenantSchema.channelAgent.agentId),
         )
-        .where(eq(tenantSchema.channelAgent.channelId, channelId))
+        .where(
+          and(
+            eq(tenantSchema.channelAgent.channelId, channelId),
+            eq(tenantSchema.agent.archived, false),
+          ),
+        )
         .orderBy(tenantSchema.agent.name);
 
       log.debug("Retrieved agents by channel", {
@@ -438,7 +451,9 @@ export class AgentService {
       const agent = await db
         .select()
         .from(tenantSchema.agent)
-        .where(eq(tenantSchema.agent.id, request.agentId))
+        .where(
+          and(eq(tenantSchema.agent.id, request.agentId), eq(tenantSchema.agent.archived, false)),
+        )
         .limit(1);
 
       if (agent.length === 0) {

@@ -1,6 +1,7 @@
 import { getTenantDb } from "./index";
 import { TenantConfig } from "./tenant-config";
 import * as tenantSchema from "./tenant-schema";
+import { eq } from "drizzle-orm";
 
 /**
  * Helper class for tenant-specific database operations
@@ -37,7 +38,10 @@ export class TenantService {
    */
   async getChannels() {
     const db = await this.getDb();
-    return await db.select().from(tenantSchema.channel);
+    return await db
+      .select()
+      .from(tenantSchema.channel)
+      .where(eq(tenantSchema.channel.archived, false));
   }
 
   /**
