@@ -26,7 +26,7 @@ const PUBLIC_PATHS = [
 
 // Client booking routes that need public access (no authentication required)
 const CLIENT_BOOKING_PATHS = [
-  "/api/tenants/public", // Public tenant information
+  "/api/public", // Public tenant information
   "/schedule", // Available time slots for clients
   "/appointments/challenge", // Create authentication challenge for existing clients
   "/appointments/verify-challenge", // Verify challenge response

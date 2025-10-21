@@ -1,7 +1,6 @@
 import { ERRORS } from "$lib/errors";
 import logger from "$lib/logger";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
-import { ChannelService, type ChannelWithRelations } from "$lib/server/services/channel-service";
 import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
 import { InternalError, logError, NotFoundError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
@@ -9,7 +8,7 @@ import { json } from "@sveltejs/kit";
 import { getTenantIdByDomain } from "./utils";
 
 // Register OpenAPI documentation
-registerOpenAPIRoute("/tenants/public", "GET", {
+registerOpenAPIRoute("/public", "GET", {
   summary: "Get public tenant data",
   description: "Retrieves the tenant data to display the appointment booking form",
   tags: ["Tenants", "Channels", "Agents"],
@@ -81,31 +80,6 @@ export const GET: RequestHandler = async ({ locals, url }) => {
       throw new NotFoundError(ERRORS.TENANTS.NOT_FOUND);
     }
 
-    const channelService = await ChannelService.forTenant(tenantId);
-    const channels = await channelService.getAllChannels();
-
-    type PublicChannel = Pick<
-      ChannelWithRelations,
-      "id" | "names" | "descriptions" | "requiresConfirmation"
-    >;
-    const filteredChannels = channels
-      .filter((c) => !c.pause && c.isPublic)
-      .reduce<PublicChannel[]>((list, ch) => {
-        if (ch.agents.length > 0) {
-          return [
-            ...list,
-            {
-              id: ch.id,
-              names: ch.names,
-              descriptions: ch.descriptions,
-              requiresConfirmation: ch.requiresConfirmation,
-            },
-          ];
-        } else {
-          return list;
-        }
-      }, []);
-
     return json({
       tenant: {
         id: tenantData.id,
@@ -125,7 +99,6 @@ export const GET: RequestHandler = async ({ locals, url }) => {
           zip: config["address.zip"] || "",
           city: config["address.city"] || "",
         },
-        channels: filteredChannels,
         logo: tenantData.logo,
       },
     });

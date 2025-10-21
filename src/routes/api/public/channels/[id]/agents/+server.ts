@@ -8,7 +8,7 @@ import { json } from "@sveltejs/kit";
 import { getTenantIdByDomain } from "../../../utils";
 
 // Register OpenAPI documentation
-registerOpenAPIRoute("/tenants/public/channels/{id}/agents", "GET", {
+registerOpenAPIRoute("/public/channels/{id}/agents", "GET", {
   summary: "Get agents for a channel",
   description: "Shows all available agents for a channel",
   tags: ["Tenants", "Channels", "Agents"],
