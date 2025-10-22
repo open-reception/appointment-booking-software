@@ -11,7 +11,7 @@
   import { ROUTES } from "$lib/const/routes";
   import { tenants as tenantsStore } from "$lib/stores/tenants";
   import { type TTenant } from "$lib/types/tenant";
-  import EditIcon from "@lucide/svelte/icons/pencil";
+  // import EditIcon from "@lucide/svelte/icons/pencil";
   import SelectIcon from "@lucide/svelte/icons/plug-zap";
   import PlusIcon from "@lucide/svelte/icons/plus";
   import UnknownItemIcon from "@lucide/svelte/icons/landmark";
