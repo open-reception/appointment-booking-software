@@ -33,8 +33,13 @@
       class="-my-4 mr-2 hidden !h-[calc(100%_+_var(--spacing)*8)] md:block"
     />
     <Separator class="-mx-4 -my-2 !w-[calc(100%_+_var(--spacing)*8)] md:hidden" />
-    <div class="md:flex-2/3">
+    <div class="flex flex-col gap-4 md:flex-2/3">
       <Skeleton class="h-5 w-3/7" />
+      <div class="flex flex-col gap-2">
+        <Skeleton class="h-12 w-full opacity-65" />
+        <Skeleton class="h-12 w-full opacity-50" />
+        <Skeleton class="h-12 w-full opacity-35" />
+      </div>
     </div>
   </SideBySide>
 {:then tenant}
@@ -48,6 +53,7 @@
         />
         <Separator class="-mx-4 -my-2 !w-[calc(100%_+_var(--spacing)*8)] md:hidden" />
         <div class="md:flex-2/3">
+          <!-- BookAppointmentWizard -->
           <Text style="sm" class="font-medium">
             {m["public.steps.channel.title"]()}
           </Text>
