@@ -134,7 +134,8 @@ describe("AgentService", () => {
       // Mock centralDb to handle TenantConfig.create() and tenant queries
       let callCount = 0;
       const mockSelectBuilder = {
-        from: vi.fn((table) => ({
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        from: vi.fn((_) => ({
           where: vi.fn(() => {
             callCount++;
             if (callCount === 1) {
