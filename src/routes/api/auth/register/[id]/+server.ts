@@ -2,7 +2,7 @@ import { json } from "@sveltejs/kit";
 import { UserService } from "$lib/server/services/user-service";
 import { WebAuthnService } from "$lib/server/auth/webauthn-service";
 import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
-import type { RequestHandler } from "../$types";
+import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 
