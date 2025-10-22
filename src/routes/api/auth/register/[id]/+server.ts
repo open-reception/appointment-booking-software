@@ -18,38 +18,6 @@ registerOpenAPIRoute("/auth/register", "POST", {
         schema: {
           type: "object",
           properties: {
-            name: { type: "string", description: "User's full name", example: "John Doe" },
-            email: {
-              type: "string",
-              format: "email",
-              description: "User's email address",
-              example: "user@example.com",
-            },
-            invite: {
-              type: "string",
-              format: "uuid",
-              description: "Invitation code (optional - if provided, overrides role/tenantId)",
-              example: "01234567-89ab-cdef-0123-456789abcdef",
-            },
-            role: {
-              type: "string",
-              enum: ["GLOBAL_ADMIN", "TENANT_ADMIN", "STAFF"],
-              description: "User's role in the system (ignored if invite is provided)",
-              example: "STAFF",
-            },
-            tenantId: {
-              type: "string",
-              format: "uuid",
-              description:
-                "Tenant ID for TENANT_ADMIN and STAFF roles (ignored if invite is provided)",
-              example: "01234567-89ab-cdef-0123-456789abcdef",
-            },
-            passphrase: {
-              type: "string",
-              minLength: 12,
-              description: "Optional passphrase for password authentication (min 12 chars)",
-              example: "my-secure-passphrase-123",
-            },
             passkey: {
               type: "object",
               description: "WebAuthn passkey data",
