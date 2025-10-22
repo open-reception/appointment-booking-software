@@ -12,6 +12,7 @@
         h3: "text-2xl font-semibold",
         h4: "text-xl font-semibold",
         h5: "text-lg font-semibold",
+        h6: "text-md font-semibold",
       },
     },
   });

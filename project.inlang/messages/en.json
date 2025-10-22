@@ -648,5 +648,40 @@
 				}
 			}
 		}
+	},
+	"public": {
+		"links": {
+			"website": "Go to Website",
+			"imprint": "Imprint",
+			"privacyStatement": "Privacy Statement"
+		},
+		"bookAppointment": "Book Appointment",
+		"tenantNotReady": {
+			"title": "Not ready to accept appointments.",
+			"description": "If this is yours, please login and complete onboarding."
+		},
+		"steps": {
+			"channel": {
+				"title": "Please select an appointment type:"
+			},
+			"agent": {
+				"title": "Please select who you want your appointment with:",
+				"anyone": "The first one available"
+			},
+			"slot": {
+				"title": "Please select an available appointment:",
+				"today": "Today",
+				"empty": "No appointments available. Please select another date.",
+				"action": "Select appointment"
+			},
+			"data": {
+				"title": "Please add your information:",
+				"alert": {
+					"title": "Your data is safe",
+					"description": "Only you and {name} will be able to access this information. It is end-to-end encrypted."
+				},
+				"action": "Add personal data"
+			}
+		}
 	}
 }
