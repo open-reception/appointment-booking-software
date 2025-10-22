@@ -61,7 +61,7 @@ export const tenant = pgTable(
     logo: varchar("logo", { length: 100_000 }),
     /** Database connection string for this tenant's isolated database */
     databaseUrl: text("database_url").notNull(),
-    /** STate of tenant setup */
+    /** State of tenant setup */
     setupState: tenantSetupState("setup_state").notNull().default("SETTINGS"),
     /** Links (object) */
     links: json("links")
