@@ -1,11 +1,12 @@
 import { centralDb, getTenantDb } from "../db";
 import { user, userPasskey } from "../db/central-schema";
 import { clientTunnelStaffKeyShare } from "../db/tenant-schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { NotFoundError, ValidationError, InternalError } from "../utils/errors";
 import { StaffCryptoService } from "./staff-crypto.service";
 import { UniversalLogger } from "$lib/logger";
 import type { InferSelectModel } from "drizzle-orm";
+import { TenantAdminService } from "./tenant-admin-service";
 
 const logger = new UniversalLogger().setContext("StaffService");
 
@@ -167,6 +168,22 @@ export class StaffService {
       throw new ValidationError("You cannot delete your own account");
     }
 
+    // Check if this is the only non-global admin staff member
+    const nonGlobalAdminStaff = await centralDb
+      .select({ id: user.id })
+      .from(user)
+      .where(
+        and(
+          eq(user.tenantId, tenantId),
+          eq(user.isActive, true),
+          or(eq(user.role, "TENANT_ADMIN"), eq(user.role, "STAFF")),
+        ),
+      );
+
+    if (nonGlobalAdminStaff.length === 1 && nonGlobalAdminStaff[0].id === staffId) {
+      throw new ValidationError("Cannot delete the last active non-global admin staff member");
+    }
+
     try {
       // Use transaction to ensure all related data is deleted consistently
       const result = await centralDb.transaction(async (tx) => {
@@ -253,6 +270,9 @@ export class StaffService {
 
         return deletionResult;
       });
+
+      const adminService = await TenantAdminService.getTenantById(tenantId);
+      adminService.validateSetupState();
 
       return result;
     } catch (error) {

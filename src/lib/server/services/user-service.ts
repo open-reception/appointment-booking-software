@@ -49,7 +49,7 @@ function createSystemTenant(): SelectTenant {
     logo: null,
     links: { website: "", imprint: "", privacyStatement: "" },
     databaseUrl: "",
-    setupState: "FIRST_CHANNEL_CREATED",
+    setupState: "SETTINGS",
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -293,6 +293,9 @@ export class UserService {
         hadRecoveryPassphrase: !!user.recoveryPassphrase,
       });
 
+      const adminService = await TenantAdminService.getTenantById(user.tenantId!);
+      adminService.validateSetupState();
+
       return {
         recoveryPassphrase: user.recoveryPassphrase || undefined,
         isSetup: countResult[0].count === 1,
@@ -468,6 +471,42 @@ export class UserService {
     log.debug("Deleting user and associated passkeys", { userId });
 
     try {
+      // Check if this is the last user with role TENANT_ADMIN or STAFF for their tenant
+      const userToDelete = await centralDb
+        .select({
+          role: centralSchema.user.role,
+          tenantId: centralSchema.user.tenantId,
+        })
+        .from(centralSchema.user)
+        .where(eq(centralSchema.user.id, userId))
+        .limit(1);
+
+      if (userToDelete.length === 0) {
+        throw new NotFoundError("User not found");
+      }
+
+      const user = userToDelete[0];
+
+      if (user.role === "TENANT_ADMIN" || user.role === "STAFF") {
+        if (user.tenantId) {
+          // Count other users with same role in the same tenant
+          const sameRoleUsersCount = await centralDb
+            .select({ count: count() })
+            .from(centralSchema.user)
+            .where(
+              and(
+                eq(centralSchema.user.tenantId, user.tenantId),
+                eq(centralSchema.user.role, user.role),
+                eq(centralSchema.user.isActive, true),
+              ),
+            );
+
+          if (sameRoleUsersCount[0].count <= 1) {
+            throw new ValidationError(`Cannot delete the last ${user.role} user for this tenant`);
+          }
+        }
+      }
+
       // Delete associated passkeys first
       const passkeyResult = await centralDb
         .delete(centralSchema.userPasskey)
@@ -486,6 +525,9 @@ export class UserService {
       } else {
         log.warn("User deletion failed: User not found", { userId });
       }
+
+      const adminService = await TenantAdminService.getTenantById(user.tenantId!);
+      adminService.validateSetupState();
 
       return result[0] || null;
     } catch (error) {
