@@ -74,6 +74,7 @@ describe("UserService", () => {
         shortName: "test",
         longName: "Test Tenant",
       },
+      validateSetupState: vi.fn(),
     });
   });
 
@@ -303,6 +304,20 @@ describe("UserService", () => {
         email: "deleted@example.com",
       };
 
+      // Mock the select operation for checking the user to delete
+      const mockSelectBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([
+          {
+            role: "GLOBAL_ADMIN",
+            tenantId: null,
+          },
+        ]),
+      };
+
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
+
       const mockDeleteBuilder = {
         where: vi.fn().mockReturnThis(),
         returning: vi.fn().mockResolvedValue([mockDeletedAdmin]),
@@ -312,6 +327,7 @@ describe("UserService", () => {
 
       const result = await UserService.deleteUser(adminId);
 
+      expect(mockCentralDb.select).toHaveBeenCalled();
       expect(mockCentralDb.delete).toHaveBeenCalledTimes(2);
       expect(result).toEqual(mockDeletedAdmin);
     });

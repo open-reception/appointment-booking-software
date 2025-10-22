@@ -4,14 +4,29 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock dependencies before imports
 vi.mock("../../db", () => ({
   getTenantDb: vi.fn(),
+  centralDb: {
+    select: vi.fn(),
+    insert: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
 }));
 
 vi.mock("$lib/logger", () => ({
+  UniversalLogger: vi.fn(() => ({
+    setContext: vi.fn(() => ({
+      debug: vi.fn(),
+      error: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
+    })),
+  })),
   default: {
     setContext: vi.fn(() => ({
       debug: vi.fn(),
       error: vi.fn(),
       warn: vi.fn(),
+      info: vi.fn(),
     })),
   },
 }));
@@ -82,9 +97,15 @@ const mockAgent = {
 };
 
 describe("AgentService", () => {
-  beforeEach(() => {
+  let mockCentralDb: any;
+
+  beforeEach(async () => {
     vi.clearAllMocks();
     vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+    // Import and get the mocked centralDb
+    const dbModule = await import("../../db");
+    mockCentralDb = dbModule.centralDb;
   });
 
   describe("forTenant", () => {
@@ -110,6 +131,45 @@ describe("AgentService", () => {
     });
 
     it("should create agent successfully", async () => {
+      // Mock centralDb to handle TenantConfig.create() and tenant queries
+      let callCount = 0;
+      const mockSelectBuilder = {
+        from: vi.fn((table) => ({
+          where: vi.fn(() => {
+            callCount++;
+            if (callCount === 1) {
+              // First call: TenantConfig.#getTenantConfig() - return config entries
+              return Promise.resolve([
+                { tenantId: "tenant-123", name: "maxAgents", type: "NUMBER", value: "10" },
+                {
+                  tenantId: "tenant-123",
+                  name: "allowNotifications",
+                  type: "BOOLEAN",
+                  value: "true",
+                },
+              ]);
+            } else {
+              // Second call: getTenantById tenant query - return with limit
+              return {
+                limit: vi.fn(() =>
+                  Promise.resolve([
+                    {
+                      id: "tenant-123",
+                      subdomain: "test-tenant",
+                      plan: "basic",
+                      isActive: true,
+                      createdAt: new Date(),
+                      updatedAt: new Date(),
+                    },
+                  ]),
+                ),
+              };
+            }
+          }),
+        })),
+      };
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
+
       const insertChain = {
         values: vi.fn(() => ({
           returning: vi.fn().mockResolvedValue([mockAgent]),
@@ -338,6 +398,45 @@ describe("AgentService", () => {
     });
 
     it("should delete agent successfully", async () => {
+      // Mock centralDb to handle TenantConfig.create() and tenant queries
+      let callCount = 0;
+      const mockSelectBuilder = {
+        from: vi.fn(() => ({
+          where: vi.fn(() => {
+            callCount++;
+            if (callCount === 1) {
+              // First call: TenantConfig.#getTenantConfig() - return config entries
+              return Promise.resolve([
+                { tenantId: "tenant-123", name: "maxAgents", type: "NUMBER", value: "10" },
+                {
+                  tenantId: "tenant-123",
+                  name: "allowNotifications",
+                  type: "BOOLEAN",
+                  value: "true",
+                },
+              ]);
+            } else {
+              // Second call: getTenantById tenant query - return with limit
+              return {
+                limit: vi.fn(() =>
+                  Promise.resolve([
+                    {
+                      id: "tenant-123",
+                      subdomain: "test-tenant",
+                      plan: "basic",
+                      isActive: true,
+                      createdAt: new Date(),
+                      updatedAt: new Date(),
+                    },
+                  ]),
+                ),
+              };
+            }
+          }),
+        })),
+      };
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
+
       const result = await service.deleteAgent("agent-123");
 
       expect(result).toBe(true);

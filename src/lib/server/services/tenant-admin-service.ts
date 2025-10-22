@@ -5,7 +5,7 @@ import { TenantConfig } from "../db/tenant-config";
 import { TenantMigrationService } from "./tenant-migration-service";
 
 import { env } from "$env/dynamic/private";
-import { eq, and, not } from "drizzle-orm";
+import { eq, and, not, count } from "drizzle-orm";
 import logger from "$lib/logger";
 import z from "zod/v4";
 import { ValidationError, NotFoundError, ConflictError } from "../utils/errors";
@@ -429,19 +429,25 @@ export class TenantAdminService {
       // Check for agents
       const { agent, channel } = await import("../db/tenant-schema");
 
-      const agentCount = await db.select().from(agent).where(eq(agent.archived, false));
+      const agentCount = await db
+        .select({ count: count() })
+        .from(agent)
+        .where(eq(agent.archived, false));
 
       if (agentCount.length === 0) {
         newState = "AGENTS";
       } else {
         // Check for channels
-        const channelCount = await db.select().from(channel).where(eq(channel.archived, false));
+        const channelCount = await db
+          .select({ count: count() })
+          .from(channel)
+          .where(eq(channel.archived, false));
         if (channelCount.length === 0) {
           newState = "CHANNELS";
         } else {
           // Check for staff members
           const staffCount = await centralDb
-            .select()
+            .select({ count: count() })
             .from(centralSchema.user)
             .where(
               and(
@@ -479,7 +485,6 @@ export class TenantAdminService {
       });
       throw error;
     }
-    this.setSetupState(newState);
   }
 
   /**

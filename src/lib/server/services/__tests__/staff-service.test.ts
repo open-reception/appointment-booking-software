@@ -20,6 +20,12 @@ vi.mock("../staff-crypto.service", () => ({
   })),
 }));
 
+vi.mock("../tenant-admin-service", () => ({
+  TenantAdminService: {
+    getTenantById: vi.fn(),
+  },
+}));
+
 const mockStaffMember = {
   id: "staff-123",
   email: "staff@example.com",
@@ -35,6 +41,7 @@ const mockStaffMember = {
 describe("StaffService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   describe("getStaffMembers", () => {
@@ -125,6 +132,29 @@ describe("StaffService", () => {
   describe("deleteStaffMember", () => {
     it("should delete a staff member successfully", async () => {
       const { centralDb, getTenantDb } = await import("../../db");
+      const { TenantAdminService } = await import("../tenant-admin-service");
+
+      // Mock the pre-transaction select queries
+      const mockSelectBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue([
+          {
+            id: "staff-456", // Different ID to simulate multiple staff members
+          },
+        ]),
+      };
+
+      vi.mocked(centralDb.select).mockReturnValue(mockSelectBuilder as any);
+
+      // Mock TenantAdminService
+      vi.mocked(TenantAdminService.getTenantById).mockResolvedValue({
+        tenantData: {
+          id: "tenant-123",
+          shortName: "test",
+          longName: "Test Tenant",
+        },
+        validateSetupState: vi.fn(),
+      } as any);
 
       const mockTransaction = vi.fn().mockImplementation(async (callback) => {
         const tx = {
@@ -190,12 +220,24 @@ describe("StaffService", () => {
     it("should throw NotFoundError when staff member not found", async () => {
       const { centralDb } = await import("../../db");
 
+      // Mock the pre-transaction select queries
+      const mockSelectBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue([
+          {
+            id: "staff-456", // Different ID to simulate multiple staff members
+          },
+        ]),
+      };
+
+      vi.mocked(centralDb.select).mockReturnValue(mockSelectBuilder as any);
+
       const mockTransaction = vi.fn().mockImplementation(async (callback) => {
         const tx = {
           select: vi.fn().mockReturnValue({
             from: vi.fn().mockReturnValue({
               where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([]),
+                limit: vi.fn().mockResolvedValue([]), // No user found
               }),
             }),
           }),
