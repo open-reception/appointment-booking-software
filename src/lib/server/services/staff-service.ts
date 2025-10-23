@@ -205,7 +205,11 @@ export class StaffService {
           throw new NotFoundError("Staff member not found in this tenant");
         }
 
-        // Delete tenant-specific data (client tunnel key shares)
+        // Use UserService to delete central database data (user + passkeys) first
+        // This ensures all validation logic is applied before deleting tenant data
+        const userDeletionResult = await UserService.deleteUser(staffId, tx);
+
+        // Delete tenant-specific data (client tunnel key shares) after user deletion succeeds
         let deletedKeySharesCount = 0;
         try {
           const tenantDb = await getTenantDb(tenantId);
@@ -226,11 +230,8 @@ export class StaffService {
             tenantId,
             error: String(error),
           });
-          // Continue with user deletion even if key share deletion fails
+          // Note: User deletion already succeeded, key share deletion is auxiliary
         }
-
-        // Use UserService to delete central database data (user + passkeys)
-        const userDeletionResult = await UserService.deleteUser(staffId, tx);
 
         // Combine results for staff-specific response format
         const staffDeletionResult: StaffDeletionResult = {
