@@ -639,5 +639,40 @@
 				}
 			}
 		}
+	},
+	"public": {
+		"links": {
+			"website": "Webseite aufrufen",
+			"imprint": "Impressum",
+			"privacyStatement": "Datenschutz"
+		},
+		"bookAppointment": "Termin buchen",
+		"tenantNotReady": {
+			"title": "Diese Seite ist noch nicht bereit",
+			"description": "Falls dies Ihre Seite ist, loggen Sie sich ein und schließen Sie das Onboarding ab."
+		},
+		"steps": {
+			"channel": {
+				"title": "Bitte wählen Sie eine Terminart aus:"
+			},
+			"agent": {
+				"title": "Mit wem möchten Sie Ihren Termin vereinbaren?",
+				"anyone": "Der/die Erste verfügbar"
+			},
+			"slot": {
+				"title": "Bitte wählen Sie einen verfügbaren Termin aus:",
+				"today": "Heute",
+				"empty": "Keine Termine verfügbar. Bitte wählen Sie ein anderes Datum.",
+				"action": "Termin auswählen"
+			},
+			"data": {
+				"title": "Bitte fügen Sie Ihre Informationen hinzu:",
+				"alert": {
+					"title": "Ihre Daten sind sicher",
+					"description": "Nur Sie und {name} können diese Informationen sehen. Die Daten sind Ende-zu-Ende verschlüsselt."
+				},
+				"action": "Daten hinzufügen"
+			}
+		}
 	}
 }
