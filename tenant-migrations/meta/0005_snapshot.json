@@ -98,12 +98,8 @@
           "name": "agent_absence_agent_id_agent_id_fk",
           "tableFrom": "agent_absence",
           "tableTo": "agent",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -213,12 +209,8 @@
           "name": "appointment_tunnel_id_client_appointment_tunnel_id_fk",
           "tableFrom": "appointment",
           "tableTo": "client_appointment_tunnel",
-          "columnsFrom": [
-            "tunnel_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tunnel_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -226,12 +218,8 @@
           "name": "appointment_channel_id_channel_id_fk",
           "tableFrom": "appointment",
           "tableTo": "channel",
-          "columnsFrom": [
-            "channel_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["channel_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -239,12 +227,8 @@
           "name": "appointment_agent_id_agent_id_fk",
           "tableFrom": "appointment",
           "tableTo": "agent",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -291,12 +275,8 @@
           "name": "appointment_key_share_appointment_id_appointment_id_fk",
           "tableFrom": "appointment_key_share",
           "tableTo": "appointment",
-          "columnsFrom": [
-            "appointment_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["appointment_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -445,12 +425,8 @@
           "name": "channel_agent_channel_id_channel_id_fk",
           "tableFrom": "channel_agent",
           "tableTo": "channel",
-          "columnsFrom": [
-            "channel_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["channel_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -458,12 +434,8 @@
           "name": "channel_agent_agent_id_agent_id_fk",
           "tableFrom": "channel_agent",
           "tableTo": "agent",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -497,12 +469,8 @@
           "name": "channel_slot_template_channel_id_channel_id_fk",
           "tableFrom": "channel_slot_template",
           "tableTo": "channel",
-          "columnsFrom": [
-            "channel_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["channel_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -510,12 +478,8 @@
           "name": "channel_slot_template_slot_template_id_slotTemplate_id_fk",
           "tableFrom": "channel_slot_template",
           "tableTo": "slotTemplate",
-          "columnsFrom": [
-            "slot_template_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["slot_template_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -575,9 +539,7 @@
         "client_hash_key_unique": {
           "name": "client_hash_key_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "hash_key"
-          ]
+          "columns": ["hash_key"]
         }
       },
       "policies": {},
@@ -641,9 +603,7 @@
         "client_appointment_tunnel_email_hash_unique": {
           "name": "client_appointment_tunnel_email_hash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email_hash"
-          ]
+          "columns": ["email_hash"]
         }
       },
       "policies": {},
@@ -693,12 +653,8 @@
           "name": "client_tunnel_staff_key_share_tunnel_id_client_appointment_tunnel_id_fk",
           "tableFrom": "client_tunnel_staff_key_share",
           "tableTo": "client_appointment_tunnel",
-          "columnsFrom": [
-            "tunnel_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tunnel_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -823,13 +779,7 @@
     "public.appointment_status": {
       "name": "appointment_status",
       "schema": "public",
-      "values": [
-        "NEW",
-        "CONFIRMED",
-        "HELD",
-        "REJECTED",
-        "NO_SHOW"
-      ]
+      "values": ["NEW", "CONFIRMED", "HELD", "REJECTED", "NO_SHOW"]
     }
   },
   "schemas": {},
