@@ -5,7 +5,7 @@ import { TenantConfig } from "../db/tenant-config";
 import { TenantMigrationService } from "./tenant-migration-service";
 
 import { env } from "$env/dynamic/private";
-import { eq, and, not, count } from "drizzle-orm";
+import { eq, and, not, count, or } from "drizzle-orm";
 import logger from "$lib/logger";
 import z from "zod/v4";
 import { ValidationError, NotFoundError, ConflictError } from "../utils/errors";
@@ -452,7 +452,10 @@ export class TenantAdminService {
             .where(
               and(
                 eq(centralSchema.user.tenantId, this.tenantId),
-                eq(centralSchema.user.role, "STAFF"),
+                or(
+                  eq(centralSchema.user.role, "STAFF"),
+                  eq(centralSchema.user.role, "TENANT_ADMIN"),
+                ),
               ),
             );
 

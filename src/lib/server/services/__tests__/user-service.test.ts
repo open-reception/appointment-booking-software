@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { NotFoundError } from "../../utils/errors";
+import { NotFoundError, ValidationError } from "../../utils/errors";
 
 // Mock the database module
 vi.mock("../../db", () => ({
@@ -9,6 +9,7 @@ vi.mock("../../db", () => ({
     select: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+    transaction: vi.fn(),
   },
 }));
 
@@ -296,40 +297,147 @@ describe("UserService", () => {
   });
 
   describe("deleteUser", () => {
-    it("should delete admin and associated passkeys", async () => {
+    it("should delete global admin successfully", async () => {
       const adminId = "018f-a1b2-c3d4-e5f6-789abcdef012";
       const mockDeletedAdmin = {
         id: adminId,
         name: "Deleted Admin",
         email: "deleted@example.com",
+        role: "GLOBAL_ADMIN",
       };
 
-      // Mock the select operation for checking the user to delete
-      const mockSelectBuilder = {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue([
-          {
-            role: "GLOBAL_ADMIN",
-            tenantId: null,
-          },
-        ]),
-      };
+      const mockTransaction = vi.fn().mockImplementation(async (callback) => {
+        const tx = {
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue([
+                  {
+                    id: adminId,
+                    email: "deleted@example.com",
+                    name: "Deleted Admin",
+                    role: "GLOBAL_ADMIN",
+                    tenantId: null,
+                  },
+                ]),
+              }),
+            }),
+          }),
+          delete: vi
+            .fn()
+            .mockReturnValueOnce({
+              where: vi.fn().mockResolvedValue({ count: 2 }),
+            })
+            .mockReturnValueOnce({
+              where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([mockDeletedAdmin]),
+              }),
+            }),
+        };
+        return await callback(tx);
+      });
 
-      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
-
-      const mockDeleteBuilder = {
-        where: vi.fn().mockReturnThis(),
-        returning: vi.fn().mockResolvedValue([mockDeletedAdmin]),
-      };
-
-      mockCentralDb.delete.mockReturnValue(mockDeleteBuilder);
+      mockCentralDb.transaction.mockImplementation(mockTransaction);
 
       const result = await UserService.deleteUser(adminId);
 
-      expect(mockCentralDb.select).toHaveBeenCalled();
-      expect(mockCentralDb.delete).toHaveBeenCalledTimes(2);
-      expect(result).toEqual(mockDeletedAdmin);
+      expect(result.success).toBe(true);
+      expect(result.deletedUser).toEqual(mockDeletedAdmin);
+      expect(result.deletedPasskeysCount).toBe(2);
+      expect(result.tenantId).toBeNull();
+    });
+
+    it("should prevent deletion of last tenant admin", async () => {
+      const adminId = "018f-a1b2-c3d4-e5f6-789abcdef012";
+
+      const mockTransaction = vi.fn().mockImplementation(async (callback) => {
+        const tx = {
+          select: vi
+            .fn()
+            .mockReturnValueOnce({
+              from: vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue([
+                    {
+                      id: adminId,
+                      email: "admin@example.com",
+                      name: "Last Admin",
+                      role: "TENANT_ADMIN",
+                      tenantId: "tenant-123",
+                    },
+                  ]),
+                }),
+              }),
+            })
+            .mockReturnValueOnce({
+              from: vi.fn().mockReturnValue({
+                where: vi.fn().mockResolvedValue([{ count: 1 }]), // Only one admin
+              }),
+            }),
+        };
+        return await callback(tx);
+      });
+
+      mockCentralDb.transaction.mockImplementation(mockTransaction);
+
+      await expect(UserService.deleteUser(adminId)).rejects.toThrow(ValidationError);
+    });
+
+    it("should delete tenant admin when multiple exist", async () => {
+      const adminId = "018f-a1b2-c3d4-e5f6-789abcdef012";
+      const mockDeletedAdmin = {
+        id: adminId,
+        name: "Deleted Admin",
+        email: "deleted@example.com",
+        role: "TENANT_ADMIN",
+      };
+
+      const mockTransaction = vi.fn().mockImplementation(async (callback) => {
+        const tx = {
+          select: vi
+            .fn()
+            .mockReturnValueOnce({
+              from: vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue([
+                    {
+                      id: adminId,
+                      email: "deleted@example.com",
+                      name: "Deleted Admin",
+                      role: "TENANT_ADMIN",
+                      tenantId: "tenant-123",
+                    },
+                  ]),
+                }),
+              }),
+            })
+            .mockReturnValueOnce({
+              from: vi.fn().mockReturnValue({
+                where: vi.fn().mockResolvedValue([{ count: 2 }]), // Multiple admins
+              }),
+            }),
+          delete: vi
+            .fn()
+            .mockReturnValueOnce({
+              where: vi.fn().mockResolvedValue({ count: 1 }),
+            })
+            .mockReturnValueOnce({
+              where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([mockDeletedAdmin]),
+              }),
+            }),
+        };
+        return await callback(tx);
+      });
+
+      mockCentralDb.transaction.mockImplementation(mockTransaction);
+
+      const result = await UserService.deleteUser(adminId);
+
+      expect(result.success).toBe(true);
+      expect(result.deletedUser).toEqual(mockDeletedAdmin);
+      expect(result.deletedPasskeysCount).toBe(1);
+      expect(result.tenantId).toBe("tenant-123");
     });
   });
 

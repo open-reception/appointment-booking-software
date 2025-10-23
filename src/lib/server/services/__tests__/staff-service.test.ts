@@ -26,6 +26,12 @@ vi.mock("../tenant-admin-service", () => ({
   },
 }));
 
+vi.mock("../user-service", () => ({
+  UserService: {
+    deleteUser: vi.fn(),
+  },
+}));
+
 const mockStaffMember = {
   id: "staff-123",
   email: "staff@example.com",
@@ -130,32 +136,68 @@ describe("StaffService", () => {
   });
 
   describe("deleteStaffMember", () => {
-    it("should delete a staff member successfully", async () => {
-      const { centralDb, getTenantDb } = await import("../../db");
-      const { TenantAdminService } = await import("../tenant-admin-service");
+    it("should prevent deletion of last staff member", async () => {
+      const { centralDb } = await import("../../db");
 
-      // Mock the pre-transaction select queries
+      // Mock the non-global admin staff check - only one staff member exists
       const mockSelectBuilder = {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockResolvedValue([
           {
-            id: "staff-456", // Different ID to simulate multiple staff members
+            id: "staff-123", // Only one staff member
           },
         ]),
       };
 
       vi.mocked(centralDb.select).mockReturnValue(mockSelectBuilder as any);
 
-      // Mock TenantAdminService
-      vi.mocked(TenantAdminService.getTenantById).mockResolvedValue({
-        tenantData: {
-          id: "tenant-123",
-          shortName: "test",
-          longName: "Test Tenant",
-        },
-        validateSetupState: vi.fn(),
-      } as any);
+      await expect(StaffService.deleteStaffMember("tenant-123", "staff-123")).rejects.toThrow(
+        ValidationError,
+      );
+    });
 
+    it("should delete a staff member successfully when multiple exist", async () => {
+      const { centralDb, getTenantDb } = await import("../../db");
+      const { UserService } = await import("../user-service");
+
+      // Mock the non-global admin staff check - multiple staff members exist
+      const mockSelectBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue([
+          {
+            id: "staff-123",
+          },
+          {
+            id: "staff-456", // Multiple staff members
+          },
+        ]),
+      };
+
+      vi.mocked(centralDb.select).mockReturnValue(mockSelectBuilder as any);
+
+      // Mock UserService.deleteUser
+      const mockUserDeletionResult = {
+        success: true,
+        deletedUser: {
+          id: "staff-123",
+          email: "staff@example.com",
+          name: "Staff Member",
+          role: "STAFF" as const,
+        },
+        deletedPasskeysCount: 2,
+        tenantId: "tenant-123",
+      };
+      vi.mocked(UserService.deleteUser).mockResolvedValue(mockUserDeletionResult);
+
+      // Mock tenant database for key shares
+      const mockTenantDb = {
+        delete: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue({ count: 1 }),
+        }),
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockTenantDb as any);
+
+      // Mock transaction
       const mockTransaction = vi.fn().mockImplementation(async (callback) => {
         const tx = {
           select: vi.fn().mockReturnValue({
@@ -173,35 +215,11 @@ describe("StaffService", () => {
               }),
             }),
           }),
-          delete: vi
-            .fn()
-            .mockReturnValueOnce({
-              where: vi.fn().mockResolvedValue({ count: 2 }),
-            })
-            .mockReturnValueOnce({
-              where: vi.fn().mockReturnValue({
-                returning: vi.fn().mockResolvedValue([
-                  {
-                    id: "staff-123",
-                    email: "staff@example.com",
-                    name: "Staff Member",
-                    role: "STAFF",
-                  },
-                ]),
-              }),
-            }),
         };
         return await callback(tx);
       });
 
-      const mockTenantDb = {
-        delete: vi.fn().mockReturnValue({
-          where: vi.fn().mockResolvedValue({ count: 1 }),
-        }),
-      };
-
       vi.mocked(centralDb.transaction).mockImplementation(mockTransaction);
-      vi.mocked(getTenantDb).mockResolvedValue(mockTenantDb as any);
 
       const result = await StaffService.deleteStaffMember("tenant-123", "staff-123");
 
