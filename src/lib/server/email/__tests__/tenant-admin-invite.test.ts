@@ -10,7 +10,7 @@ describe("sendTenantAdminInviteEmail", () => {
     languages: ["en"],
     defaultLanguage: "en",
     databaseUrl: "postgresql://test",
-    setupState: "NEW" as const,
+    setupState: "SETTINGS" as const,
     createdAt: new Date(),
     updatedAt: new Date(),
     logo: null,

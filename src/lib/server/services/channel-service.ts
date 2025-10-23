@@ -7,6 +7,7 @@ import { TenantConfig } from "../db/tenant-config";
 import * as tenantSchema from "../db/tenant-schema";
 import { type SelectAgent, type SelectChannel, type SelectSlotTemplate } from "../db/tenant-schema";
 import { NotFoundError, ValidationError } from "../utils/errors";
+import { TenantAdminService } from "./tenant-admin-service";
 
 const CHANNEL_COLORS = ["#FF0000", "#00FF00", "#0000FF"] as const;
 const NEXT_COLOR_KEY = "nextChannelColor";
@@ -200,6 +201,9 @@ export class ChannelService {
         agentCount: result.agents.length,
         slotTemplateCount: result.slotTemplates.length,
       });
+
+      const adminService = await TenantAdminService.getTenantById(this.tenantId);
+      adminService.validateSetupState();
 
       return result;
     } catch (error) {
@@ -677,6 +681,9 @@ export class ChannelService {
           channelId,
         });
       }
+
+      const adminService = await TenantAdminService.getTenantById(this.tenantId);
+      adminService.validateSetupState();
 
       return result;
     } catch (error) {

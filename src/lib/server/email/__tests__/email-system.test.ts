@@ -113,7 +113,7 @@ describe("Email System", () => {
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
         databaseUrl: "postgresql://test",
-        setupState: "FIRST_CHANNEL_CREATED" as const,
+        setupState: "STAFF" as const,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -146,7 +146,7 @@ describe("Email System", () => {
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
         databaseUrl: "postgresql://test",
-        setupState: "FIRST_CHANNEL_CREATED" as const,
+        setupState: "STAFF" as const,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -179,7 +179,7 @@ describe("Email System", () => {
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
         databaseUrl: "postgresql://test",
-        setupState: "FIRST_CHANNEL_CREATED" as const,
+        setupState: "STAFF" as const,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -212,7 +212,7 @@ describe("Email System", () => {
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
         databaseUrl: "postgresql://test",
-        setupState: "FIRST_CHANNEL_CREATED" as const,
+        setupState: "STAFF" as const,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -270,7 +270,7 @@ describe("Email System", () => {
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
         databaseUrl: "postgresql://test",
-        setupState: "FIRST_CHANNEL_CREATED" as const,
+        setupState: "STAFF" as const,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -336,7 +336,7 @@ describe("Email System", () => {
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
         databaseUrl: "postgresql://test",
-        setupState: "FIRST_CHANNEL_CREATED" as const,
+        setupState: "STAFF" as const,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -378,7 +378,7 @@ describe("Email System", () => {
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
         databaseUrl: "postgresql://test",
-        setupState: "FIRST_CHANNEL_CREATED" as const,
+        setupState: "STAFF" as const,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -414,7 +414,7 @@ describe("Email System", () => {
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
         databaseUrl: "postgresql://test",
-        setupState: "FIRST_CHANNEL_CREATED" as const,
+        setupState: "STAFF" as const,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -450,7 +450,7 @@ describe("Email System", () => {
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
         databaseUrl: "postgresql://test",
-        setupState: "FIRST_CHANNEL_CREATED" as const,
+        setupState: "STAFF" as const,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -505,7 +505,7 @@ describe("Email System", () => {
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
         databaseUrl: "postgresql://test",
-        setupState: "FIRST_CHANNEL_CREATED" as const,
+        setupState: "STAFF" as const,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -551,7 +551,7 @@ describe("Email System", () => {
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
         databaseUrl: "postgresql://test",
-        setupState: "FIRST_CHANNEL_CREATED" as const,
+        setupState: "STAFF" as const,
         createdAt: new Date(),
         updatedAt: new Date(),
       };

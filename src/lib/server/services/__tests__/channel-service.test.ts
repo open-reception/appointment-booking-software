@@ -7,8 +7,27 @@ vi.mock("../../db", () => ({
   getTenantDb: vi.fn(),
   centralDb: {
     select: vi.fn(() => ({
-      from: vi.fn(() => ({
-        where: vi.fn(() => Promise.resolve([])),
+      from: vi.fn((table) => ({
+        where: vi.fn(() => ({
+          limit: vi.fn(() => {
+            // Return different data based on table
+            if (table?.name === "tenant_config" || table === "tenant_config") {
+              return Promise.resolve([]);
+            }
+            // Default to tenant data
+            return Promise.resolve([
+              {
+                id: "tenant-123",
+                name: "Test Tenant",
+                subdomain: "test",
+                plan: "basic",
+                isActive: true,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ]);
+          }),
+        })),
       })),
     })),
     insert: vi.fn(),
@@ -18,11 +37,20 @@ vi.mock("../../db", () => ({
 }));
 
 vi.mock("$lib/logger", () => ({
+  UniversalLogger: vi.fn(() => ({
+    setContext: vi.fn(() => ({
+      debug: vi.fn(),
+      error: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
+    })),
+  })),
   default: {
     setContext: vi.fn(() => ({
       debug: vi.fn(),
       error: vi.fn(),
       warn: vi.fn(),
+      info: vi.fn(),
     })),
   },
 }));
