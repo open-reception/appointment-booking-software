@@ -54,23 +54,30 @@ describe("StaffService", () => {
     it("should return staff members for a tenant", async () => {
       const { centralDb } = await import("../../db");
 
-      const mockSelectBuilder = {
+      // Mock the first select query (for users)
+      const mockSelectBuilder1 = {
         from: vi.fn().mockReturnThis(),
-        where: vi
-          .fn()
-          .mockResolvedValue([
-            mockStaffMember,
-            { ...mockStaffMember, confirmationState: "INVITED" },
-          ]),
+        where: vi.fn().mockResolvedValue([mockStaffMember]),
       };
 
-      vi.mocked(centralDb.select).mockReturnValue(mockSelectBuilder as any);
+      // Mock the second select query (for invites)
+      const mockSelectBuilder2 = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue([]),
+      };
+
+      // Mock centralDb.select to return different builders for each call
+      vi.mocked(centralDb.select)
+        .mockReturnValueOnce(mockSelectBuilder1 as any)
+        .mockReturnValueOnce(mockSelectBuilder2 as any);
 
       const result = await StaffService.getStaffMembers("tenant-123");
 
-      expect(centralDb.select).toHaveBeenCalled();
-      expect(mockSelectBuilder.from).toHaveBeenCalled();
-      expect(mockSelectBuilder.where).toHaveBeenCalled();
+      expect(centralDb.select).toHaveBeenCalledTimes(2);
+      expect(mockSelectBuilder1.from).toHaveBeenCalled();
+      expect(mockSelectBuilder1.where).toHaveBeenCalled();
+      expect(mockSelectBuilder2.from).toHaveBeenCalled();
+      expect(mockSelectBuilder2.where).toHaveBeenCalled();
       expect(result).toEqual([mockStaffMember]);
     });
 
@@ -180,7 +187,7 @@ describe("StaffService", () => {
 
       vi.mocked(centralDb.select).mockReturnValue(mockSelectBuilder as any);
 
-      // Mock UserService.deleteUser
+      // Mock UserService.deleteUser - wichtig: das muss vor der transaction() mock sein
       const mockUserDeletionResult = {
         success: true,
         deletedUser: {
@@ -219,6 +226,9 @@ describe("StaffService", () => {
                 ]),
               }),
             }),
+          }),
+          delete: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue({ count: 1 }),
           }),
         };
         return await callback(tx);

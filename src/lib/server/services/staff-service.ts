@@ -1,5 +1,5 @@
 import { centralDb, getTenantDb } from "../db";
-import { user, userInvite, userPasskey } from "../db/central-schema";
+import { user, userInvite } from "../db/central-schema";
 import { clientTunnelStaffKeyShare } from "../db/tenant-schema";
 import { eq, and, or } from "drizzle-orm";
 import { NotFoundError, ValidationError, InternalError } from "../utils/errors";
@@ -236,20 +236,7 @@ export class StaffService {
           // This ensures all validation logic is applied before deleting tenant data
           const userDeletionResult = await UserService.deleteUser(staffId, tx);
 
-          // Delete associated passkeys from central database
-          const passkeyDeletionResult = await tx
-            .delete(userPasskey)
-            .where(eq(userPasskey.userId, staffId));
-
-          const deletedPasskeysCount = passkeyDeletionResult.count || 0;
-
-          logger.debug("Deleted user passkeys", {
-            staffId,
-            tenantId,
-            deletedCount: deletedPasskeysCount,
-          });
-
-          // Remove old invites of user
+          // Remove old invites of user if any exist
           const deletedInvites = await tx
             .delete(userInvite)
             .where(eq(userInvite.email, userToDelete[0].email));
@@ -258,17 +245,6 @@ export class StaffService {
             tenantId,
             deletedCount: deletedInvites.count || 0,
           });
-          // Finally, delete the user account from central database
-          const deletedUsers = await tx.delete(user).where(eq(user.id, staffId)).returning({
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-          });
-
-          if (deletedUsers.length === 0) {
-            throw new InternalError("Failed to delete user account");
-          }
 
           // Delete tenant-specific data (client tunnel key shares) after user deletion succeeds
           const tenantDb = await getTenantDb(tenantId);
@@ -281,8 +257,8 @@ export class StaffService {
           logger.debug("Deleted client tunnel key shares", {
             staffId,
             tenantId,
-            deletedUser: deletedUsers[0],
-            deletedPasskeysCount,
+            deletedUser: userDeletionResult.deletedUser,
+            deletedPasskeysCount: userDeletionResult.deletedPasskeysCount,
             deletedKeySharesCount,
           });
 
