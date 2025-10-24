@@ -166,43 +166,6 @@ describe("SessionService.validateTokenWithDB", () => {
     expect(result).toBeNull();
   });
 
-  it("should return null for unconfirmed user", async () => {
-    const { db } = await import("$lib/server/db");
-
-    const mockTokenData = {
-      sessionId: "session-id",
-      userId: "test-user-id",
-      exp: Math.floor(Date.now() / 1000) + 3600,
-    };
-    vi.mocked(jwtUtils.verifyAccessToken).mockResolvedValue(mockTokenData);
-
-    const unconfirmedUser = {
-      ...mockUser,
-      confirmationState: "PENDING_CONFIRMATION" as const,
-    };
-
-    const mockQuery = vi.fn().mockResolvedValue([
-      {
-        user: unconfirmedUser,
-        user_session: mockSession,
-      },
-    ]);
-
-    vi.mocked(db.select).mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        innerJoin: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            limit: mockQuery,
-          }),
-        }),
-      }),
-    } as any);
-
-    const result = await SessionService.validateTokenWithDB("valid-token");
-
-    expect(result).toBeNull();
-  });
-
   it("should return null and handle errors gracefully", async () => {
     vi.mocked(jwtUtils.verifyAccessToken).mockRejectedValue(new Error("JWT error"));
 

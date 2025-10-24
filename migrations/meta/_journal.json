@@ -50,6 +50,13 @@
       "when": 1760360156572,
       "tag": "0006_legal_dracula",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1761303767674,
+      "tag": "0007_milky_wasp",
+      "breakpoints": true
     }
   ]
 }

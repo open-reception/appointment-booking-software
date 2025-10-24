@@ -228,7 +228,7 @@
       </Form.Field>
       <Label class="mb-2">{m["form.passkey"]()}</Label>
       <Passkey.State state={$passkeyLoading} onclick={onSetPasskey} />
-      <Text style="md" color="medium">
+      <Text style="xs" color="medium" class="mt-1 ml-1 leading-none">
         {m["login.or"]()}
         <Button variant="link" size="sm" onclick={onToggle} class="text-inherit">
           {m["login.usePassphrase"]()}

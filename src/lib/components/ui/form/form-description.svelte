@@ -3,6 +3,7 @@
     Custom Changes
     * use Text component for consistent typography
     * custom margin and padding
+    * added leading-none
   */
   import * as FormPrimitive from "formsnap";
   import { cn, type WithoutChild } from "$lib/utils.js";

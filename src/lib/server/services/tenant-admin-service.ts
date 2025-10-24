@@ -255,12 +255,7 @@ export class TenantAdminService {
     });
 
     if (updateData.shortName) {
-      const shortNameValidation = tenantCreationSchema.shape.shortName.safeParse(
-        updateData.shortName,
-      );
-      if (!shortNameValidation.success) {
-        throw new ValidationError("Invalid shortName format");
-      }
+      throw new ValidationError("Shortname cannot be changed");
     }
 
     try {

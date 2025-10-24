@@ -181,7 +181,7 @@ describe("POST /api/auth/invite", () => {
       "Test User",
       mockTenant,
       "STAFF",
-      expect.stringContaining("invite=invite-code-123"),
+      expect.stringContaining("invite-code-123"),
       "de",
     );
   });

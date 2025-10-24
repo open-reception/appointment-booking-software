@@ -6,7 +6,7 @@ import { getAccessToken } from "./utils/accessToken";
 
 const logger = new UniversalLogger().setContext("AuthHandle");
 
-const PROTECTED_PATHS = ["/api/admin", "/api/tenant-admin", "/api/tenants", "/api/auth/register"];
+const PROTECTED_PATHS = ["/api/admin", "/api/tenant-admin", "/api/tenants"];
 const PUBLIC_PATHS = [
   "/",
   "/api/auth/challenge",
