@@ -110,7 +110,7 @@
     if (navState?.id && navState?.email) {
       $formData = {
         ...$formData,
-        id: navState.id,
+        userId: navState.id,
         email: navState.email,
       };
       history.replaceState({}, "");
@@ -129,35 +129,31 @@
     <Form.FieldErrors />
   </Form.Field>
   <div>
-    userId
-    <Form.Field {form} name="userId" class="text">
+    <Form.Field {form} name="userId" class="hidden">
       <Form.Control>
         {#snippet children({ props })}
-          <Input {...props} bind:value={$formData.userId} type="text" />
+          <Input {...props} bind:value={$formData.userId} type="hidden" />
         {/snippet}
       </Form.Control>
     </Form.Field>
-    passkey id
-    <Form.Field {form} name="id" class="text">
+    <Form.Field {form} name="id" class="hidden">
       <Form.Control>
         {#snippet children({ props })}
-          <Input {...props} bind:value={$formData.id} type="text" />
+          <Input {...props} bind:value={$formData.id} type="hidden" />
         {/snippet}
       </Form.Control>
     </Form.Field>
-    publicKeyBase64
-    <Form.Field {form} name="publicKeyBase64" class="text">
+    <Form.Field {form} name="publicKeyBase64" class="hidden">
       <Form.Control>
         {#snippet children({ props })}
-          <Input {...props} bind:value={$formData.publicKeyBase64} type="text" />
+          <Input {...props} bind:value={$formData.publicKeyBase64} type="hidden" />
         {/snippet}
       </Form.Control>
     </Form.Field>
-    authenticatorDataBase64
-    <Form.Field {form} name="authenticatorDataBase64" class="text">
+    <Form.Field {form} name="authenticatorDataBase64" class="hidden">
       <Form.Control>
         {#snippet children({ props })}
-          <Input {...props} bind:value={$formData.authenticatorDataBase64} type="text" />
+          <Input {...props} bind:value={$formData.authenticatorDataBase64} type="hidden" />
         {/snippet}
       </Form.Control>
     </Form.Field>

@@ -155,7 +155,7 @@
 			"title": "Add Tenant",
 			"description": "Create a site for someone to start collecting appointments.",
 			"name": {
-				"description": "Must be unique on this server. Used as a subdomain {domain}",
+				"description": "Must be unique on this server. Cannot be changed. Used as a subdomain {domain}",
 				"errors": {
 					"urlFormat": "Only letters, numbers, and hyphens are allowed",
 					"startEndDash": "Must not start or end with a dash"

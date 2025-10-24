@@ -425,7 +425,7 @@ export class UserService {
    */
   static async getUserByEmail(email: string) {
     const log = logger.setContext("UserService");
-    log.debug("Getting admin by email", { email });
+    log.debug("Getting user by email", { email });
 
     try {
       const result = await centralDb

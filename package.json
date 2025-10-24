@@ -93,7 +93,7 @@
     "drizzle-orm": "^0.44.2",
     "jose": "^6.0.11",
     "mode-watcher": "^1.0.8",
-    "nodemailer": "^7.0.3",
+    "nodemailer": "^7.0.7",
     "postgres": "^3.4.7",
     "secrets.js-34r7h": "^2.0.2",
     "uuidv7": "^1.0.2",

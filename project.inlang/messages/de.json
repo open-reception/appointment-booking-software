@@ -147,7 +147,7 @@
 			"title": "Mandant hinzufügen",
 			"description": "Erstelle eine Seite für jemanden, der Termine sammeln möchte.",
 			"name": {
-				"description": "Muss einmalig auf diesem Server sein. Wird als URL verwendet {domain}",
+				"description": "Muss einmalig auf diesem Server sein. Kann niemals geändert werden. Wird als URL verwendet {domain}",
 				"errors": {
 					"urlFormat": "Nur Kleinbuchstaben, Zahlen und Bindestriche sind erlaubt",
 					"startEndDash": "Darf nicht mit einem Bindestrich beginnen oder enden"

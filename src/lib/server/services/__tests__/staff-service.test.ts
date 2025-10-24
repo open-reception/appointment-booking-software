@@ -43,7 +43,12 @@ describe("StaffService", () => {
 
       const mockSelectBuilder = {
         from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue([mockStaffMember]),
+        where: vi
+          .fn()
+          .mockResolvedValue([
+            mockStaffMember,
+            { ...mockStaffMember, confirmationState: "INVITED" },
+          ]),
       };
 
       vi.mocked(centralDb.select).mockReturnValue(mockSelectBuilder as any);
