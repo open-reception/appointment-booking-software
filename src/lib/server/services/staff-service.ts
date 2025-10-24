@@ -1,11 +1,12 @@
 import { centralDb, getTenantDb } from "../db";
 import { user, userInvite, userPasskey } from "../db/central-schema";
 import { clientTunnelStaffKeyShare } from "../db/tenant-schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { NotFoundError, ValidationError, InternalError } from "../utils/errors";
 import { StaffCryptoService } from "./staff-crypto.service";
 import { UniversalLogger } from "$lib/logger";
 import type { InferSelectModel } from "drizzle-orm";
+import { UserService } from "./user-service";
 
 const logger = new UniversalLogger().setContext("StaffService");
 
@@ -193,6 +194,23 @@ export class StaffService {
       throw new ValidationError("You cannot delete your own account");
     }
 
+    // Check if this is the only non-global admin staff member
+    const nonGlobalAdminStaff = await centralDb
+      .select({ id: user.id })
+      .from(user)
+      .where(
+        and(
+          eq(user.tenantId, tenantId),
+          eq(user.isActive, true),
+          or(eq(user.role, "TENANT_ADMIN"), eq(user.role, "STAFF")),
+          eq(user.confirmationState, "ACCESS_GRANTED"),
+        ),
+      );
+
+    if (nonGlobalAdminStaff.length === 1 && nonGlobalAdminStaff[0].id === staffId) {
+      throw new ValidationError("Cannot delete the last active non-global admin staff member");
+    }
+
     try {
       // Use transaction to ensure all related data is deleted consistently
       const result = await centralDb.transaction(async (tx) => {
@@ -214,6 +232,10 @@ export class StaffService {
             throw new NotFoundError("Staff member not found in this tenant");
           }
 
+          // Use UserService to delete central database data (user + passkeys) first
+          // This ensures all validation logic is applied before deleting tenant data
+          const userDeletionResult = await UserService.deleteUser(staffId, tx);
+
           // Delete associated passkeys from central database
           const passkeyDeletionResult = await tx
             .delete(userPasskey)
@@ -227,29 +249,6 @@ export class StaffService {
             deletedCount: deletedPasskeysCount,
           });
 
-          // Delete client tunnel key shares from tenant database
-          let deletedKeySharesCount = 0;
-          try {
-            const tenantDb = await getTenantDb(tenantId);
-            const keyShareDeletionResult = await tenantDb
-              .delete(clientTunnelStaffKeyShare)
-              .where(eq(clientTunnelStaffKeyShare.userId, staffId));
-
-            deletedKeySharesCount = keyShareDeletionResult.count || 0;
-
-            logger.debug("Deleted client tunnel key shares", {
-              staffId,
-              tenantId,
-              deletedCount: deletedKeySharesCount,
-            });
-          } catch (error) {
-            logger.warn("Failed to delete client tunnel key shares", {
-              staffId,
-              tenantId,
-              error: String(error),
-            });
-            // Continue with user deletion even if key share deletion fails
-          }
           // Remove old invites of user
           const deletedInvites = await tx
             .delete(userInvite)
@@ -271,14 +270,15 @@ export class StaffService {
             throw new InternalError("Failed to delete user account");
           }
 
-          const deletionResult = {
-            success: true,
-            deletedUser: deletedUsers[0],
-            deletedPasskeysCount,
-            deletedKeySharesCount,
-          };
+          // Delete tenant-specific data (client tunnel key shares) after user deletion succeeds
+          const tenantDb = await getTenantDb(tenantId);
+          const keyShareDeletionResult = await tenantDb
+            .delete(clientTunnelStaffKeyShare)
+            .where(eq(clientTunnelStaffKeyShare.userId, staffId));
 
-          logger.info("Staff member deleted successfully", {
+          const deletedKeySharesCount = keyShareDeletionResult?.count || 0;
+
+          logger.debug("Deleted client tunnel key shares", {
             staffId,
             tenantId,
             deletedUser: deletedUsers[0],
@@ -286,7 +286,23 @@ export class StaffService {
             deletedKeySharesCount,
           });
 
-          return deletionResult;
+          // Combine results for staff-specific response format
+          const staffDeletionResult: StaffDeletionResult = {
+            success: userDeletionResult.success,
+            deletedUser: userDeletionResult.deletedUser,
+            deletedPasskeysCount: userDeletionResult.deletedPasskeysCount,
+            deletedKeySharesCount,
+          };
+
+          logger.info("Staff member deleted successfully", {
+            staffId,
+            tenantId,
+            deletedUser: userDeletionResult.deletedUser,
+            deletedPasskeysCount: userDeletionResult.deletedPasskeysCount,
+            deletedKeySharesCount,
+          });
+
+          return staffDeletionResult;
         } else {
           const deletedInvites = await tx.delete(userInvite).where(eq(userInvite.id, staffId));
           logger.debug("Deleted user invites", {
@@ -294,25 +310,20 @@ export class StaffService {
             tenantId,
             deletedCount: deletedInvites.count || 0,
           });
-
-          const deletionResult = {
+          // Note: User deletion already succeeded, key share deletion is auxiliary
+          return {
             success: true,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            deletedUser: staffId as any,
+            deletedUser: {
+              id: staffId,
+              email: "",
+              name: "",
+              role: "STAFF" as const,
+            },
             deletedPasskeysCount: 0,
             deletedKeySharesCount: 0,
           };
-
-          logger.info("Staff member invites deleted successfully", {
-            staffId,
-            tenantId,
-            deletedUser: staffId,
-          });
-
-          return deletionResult;
         }
       });
-
       return result;
     } catch (error) {
       if (error instanceof ValidationError || error instanceof NotFoundError) {
