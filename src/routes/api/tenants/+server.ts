@@ -28,12 +28,6 @@ registerOpenAPIRoute("/tenants", "POST", {
               description: "Short name for the tenant (4-15 characters)",
               example: "acme-corp",
             },
-            inviteAdmin: {
-              type: "string",
-              format: "email",
-              description: "Email address to invite as tenant admin",
-              example: "admin@acme-corp.com",
-            },
           },
           required: ["shortName"],
         },
@@ -49,15 +43,23 @@ registerOpenAPIRoute("/tenants", "POST", {
             type: "object",
             properties: {
               message: { type: "string", description: "Success message" },
-              tenantId: { type: "string", description: "Generated tenant ID" },
-              shortName: { type: "string", description: "Tenant short name" },
+              tenant: {
+                type: "object",
+                properties: {
+                  id: { type: "string", description: "Generated tenant ID" },
+                  shortName: { type: "string", description: "Tenant short name" },
+                },
+                required: ["id", "shortName"],
+              },
             },
-            required: ["message", "tenantId", "shortName"],
+            required: ["message", "tenant"],
           },
           example: {
             message: "Tenant created successfully",
-            tenantId: "01234567-89ab-cdef-0123-456789abcdef",
-            shortName: "acme-corp",
+            tenant: {
+              id: "01234567-89ab-cdef-0123-456789abcdef",
+              shortName: "acme-corp",
+            },
           },
         },
       },
@@ -157,14 +159,12 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 
     log.debug("Creating tenant", {
       shortName: body.shortName,
-      hasInviteAdmin: !!body.inviteAdmin,
     });
 
     checkPermission(locals, null, true);
 
     const tenantService = await TenantAdminService.createTenant({
       shortName: body.shortName,
-      inviteAdmin: body.inviteAdmin,
     });
 
     log.debug("Tenant created successfully", {
@@ -175,8 +175,10 @@ export const POST: RequestHandler = async ({ locals, request }) => {
     return json(
       {
         message: "Tenant created successfully",
-        tenantId: tenantService.tenantId,
-        shortName: body.shortName,
+        tenant: {
+          id: tenantService.tenantId,
+          shortName: body.shortName,
+        },
       },
       { status: 201 },
     );
