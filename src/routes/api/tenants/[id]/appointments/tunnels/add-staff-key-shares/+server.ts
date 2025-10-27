@@ -166,7 +166,7 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
 
     if (!validation.success) {
       throw new ValidationError(
-        "Invalid request data: " + validation.error.errors.map((e) => e.message).join(", "),
+        "Invalid request data: " + validation.error.issues.map((e) => e.message).join(", "),
       );
     }
 

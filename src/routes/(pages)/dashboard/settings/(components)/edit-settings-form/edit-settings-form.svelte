@@ -13,7 +13,7 @@
   import DefaultOrgIcon from "@lucide/svelte/icons/landmark";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
-  import { zodClient } from "sveltekit-superforms/adapters";
+  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from "./schema";
   import { tenants } from "$lib/stores/tenants";
 

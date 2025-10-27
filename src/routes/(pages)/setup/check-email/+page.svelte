@@ -3,7 +3,7 @@
   import * as Form from "$lib/components/ui/form";
   import { CenteredCard } from "$lib/components/layouts";
   import { PageWithClaim } from "$lib/components/ui/page";
-  import { zodClient } from "sveltekit-superforms/adapters";
+  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { CenterState } from "$lib/components/templates/empty-state";
   import MailPlus from "@lucide/svelte/icons/mail-plus";
   import { superForm, type Infer, type SuperValidated } from "sveltekit-superforms/client";

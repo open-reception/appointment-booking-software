@@ -3,7 +3,7 @@ import logger from "$lib/logger";
 import type { TStaff } from "$lib/types/users.js";
 import { fail, redirect, type Actions } from "@sveltejs/kit";
 import { superValidate } from "sveltekit-superforms";
-import { zod } from "sveltekit-superforms/adapters";
+import { zod4 as zod } from "sveltekit-superforms/adapters";
 import { formSchema as addFormSchema } from "./(components)/add-staff-member-form";
 import { formSchema as deleteFormSchema } from "./(components)/delete-staff-member-form";
 import { formSchema as editFormSchema } from "./(components)/edit-staff-member-form";

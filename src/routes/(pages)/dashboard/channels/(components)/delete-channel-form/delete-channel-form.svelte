@@ -7,8 +7,8 @@
   import { Text } from "$lib/components/ui/typography";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
-  import { zodClient } from "sveltekit-superforms/adapters";
-  import z from "zod";
+  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
+  import { z } from "zod";
   import { formSchema } from ".";
   import type { TChannelWithFullAgents } from "$lib/types/channel";
   import { getCurrentTranlslation } from "$lib/utils/localizations";

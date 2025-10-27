@@ -3,7 +3,7 @@ import * as centralSchema from "../db/central-schema";
 import { eq, desc, gt, and, count, or } from "drizzle-orm";
 import type { InferInsertModel, TablesRelationalConfig } from "drizzle-orm";
 
-import z from "zod/v4";
+import { z } from "zod";
 import { NotFoundError, ValidationError, InternalError } from "../utils/errors";
 import { uuidv7 } from "uuidv7";
 import { addMinutes } from "date-fns";

@@ -5,7 +5,7 @@
   import { Input } from "$lib/components/ui/input";
   import { toast } from "svelte-sonner";
   import { type Infer, superForm, type SuperValidated } from "sveltekit-superforms";
-  import { zodClient } from "sveltekit-superforms/adapters";
+  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema, type FormSchema } from "./schema";
 
   let {

@@ -42,7 +42,7 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
     if (!validation.success) {
       logger.warn("Invalid tenant switch request", {
         userId: locals.user?.id,
-        errors: validation.error.errors,
+        errors: validation.error.issues,
       });
       throw new ValidationError(ERRORS.VALIDATION.INVALID_REQUEST_BODY);
     }

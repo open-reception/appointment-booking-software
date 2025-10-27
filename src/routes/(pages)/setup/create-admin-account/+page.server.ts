@@ -2,7 +2,7 @@ import logger from "$lib/logger";
 import { UserService } from "$lib/server/services/user-service";
 import { fail } from "@sveltejs/kit";
 import { superValidate } from "sveltekit-superforms";
-import { zod } from "sveltekit-superforms/adapters";
+import { zod4 as zod } from "sveltekit-superforms/adapters";
 import type { Actions, PageServerLoad } from "./$types";
 import { formSchema } from "./schema";
 import { base64ToArrayBuffer, getCounterFromAuthenticatorData } from "$lib/utils/passkey";

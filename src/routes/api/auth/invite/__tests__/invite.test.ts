@@ -33,7 +33,7 @@ import { mockCookies } from "$lib/tests/const";
 
 describe("POST /api/auth/invite", () => {
   const mockTenant = {
-    id: "12345678-1234-1234-1234-123456789012",
+    id: "12345678-1234-4234-8234-123456789012",
     shortName: "testcorp",
     longName: "Test Corporation GmbH",
     description: "A test corporation",
@@ -54,7 +54,7 @@ describe("POST /api/auth/invite", () => {
     email: "user@example.com",
     name: "Test User",
     role: "STAFF" as const,
-    tenantId: "12345678-1234-1234-1234-123456789012",
+    tenantId: "12345678-1234-4234-8234-123456789012",
     invitedBy: "admin-id",
     language: "de" as const,
     used: false,
@@ -96,7 +96,7 @@ describe("POST /api/auth/invite", () => {
       email: "user@example.com",
       name: "Test User",
       role: "STAFF",
-      tenantId: "12345678-1234-1234-1234-123456789012",
+      tenantId: "12345678-1234-4234-8234-123456789012",
     });
 
     const response = await POST(requestEvent);
@@ -118,7 +118,7 @@ describe("POST /api/auth/invite", () => {
         email: "user@example.com",
         name: "Test User",
         role: "STAFF",
-        tenantId: "12345678-1234-1234-1234-123456789012",
+        tenantId: "12345678-1234-4234-8234-123456789012",
       },
       globalAdmin,
     );
@@ -132,13 +132,13 @@ describe("POST /api/auth/invite", () => {
     expect(data.inviteCode).toBe("invite-code-123");
     expect(vi.mocked(InviteService.hasPendingInvite)).toHaveBeenCalledWith(
       "user@example.com",
-      "12345678-1234-1234-1234-123456789012",
+      "12345678-1234-4234-8234-123456789012",
     );
     expect(vi.mocked(InviteService.createInvite)).toHaveBeenCalledWith(
       "user@example.com",
       "Test User",
       "STAFF",
-      "12345678-1234-1234-1234-123456789012",
+      "12345678-1234-4234-8234-123456789012",
       "admin-id",
       "de",
     );
@@ -149,7 +149,7 @@ describe("POST /api/auth/invite", () => {
     const tenantAdmin = {
       userId: "tenant-admin-id",
       role: "TENANT_ADMIN",
-      tenantId: "12345678-1234-1234-1234-123456789012",
+      tenantId: "12345678-1234-4234-8234-123456789012",
     };
 
     const requestEvent = createRequestEvent(
@@ -157,7 +157,7 @@ describe("POST /api/auth/invite", () => {
         email: "user@example.com",
         name: "Test User",
         role: "STAFF",
-        tenantId: "12345678-1234-1234-1234-123456789012",
+        tenantId: "12345678-1234-4234-8234-123456789012",
       },
       tenantAdmin,
     );
@@ -172,7 +172,7 @@ describe("POST /api/auth/invite", () => {
       "user@example.com",
       "Test User",
       "STAFF",
-      "12345678-1234-1234-1234-123456789012",
+      "12345678-1234-4234-8234-123456789012",
       "tenant-admin-id",
       "de",
     );
@@ -198,7 +198,7 @@ describe("POST /api/auth/invite", () => {
         email: "user@example.com",
         name: "Test User",
         role: "STAFF",
-        tenantId: "12345678-1234-1234-1234-123456789012",
+        tenantId: "12345678-1234-4234-8234-123456789012",
       },
       tenantAdmin,
     );
@@ -216,7 +216,7 @@ describe("POST /api/auth/invite", () => {
     const staff = {
       userId: "staff-id",
       role: "STAFF",
-      tenantId: "12345678-1234-1234-1234-123456789012",
+      tenantId: "12345678-1234-4234-8234-123456789012",
     };
 
     const requestEvent = createRequestEvent(
@@ -224,7 +224,7 @@ describe("POST /api/auth/invite", () => {
         email: "user@example.com",
         name: "Test User",
         role: "STAFF",
-        tenantId: "12345678-1234-1234-1234-123456789012",
+        tenantId: "12345678-1234-4234-8234-123456789012",
       },
       staff,
     );
@@ -279,7 +279,7 @@ describe("POST /api/auth/invite", () => {
         email: "user@example.com",
         name: "Test User",
         role: "STAFF",
-        tenantId: "12345678-1234-1234-1234-123456789012",
+        tenantId: "12345678-1234-4234-8234-123456789012",
       },
       globalAdmin,
     );
@@ -291,7 +291,7 @@ describe("POST /api/auth/invite", () => {
     expect(data.error).toBe("User already has a pending invitation for this tenant");
     expect(vi.mocked(InviteService.hasPendingInvite)).toHaveBeenCalledWith(
       "user@example.com",
-      "12345678-1234-1234-1234-123456789012",
+      "12345678-1234-4234-8234-123456789012",
     );
     expect(vi.mocked(InviteService.createInvite)).not.toHaveBeenCalled();
     expect(vi.mocked(sendUserInviteEmail)).not.toHaveBeenCalled();

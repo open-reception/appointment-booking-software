@@ -13,7 +13,7 @@
   import { toast } from "svelte-sonner";
   import { writable, type Writable } from "svelte/store";
   import { type Infer, type SuperValidated } from "sveltekit-superforms";
-  import { zodClient } from "sveltekit-superforms/adapters";
+  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { superForm } from "sveltekit-superforms/client";
   import { formSchema, type FormSchema } from "./schema";
   import { onMount } from "svelte";

@@ -6,7 +6,7 @@ import { ERRORS } from "$lib/errors";
 import { checkPermission } from "$lib/server/utils/permissions";
 import { StaffService } from "$lib/server/services/staff-service";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
-import z from "zod";
+import { z } from "zod";
 
 // Register OpenAPI documentation for DELETE
 registerOpenAPIRoute("/tenants/{id}/staff/{staffId}", "DELETE", {
@@ -290,7 +290,7 @@ const userUpdateSchema = z.object({
   name: z.string().min(1, "Name cannot be empty").optional(),
   role: z
     .enum(["GLOBAL_ADMIN", "TENANT_ADMIN", "STAFF"], {
-      errorMap: () => ({ message: "Invalid role" }),
+      error: () => ({ message: "Invalid role" }),
     })
     .optional(),
   isActive: z.boolean().optional(),
@@ -315,7 +315,7 @@ export const PUT: RequestHandler = async ({ params, locals, request }) => {
 
     if (!validation.success) {
       throw new ValidationError(
-        "Invalid user update data: " + validation.error.errors.map((e) => e.message).join(", "),
+        "Invalid user update data: " + validation.error.issues.map((e) => e.message).join(", "),
       );
     }
 

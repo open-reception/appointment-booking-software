@@ -7,7 +7,7 @@ import { TenantMigrationService } from "./tenant-migration-service";
 import { env } from "$env/dynamic/private";
 import { eq, and, not, count, or } from "drizzle-orm";
 import logger from "$lib/logger";
-import z from "zod/v4";
+import { z } from "zod";
 import { ValidationError, NotFoundError, ConflictError } from "../utils/errors";
 import { sendTenantAdminInviteEmail } from "../email/email-service";
 import { ERRORS } from "$lib/errors";
