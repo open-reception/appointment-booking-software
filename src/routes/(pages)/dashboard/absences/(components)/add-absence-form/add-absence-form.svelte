@@ -10,7 +10,7 @@
   import StopIcon from "@lucide/svelte/icons/octagon-x";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
-  import { zodClient } from "sveltekit-superforms/adapters";
+  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { reasons } from "../utils";
   import { formSchema } from "./schema";
   import { getDefaultStartTime, getDefaultEndTime } from "$lib/utils/datetime";

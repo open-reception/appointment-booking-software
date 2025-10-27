@@ -7,7 +7,7 @@
   import type { TStaff } from "$lib/types/users";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
-  import { zodClient } from "sveltekit-superforms/adapters";
+  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from ".";
   import RolePermissions from "../role-permissions.svelte";
   import { roles } from "../utils";

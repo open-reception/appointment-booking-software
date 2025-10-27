@@ -2,7 +2,7 @@ import { ROUTES } from "$lib/const/routes.js";
 import logger from "$lib/logger";
 import { fail, redirect, type Actions } from "@sveltejs/kit";
 import { superValidate } from "sveltekit-superforms";
-import { zod } from "sveltekit-superforms/adapters";
+import { zod4 as zod } from "sveltekit-superforms/adapters";
 import { formSchema as editFormSchema } from "./(components)/edit-settings-form";
 import { removeEmptyTranslations } from "$lib/utils/localizations";
 

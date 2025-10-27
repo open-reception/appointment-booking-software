@@ -10,7 +10,7 @@ import {
 
 import { eq, and, between, sql, or } from "drizzle-orm";
 import logger from "$lib/logger";
-import z from "zod/v4";
+import { z } from "zod";
 import { ValidationError } from "../utils/errors";
 
 const scheduleRequestSchema = z.object({

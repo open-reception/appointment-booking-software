@@ -4,7 +4,7 @@ import { BackendError, InternalError, logError, ValidationError } from "$lib/ser
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
-import z from "zod/v4";
+import { z } from "zod";
 import { checkPermission } from "$lib/server/utils/permissions";
 import { ERRORS } from "$lib/errors";
 
