@@ -9,6 +9,7 @@
   import { Button } from "$lib/components/ui/button";
   import { ResponsiveDialog, closeDialog, openDialog } from "$lib/components/ui/responsive-dialog";
   import { ROUTES } from "$lib/const/routes";
+  import { agents } from "$lib/stores/agents";
   import { type TAgent } from "$lib/types/agent";
   import EditIcon from "@lucide/svelte/icons/pencil";
   import PlusIcon from "@lucide/svelte/icons/plus";
@@ -16,9 +17,8 @@
   import UnknownItemIcon from "@lucide/svelte/icons/user-star";
   import { onMount } from "svelte";
   import { AddAgentForm } from "./(components)/add-agent-form";
-  import DeleteAgentForm from "./(components)/delete-agent-form/delete-agent-form.svelte";
-  import EditAgentForm from "./(components)/edit-agent-form/edit-agent-form.svelte";
-  import { agents } from "$lib/stores/agents";
+  import { DeleteAgentForm } from "./(components)/delete-agent-form";
+  import { EditAgentForm } from "./(components)/edit-agent-form";
 
   const { data } = $props();
   let curItem: TAgent | null = $state(null);

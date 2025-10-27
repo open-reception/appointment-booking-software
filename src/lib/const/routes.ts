@@ -6,6 +6,7 @@ export const ROUTES = {
     CREATE_ADMIN_ACCOUNT: "/setup/create-admin-account",
     CHECK_EMAIL: "/setup/check-email",
   },
+  SETUP_PASSKEY: "/confirm/setup-passkey",
   RESEND_CONFIRMATION: "/confirm/resend",
   LOGIN: "/login",
   LOGOUT: "/logout",

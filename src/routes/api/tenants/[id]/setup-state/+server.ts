@@ -9,7 +9,7 @@ import { checkPermission } from "$lib/server/utils/permissions";
 import { ERRORS } from "$lib/errors";
 
 const setupStateSchema = z.object({
-  setupState: z.enum(["NEW", "SETTINGS_CREATED", "AGENTS_SET_UP", "FIRST_CHANNEL_CREATED"]),
+  setupState: z.enum(["SETTINGS", "AGENTS", "CHANNELS", "STAFF", "READY"]),
 });
 
 // Register OpenAPI documentation for PUT

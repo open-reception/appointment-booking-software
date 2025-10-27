@@ -56,10 +56,6 @@ export class SessionService {
       throw new ValidationError("User account is inactive");
     }
 
-    if (userData.confirmationState !== "ACCESS_GRANTED") {
-      throw new ValidationError("User account is not fully confirmed");
-    }
-
     // Create session entry first to get the ID
     const sessionData: InsertUserSession = {
       userId: userData.id,
@@ -140,11 +136,6 @@ export class SessionService {
 
       if (!session.user.isActive) {
         logger.debug("User account is inactive");
-        return null;
-      }
-
-      if (session.user.confirmationState !== "ACCESS_GRANTED") {
-        logger.debug("User account is not fully confirmed");
         return null;
       }
 

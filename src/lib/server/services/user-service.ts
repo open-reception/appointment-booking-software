@@ -1,9 +1,10 @@
 import { centralDb } from "../db";
 import * as centralSchema from "../db/central-schema";
-import { eq, desc, gt, and, count } from "drizzle-orm";
-import type { InferInsertModel } from "drizzle-orm";
+import { eq, desc, gt, and, count, or } from "drizzle-orm";
+import type { InferInsertModel, TablesRelationalConfig } from "drizzle-orm";
+
 import z from "zod/v4";
-import { NotFoundError, ValidationError } from "../utils/errors";
+import { NotFoundError, ValidationError, InternalError } from "../utils/errors";
 import { uuidv7 } from "uuidv7";
 import { addMinutes } from "date-fns";
 import logger from "$lib/logger";
@@ -15,9 +16,29 @@ import {
 import { sendConfirmationEmail } from "../email/email-service";
 import type { SelectTenant } from "../db/central-schema";
 import { TenantAdminService } from "./tenant-admin-service";
+import { InviteService } from "./invite-service";
+import type { PgTransaction } from "drizzle-orm/pg-core";
+import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
 
 export type InsertUser = InferInsertModel<typeof centralSchema.user>;
 export type InsertUserPasskey = InferInsertModel<typeof centralSchema.userPasskey>;
+export type UserTransaction = PgTransaction<
+  PostgresJsQueryResultHKT,
+  Record<string, unknown>,
+  TablesRelationalConfig
+>;
+
+export interface UserDeletionResult {
+  success: boolean;
+  deletedUser: {
+    id: string;
+    email: string;
+    name: string;
+    role: "GLOBAL_ADMIN" | "TENANT_ADMIN" | "STAFF";
+  };
+  deletedPasskeysCount: number;
+  tenantId?: string | null;
+}
 
 const userCreationSchema = z.object({
   name: z.string().min(5),
@@ -49,7 +70,7 @@ function createSystemTenant(): SelectTenant {
     logo: null,
     links: { website: "", imprint: "", privacyStatement: "" },
     databaseUrl: "",
-    setupState: "FIRST_CHANNEL_CREATED",
+    setupState: "SETTINGS",
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -234,20 +255,40 @@ export class UserService {
    * Confirm and activate user after confirmation link was clicked
    * @param linkToken - The token from the link
    */
-  static async confirm(
-    linkToken: string,
-  ): Promise<{ recoveryPassphrase?: string; isSetup: boolean }> {
+  static async confirm(linkToken: string): Promise<{
+    recoveryPassphrase?: string;
+    isSetup: boolean;
+    id: string;
+    email: string;
+    name?: string;
+    language?: string;
+  }> {
     const log = logger.setContext("UserService");
     log.debug("Confirming user account", { token: linkToken.substring(0, 8) + "..." });
 
     try {
-      // First, get the user data to check for recovery passphrase
+      // First, get the user data to check for recovery pass
+      // phrase
+
+      let resultData:
+        | {
+            id: string;
+            name?: string;
+            language?: string;
+            recoveryPassphrase: string | null;
+            tenantId: string | null;
+            role: "GLOBAL_ADMIN" | "TENANT_ADMIN" | "STAFF";
+            email: string;
+          }
+        | undefined = undefined;
+
       const userData = await centralDb
         .select({
           id: centralSchema.user.id,
           recoveryPassphrase: centralSchema.user.recoveryPassphrase,
           tenantId: centralSchema.user.tenantId,
           role: centralSchema.user.role,
+          email: centralSchema.user.email,
         })
         .from(centralSchema.user)
         .where(
@@ -259,17 +300,63 @@ export class UserService {
         .limit(1);
 
       if (userData.length === 0) {
-        log.warn("User confirmation failed: Invalid or expired token", {
-          token: linkToken.substring(0, 8) + "...",
-        });
-        throw new NotFoundError("Invalid or timed-out token");
+        const inviteData = await centralDb
+          .select({
+            id: centralSchema.userInvite.id,
+            tenantId: centralSchema.userInvite.tenantId,
+            role: centralSchema.userInvite.role,
+            email: centralSchema.userInvite.email,
+            name: centralSchema.userInvite.name,
+            language: centralSchema.userInvite.language,
+          })
+          .from(centralSchema.userInvite)
+          .where(
+            and(
+              eq(centralSchema.userInvite.inviteCode, linkToken),
+              gt(centralSchema.userInvite.expiresAt, new Date()),
+            ),
+          )
+          .limit(1);
+
+        if (inviteData.length === 0) {
+          log.warn("User confirmation failed: Invalid or expired token", {
+            token: linkToken.substring(0, 8) + "...",
+          });
+          throw new NotFoundError("Invalid or timed-out token");
+        } else {
+          resultData = { ...inviteData[0], recoveryPassphrase: null };
+          const userDataForDb: InsertUser = {
+            name: resultData.name!,
+            email: resultData.email,
+            role: resultData.role,
+            tenantId: resultData.tenantId,
+            language: resultData.language || "de",
+            confirmationState: "CONFIRMED",
+            isActive: true,
+          };
+          const retVal = await centralDb
+            .insert(centralSchema.user)
+            .values(userDataForDb)
+            .returning();
+          resultData.id = retVal[0].id;
+
+          await InviteService.markInviteAsUsed(linkToken, resultData.id);
+          log.debug("Invitation marked as used", {
+            inviteCode: linkToken,
+            userId: resultData.id,
+          });
+
+          const adminService = await TenantAdminService.getTenantById(resultData.tenantId!);
+          adminService.validateSetupState();
+        }
+      } else {
+        resultData = userData[0];
       }
 
-      const user = userData[0];
-
       // Check if this is the first tenant admin for the tenant
-      const shouldGrantAccess = userData[0].role === "GLOBAL_ADMIN"; // Global admins always get ACCESS_GRANTED
+      const shouldGrantAccess = resultData.role === "GLOBAL_ADMIN"; // Global admins always get ACCESS_GRANTED
       const confirmationState = shouldGrantAccess ? "ACCESS_GRANTED" : "CONFIRMED";
+
       // Update the user to confirmed and active, and clear the recovery passphrase
       const result = await centralDb
         .update(centralSchema.user)
@@ -278,7 +365,7 @@ export class UserService {
           isActive: true,
           recoveryPassphrase: null, // Clear it after showing it once
         })
-        .where(eq(centralSchema.user.id, user.id))
+        .where(eq(centralSchema.user.id, resultData.id))
         .execute();
 
       if (result.count != 1) {
@@ -288,14 +375,18 @@ export class UserService {
       const countResult = await centralDb.select({ count: count() }).from(centralSchema.user);
 
       log.debug("User account confirmed successfully", {
-        userId: user.id,
+        userId: resultData.id,
         token: linkToken.substring(0, 8) + "...",
-        hadRecoveryPassphrase: !!user.recoveryPassphrase,
+        hadRecoveryPassphrase: !!resultData.recoveryPassphrase,
       });
 
       return {
-        recoveryPassphrase: user.recoveryPassphrase || undefined,
+        recoveryPassphrase: resultData.recoveryPassphrase || undefined,
         isSetup: countResult[0].count === 1,
+        id: resultData.id,
+        email: resultData.email,
+        name: resultData.name,
+        language: resultData.language,
       };
     } catch (error) {
       if (error instanceof NotFoundError) throw error;
@@ -357,7 +448,7 @@ export class UserService {
    */
   static async getUserByEmail(email: string) {
     const log = logger.setContext("UserService");
-    log.debug("Getting admin by email", { email });
+    log.debug("Getting user by email", { email });
 
     try {
       const result = await centralDb
@@ -461,36 +552,132 @@ export class UserService {
   }
 
   /**
-   * Permanently delete admin and all associated passkeys
+   * Permanently delete user and all associated passkeys
    */
-  static async deleteUser(userId: string) {
+  static async deleteUser(
+    userId: string,
+    externalTransaction?: UserTransaction,
+  ): Promise<UserDeletionResult> {
     const log = logger.setContext("UserService");
     log.debug("Deleting user and associated passkeys", { userId });
 
-    try {
+    const executeDeleteUser = async (tx: UserTransaction) => {
+      // First, verify the user exists and get user data
+      const userToDelete = await tx
+        .select({
+          id: centralSchema.user.id,
+          email: centralSchema.user.email,
+          name: centralSchema.user.name,
+          role: centralSchema.user.role,
+          tenantId: centralSchema.user.tenantId,
+        })
+        .from(centralSchema.user)
+        .where(eq(centralSchema.user.id, userId))
+        .limit(1);
+
+      if (userToDelete.length === 0) {
+        log.warn("User deletion failed: User not found", { userId });
+        throw new NotFoundError("User not found");
+      }
+
+      const user = userToDelete[0];
+
+      // We cannot delete the last user with access to the tenant's appointments
+      if (user.role === "TENANT_ADMIN" || user.role === "STAFF") {
+        const usersCount = await tx
+          .select({ count: count() })
+          .from(centralSchema.user)
+          .where(
+            and(
+              eq(centralSchema.user.tenantId, user.tenantId!),
+              or(eq(centralSchema.user.role, "STAFF"), eq(centralSchema.user.role, "TENANT_ADMIN")),
+              eq(centralSchema.user.isActive, true),
+              eq(centralSchema.user.confirmationState, "ACCESS_GRANTED"),
+            ),
+          );
+
+        if (usersCount[0].count <= 1) {
+          throw new ValidationError(`Cannot delete the last ${user.role} user for this tenant`);
+        }
+      }
+
       // Delete associated passkeys first
-      const passkeyResult = await centralDb
+      const passkeyDeletionResult = await tx
         .delete(centralSchema.userPasskey)
         .where(eq(centralSchema.userPasskey.userId, userId));
 
-      log.debug("Deleted user passkeys", { userId, deletedCount: passkeyResult.count || 0 });
+      const deletedPasskeysCount = passkeyDeletionResult?.count || 0;
+      log.debug("Deleted user passkeys", {
+        userId,
+        deletedCount: deletedPasskeysCount,
+      });
 
-      // Delete admin
-      const result = await centralDb
+      // Delete the user account
+      const deletedUsers = await tx
         .delete(centralSchema.user)
         .where(eq(centralSchema.user.id, userId))
-        .returning();
+        .returning({
+          id: centralSchema.user.id,
+          email: centralSchema.user.email,
+          name: centralSchema.user.name,
+          role: centralSchema.user.role,
+        });
 
-      if (result[0]) {
-        log.debug("User deleted successfully", { userId, email: result[0].email });
-      } else {
-        log.warn("User deletion failed: User not found", { userId });
+      if (deletedUsers.length === 0) {
+        throw new NotFoundError("Failed to delete user account");
       }
 
-      return result[0] || null;
+      const deletionResult = {
+        success: true,
+        deletedUser: deletedUsers[0],
+        deletedPasskeysCount,
+        tenantId: user.tenantId, // Include tenantId for setup state validation
+      };
+
+      log.info("User deleted successfully", {
+        userId,
+        deletedUser: deletedUsers[0],
+        deletedPasskeysCount,
+        tenantId: user.tenantId,
+      });
+
+      return deletionResult;
+    };
+
+    try {
+      let result: UserDeletionResult;
+
+      if (externalTransaction) {
+        // Use provided transaction
+        result = await executeDeleteUser(externalTransaction);
+      } else {
+        // Create new transaction
+        result = await centralDb.transaction(executeDeleteUser);
+      }
+
+      // Validate setup state only if we have a tenant
+      if (result.deletedUser.role !== "GLOBAL_ADMIN" && result.tenantId) {
+        try {
+          const adminService = await TenantAdminService.getTenantById(result.tenantId);
+          adminService.validateSetupState();
+        } catch (error) {
+          log.warn("Failed to validate setup state after user deletion", {
+            userId,
+            tenantId: result.tenantId,
+            error: String(error),
+          });
+          // Don't throw - user deletion was successful
+        }
+      }
+
+      return result;
     } catch (error) {
+      if (error instanceof ValidationError || error instanceof NotFoundError) {
+        throw error;
+      }
+
       log.error("Failed to delete user", { userId, error: String(error) });
-      throw error;
+      throw new InternalError("Failed to delete user");
     }
   }
 

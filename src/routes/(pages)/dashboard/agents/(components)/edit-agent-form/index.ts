@@ -1,5 +1,5 @@
-import EditTenantForm from "./edit-agent-form.svelte";
+import EditAgentForm from "./edit-agent-form.svelte";
 
-export { EditTenantForm };
+export { EditAgentForm };
 export { formSchema } from "./schema";
 export type { FormSchema } from "./schema";

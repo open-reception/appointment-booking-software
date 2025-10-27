@@ -35,6 +35,13 @@
 			}
 		}
 	},
+	"setupPasskey": {
+		"title": "Setup Passkey",
+		"description": "Create your passkey to secure your account.",
+		"action": "Set Passkey",
+		"success": "Passkey set. Login with it now.",
+		"error": "Passkey could not be set"
+	},
 	"slogan": "End-to-End encrypted appointment booking platform.",
 	"logo": "OpenReception Logo: A 3D pixel art with calendar that's also a lock",
 	"form": {
@@ -85,9 +92,9 @@
 	},
 	"confirm": {
 		"success": {
-			"title": "You’re all set!",
-			"description": "You’ve successfully secured your account",
-			"action": "Proceed"
+			"title": "E-Mail address confirmed!",
+			"description": "Now you just need to setup a passkey.",
+			"action": "Setup Passkey"
 		},
 		"error": {
 			"title": "Verification failed",
@@ -148,7 +155,7 @@
 			"title": "Add Tenant",
 			"description": "Create a site for someone to start collecting appointments.",
 			"name": {
-				"description": "Must be unique on this server. Used as a subdomain {domain}",
+				"description": "Must be unique on this server. Cannot be changed. Used as a subdomain {domain}",
 				"errors": {
 					"urlFormat": "Only letters, numbers, and hyphens are allowed",
 					"startEndDash": "Must not start or end with a dash"
@@ -649,6 +656,80 @@
 			}
 		}
 	},
+	"staff": {
+		"title": "Staff",
+		"roles": {
+			"GLOBAL_ADMIN": "Global Admin",
+			"TENANT_ADMIN": "Tenant Admin",
+			"STAFF": "Appointment Manager"
+		},
+		"permissions": {
+			"agents": "Manages agents",
+			"channels": "Manages channels",
+			"absences": "Manages absences",
+			"settings": "Manages settings",
+			"staff": "Manages staff",
+			"appointments": "Manages appointments"
+		},
+		"form": {
+			"fields": {
+				"language": {
+					"title": "Language",
+					"description": "Will be used in the invitation e-mail.",
+					"placeholder": "Select langauge"
+				},
+				"role": {
+					"title": "Role",
+					"placeholder": "Select role"
+				}
+			}
+		},
+		"add": {
+			"title": "Add Member",
+			"description": "Staff members manage your appointments and settings. They are not public.",
+			"action": "Add Member",
+			"success": "Member added",
+			"errors": {
+				"unknown": "Could not add member"
+			}
+		},
+		"list": {
+			"needsAccess": "Can't see appointments",
+			"empty": {
+				"title": "No staff members yet",
+				"description": "Staff members manage your appointments and settings"
+			}
+		},
+		"edit": {
+			"title": "Edit Member",
+			"description": "Update the members details.",
+			"success": "Member updated",
+			"error": "Could not update member.",
+			"action": "Edit Member"
+		},
+		"delete": {
+			"title": "Remove Member",
+			"description": "Type {email} to remove this member. This step cannot be undone.",
+			"action": "Remove Member",
+			"success": "Member removed",
+			"error": "Could not remove member."
+		},
+		"access": {
+			"title": "Grant access to appointments",
+			"description": "Do you want to grant {name} access to all client data?",
+			"action": "Grant access",
+			"loading": "Granting access ({success}/{total} clients)",
+			"success": "Access granted",
+			"error": "Granting access to all clients failed. You can retry anytime.",
+			"unavailable": {
+				"title": "You can't grant access",
+				"description": "Only Appointment Managers and Tenant Admins can be granted access to client data."
+			}
+		},
+		"loading": "Loading staff members"
+	},
+	"yes": "Yes",
+	"no": "No",
 	"public": {
 		"links": {
 			"website": "Go to Website",

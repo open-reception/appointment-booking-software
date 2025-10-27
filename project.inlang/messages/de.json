@@ -77,9 +77,9 @@
 	},
 	"confirm": {
 		"success": {
-			"title": "Du bist bereit!",
-			"description": "Du hast Dein Konto erfolgreich gesichert",
-			"action": "Weiter"
+			"title": "E-Mail Adresse bestätigt!",
+			"description": "Jetzt musst Du nur noch einen Passkey hinzufügen.",
+			"action": "Passkey hinzufügen"
 		},
 		"error": {
 			"title": "Bestätigung fehlgeschlagen",
@@ -93,6 +93,13 @@
 			"action": "E-Mail erneut senden",
 			"success": "E-Mail gesendet"
 		}
+	},
+	"setupPasskey": {
+		"title": "Passkey einrichten",
+		"description": "Erstelle Deinen Passkey, um Dein Konto zu sichern.",
+		"action": "Passkey setzen",
+		"success": "Passkey eingerichtet. Logge Dich damit jetzt ein.",
+		"error": "Passkey konnte nicht gesetzt werden"
 	},
 	"logout": {
 		"title": "Erfolgreich abgemeldet",
@@ -140,7 +147,7 @@
 			"title": "Mandant hinzufügen",
 			"description": "Erstelle eine Seite für jemanden, der Termine sammeln möchte.",
 			"name": {
-				"description": "Muss einmalig auf diesem Server sein. Wird als URL verwendet {domain}",
+				"description": "Muss einmalig auf diesem Server sein. Kann niemals geändert werden. Wird als URL verwendet {domain}",
 				"errors": {
 					"urlFormat": "Nur Kleinbuchstaben, Zahlen und Bindestriche sind erlaubt",
 					"startEndDash": "Darf nicht mit einem Bindestrich beginnen oder enden"
@@ -640,6 +647,80 @@
 			}
 		}
 	},
+	"staff": {
+		"title": "Personal",
+		"roles": {
+			"GLOBAL_ADMIN": "Globaler Admin",
+			"TENANT_ADMIN": "Mandanten-Admin",
+			"STAFF": "Mitarbeiter:in"
+		},
+		"permissions": {
+			"agents": "verwaltet Akteure",
+			"channels": "verwaltet Kanäle",
+			"absences": "verwaltet Abwesenheiten",
+			"settings": "verwaltet Einstellungen",
+			"staff": "verwaltet Personal",
+			"appointments": "verwaltet Termine"
+		},
+		"form": {
+			"fields": {
+				"language": {
+					"title": "Sprache",
+					"description": "Wird in der Einlaungs-E-Mail verwendet.",
+					"placeholder": "Sprache auswählen"
+				},
+				"role": {
+					"title": "Rolle",
+					"placeholder": "Rolle auswählen"
+				}
+			}
+		},
+		"add": {
+			"title": "Mitarbeiter:in hinzufügen",
+			"description": "Mitarbeiter:innen verwalten Termine und Einstellungen. Diese Konten sind nicht öffentlich.",
+			"action": "Mitarbeiter:in hinzufügen",
+			"success": "Mitarbeiter:in hinzugefügt",
+			"errors": {
+				"unknown": "Konnte Mitarbeiter:in nicht hinzufügen"
+			}
+		},
+		"list": {
+			"needsAccess": "Kann Termine nicht sehen",
+			"empty": {
+				"title": "Bisher kein Personal",
+				"description": "Personal verwaltet Termine und Einstellungen. Diese Konten sind nicht öffentlich."
+			}
+		},
+		"edit": {
+			"title": "Konto bearbeiten",
+			"description": "Aktualisiere das Konto dieser Mitarbeiter:in.",
+			"success": "Konto aktualisiert",
+			"error": "Konnte Konto nicht aktualisieren.",
+			"action": "Übernehmen"
+		},
+		"delete": {
+			"title": "Konto entfernen",
+			"description": "Tippe {email} um dieses Konto zu entfernen. Dieser Schritt kann nicht rückgängig gemacht werden.",
+			"action": "Konto entfernen",
+			"success": "Konto entfernt",
+			"error": "Konnte Konto nicht entfernen."
+		},
+		"access": {
+			"title": "Zugriff auf Klientendaten gewähren",
+			"description": "Willst Du {name} Zugriff auf alle Kundendaten geben?",
+			"action": "Zugriff gewähren",
+			"loading": "Zugriff wird gewährt ({success}/{total} Klienten)",
+			"success": "Zugriff gewährt",
+			"error": "Konnte Zugriff nicht für alle Klienten gewähren. Bitte erneut versuchen.",
+			"unavailable": {
+				"title": "Du kannst keinen Zugriff gewähren",
+				"description": "Nur Mitarbeiter:innen und Mandanten-Admins können Zugriff gewähren."
+			}
+		},
+		"loading": "Lade Personal"
+	},
+	"yes": "Ja",
+	"no": "Nein",
 	"public": {
 		"links": {
 			"website": "Webseite aufrufen",

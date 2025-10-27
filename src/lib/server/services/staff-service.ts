@@ -1,11 +1,12 @@
 import { centralDb, getTenantDb } from "../db";
-import { user, userPasskey } from "../db/central-schema";
+import { user, userInvite } from "../db/central-schema";
 import { clientTunnelStaffKeyShare } from "../db/tenant-schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { NotFoundError, ValidationError, InternalError } from "../utils/errors";
 import { StaffCryptoService } from "./staff-crypto.service";
 import { UniversalLogger } from "$lib/logger";
 import type { InferSelectModel } from "drizzle-orm";
+import { UserService } from "./user-service";
 
 const logger = new UniversalLogger().setContext("StaffService");
 
@@ -55,7 +56,7 @@ export class StaffService {
     logger.debug("Fetching staff members", { tenantId });
 
     try {
-      const staff: StaffMember[] = await centralDb
+      let staff: StaffMember[] = await centralDb
         .select({
           id: user.id,
           email: user.email,
@@ -70,12 +71,37 @@ export class StaffService {
         .from(user)
         .where(eq(user.tenantId, tenantId));
 
+      const invitedStaff = await centralDb
+        .select({
+          id: userInvite.id,
+          email: userInvite.email,
+          name: userInvite.name,
+          role: userInvite.role,
+          createdAt: userInvite.createdAt,
+        })
+        .from(userInvite)
+        .where(and(eq(userInvite.tenantId, tenantId), eq(userInvite.used, false)));
+
+      staff = staff.concat(
+        invitedStaff.map((invite) => ({
+          id: invite.id,
+          email: invite.email,
+          name: invite.name,
+          role: invite.role,
+          isActive: null,
+          confirmationState: "INVITED" as const,
+          createdAt: invite.createdAt,
+          updatedAt: null,
+          lastLoginAt: null,
+        })),
+      );
+
       logger.debug("Staff members fetched successfully", {
         tenantId,
         count: staff.length,
       });
 
-      return staff;
+      return staff.sort((a, b) => a.name.localeCompare(b.name));
     } catch (error) {
       logger.error("Failed to fetch staff members", {
         tenantId,
@@ -159,6 +185,7 @@ export class StaffService {
     tenantId: string,
     staffId: string,
     currentUserId?: string,
+    confirmationState?: "INVITED" | "CONFIRMED" | "ACCESS_GRANTED",
   ): Promise<StaffDeletionResult> {
     logger.debug("Deleting staff member", { tenantId, staffId, currentUserId });
 
@@ -167,99 +194,117 @@ export class StaffService {
       throw new ValidationError("You cannot delete your own account");
     }
 
+    // Check if this is the only non-global admin staff member
+    const nonGlobalAdminStaff = await centralDb
+      .select({ id: user.id })
+      .from(user)
+      .where(
+        and(
+          eq(user.tenantId, tenantId),
+          eq(user.isActive, true),
+          or(eq(user.role, "TENANT_ADMIN"), eq(user.role, "STAFF")),
+          eq(user.confirmationState, "ACCESS_GRANTED"),
+        ),
+      );
+
+    if (nonGlobalAdminStaff.length === 1 && nonGlobalAdminStaff[0].id === staffId) {
+      throw new ValidationError("Cannot delete the last active non-global admin staff member");
+    }
+
     try {
       // Use transaction to ensure all related data is deleted consistently
       const result = await centralDb.transaction(async (tx) => {
         // First, verify the user exists and belongs to this tenant
-        const userToDelete = await tx
-          .select({
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            tenantId: user.tenantId,
-          })
-          .from(user)
-          .where(and(eq(user.id, staffId), eq(user.tenantId, tenantId)))
-          .limit(1);
+        if (confirmationState !== "INVITED") {
+          const userToDelete = await tx
+            .select({
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              role: user.role,
+              tenantId: user.tenantId,
+            })
+            .from(user)
+            .where(and(eq(user.id, staffId), eq(user.tenantId, tenantId)))
+            .limit(1);
 
-        if (userToDelete.length === 0) {
-          throw new NotFoundError("Staff member not found in this tenant");
-        }
+          if (userToDelete.length === 0) {
+            throw new NotFoundError("Staff member not found in this tenant");
+          }
 
-        // Delete associated passkeys from central database
-        const passkeyDeletionResult = await tx
-          .delete(userPasskey)
-          .where(eq(userPasskey.userId, staffId));
+          // Use UserService to delete central database data (user + passkeys) first
+          // This ensures all validation logic is applied before deleting tenant data
+          const userDeletionResult = await UserService.deleteUser(staffId, tx);
 
-        const deletedPasskeysCount = passkeyDeletionResult.count || 0;
+          // Remove old invites of user if any exist
+          const deletedInvites = await tx
+            .delete(userInvite)
+            .where(eq(userInvite.email, userToDelete[0].email));
+          logger.debug("Deleted user invites", {
+            staffId,
+            tenantId,
+            deletedCount: deletedInvites.count || 0,
+          });
 
-        logger.debug("Deleted user passkeys", {
-          staffId,
-          tenantId,
-          deletedCount: deletedPasskeysCount,
-        });
-
-        // Delete client tunnel key shares from tenant database
-        let deletedKeySharesCount = 0;
-        try {
+          // Delete tenant-specific data (client tunnel key shares) after user deletion succeeds
           const tenantDb = await getTenantDb(tenantId);
           const keyShareDeletionResult = await tenantDb
             .delete(clientTunnelStaffKeyShare)
             .where(eq(clientTunnelStaffKeyShare.userId, staffId));
 
-          deletedKeySharesCount = keyShareDeletionResult.count || 0;
+          const deletedKeySharesCount = keyShareDeletionResult?.count || 0;
 
           logger.debug("Deleted client tunnel key shares", {
             staffId,
             tenantId,
-            deletedCount: deletedKeySharesCount,
+            deletedUser: userDeletionResult.deletedUser,
+            deletedPasskeysCount: userDeletionResult.deletedPasskeysCount,
+            deletedKeySharesCount,
           });
-        } catch (error) {
-          logger.warn("Failed to delete client tunnel key shares", {
+
+          // Combine results for staff-specific response format
+          const staffDeletionResult: StaffDeletionResult = {
+            success: userDeletionResult.success,
+            deletedUser: userDeletionResult.deletedUser,
+            deletedPasskeysCount: userDeletionResult.deletedPasskeysCount,
+            deletedKeySharesCount,
+          };
+
+          logger.info("Staff member deleted successfully", {
             staffId,
             tenantId,
-            error: String(error),
+            deletedUser: userDeletionResult.deletedUser,
+            deletedPasskeysCount: userDeletionResult.deletedPasskeysCount,
+            deletedKeySharesCount,
           });
-          // Continue with user deletion even if key share deletion fails
+
+          return staffDeletionResult;
+        } else {
+          const deletedInvites = await tx.delete(userInvite).where(eq(userInvite.id, staffId));
+          logger.debug("Deleted user invites", {
+            staffId,
+            tenantId,
+            deletedCount: deletedInvites.count || 0,
+          });
+          // Note: User deletion already succeeded, key share deletion is auxiliary
+          return {
+            success: true,
+            deletedUser: {
+              id: staffId,
+              email: "",
+              name: "",
+              role: "STAFF" as const,
+            },
+            deletedPasskeysCount: 0,
+            deletedKeySharesCount: 0,
+          };
         }
-
-        // Finally, delete the user account from central database
-        const deletedUsers = await tx.delete(user).where(eq(user.id, staffId)).returning({
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-        });
-
-        if (deletedUsers.length === 0) {
-          throw new InternalError("Failed to delete user account");
-        }
-
-        const deletionResult = {
-          success: true,
-          deletedUser: deletedUsers[0],
-          deletedPasskeysCount,
-          deletedKeySharesCount,
-        };
-
-        logger.info("Staff member deleted successfully", {
-          staffId,
-          tenantId,
-          deletedUser: deletedUsers[0],
-          deletedPasskeysCount,
-          deletedKeySharesCount,
-        });
-
-        return deletionResult;
       });
-
       return result;
     } catch (error) {
       if (error instanceof ValidationError || error instanceof NotFoundError) {
         throw error;
       }
-
       logger.error("Failed to delete staff member", {
         tenantId,
         staffId,
