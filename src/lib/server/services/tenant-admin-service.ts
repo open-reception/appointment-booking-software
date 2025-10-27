@@ -5,7 +5,7 @@ import { TenantConfig } from "../db/tenant-config";
 import { TenantMigrationService } from "./tenant-migration-service";
 
 import { env } from "$env/dynamic/private";
-import { eq, and, not } from "drizzle-orm";
+import { eq, and, not, count, or } from "drizzle-orm";
 import logger from "$lib/logger";
 import z from "zod/v4";
 import { ValidationError, NotFoundError, ConflictError } from "../utils/errors";
@@ -27,16 +27,12 @@ export type TenantCreationRequest = z.infer<typeof tenantCreationSchema>;
 
 export interface TenantConfiguration extends Record<string, string | number | boolean> {
   brandColor: string;
-  defaultLanguage: string;
   maxChannels: number;
   maxTeamMembers: number;
   autoDeleteDays: number;
   requireEmail: boolean;
   requirePhone: boolean;
   nextChannelColor: number;
-  website: string;
-  imprint: string;
-  privacyStatement: string;
 }
 
 export class TenantAdminService {
@@ -49,16 +45,12 @@ export class TenantAdminService {
   static getConfigDefaults(): TenantConfiguration {
     return {
       brandColor: "#E11E15",
-      defaultLanguage: "DE",
       maxChannels: -1,
       maxTeamMembers: -1,
       autoDeleteDays: 30,
       requireEmail: true,
       requirePhone: false,
       nextChannelColor: 0,
-      website: "",
-      imprint: "",
-      privacyStatement: "",
     };
   }
 
@@ -104,6 +96,12 @@ export class TenantAdminService {
       databaseUrl: "",
       descriptions: { en: "" },
       languages: ["en"],
+      defaultLanguage: "en",
+      links: {
+        website: "",
+        imprint: "",
+        privacyStatement: "",
+      },
     };
     newTenant.databaseUrl = urlParts.join("/") + "/" + newTenant.shortName;
 
@@ -219,7 +217,11 @@ export class TenantAdminService {
         throw new NotFoundError(`Tenant with ID ${id} not found`);
       }
 
-      log.debug("Tenant service loaded successfully", { tenantId: id, data: tenant.#tenant });
+      log.debug("Tenant service loaded successfully", {
+        tenantId: id,
+        // Do not log logo to not spam logs
+        data: { ...tenant.#tenant, logo: tenant.#tenant.logo ? "removed-from-log-but-set" : null },
+      });
       return tenant;
     } catch (error) {
       log.error("Failed to get tenant by ID", { tenantId: id, error: String(error) });
@@ -253,12 +255,7 @@ export class TenantAdminService {
     });
 
     if (updateData.shortName) {
-      const shortNameValidation = tenantCreationSchema.shape.shortName.safeParse(
-        updateData.shortName,
-      );
-      if (!shortNameValidation.success) {
-        throw new ValidationError("Invalid shortName format");
-      }
+      throw new ValidationError("Shortname cannot be changed");
     }
 
     try {
@@ -316,6 +313,10 @@ export class TenantAdminService {
         updatedCount: results.length,
       });
 
+      if (this.#tenant?.setupState === "SETTINGS") {
+        await this.setSetupState("AGENTS");
+      }
+
       return results;
     } catch (error) {
       log.error("Failed to update tenant configuration", {
@@ -330,9 +331,7 @@ export class TenantAdminService {
   /**
    * Set the setup state of the tenant
    */
-  async setSetupState(
-    setupState: "NEW" | "SETTINGS_CREATED" | "AGENTS_SET_UP" | "FIRST_CHANNEL_CREATED",
-  ) {
+  async setSetupState(setupState: "SETTINGS" | "AGENTS" | "CHANNELS" | "STAFF" | "READY") {
     const log = logger.setContext("TenantAdminService");
     log.debug("Setting tenant setup state", {
       tenantId: this.tenantId,
@@ -396,6 +395,94 @@ export class TenantAdminService {
     }
 
     return this.#db;
+  }
+
+  /**
+   * Validates and updates the setup state of a tenant. Called by other services after certain operations that might influence the setup state.
+   */
+  async validateSetupState() {
+    const log = logger.setContext("TenantAdminService");
+    log.debug("Validating tenant setup state", { tenantId: this.tenantId });
+
+    if (!this.#tenant) {
+      throw new NotFoundError(`Tenant with ID ${this.tenantId} not found`);
+    }
+
+    let newState = this.#tenant.setupState || "SETTINGS";
+
+    // If it is SETTINGS, return. The tenant was not configured yet.
+    if (newState === "SETTINGS") {
+      log.debug("Tenant setup state validation complete - still in SETTINGS", {
+        tenantId: this.tenantId,
+      });
+      return;
+    }
+
+    try {
+      const db = await this.getDb();
+
+      // Check for agents
+      const { agent, channel } = await import("../db/tenant-schema");
+
+      const agentCount = await db
+        .select({ count: count() })
+        .from(agent)
+        .where(eq(agent.archived, false));
+
+      if (agentCount.length === 0) {
+        newState = "AGENTS";
+      } else {
+        // Check for channels
+        const channelCount = await db
+          .select({ count: count() })
+          .from(channel)
+          .where(eq(channel.archived, false));
+        if (channelCount.length === 0) {
+          newState = "CHANNELS";
+        } else {
+          // Check for staff members
+          const staffCount = await centralDb
+            .select({ count: count() })
+            .from(centralSchema.user)
+            .where(
+              and(
+                eq(centralSchema.user.tenantId, this.tenantId),
+                or(
+                  eq(centralSchema.user.role, "STAFF"),
+                  eq(centralSchema.user.role, "TENANT_ADMIN"),
+                ),
+              ),
+            );
+
+          if (staffCount.length === 0) {
+            newState = "STAFF";
+          } else {
+            newState = "READY";
+          }
+        }
+      }
+
+      // Only update if state has changed
+      if (newState !== this.#tenant.setupState) {
+        log.debug("Tenant setup state needs update", {
+          tenantId: this.tenantId,
+          currentState: this.#tenant.setupState,
+          newState,
+        });
+        await this.setSetupState(newState);
+      } else {
+        log.debug("Tenant setup state validation complete - no change needed", {
+          tenantId: this.tenantId,
+          currentState: newState,
+        });
+      }
+    } catch (error) {
+      log.error("Failed to validate tenant setup state", {
+        tenantId: this.tenantId,
+        error: error,
+      });
+      throw error;
+    }
   }
 
   /**

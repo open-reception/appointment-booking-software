@@ -47,12 +47,21 @@
 			"bothPassSet": "Nur Passphrase oder Passkey darf gesetzt sein",
 			"name": "Muss mindestens 2 Zeichen lang sein",
 			"shortname": "Muss zwischen 4 und 15 Zeichen lang sein",
+			"longname": "Name hinzufügen",
 			"deleteConfirmation": "Muss exakt »{expectedValue}« sein",
 			"noAgentsSelected": "Wähle einen Akteur",
 			"noStartDate": "Beginn ist erforderlich",
 			"noEndDate": "Ende ist erforderlich",
 			"endDateBeforeStartDate": "Das Ende muss nach dem Beginn sein",
-			"endDateTooEarly": "Das Ende muss in der Zukunft liegen"
+			"endDateTooEarly": "Das Ende muss in der Zukunft liegen",
+			"street": "Straße hinzufügen",
+			"houseNo": "Pflichtfeld",
+			"zip": "Postleitzahl hinzufügen",
+			"city": "Stadt hinzufügen",
+			"url": "Ungültige URL",
+			"languages": "Wähle mindestens eine Sprache",
+			"language": "Wähle eine Sprache",
+			"deleteAfterDays": "Wähle einen Zeitpunkt"
 		},
 		"passkey": "Passkey",
 		"name": "Name"
@@ -68,9 +77,9 @@
 	},
 	"confirm": {
 		"success": {
-			"title": "Du bist bereit!",
-			"description": "Du hast Dein Konto erfolgreich gesichert",
-			"action": "Weiter"
+			"title": "E-Mail Adresse bestätigt!",
+			"description": "Jetzt musst Du nur noch einen Passkey hinzufügen.",
+			"action": "Passkey hinzufügen"
 		},
 		"error": {
 			"title": "Bestätigung fehlgeschlagen",
@@ -84,6 +93,13 @@
 			"action": "E-Mail erneut senden",
 			"success": "E-Mail gesendet"
 		}
+	},
+	"setupPasskey": {
+		"title": "Passkey einrichten",
+		"description": "Erstelle Deinen Passkey, um Dein Konto zu sichern.",
+		"action": "Passkey setzen",
+		"success": "Passkey eingerichtet. Logge Dich damit jetzt ein.",
+		"error": "Passkey konnte nicht gesetzt werden"
 	},
 	"logout": {
 		"title": "Erfolgreich abgemeldet",
@@ -131,7 +147,7 @@
 			"title": "Mandant hinzufügen",
 			"description": "Erstelle eine Seite für jemanden, der Termine sammeln möchte.",
 			"name": {
-				"description": "Muss einmalig auf diesem Server sein. Wird als URL verwendet {domain}",
+				"description": "Muss einmalig auf diesem Server sein. Kann niemals geändert werden. Wird als URL verwendet {domain}",
 				"errors": {
 					"urlFormat": "Nur Kleinbuchstaben, Zahlen und Bindestriche sind erlaubt",
 					"startEndDash": "Darf nicht mit einem Bindestrich beginnen oder enden"
@@ -549,5 +565,160 @@
 			"off.site": "Außer Haus",
 			"other": "Andere"
 		}
-	}
+	},
+	"settings": {
+		"loading": "Lade Einstellungen...",
+		"form": {
+			"sections": {
+				"general": "Allgemein",
+				"address": "Adresse",
+				"links": "Links",
+				"advanced": "Erweitert"
+			},
+			"fields": {
+				"languages": {
+					"title": "Sprachen",
+					"description": "Wähle die Sprachen, die Kunden angezeigt bekommen sollen. Du musst mindestens Eine auswählen.",
+					"placeholder": "Sprachen auswählen"
+				},
+				"defaultLanguage": {
+					"title": "Standardsprache",
+					"description": "Diese Sprache wird angezeigt, wenn die Sprache des Kunden nicht unterstützt wird. In den meisten Fällen sollte dies Englisch sein.",
+					"placeholder": "Standardsprache auswählen",
+					"errors": {
+						"notInLanguages": "Muss eine der ausgewählten Sprachen sein"
+					}
+				},
+				"longName": {
+					"title": "Name",
+					"description": "Der öffentliche Name Deiner Organisation."
+				},
+				"logo": {
+					"title": "Logo (optional)"
+				},
+				"descriptions": {
+					"title": "Beschreibung (optional)",
+					"description": "Kurze Beschreibung deiner Organisation. Wird auf der Startseite angezeigt."
+				},
+				"street": {
+					"title": "Straße"
+				},
+				"number": {
+					"title": "Nr."
+				},
+				"additionalAddressInfo": {
+					"title": "Adresszusatz (optional)",
+					"description": "z.B. Gebäude, Stockwerk, Abteilung"
+				},
+				"zip": {
+					"title": "PLZ"
+				},
+				"city": {
+					"title": "Stadt"
+				},
+				"website": {
+					"title": "Webseite (optional)",
+					"description": "Wird auf der Homepage angezeigt."
+				},
+				"imprint": {
+					"title": "Impressum URL (optional)",
+					"description": "Wird in der Fußzeile angezeigt."
+				},
+				"privacyStatement": {
+					"title": "Datenschutzerklärung URL (optional)",
+					"description": "Wird in der Fußzeile angezeigt."
+				},
+				"autoDeleteDays": {
+					"title": "Automatisches Löschen von Termindaten",
+					"description": "Löscht Termindetails nach dem ausgewählten Zeitraum.",
+					"placeholder": "Zeitraum auswählen",
+					"options": {
+						"30": "nach 30 Tagen",
+						"60": "nach 60 Tagen",
+						"90": "nach 90 Tagen",
+						"180": "nach 180 Tagen",
+						"365": "nach 365 Tagen"
+					}
+				},
+				"requirePhone": {
+					"title": "Telefonnummer erforderlich",
+					"label": "Kunden müssen eine Telefonnummer angeben, wenn sie einen Termin buchen."
+				}
+			}
+		}
+	},
+	"staff": {
+		"title": "Personal",
+		"roles": {
+			"GLOBAL_ADMIN": "Globaler Admin",
+			"TENANT_ADMIN": "Mandanten-Admin",
+			"STAFF": "Mitarbeiter:in"
+		},
+		"permissions": {
+			"agents": "verwaltet Akteure",
+			"channels": "verwaltet Kanäle",
+			"absences": "verwaltet Abwesenheiten",
+			"settings": "verwaltet Einstellungen",
+			"staff": "verwaltet Personal",
+			"appointments": "verwaltet Termine"
+		},
+		"form": {
+			"fields": {
+				"language": {
+					"title": "Sprache",
+					"description": "Wird in der Einlaungs-E-Mail verwendet.",
+					"placeholder": "Sprache auswählen"
+				},
+				"role": {
+					"title": "Rolle",
+					"placeholder": "Rolle auswählen"
+				}
+			}
+		},
+		"add": {
+			"title": "Mitarbeiter:in hinzufügen",
+			"description": "Mitarbeiter:innen verwalten Termine und Einstellungen. Diese Konten sind nicht öffentlich.",
+			"action": "Mitarbeiter:in hinzufügen",
+			"success": "Mitarbeiter:in hinzugefügt",
+			"errors": {
+				"unknown": "Konnte Mitarbeiter:in nicht hinzufügen"
+			}
+		},
+		"list": {
+			"needsAccess": "Kann Termine nicht sehen",
+			"empty": {
+				"title": "Bisher kein Personal",
+				"description": "Personal verwaltet Termine und Einstellungen. Diese Konten sind nicht öffentlich."
+			}
+		},
+		"edit": {
+			"title": "Konto bearbeiten",
+			"description": "Aktualisiere das Konto dieser Mitarbeiter:in.",
+			"success": "Konto aktualisiert",
+			"error": "Konnte Konto nicht aktualisieren.",
+			"action": "Übernehmen"
+		},
+		"delete": {
+			"title": "Konto entfernen",
+			"description": "Tippe {email} um dieses Konto zu entfernen. Dieser Schritt kann nicht rückgängig gemacht werden.",
+			"action": "Konto entfernen",
+			"success": "Konto entfernt",
+			"error": "Konnte Konto nicht entfernen."
+		},
+		"access": {
+			"title": "Zugriff auf Klientendaten gewähren",
+			"description": "Willst Du {name} Zugriff auf alle Kundendaten geben?",
+			"action": "Zugriff gewähren",
+			"loading": "Zugriff wird gewährt ({success}/{total} Klienten)",
+			"success": "Zugriff gewährt",
+			"error": "Konnte Zugriff nicht für alle Klienten gewähren. Bitte erneut versuchen.",
+			"unavailable": {
+				"title": "Du kannst keinen Zugriff gewähren",
+				"description": "Nur Mitarbeiter:innen und Mandanten-Admins können Zugriff gewähren."
+			}
+		},
+		"loading": "Lade Personal"
+	},
+	"yes": "Ja",
+	"no": "Nein"
 }

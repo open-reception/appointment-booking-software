@@ -14,14 +14,22 @@ export const ERRORS = {
     BOTH_PASSKEY_AND_PHRASE: "Cannot provide both passkey and passphrase",
     SESSION_MISSING: "No session found",
   },
+  STAFF: {
+    NO_STAFF_ID: "No staff id given",
+    NOT_FOUND: "Staff member not found",
+    CANNOT_DELETE_OWN_ACCOUNT: "Users cannot delete their own account",
+  },
   TENANTS: {
     NAME_EXISTS: "A tenant with this short name already exists",
     NO_TENANT_ID: "No tenant id given",
     NOT_FOUND: "Tenant not found",
     MISSING_TENANT_OR_AGENT_ID: "Missing tenant or agent ID",
+    NONE_FOUND: "No Tenant found on this instance",
   },
   CHANNELS: {
     NOT_FOUND: "Channel not found",
+    OPEN_APPOINTMENTS_CONFLICT:
+      "Channel has open appointments and cannot be deleted. Please cancel these appointments first.",
   },
   USERS: {
     ADMIN_EXISTS: "System was already initialized",
@@ -30,5 +38,7 @@ export const ERRORS = {
   },
   AGENTS: {
     NOT_FOUND: "Agent not found",
+    OPEN_APPOINTMENTS_CONFLICT:
+      "Agent has open appointments and cannot be deleted. Please reassign or cancel these appointments first.",
   },
 };

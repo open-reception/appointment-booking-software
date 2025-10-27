@@ -70,9 +70,15 @@ const createTenantsStore = () => {
 
         const body = await res.json();
         const tenants = body.tenants ?? ([] as TTenant[]);
+        const newCurrentTenantId = auth.getTenant();
 
         store.update((state) => {
-          return { ...state, tenants, isLoading: false };
+          return {
+            ...state,
+            tenants,
+            isLoading: false,
+            currentTenant: tenants.find((t: TTenant) => t.id === newCurrentTenantId) || null,
+          };
         });
       } catch (error) {
         store.update((state) => {

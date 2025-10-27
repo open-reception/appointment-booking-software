@@ -8,11 +8,17 @@ describe("sendTenantAdminInviteEmail", () => {
     longName: "Test Corporation GmbH",
     descriptions: { en: "A test corporation" },
     languages: ["en"],
+    defaultLanguage: "en",
     databaseUrl: "postgresql://test",
-    setupState: "NEW" as const,
+    setupState: "SETTINGS" as const,
     createdAt: new Date(),
     updatedAt: new Date(),
     logo: null,
+    links: {
+      website: "https://testcorp.com",
+      imprint: "https://testcorp.com/imprint",
+      privacyStatement: "https://testcorp.com/privacy",
+    },
   };
 
   it("should accept correct parameters and not throw for German language", () => {

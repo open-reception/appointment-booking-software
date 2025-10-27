@@ -1,3 +1,4 @@
-import LoadingList from "./loading-list.svelte";
+import LoadingList from "./list.svelte";
+import LoadingCenter from "./center.svelte";
 
-export { LoadingList };
+export { LoadingList, LoadingCenter };

@@ -7,6 +7,7 @@ import {
 } from "$lib/server/db/central-schema";
 import { eq, and, lt } from "drizzle-orm";
 import { UniversalLogger } from "$lib/logger";
+import { InternalError } from "../utils/errors";
 
 const logger = new UniversalLogger().setContext("InviteService");
 
@@ -59,7 +60,7 @@ export class InviteService {
       return createdInvite;
     } catch (error) {
       logger.error("Failed to create user invitation", { error, email, tenantId, role });
-      throw new Error(`Failed to create invitation: ${error}`);
+      throw new InternalError(`Failed to create invitation: ${error}`);
     }
   }
 
@@ -142,7 +143,7 @@ export class InviteService {
       return updatedInvite;
     } catch (error) {
       logger.error("Failed to mark invitation as used", { error, inviteCode, createdUserId });
-      throw new Error(`Failed to update invitation: ${error}`);
+      throw new InternalError(`Failed to update invitation: ${error}`);
     }
   }
 

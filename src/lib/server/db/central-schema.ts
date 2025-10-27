@@ -29,10 +29,11 @@ export const confirmationStateEnum = pgEnum("confirmation_state", [
 ]);
 
 export const tenantSetupState = pgEnum("setup_state", [
-  "NEW", // newly created
-  "SETTINGS_CREATED", // settings were reviewed
-  "AGENTS_SET_UP", // agents set up was triggered or skipped
-  "FIRST_CHANNEL_CREATED", // the first channel was set up
+  "SETTINGS", // Settings need to be saved initially
+  "AGENTS", // At least one agent needs to be created
+  "CHANNELS", // At least one channel needs to be created
+  "STAFF", // At least one staff member needs to be created
+  "READY", // Tenant is fully set up and ready to use
 ]);
 
 /**
@@ -54,12 +55,19 @@ export const tenant = pgTable(
     descriptions: json("descriptions").$type<{ [key: string]: string }>().notNull(),
     /** Active languages for this tenant (array of language codes) */
     languages: json("languages").$type<string[]>().notNull(),
+    /** Active languages for this tenant (array of language codes) */
+    defaultLanguage: text("defaultLanguage").notNull().default("en"),
     /** Organization logo as binary data (PNG, JPEG, GIF, or WEBP) */
     logo: varchar("logo", { length: 100_000 }),
     /** Database connection string for this tenant's isolated database */
     databaseUrl: text("database_url").notNull(),
-    /** STate of tenant setup */
-    setupState: tenantSetupState("setup_state").notNull().default("NEW"),
+    /** State of tenant setup */
+    setupState: tenantSetupState("setup_state").notNull().default("SETTINGS"),
+    /** Links (object) */
+    links: json("links")
+      .$type<{ imprint?: string; privacyStatement?: string; website?: string }>()
+      .notNull()
+      .default({}),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },

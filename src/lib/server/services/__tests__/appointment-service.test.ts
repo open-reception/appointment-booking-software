@@ -36,6 +36,7 @@ const mockClientTunnel = {
 const mockClientTunnelData = {
   tunnelId: "tunnel-123",
   channelId: "channel-123",
+  agentId: "agent-123",
   appointmentDate: "2024-01-15T10:00:00Z",
   emailHash: "email-hash-123",
   clientPublicKey: "client-public-key",

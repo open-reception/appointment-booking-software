@@ -53,6 +53,7 @@ export const actions: Actions = {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
+      credentials: "same-origin",
     });
 
     let user: TUser | null = null;

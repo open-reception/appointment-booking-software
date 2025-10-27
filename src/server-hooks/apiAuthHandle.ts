@@ -6,7 +6,7 @@ import { getAccessToken } from "./utils/accessToken";
 
 const logger = new UniversalLogger().setContext("AuthHandle");
 
-const PROTECTED_PATHS = ["/api/admin", "/api/tenant-admin", "/api/tenants", "/api/auth/register"];
+const PROTECTED_PATHS = ["/api/admin", "/api/tenant-admin", "/api/tenants"];
 const PUBLIC_PATHS = [
   "/",
   "/api/auth/challenge",
@@ -26,6 +26,7 @@ const PUBLIC_PATHS = [
 
 // Client booking routes that need public access (no authentication required)
 const CLIENT_BOOKING_PATHS = [
+  "/api/public", // Public tenant information
   "/schedule", // Available time slots for clients
   "/appointments/challenge", // Create authentication challenge for existing clients
   "/appointments/verify-challenge", // Verify challenge response
@@ -49,20 +50,22 @@ const PROTECTED_AUTH_PATHS = [
 export const apiAuthHandle: Handle = async ({ event, resolve }) => {
   const { url } = event;
   const path = url.pathname;
-
   if (!path.startsWith("/api")) {
     return resolve(event);
   }
 
   // Check for tenant client booking routes (public for clients)
   const isTenantClientBookingRoute =
-    path.match(/^\/api\/tenants\/[^/]+\//) &&
+    path.match(/^\/api\/tenants\/[^/]+\/?/) &&
     CLIENT_BOOKING_PATHS.some((clientPath) => path.includes(clientPath));
 
-  const isProtectedPath = PROTECTED_PATHS.some((protectedPath) => path.startsWith(protectedPath));
+  const isProtectedPath =
+    PROTECTED_PATHS.some((protectedPath) => path.startsWith(protectedPath)) &&
+    !isTenantClientBookingRoute;
   const isPublicPath = PUBLIC_PATHS.some((publicPath) => path.startsWith(publicPath));
   const isProtectedAuthPath = PROTECTED_AUTH_PATHS.some((authPath) => path.startsWith(authPath));
-  const isGlobalAdminPath = GLOBAL_ADMIN_PATHS.some((gadPath) => path.startsWith(gadPath));
+  const isGlobalAdminPath =
+    GLOBAL_ADMIN_PATHS.some((gadPath) => path.startsWith(gadPath)) && !isTenantClientBookingRoute;
   const isAdminPath = ADMIN_PATHS.some((gadPath) => path.startsWith(gadPath));
 
   // Allow public paths and tenant client booking routes

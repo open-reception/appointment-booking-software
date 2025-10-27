@@ -10,6 +10,7 @@ import type { AppointmentResponse } from "$lib/types/appointment";
 export interface ClientTunnelData {
   tunnelId: string;
   channelId: string;
+  agentId: string;
   appointmentDate: string;
   emailHash: string;
   clientPublicKey: string;
@@ -268,7 +269,12 @@ export class AppointmentService {
       const channelResult = await tx
         .select({ requiresConfirmation: tenantSchema.channel.requiresConfirmation })
         .from(tenantSchema.channel)
-        .where(eq(tenantSchema.channel.id, clientData.channelId))
+        .where(
+          and(
+            eq(tenantSchema.channel.id, clientData.channelId),
+            eq(tenantSchema.channel.archived, false),
+          ),
+        )
         .limit(1);
 
       if (channelResult.length === 0) {
@@ -283,6 +289,7 @@ export class AppointmentService {
         .values({
           tunnelId: clientData.tunnelId,
           channelId: clientData.channelId,
+          agentId: clientData.agentId,
           appointmentDate: new Date(clientData.appointmentDate),
           encryptedPayload: clientData.encryptedAppointment.encryptedPayload,
           iv: clientData.encryptedAppointment.iv,
@@ -316,6 +323,66 @@ export class AppointmentService {
     });
 
     return response;
+  }
+
+  /**
+   * Return appointments for a specific agent from a given date
+   * @param agentId
+   * @param from
+   * @returns
+   */
+  public async getAppointmentsForAgent(agentId: string, from: Date) {
+    const log = logger.setContext("AppointmentService");
+    log.debug("Fetching appointments for agent", {
+      agentId,
+      startDate: from.toISOString(),
+      tenantId: this.tenantId,
+    });
+
+    const db = await this.getDb();
+
+    const result = await db
+      .select()
+      .from(tenantSchema.appointment)
+      .where(
+        and(
+          gte(tenantSchema.appointment.appointmentDate, from),
+          eq(tenantSchema.appointment.agentId, agentId),
+        ),
+      )
+      .orderBy(asc(tenantSchema.appointment.appointmentDate));
+
+    return result;
+  }
+
+  /**
+   * Return appointments for a specific channel from a given date
+   * @param channelId
+   * @param from
+   * @returns
+   */
+  public async getAppointmentsForChannel(channelId: string, from: Date) {
+    const log = logger.setContext("AppointmentService");
+    log.debug("Fetching appointments for channel", {
+      channelId,
+      startDate: from.toISOString(),
+      tenantId: this.tenantId,
+    });
+
+    const db = await this.getDb();
+
+    const result = await db
+      .select()
+      .from(tenantSchema.appointment)
+      .where(
+        and(
+          gte(tenantSchema.appointment.appointmentDate, from),
+          eq(tenantSchema.appointment.channelId, channelId),
+        ),
+      )
+      .orderBy(asc(tenantSchema.appointment.appointmentDate));
+
+    return result;
   }
 
   public async getAppointmentsByTimeRange(

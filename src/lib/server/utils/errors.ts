@@ -59,7 +59,7 @@ export class NotFoundError extends BackendError {
     public code = 404,
   ) {
     super(message, code);
-    this.name = "ValidationError";
+    this.name = "NotFoundError";
   }
 }
 

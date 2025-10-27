@@ -8,6 +8,7 @@
   import Ban from "@lucide/svelte/icons/ban";
   import Check from "@lucide/svelte/icons/check";
   import { ROUTES } from "$lib/const/routes";
+  import { goto } from "$app/navigation";
 
   const { data } = $props();
 </script>
@@ -60,7 +61,14 @@
               {m["setup.confirm.success.action"]()}
             </Button>
           {:else}
-            <Button size="lg" class="w-full" href={ROUTES.LOGIN}>
+            <Button
+              size="lg"
+              class="w-full"
+              onclick={() =>
+                goto(ROUTES.SETUP_PASSKEY, {
+                  state: { id: confirmation.id, email: confirmation.email },
+                })}
+            >
               {m["confirm.success.action"]()}
             </Button>
           {/if}

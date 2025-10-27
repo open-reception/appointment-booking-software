@@ -1,18 +1,32 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ValidationError, NotFoundError, ConflictError } from "../../utils/errors";
 
 // Mock dependencies before imports
 vi.mock("../../db", () => ({
   getTenantDb: vi.fn(),
+  centralDb: {
+    select: vi.fn(),
+    insert: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
 }));
 
 vi.mock("$lib/logger", () => ({
+  UniversalLogger: vi.fn(() => ({
+    setContext: vi.fn(() => ({
+      debug: vi.fn(),
+      error: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
+    })),
+  })),
   default: {
     setContext: vi.fn(() => ({
       debug: vi.fn(),
       error: vi.fn(),
       warn: vi.fn(),
+      info: vi.fn(),
     })),
   },
 }));
@@ -20,18 +34,21 @@ vi.mock("$lib/logger", () => ({
 // Import after mocking
 import { AgentService, type AbsenceCreationRequest } from "../agent-service";
 import { getTenantDb } from "../../db";
+import { ValidationError, NotFoundError, ConflictError } from "../../utils/errors";
 
 // Mock database operations
 const mockDb = {
   insert: vi.fn(() => ({
     values: vi.fn(() => ({
       returning: vi.fn(),
+      onConflictDoNothing: vi.fn().mockResolvedValue([]),
     })),
   })),
   select: vi.fn(() => ({
     from: vi.fn(() => ({
       where: vi.fn(() => ({
         limit: vi.fn(),
+        orderBy: vi.fn(),
       })),
       orderBy: vi.fn(),
       innerJoin: vi.fn(() => ({
@@ -53,6 +70,22 @@ const mockDb = {
       returning: vi.fn(),
     })),
   })),
+  transaction: vi.fn(async (callback) => {
+    // Mock transaction by calling callback with a mock transaction object
+    const mockTx = {
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue([mockAgent]),
+          })),
+        })),
+      })),
+      delete: vi.fn(() => ({
+        where: vi.fn().mockResolvedValue([]),
+      })),
+    };
+    return await callback(mockTx);
+  }),
 };
 
 const mockAgent = {
@@ -64,9 +97,15 @@ const mockAgent = {
 };
 
 describe("AgentService", () => {
-  beforeEach(() => {
+  let mockCentralDb: any;
+
+  beforeEach(async () => {
     vi.clearAllMocks();
     vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+    // Import and get the mocked centralDb
+    const dbModule = await import("../../db");
+    mockCentralDb = dbModule.centralDb;
   });
 
   describe("forTenant", () => {
@@ -92,6 +131,46 @@ describe("AgentService", () => {
     });
 
     it("should create agent successfully", async () => {
+      // Mock centralDb to handle TenantConfig.create() and tenant queries
+      let callCount = 0;
+      const mockSelectBuilder = {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        from: vi.fn((_) => ({
+          where: vi.fn(() => {
+            callCount++;
+            if (callCount === 1) {
+              // First call: TenantConfig.#getTenantConfig() - return config entries
+              return Promise.resolve([
+                { tenantId: "tenant-123", name: "maxAgents", type: "NUMBER", value: "10" },
+                {
+                  tenantId: "tenant-123",
+                  name: "allowNotifications",
+                  type: "BOOLEAN",
+                  value: "true",
+                },
+              ]);
+            } else {
+              // Second call: getTenantById tenant query - return with limit
+              return {
+                limit: vi.fn(() =>
+                  Promise.resolve([
+                    {
+                      id: "tenant-123",
+                      subdomain: "test-tenant",
+                      plan: "basic",
+                      isActive: true,
+                      createdAt: new Date(),
+                      updatedAt: new Date(),
+                    },
+                  ]),
+                ),
+              };
+            }
+          }),
+        })),
+      };
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
+
       const insertChain = {
         values: vi.fn(() => ({
           returning: vi.fn().mockResolvedValue([mockAgent]),
@@ -205,7 +284,9 @@ describe("AgentService", () => {
       const agents = [mockAgent, { ...mockAgent, id: "agent-456", name: "Agent 2" }];
       const selectChain = {
         from: vi.fn(() => ({
-          orderBy: vi.fn().mockResolvedValue(agents),
+          where: vi.fn(() => ({
+            orderBy: vi.fn().mockResolvedValue(agents),
+          })),
         })),
       };
       mockDb.select.mockReturnValue(selectChain);
@@ -219,7 +300,9 @@ describe("AgentService", () => {
     it("should return empty array when no agents exist", async () => {
       const selectChain = {
         from: vi.fn(() => ({
-          orderBy: vi.fn().mockResolvedValue([]),
+          where: vi.fn(() => ({
+            orderBy: vi.fn().mockResolvedValue([]),
+          })),
         })),
       };
       mockDb.select.mockReturnValue(selectChain);
@@ -233,7 +316,9 @@ describe("AgentService", () => {
     it("should handle database error", async () => {
       const selectChain = {
         from: vi.fn(() => ({
-          orderBy: vi.fn().mockRejectedValue(new Error("DB error")),
+          where: vi.fn(() => ({
+            orderBy: vi.fn().mockRejectedValue(new Error("DB error")),
+          })),
         })),
       };
       mockDb.select.mockReturnValue(selectChain);
@@ -314,40 +399,68 @@ describe("AgentService", () => {
     });
 
     it("should delete agent successfully", async () => {
-      // Mock channel-agent deletion
-      const channelAgentDeleteChain = {
-        where: vi.fn().mockResolvedValue([]),
-      };
-      mockDb.delete.mockReturnValueOnce(channelAgentDeleteChain);
-
-      // Mock agent deletion
-      const agentDeleteChain = {
-        where: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue([mockAgent]),
+      // Mock centralDb to handle TenantConfig.create() and tenant queries
+      let callCount = 0;
+      const mockSelectBuilder = {
+        from: vi.fn(() => ({
+          where: vi.fn(() => {
+            callCount++;
+            if (callCount === 1) {
+              // First call: TenantConfig.#getTenantConfig() - return config entries
+              return Promise.resolve([
+                { tenantId: "tenant-123", name: "maxAgents", type: "NUMBER", value: "10" },
+                {
+                  tenantId: "tenant-123",
+                  name: "allowNotifications",
+                  type: "BOOLEAN",
+                  value: "true",
+                },
+              ]);
+            } else {
+              // Second call: getTenantById tenant query - return with limit
+              return {
+                limit: vi.fn(() =>
+                  Promise.resolve([
+                    {
+                      id: "tenant-123",
+                      subdomain: "test-tenant",
+                      plan: "basic",
+                      isActive: true,
+                      createdAt: new Date(),
+                      updatedAt: new Date(),
+                    },
+                  ]),
+                ),
+              };
+            }
+          }),
         })),
       };
-      mockDb.delete.mockReturnValueOnce(agentDeleteChain);
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
 
       const result = await service.deleteAgent("agent-123");
 
       expect(result).toBe(true);
-      expect(mockDb.delete).toHaveBeenCalledTimes(2);
+      expect(mockDb.transaction).toHaveBeenCalledTimes(1);
     });
 
     it("should return false when agent not found", async () => {
-      // Mock channel-agent deletion
-      const channelAgentDeleteChain = {
-        where: vi.fn().mockResolvedValue([]),
-      };
-      mockDb.delete.mockReturnValueOnce(channelAgentDeleteChain);
-
-      // Mock agent deletion with no results
-      const agentDeleteChain = {
-        where: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue([]),
-        })),
-      };
-      mockDb.delete.mockReturnValueOnce(agentDeleteChain);
+      // Mock transaction to return empty result for agent deletion
+      mockDb.transaction = vi.fn(async (callback) => {
+        const mockTx = {
+          update: vi.fn(() => ({
+            set: vi.fn(() => ({
+              where: vi.fn(() => ({
+                returning: vi.fn().mockResolvedValue([]), // No agent found
+              })),
+            })),
+          })),
+          delete: vi.fn(() => ({
+            where: vi.fn().mockResolvedValue([]),
+          })),
+        };
+        return await callback(mockTx);
+      });
 
       const result = await service.deleteAgent("nonexistent-agent");
 
@@ -355,10 +468,7 @@ describe("AgentService", () => {
     });
 
     it("should handle database error", async () => {
-      const deleteChain = {
-        where: vi.fn().mockRejectedValue(new Error("DB error")),
-      };
-      mockDb.delete.mockReturnValue(deleteChain);
+      mockDb.transaction = vi.fn().mockRejectedValue(new Error("DB error"));
 
       await expect(service.deleteAgent("agent-123")).rejects.toThrow("DB error");
     });
@@ -433,7 +543,6 @@ describe("AgentService", () => {
       const insertChain = {
         values: vi.fn(() => ({
           onConflictDoNothing: vi.fn().mockResolvedValue([]),
-          returning: vi.fn().mockResolvedValue([]),
         })),
       };
       mockDb.insert.mockReturnValue(insertChain);
@@ -450,7 +559,6 @@ describe("AgentService", () => {
       const insertChain = {
         values: vi.fn(() => ({
           onConflictDoNothing: vi.fn().mockRejectedValue(new Error("DB error")),
-          returning: vi.fn().mockResolvedValue([]),
         })),
       };
       mockDb.insert.mockReturnValue(insertChain);
