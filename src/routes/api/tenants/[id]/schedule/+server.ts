@@ -33,6 +33,20 @@ registerOpenAPIRoute("/tenants/{id}/schedule", "GET", {
       schema: { type: "string", format: "date-time" },
       description: "End date for the schedule range (ISO 8601 format with timezone)",
     },
+    {
+      name: "channel",
+      in: "query",
+      required: false,
+      schema: { type: "string", format: "uuid" },
+      description: "Channel ID (UUID) to filter the schedule",
+    },
+    {
+      name: "agent",
+      in: "query",
+      required: false,
+      schema: { type: "string", format: "uuid" },
+      description: "Agent ID (UUID) to filter the schedule",
+    },
   ],
   responses: {
     "200": {
@@ -123,6 +137,8 @@ export const GET: RequestHandler = async ({ params, url }) => {
     // Parse query parameters for date range
     const startDateParam = url.searchParams.get("startDate");
     const endDateParam = url.searchParams.get("endDate");
+    const channelIdParam = url.searchParams.get("channel");
+    const agentIdParam = url.searchParams.get("agent");
 
     if (!startDateParam || !endDateParam) {
       throw new ValidationError("Both startDate and endDate query parameters are required");
@@ -159,6 +175,8 @@ export const GET: RequestHandler = async ({ params, url }) => {
       tenantId,
       startDate: startDateParam,
       endDate: endDateParam,
+      channelId: channelIdParam || undefined,
+      agentId: agentIdParam || undefined,
     });
 
     // Transform schedule to client-friendly format (remove appointments, simplify available slots)
@@ -179,7 +197,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
               from: slot.from,
               to: slot.to,
               duration: slot.duration,
-              availableAgentCount: slot.availableAgents.length,
+              availableAgents: slot.availableAgents,
             })),
           },
         ]),
