@@ -5,12 +5,17 @@
   import { publicStore } from "$lib/stores/public";
   import type { TPublicAppointment } from "$lib/types/public";
   import type { HTMLAttributes } from "svelte/elements";
+  import { resest } from "../../../../routes/(pages)/(clients)/book-appointment/[[id]]/(components)/utils";
+  import { Button } from "../button";
+  import LocalizedText from "./localized-text.svelte";
 
   let {
     class: className,
     appointment,
   }: HTMLAttributes<HTMLDivElement> & { appointment?: TPublicAppointment } = $props();
   const tenant = $derived($publicStore.tenant);
+  const channels = $derived($publicStore.channels || []);
+  const channel = $derived(channels.find((ch) => ch.id === appointment?.channel));
 </script>
 
 {#if tenant && appointment}
@@ -24,13 +29,38 @@
           loading="lazy"
         />
       {/if}
-      <div class="flex flex-col gap-1">
-        <Headline level="h1" style="h6">
-          {tenant?.longName}
-        </Headline>
-        <Text style="xs" color="medium" class="font-normal whitespace-pre-line">
-          {m["public.bookAppointment"]()}
-        </Text>
+      <div class="flex flex-col gap-5">
+        <div class="flex flex-col gap-1">
+          <Headline level="h1" style="h6">
+            {tenant?.longName}
+          </Headline>
+          <Text style="xs" color="medium" class="font-normal whitespace-pre-line">
+            {m["public.bookAppointment"]()}
+          </Text>
+        </div>
+        {#if channel}
+          <div class="flex flex-col gap-3">
+            <div>
+              <Text style="sm">
+                <LocalizedText translations={channel.names} />
+              </Text>
+              <Button
+                onclick={() => resest()}
+                variant="link"
+                size="xs"
+                class="text-normal text-muted-foreground h-auto p-0 font-normal"
+              >
+                {m.edit()}
+              </Button>
+              {#if appointment.agent || appointment.agent === null}
+                <br />
+                <Text style="sm" class="font-normal">
+                  {appointment.agent?.name || m["public.anyAgent"]()}
+                </Text>
+              {/if}
+            </div>
+          </div>
+        {/if}
       </div>
     </Card.Title>
   </div>

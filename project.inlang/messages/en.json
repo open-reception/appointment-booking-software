@@ -743,11 +743,15 @@
 		},
 		"steps": {
 			"channel": {
-				"title": "Please select an appointment type:"
+				"title": "Please select an appointment type:",
+				"empty": "Currently we don't have available appointments. Please check again later."
 			},
 			"agent": {
 				"title": "Please select who you want your appointment with:",
-				"anyone": "The first one available"
+				"anyone": {
+					"title": "The first one available",
+					"description": "Choose this option to get the fastest appointment."
+				}
 			},
 			"slot": {
 				"title": "Please select an available appointment:",
@@ -763,6 +767,7 @@
 				},
 				"action": "Add personal data"
 			}
-		}
+		},
+		"anyAgent": "Anyone available"
 	}
 }

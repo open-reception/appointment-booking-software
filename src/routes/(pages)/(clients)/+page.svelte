@@ -39,7 +39,7 @@
         </div>
       </div>
     {:then tenant}
-      {#if tenant}
+      {#if tenant && tenant.longName}
         <div class="flex max-w-(--max-w-sm) flex-col justify-between gap-3">
           {#if typeof tenant.logo === "string" && tenant.logo}
             <img
@@ -67,6 +67,13 @@
             {/if}
           </div>
         </div>
+      {:else}
+        <Headline level="h1" style="h4" class="w-full text-center">
+          {m["public.tenantNotReady.title"]()}
+        </Headline>
+        <Text style="sm" class="text-muted-foreground w-full text-center">
+          {m["public.tenantNotReady.description"]()}
+        </Text>
       {/if}
     {/await}
   </CenteredCard.Main>
@@ -74,17 +81,15 @@
     {#await data.streaming.tenant}
       <Skeleton class="h-10 w-full" />
     {:then tenant}
-      {#if tenant?.confirmationState === "READY"}
+      {#if tenant?.setupState === "READY" && tenant.longName}
         <Button size="lg" class="w-full" href={ROUTES.BOOK_APPOINTMENT}>
           {m["public.bookAppointment"]()}
         </Button>
       {:else}
         <div class="flex flex-col items-center gap-2 text-center">
-          <Separator />
-          <Text style="md" class="w-full">{m["public.tenantNotReady.title"]()}</Text>
-          <Text style="sm" class="text-muted-foreground w-full">
-            {m["public.tenantNotReady.description"]()}
-          </Text>
+          <Button size="lg" class="w-full" href={ROUTES.LOGIN}>
+            {m["login.action"]()}
+          </Button>
         </div>
       {/if}
     {/await}

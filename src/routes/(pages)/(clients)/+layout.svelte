@@ -24,9 +24,15 @@
         tenant,
         isLoading: false,
         locale,
-        newAppointment: {},
+        newAppointment: { step: "SELECT_CHANNEL" },
       });
     }
+
+    const channels = await data.streaming.channels;
+    publicStore.update((state) => ({
+      ...state,
+      channels,
+    }));
   };
 </script>
 

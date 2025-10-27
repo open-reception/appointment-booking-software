@@ -6,13 +6,23 @@
   import { AppointmentCard, SideBySide } from "$lib/components/ui/public";
   import { Separator } from "$lib/components/ui/separator";
   import { Skeleton } from "$lib/components/ui/skeleton";
-  import { Text } from "$lib/components/ui/typography";
   import { ROUTES } from "$lib/const/routes";
   import { publicStore } from "$lib/stores/public.js";
   import { CircleX } from "@lucide/svelte/icons";
+  import SelectAgent from "./(components)/select-agent.svelte";
+  import SelectChannel from "./(components)/select-channel.svelte";
+  import { proceed } from "./(components)/utils";
 
   const { data } = $props();
   const appointment = $derived($publicStore.newAppointment);
+
+  $effect(() => {
+    if (data.channelId && appointment?.step === "SELECT_CHANNEL") {
+      proceed({ ...appointment, channel: data.channelId });
+    } else {
+      proceed({});
+    }
+  });
 </script>
 
 <svelte:head>
@@ -44,7 +54,7 @@
   </SideBySide>
 {:then tenant}
   {#if tenant}
-    {#if tenant.confirmationState === "READY"}
+    {#if tenant.setupState === "READY" && tenant.longName}
       <SideBySide>
         <AppointmentCard {appointment} class="md:flex-1/3" />
         <Separator
@@ -53,10 +63,21 @@
         />
         <Separator class="-mx-4 -my-2 !w-[calc(100%_+_var(--spacing)*8)] md:hidden" />
         <div class="md:flex-2/3">
-          <!-- BookAppointmentWizard -->
-          <Text style="sm" class="font-medium">
-            {m["public.steps.channel.title"]()}
-          </Text>
+          {#await data.streaming.channels}
+            <div class="flex flex-col gap-2">
+              <Skeleton class="h-12 w-full opacity-65" />
+              <Skeleton class="h-12 w-full opacity-50" />
+              <Skeleton class="h-12 w-full opacity-35" />
+            </div>
+          {:then channels}
+            {#if appointment.step === "SELECT_SLOT"}
+              select a slot
+            {:else if appointment.step === "SELECT_AGENT" && appointment.channel}
+              <SelectAgent channel={appointment.channel} {proceed} />
+            {:else}
+              <SelectChannel {channels} {proceed} />
+            {/if}
+          {/await}
         </div>
       </SideBySide>
     {:else}
@@ -76,6 +97,19 @@
       </CenteredCard.Root>
     {/if}
   {:else}
-    <!-- TODO: Add unlikely error case: promise resolved, but undefined -->
+    <CenteredCard.Root>
+      <CenteredCard.Main>
+        <CenterState
+          Icon={CircleX}
+          headline={m["public.tenantNotReady.title"]()}
+          description={m["public.tenantNotReady.description"]()}
+        />
+      </CenteredCard.Main>
+      <CenteredCard.Action>
+        <Button size="lg" class="w-full" href={ROUTES.LOGIN}>
+          {m["login.action"]()}
+        </Button>
+      </CenteredCard.Action>
+    </CenteredCard.Root>
   {/if}
 {/await}

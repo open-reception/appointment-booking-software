@@ -734,11 +734,15 @@
 		},
 		"steps": {
 			"channel": {
-				"title": "Bitte wählen Sie eine Terminart aus:"
+				"title": "Bitte wählen Sie eine Terminart aus:",
+				"empty": "Aktuell keine Termine verfügbar. Bitte versuchen Sie es später erneut."
 			},
 			"agent": {
 				"title": "Mit wem möchten Sie Ihren Termin vereinbaren?",
-				"anyone": "Der/die Erste verfügbar"
+				"anyone": {
+					"title": "Die/die erste verfügbare Person",
+					"description": "Wählen Sie diese Option, wenn Sie den frühsten Termin suchen."
+				}
 			},
 			"slot": {
 				"title": "Bitte wählen Sie einen verfügbaren Termin aus:",
@@ -754,6 +758,7 @@
 				},
 				"action": "Daten hinzufügen"
 			}
-		}
+		},
+		"anyAgent": "Jede verfügbare Person"
 	}
 }
