@@ -20,7 +20,13 @@ export type TPublicTenant = Pick<
 };
 
 export type TPublicAppointment = {
-  step: "SELECT_CHANNEL" | "SELECT_AGENT" | "SELECT_SLOT" | "ADD_PERSONAL_DATA" | "COMPLETE";
+  step:
+    | "SELECT_CHANNEL"
+    | "SELECT_AGENT"
+    | "SELECT_SLOT"
+    | "ADD_PERSONAL_DATA"
+    | "LOGIN"
+    | "COMPLETE";
   channel?: string;
   agent?: {
     id: string;
@@ -29,6 +35,11 @@ export type TPublicAppointment = {
   } | null;
   slot?: {
     datetime: CalendarDateTime;
+  };
+  data?: {
+    name: string;
+    email: string;
+    phone?: string;
   };
 };
 

@@ -61,10 +61,13 @@
 			"url": "Ungültige URL",
 			"languages": "Wähle mindestens eine Sprache",
 			"language": "Wähle eine Sprache",
-			"deleteAfterDays": "Wähle einen Zeitpunkt"
+			"deleteAfterDays": "Wähle einen Zeitpunkt",
+			"phoneNoRequired": "Telefonnummer ist erforderlich",
+			"phoneNoInvalid": "Format der Telefonnummer ist ungültig"
 		},
 		"passkey": "Passkey",
-		"name": "Name"
+		"name": "Name",
+		"phone": "Telefonnummer"
 	},
 	"login": {
 		"or": "Oder",
@@ -758,6 +761,13 @@
 				"alert": {
 					"title": "Ihre Daten sind sicher",
 					"description": "Nur Sie und {name} können diese Informationen sehen. Die Daten sind Ende-zu-Ende verschlüsselt."
+				},
+				"email": {
+					"description": "Wir senden Ihnen eine Bestätigungs-E-Mail mit den Termindetails."
+				},
+				"phone": {
+					"description": "Format: +491234567890. Wir kontaktieren Sie, falls es Fragen/Anderungen zu Ihrem Termin gibt.",
+					"optional": "(optional)"
 				},
 				"action": "Daten hinzufügen"
 			}

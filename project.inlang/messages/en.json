@@ -69,11 +69,14 @@
 			"url": "Invalid URL Format",
 			"languages": "Select at least one language",
 			"language": "Select a default language",
-			"deleteAfterDays": "Choose a point in time"
+			"deleteAfterDays": "Choose a point in time",
+			"phoneNoRequired": "Phone number is required",
+			"phoneNoInvalid": "Phone number format is invalid"
 		},
 		"noPassAtAll": "Either passphrase or passkey is required",
 		"passkey": "Passkey",
-		"name": "Name"
+		"name": "Name",
+		"phone": "Phone Number"
 	},
 	"login": {
 		"or": "Or",
@@ -767,6 +770,13 @@
 				"alert": {
 					"title": "Your data is safe",
 					"description": "Only you and {name} will be able to access this information. It is end-to-end encrypted."
+				},
+				"email": {
+					"description": "We will use this to send you the appointment details."
+				},
+				"phone": {
+					"description": "Format: +1234567890. We may contact you, if there are questions or changes regarding your appointment.",
+					"optional": "(optional)"
 				},
 				"action": "Add personal data"
 			}

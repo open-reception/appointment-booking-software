@@ -13,6 +13,7 @@
     class: className,
     action,
     children,
+    ...restProps
   }: {
     formId?: string;
     enhance: EnhanceFunction;
@@ -21,6 +22,13 @@
   } & HTMLAttributes<HTMLFormElement> = $props();
 </script>
 
-<form id={formId} method="POST" {action} use:enhance class={cn("flex flex-col gap-3", className)}>
+<form
+  id={formId}
+  method="POST"
+  {action}
+  use:enhance
+  class={cn("flex flex-col gap-3", className)}
+  {...restProps}
+>
   {@render children?.()}
 </form>

@@ -3,7 +3,6 @@
   import { CenteredCard } from "$lib/components/layouts";
   import { Button } from "$lib/components/ui/button";
   import { LocalizedText } from "$lib/components/ui/public/index.js";
-  import { Separator } from "$lib/components/ui/separator";
   import { Skeleton } from "$lib/components/ui/skeleton/index";
   import { Headline, Text } from "$lib/components/ui/typography";
   import { ROUTES } from "$lib/const/routes";

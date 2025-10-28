@@ -60,8 +60,9 @@
                   {appointment.agent?.name || m["public.anyAgent"]()}
                 </Text>
               {/if}
-              {#if appointment.slot}
-                <br />
+            </div>
+            {#if appointment.slot}
+              <div>
                 <Text style="sm" class="font-normal">
                   {Intl.DateTimeFormat($publicStore.locale, {
                     year: "numeric",
@@ -72,8 +73,20 @@
                     timeZone: getLocalTimeZone().toString(),
                   }).format(appointment.slot.datetime.toDate(getLocalTimeZone()))}
                 </Text>
-              {/if}
-            </div>
+              </div>
+            {/if}
+            {#if appointment.data}
+              <div>
+                <Text style="sm" class="font-normal">
+                  {appointment.data.name}<br />
+                  {appointment.data.email}
+                  {#if appointment.data.phone}
+                    <br />
+                    {appointment.data.phone}
+                  {/if}
+                </Text>
+              </div>
+            {/if}
           </div>
         {/if}
       </div>

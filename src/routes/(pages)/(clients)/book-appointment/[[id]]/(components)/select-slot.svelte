@@ -147,7 +147,7 @@
         calendarLabel="Select a date"
         bind:value={selectedDate}
         {isDateUnavailable}
-        class="rounded-lg p-0 [&_td]:grow [&_th]:grow"
+        class="rounded-lg p-0 [&_td]:grow [&_td_*]:mx-auto [&_th]:grow"
         preventDeselect={true}
         disableDaysOutsideMonth={true}
         onValueChange={onSelectDay}
@@ -184,7 +184,7 @@
               <Text style="md" class="text-muted-foreground text-center">
                 {m["public.steps.slot.selectTime"]()}
               </Text>
-              {#each slots as slot}
+              {#each slots as slot (slot.from)}
                 <Button onclick={() => selectSlot(slot)} class="w-full">{slot.from}</Button>
               {/each}
             </div>

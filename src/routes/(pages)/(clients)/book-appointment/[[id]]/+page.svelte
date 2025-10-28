@@ -4,15 +4,15 @@
   import { CenterState } from "$lib/components/templates/empty-state";
   import { Button } from "$lib/components/ui/button";
   import { AppointmentCard, SideBySide } from "$lib/components/ui/public";
-  import { Separator } from "$lib/components/ui/separator";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { ROUTES } from "$lib/const/routes";
   import { publicStore } from "$lib/stores/public.js";
   import { CircleX } from "@lucide/svelte/icons";
+  import { AddPersonalDataForm } from "./(components)/add-personal-data-form";
   import SelectAgent from "./(components)/select-agent.svelte";
   import SelectChannel from "./(components)/select-channel.svelte";
-  import { proceed } from "./(components)/utils";
   import SelectSlot from "./(components)/select-slot.svelte";
+  import { proceed } from "./(components)/utils";
 
   const { data } = $props();
   const appointment = $derived($publicStore.newAppointment);
@@ -38,7 +38,7 @@
 
 {#await data.streaming.tenant}
   <SideBySide>
-    <Skeleton class="h-15 md:flex-1/3" />
+    <Skeleton class="h-15 md:h-full md:flex-1/3" />
     <div class="flex flex-col gap-4 p-3 md:flex-2/3">
       <Skeleton class="h-5 w-3/7" />
       <div class="flex flex-col gap-2">
@@ -61,8 +61,12 @@
               <Skeleton class="h-12 w-full opacity-35" />
             </div>
           {:then channels}
-            {#if appointment.step === "ADD_PERSONAL_DATA"}
-              Add personal data
+            {#if appointment.step === "COMPLETE"}
+              Complete
+            {:else if appointment.step === "LOGIN"}
+              Login
+            {:else if appointment.step === "ADD_PERSONAL_DATA"}
+              <AddPersonalDataForm {proceed} />
             {:else if appointment.step === "SELECT_SLOT" && appointment.channel && appointment.agent !== undefined}
               <SelectSlot channel={appointment.channel} agent={appointment.agent} {proceed} />
             {:else if appointment.step === "SELECT_AGENT" && appointment.channel}
