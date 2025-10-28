@@ -740,13 +740,16 @@
 			"agent": {
 				"title": "Mit wem möchten Sie Ihren Termin vereinbaren?",
 				"anyone": {
-					"title": "Die/die erste verfügbare Person",
+					"title": "Keinen Wunsch äußern",
 					"description": "Wählen Sie diese Option, wenn Sie den frühsten Termin suchen."
 				}
 			},
 			"slot": {
 				"title": "Bitte wählen Sie einen verfügbaren Termin aus:",
 				"today": "Heute",
+				"selectDate": "Wähle Sie ein Datum aus",
+				"selectTime": "Wähle Sie eine Uhrzeit aus:",
+				"loading": "Lade verfügbare Termine...",
 				"empty": "Keine Termine verfügbar. Bitte wählen Sie ein anderes Datum.",
 				"action": "Termin auswählen"
 			},

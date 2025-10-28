@@ -8,6 +8,8 @@
   import { resest } from "../../../../routes/(pages)/(clients)/book-appointment/[[id]]/(components)/utils";
   import { Button } from "../button";
   import LocalizedText from "./localized-text.svelte";
+  import { cn } from "$lib/utils";
+  import { getLocalTimeZone } from "@internationalized/date";
 
   let {
     class: className,
@@ -19,7 +21,7 @@
 </script>
 
 {#if tenant && appointment}
-  <div class={className}>
+  <Card.Root class={cn("rounded-lg p-3", className)}>
     <Card.Title class="flex gap-3">
       {#if typeof tenant.logo === "string" && tenant.logo}
         <img
@@ -58,10 +60,23 @@
                   {appointment.agent?.name || m["public.anyAgent"]()}
                 </Text>
               {/if}
+              {#if appointment.slot}
+                <br />
+                <Text style="sm" class="font-normal">
+                  {Intl.DateTimeFormat($publicStore.locale, {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    timeZone: getLocalTimeZone().toString(),
+                  }).format(appointment.slot.datetime.toDate(getLocalTimeZone()))}
+                </Text>
+              {/if}
             </div>
           </div>
         {/if}
       </div>
     </Card.Title>
-  </div>
+  </Card.Root>
 {/if}

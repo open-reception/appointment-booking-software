@@ -749,13 +749,16 @@
 			"agent": {
 				"title": "Please select who you want your appointment with:",
 				"anyone": {
-					"title": "The first one available",
+					"title": "No preference",
 					"description": "Choose this option to get the fastest appointment."
 				}
 			},
 			"slot": {
 				"title": "Please select an available appointment:",
 				"today": "Today",
+				"selectDate": "Select a date",
+				"selectTime": "Select a time:",
+				"loading": "Loading available appointments...",
 				"empty": "No appointments available. Please select another date.",
 				"action": "Select appointment"
 			},

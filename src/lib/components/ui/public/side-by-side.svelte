@@ -10,7 +10,7 @@
 
 <HorizontalPagePadding class="py-3 md:flex md:grow md:flex-col md:justify-center">
   <MaxPageWidth maxWidth="lg" class={cn("w-full gap-5 md:flex")} {...restProps}>
-    <Card.Root class="w-full md:flex md:flex-row md:gap-5">
+    <Card.Root class="bg-muted/40 dark:bg-muted/20 w-full p-1 md:flex md:flex-row md:gap-5">
       {@render children?.()}
     </Card.Root>
   </MaxPageWidth>

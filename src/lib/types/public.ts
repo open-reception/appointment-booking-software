@@ -1,6 +1,7 @@
 import type { supportedLocales } from "$lib/const/locales";
 import type { SelectTenant } from "$lib/server/db/central-schema";
 import type { SelectAgent, SelectChannel } from "$lib/server/db/tenant-schema";
+import type { CalendarDateTime } from "@internationalized/date";
 
 export type TPublicTenant = Pick<
   SelectTenant,
@@ -26,8 +27,38 @@ export type TPublicAppointment = {
     name: string;
     image: string | null;
   } | null;
+  slot?: {
+    datetime: CalendarDateTime;
+  };
 };
+
+export type TPublicChannel = Pick<SelectChannel, "id" | "names" | "descriptions">;
 
 export type TPublicAgent = Pick<SelectAgent, "id" | "name" | "descriptions" | "image">;
 
-export type TPublicChannel = Pick<SelectChannel, "id" | "names" | "descriptions">;
+export type TPublicSchedule = {
+  period: {
+    startDate: string;
+    endDate: string;
+  };
+  schedule: {
+    date: string; // Format YYYY-MM-DD
+    channels: {
+      [channelId: string]: {
+        availableSlots: TPublicSlot[];
+        channel: TPublicChannel;
+      }[];
+    };
+  }[];
+};
+
+export type TPublicSlot = {
+  from: string; // Format HH:mm
+  to: string; // Format HH:mm
+  duration: number;
+  availableAgents: {
+    id: string;
+    name: string;
+    image: string | null;
+  }[];
+};

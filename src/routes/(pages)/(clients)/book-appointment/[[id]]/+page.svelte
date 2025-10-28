@@ -12,6 +12,7 @@
   import SelectAgent from "./(components)/select-agent.svelte";
   import SelectChannel from "./(components)/select-channel.svelte";
   import { proceed } from "./(components)/utils";
+  import SelectSlot from "./(components)/select-slot.svelte";
 
   const { data } = $props();
   const appointment = $derived($publicStore.newAppointment);
@@ -38,12 +39,7 @@
 {#await data.streaming.tenant}
   <SideBySide>
     <Skeleton class="h-15 md:flex-1/3" />
-    <Separator
-      orientation="vertical"
-      class="-my-4 mr-2 hidden !h-[calc(100%_+_var(--spacing)*8)] md:block"
-    />
-    <Separator class="-mx-4 -my-2 !w-[calc(100%_+_var(--spacing)*8)] md:hidden" />
-    <div class="flex flex-col gap-4 md:flex-2/3">
+    <div class="flex flex-col gap-4 p-3 md:flex-2/3">
       <Skeleton class="h-5 w-3/7" />
       <div class="flex flex-col gap-2">
         <Skeleton class="h-12 w-full opacity-65" />
@@ -57,12 +53,7 @@
     {#if tenant.setupState === "READY" && tenant.longName}
       <SideBySide>
         <AppointmentCard {appointment} class="md:flex-1/3" />
-        <Separator
-          orientation="vertical"
-          class="-my-4 mr-2 hidden !h-[calc(100%_+_var(--spacing)*8)] md:block"
-        />
-        <Separator class="-mx-4 -my-2 !w-[calc(100%_+_var(--spacing)*8)] md:hidden" />
-        <div class="md:flex-2/3">
+        <div class="p-3 md:flex-2/3">
           {#await data.streaming.channels}
             <div class="flex flex-col gap-2">
               <Skeleton class="h-12 w-full opacity-65" />
@@ -70,8 +61,10 @@
               <Skeleton class="h-12 w-full opacity-35" />
             </div>
           {:then channels}
-            {#if appointment.step === "SELECT_SLOT"}
-              select a slot
+            {#if appointment.step === "ADD_PERSONAL_DATA"}
+              Add personal data
+            {:else if appointment.step === "SELECT_SLOT" && appointment.channel && appointment.agent !== undefined}
+              <SelectSlot channel={appointment.channel} agent={appointment.agent} {proceed} />
             {:else if appointment.step === "SELECT_AGENT" && appointment.channel}
               <SelectAgent channel={appointment.channel} {proceed} />
             {:else}
