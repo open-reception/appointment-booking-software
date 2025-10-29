@@ -33,6 +33,7 @@
               toast.success(m["public.register.success"]());
             })
             .catch(() => {
+              $formData.pin = "";
               toast.error(m["public.register.error"]());
               isSubmitting = false;
             });
