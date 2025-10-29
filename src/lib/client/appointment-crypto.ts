@@ -575,6 +575,39 @@ export class UnifiedAppointmentCrypto {
   }
 
   /**
+   * Store the staff key pair after the registration of a new staff member
+   */
+  public async storeStaffKeyPair(
+    tenantId: string,
+    staffId: string,
+    passkeyId: string,
+    authenticatorData: ArrayBuffer,
+  ): Promise<void> {
+    const keyPair = KyberCrypto.generateKeyPair();
+
+    const passkeyBasedShard = await this.derivePasskeyBasedShard(passkeyId, authenticatorData);
+
+    const dbShard = new Uint8Array(keyPair.privateKey.length);
+    for (let i = 0; i < keyPair.privateKey.length; i++) {
+      dbShard[i] = keyPair.privateKey[i] ^ passkeyBasedShard[i];
+    }
+
+    await fetch(`/api/tenants/${tenantId}/staff/${staffId}/crypto`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        passkeyId,
+        publicKey: this.uint8ArrayToBase64(keyPair.publicKey),
+        privateKeyShare: this.uint8ArrayToBase64(dbShard),
+      }),
+    });
+  }
+
+  private uint8ArrayToBase64(array: Uint8Array): string {
+    return btoa(String.fromCharCode.apply(null, Array.from(array)));
+  }
+
+  /**
    * Derive a deterministic shard from passkey authentication data
    *
    * This method creates a consistent private key shard from WebAuthn authenticatorData.
