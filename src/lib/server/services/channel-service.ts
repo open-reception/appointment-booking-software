@@ -1,7 +1,7 @@
 import { supportedLocales } from "$lib/const/locales";
 import logger from "$lib/logger";
 import { asc, eq, inArray, sql, and } from "drizzle-orm";
-import z from "zod/v4";
+import { z } from "zod";
 import { getTenantDb } from "../db";
 import { TenantConfig } from "../db/tenant-config";
 import * as tenantSchema from "../db/tenant-schema";

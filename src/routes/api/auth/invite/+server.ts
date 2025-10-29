@@ -141,7 +141,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     if (!validation.success) {
       logger.warn("Invalid invite request", {
         userId: locals.user.userId,
-        errors: validation.error.errors,
+        errors: validation.error.issues,
       });
       throw new ValidationError("Invalid request data");
     }

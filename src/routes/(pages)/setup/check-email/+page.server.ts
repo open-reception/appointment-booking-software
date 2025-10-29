@@ -1,5 +1,5 @@
 import { superValidate } from "sveltekit-superforms";
-import { zod } from "sveltekit-superforms/adapters";
+import { zod4 as zod } from "sveltekit-superforms/adapters";
 import type { Actions, PageServerLoad } from "./$types";
 import { formSchema } from "./schema";
 import { UserService } from "$lib/server/services/user-service";

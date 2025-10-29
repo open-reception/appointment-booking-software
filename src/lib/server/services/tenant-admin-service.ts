@@ -7,10 +7,8 @@ import { TenantMigrationService } from "./tenant-migration-service";
 import { env } from "$env/dynamic/private";
 import { eq, and, not, count, or } from "drizzle-orm";
 import logger from "$lib/logger";
-import z from "zod/v4";
+import { z } from "zod";
 import { ValidationError, NotFoundError, ConflictError } from "../utils/errors";
-import { sendTenantAdminInviteEmail } from "../email/email-service";
-import { ERRORS } from "$lib/errors";
 
 if (!env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
 
@@ -20,7 +18,6 @@ const tenantCreationSchema = z.object({
     .min(4)
     .max(15)
     .regex(/^[a-z0-9][a-z0-9-]*[a-z0-9]$/),
-  inviteAdmin: z.email().optional(),
 });
 
 export type TenantCreationRequest = z.infer<typeof tenantCreationSchema>;
@@ -67,22 +64,12 @@ export class TenantAdminService {
 
     // Check if tenant can be created without any duplications. Do not create tenant if:
     // - short name already exists
-    // - invited tenant admin email already exists
     const tenantExists = await centralDb
       .select()
       .from(centralSchema.tenant)
       .where(eq(centralSchema.tenant.shortName, request.shortName));
     if (tenantExists.length > 0) {
       throw new ConflictError("Tenant with shortname already exists");
-    }
-    if (request.inviteAdmin) {
-      const adminExists = await centralDb
-        .select()
-        .from(centralSchema.user)
-        .where(eq(centralSchema.user.email, request.inviteAdmin));
-      if (adminExists.length > 0) {
-        throw new ConflictError(ERRORS.USERS.EMAIL_EXISTS);
-      }
     }
 
     const configuration = TenantAdminService.getConfigDefaults();
@@ -149,40 +136,6 @@ export class TenantAdminService {
       tenantService.#tenant = tenant[0];
 
       log.debug("Tenant service created successfully", { tenantId: tenant[0].id });
-
-      // Send tenant admin invitation email if email is provided
-      if (request.inviteAdmin) {
-        try {
-          // For now, we'll use the email as name. In a real implementation,
-          // you might want to collect the name separately or parse it from the email
-          const adminName = request.inviteAdmin.split("@")[0];
-
-          // Generate registration URL for the tenant admin
-          // This should point to a registration page that pre-fills tenant info
-          const registrationUrl = `${env.PUBLIC_APP_URL || "http://localhost:5173"}/register?tenant=${tenant[0].id}&email=${encodeURIComponent(request.inviteAdmin)}&role=TENANT_ADMIN`;
-
-          await sendTenantAdminInviteEmail(
-            request.inviteAdmin,
-            adminName,
-            tenant[0],
-            registrationUrl,
-          );
-
-          log.info("Tenant admin invitation email sent successfully", {
-            tenantId: tenant[0].id,
-            adminEmail: request.inviteAdmin,
-          });
-        } catch (emailError) {
-          log.error("Failed to send tenant admin invitation email", {
-            tenantId: tenant[0].id,
-            adminEmail: request.inviteAdmin,
-            error: String(emailError),
-          });
-
-          // Don't fail the tenant creation if email fails
-          // Just log the error and continue
-        }
-      }
 
       return tenantService;
     } catch (error) {

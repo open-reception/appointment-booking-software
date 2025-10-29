@@ -4,7 +4,7 @@ import { type SelectAgent, type SelectAgentAbsence } from "../db/tenant-schema";
 
 import { eq, and, between, or, lte, gte, ne } from "drizzle-orm";
 import logger from "$lib/logger";
-import z from "zod/v4";
+import { z } from "zod";
 import { ValidationError, NotFoundError, ConflictError } from "../utils/errors";
 import { supportedLocales } from "$lib/const/locales";
 import { TenantAdminService } from "./tenant-admin-service";

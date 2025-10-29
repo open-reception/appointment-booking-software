@@ -5,7 +5,7 @@
   import type { TTenant } from "$lib/types/tenant";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
-  import { zodClient } from "sveltekit-superforms/adapters";
+  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from ".";
 
   let { entity, done }: { entity: TTenant; done: () => void } = $props();
