@@ -260,6 +260,7 @@ export class UserService {
     isSetup: boolean;
     id: string;
     email: string;
+    tenantId: string | null;
     name?: string;
     language?: string;
   }> {
@@ -387,6 +388,7 @@ export class UserService {
         email: resultData.email,
         name: resultData.name,
         language: resultData.language,
+        tenantId: resultData.tenantId,
       };
     } catch (error) {
       if (error instanceof NotFoundError) throw error;

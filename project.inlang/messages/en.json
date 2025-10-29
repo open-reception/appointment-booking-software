@@ -40,7 +40,10 @@
 		"description": "Create your passkey to secure your account.",
 		"action": "Set Passkey",
 		"success": "Passkey set. Login with it now.",
-		"error": "Passkey could not be set"
+		"successKeyPairSaved": "Key pair saved successfully.",
+		"error": "Passkey could not be set",
+		"errorKeyPairDataMissing": "Could not generate key pair. Missing data.",
+		"errorKeyPairNotSaved": "Key pair could not be saved."
 	},
 	"slogan": "End-to-End encrypted appointment booking platform.",
 	"logo": "OpenReception Logo: A 3D pixel art with calendar that's also a lock",

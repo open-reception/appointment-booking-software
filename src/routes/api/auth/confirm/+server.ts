@@ -81,11 +81,12 @@ export const POST: RequestHandler = async ({ request }) => {
 
     const confirmationResult = await UserService.confirm(body.token);
 
-    const response: Record<string, string | boolean> = {
+    const response: Record<string, string | boolean | null> = {
       message: "User account confirmed successfully. You can now log in.",
       isSetup: confirmationResult.isSetup,
       id: confirmationResult.id,
       email: confirmationResult.email,
+      tenantId: confirmationResult.tenantId,
     };
 
     // Include recovery passphrase if it exists (for WebAuthn-only users)

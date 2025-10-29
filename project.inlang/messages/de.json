@@ -107,7 +107,10 @@
 		"description": "Erstelle Deinen Passkey, um Dein Konto zu sichern.",
 		"action": "Passkey setzen",
 		"success": "Passkey eingerichtet. Logge Dich damit jetzt ein.",
-		"error": "Passkey konnte nicht gesetzt werden"
+		"successKeyPairSaved": "Schlüsselpaar erfolgreich gespeichert.",
+		"error": "Passkey konnte nicht gesetzt werden",
+		"errorKeyPairDataMissing": "Konnte Schlüsselpaar nicht generieren. Fehlende Daten.",
+		"errorKeyPairNotSaved": "Schlüsselpaar konnte nicht gespeichert werden."
 	},
 	"logout": {
 		"title": "Erfolgreich abgemeldet",
