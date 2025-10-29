@@ -3,7 +3,7 @@ import type { TPublicTenant, TPublicAppointment, TPublicChannel } from "$lib/typ
 import { writable } from "svelte/store";
 
 interface PublicState {
-  isLoading: boolean;
+  isLoading: boolean; // probably not needed
   locale: string;
   newAppointment: TPublicAppointment;
   tenant?: TPublicTenant;
@@ -20,6 +20,12 @@ const createPublicStore = () => {
 
   return {
     ...store,
+    reset: () =>
+      store.update((state) => ({
+        ...state,
+        newAppointment: { step: "SELECT_CHANNEL" },
+        crypto: undefined,
+      })),
   };
 };
 

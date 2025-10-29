@@ -797,6 +797,27 @@
 					"description": "Please enter the PIN number, you've set:",
 					"action": "Show summary"
 				}
+			},
+			"summary": {
+				"title": "Please review your appointment, before confirming.",
+				"book": {
+					"action": "Book appointment"
+				},
+				"request": {
+					"action": "Request appointment",
+					"hint": "This appointment will have to be manually confirmed. You will receive an E-Mail once it's confirmed."
+				},
+				"error": "Operation failed. Please retry."
+			},
+			"complete": {
+				"book": {
+					"title": "Appointment booked",
+					"description": "We’ve sent you an e-mail with the details."
+				},
+				"request": {
+					"title": "Appointment requested",
+					"description": "{name} will confirm or deny your request soon. You will be informed via e-mail."
+				}
 			}
 		},
 		"anyAgent": "Anyone available",

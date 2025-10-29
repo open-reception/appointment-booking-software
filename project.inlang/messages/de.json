@@ -788,6 +788,27 @@
 					"description": "Bitte geben Sie Ihre PIN ein:",
 					"action": "Zusammenfassung anzeigen"
 				}
+			},
+			"summary": {
+				"title": "Bitte prüfen Sie Ihren Termin, bevor Sie buchen",
+				"book": {
+					"action": "Termin buchen"
+				},
+				"request": {
+					"action": "Termin anfragen",
+					"hint": "Dieser Termin muss manuell bestätigt werden. Sie erhalten per E-Mail informiert."
+				},
+				"error": "Buchung fehlgeschlagen. Bitte erneut versuchen."
+			},
+			"complete": {
+				"book": {
+					"title": "Termin gebucht",
+					"description": "Wir haben Ihnen eine E-Mail mit den Details gesendet."
+				},
+				"request": {
+					"title": "Termin angefragt",
+					"description": "{name} wird Ihren Termin in Kürze bestätigen oder absagen. Sie werden per E-Mail informiert."
+				}
 			}
 		},
 		"anyAgent": "Jede verfügbare Person",

@@ -14,6 +14,7 @@
   import SelectSlot from "./(components)/select-slot.svelte";
   import { proceed } from "./(components)/utils";
   import AuthTabs from "./(components)/auth/auth-tabs.svelte";
+  import Summary from "./(components)/summary.svelte";
 
   const { data } = $props();
   const appointment = $derived($publicStore.newAppointment);
@@ -62,10 +63,8 @@
               <Skeleton class="h-12 w-full opacity-35" />
             </div>
           {:then channels}
-            {#if appointment.step === "COMPLETE"}
-              Complete
-            {:else if appointment.step === "SUMMARY"}
-              Summary
+            {#if appointment.step === "SUMMARY"}
+              <Summary />
             {:else if appointment.step === "LOGIN"}
               <AuthTabs {proceed} />
             {:else if appointment.step === "ADD_PERSONAL_DATA"}

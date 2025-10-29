@@ -42,9 +42,13 @@ export type TPublicAppointment = {
     email: string;
     phone?: string;
   };
+  isNewClient?: boolean;
 };
 
-export type TPublicChannel = Pick<SelectChannel, "id" | "names" | "descriptions">;
+export type TPublicChannel = Pick<
+  SelectChannel,
+  "id" | "names" | "descriptions" | "requiresConfirmation"
+>;
 
 export type TPublicAgent = Pick<SelectAgent, "id" | "name" | "descriptions" | "image">;
 
