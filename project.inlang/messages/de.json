@@ -63,11 +63,16 @@
 			"language": "Wähle eine Sprache",
 			"deleteAfterDays": "Wähle einen Zeitpunkt",
 			"phoneNoRequired": "Telefonnummer ist erforderlich",
-			"phoneNoInvalid": "Format der Telefonnummer ist ungültig"
+			"phoneNoInvalid": "Format der Telefonnummer ist ungültig",
+			"pinLength": "PIN muss 6 Ziffern lang sein",
+			"pinDigitsOnly": "PIN darf nur Ziffern enthalten",
+			"pinInsecure": "Diese PIN ist zu unsicher"
 		},
 		"passkey": "Passkey",
 		"name": "Name",
-		"phone": "Telefonnummer"
+		"phone": "Telefonnummer",
+		"pin": "PIN",
+		"pinHint": "Speichere Deine PIN an einem sicheren Ort, z.B. in einem Passwort-Manager."
 	},
 	"login": {
 		"or": "Oder",
@@ -770,8 +775,29 @@
 					"optional": "(optional)"
 				},
 				"action": "Daten hinzufügen"
+			},
+			"auth": {
+				"register": {
+					"title": "Ich bin das erste Mal hier",
+					"description": "Bitte legen Sie eine PIN fest:",
+					"hint": "Fortfahren erstellt ein Konto für Sie.",
+					"action": "Zusammenfassung anzeigen"
+				},
+				"login": {
+					"title": "Anmelden",
+					"description": "Bitte geben Sie Ihre PIN ein:",
+					"action": "Zusammenfassung anzeigen"
+				}
 			}
 		},
-		"anyAgent": "Jede verfügbare Person"
+		"anyAgent": "Jede verfügbare Person",
+		"register": {
+			"success": "Konto erstellt",
+			"error": "Konto konnte nicht erstellt werden. Bitte erneut versuchen"
+		},
+		"login": {
+			"success": "Anmeldung erfolgreich",
+			"error": "Anmeldung fehlgeschlagen. Bitte erneut versuchen"
+		}
 	}
 }

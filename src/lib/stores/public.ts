@@ -1,3 +1,4 @@
+import type { UnifiedAppointmentCrypto } from "$lib/client/appointment-crypto";
 import type { TPublicTenant, TPublicAppointment, TPublicChannel } from "$lib/types/public";
 import { writable } from "svelte/store";
 
@@ -7,6 +8,7 @@ interface PublicState {
   newAppointment: TPublicAppointment;
   tenant?: TPublicTenant;
   channels?: TPublicChannel[];
+  crypto?: UnifiedAppointmentCrypto;
 }
 
 const createPublicStore = () => {

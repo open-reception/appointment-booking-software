@@ -13,6 +13,7 @@
   import SelectChannel from "./(components)/select-channel.svelte";
   import SelectSlot from "./(components)/select-slot.svelte";
   import { proceed } from "./(components)/utils";
+  import AuthTabs from "./(components)/auth/auth-tabs.svelte";
 
   const { data } = $props();
   const appointment = $derived($publicStore.newAppointment);
@@ -63,8 +64,10 @@
           {:then channels}
             {#if appointment.step === "COMPLETE"}
               Complete
+            {:else if appointment.step === "SUMMARY"}
+              Summary
             {:else if appointment.step === "LOGIN"}
-              Login
+              <AuthTabs {proceed} />
             {:else if appointment.step === "ADD_PERSONAL_DATA"}
               <AddPersonalDataForm {proceed} />
             {:else if appointment.step === "SELECT_SLOT" && appointment.channel && appointment.agent !== undefined}

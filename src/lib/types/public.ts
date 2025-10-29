@@ -26,6 +26,7 @@ export type TPublicAppointment = {
     | "SELECT_SLOT"
     | "ADD_PERSONAL_DATA"
     | "LOGIN"
+    | "SUMMARY"
     | "COMPLETE";
   channel?: string;
   agent?: {

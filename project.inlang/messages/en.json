@@ -71,12 +71,17 @@
 			"language": "Select a default language",
 			"deleteAfterDays": "Choose a point in time",
 			"phoneNoRequired": "Phone number is required",
-			"phoneNoInvalid": "Phone number format is invalid"
+			"phoneNoInvalid": "Phone number format is invalid",
+			"pinLength": "PIN must be 6 digits",
+			"pinDigitsOnly": "PIN must contain only digits",
+			"pinInsecure": "This PIN is too insecure"
 		},
 		"noPassAtAll": "Either passphrase or passkey is required",
 		"passkey": "Passkey",
 		"name": "Name",
-		"phone": "Phone Number"
+		"phone": "Phone Number",
+		"pin": "PIN",
+		"pinHint": "Save your PIN in a secure place, like a password-manager."
 	},
 	"login": {
 		"or": "Or",
@@ -779,8 +784,29 @@
 					"optional": "(optional)"
 				},
 				"action": "Add personal data"
+			},
+			"auth": {
+				"register": {
+					"title": "It's my first time here",
+					"description": "Please add an PIN number so you can change your appointment later.",
+					"hint": "Proceeding will create an account",
+					"action": "Show summary"
+				},
+				"login": {
+					"title": "Login",
+					"description": "Please enter the PIN number, you've set:",
+					"action": "Show summary"
+				}
 			}
 		},
-		"anyAgent": "Anyone available"
+		"anyAgent": "Anyone available",
+		"register": {
+			"success": "Account created",
+			"error": "Account was not created. Please retry"
+		},
+		"login": {
+			"success": "Login successful",
+			"error": "Login failed. Please retry"
+		}
 	}
 }
