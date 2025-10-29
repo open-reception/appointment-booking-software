@@ -59,7 +59,6 @@ describe("/api/tenants", () => {
         json: () =>
           Promise.resolve({
             shortName: "test-tenant",
-            inviteAdmin: "admin@test.com",
           }),
       };
 
@@ -87,13 +86,14 @@ describe("/api/tenants", () => {
 
       expect(TenantAdminService.createTenant).toHaveBeenCalledWith({
         shortName: "test-tenant",
-        inviteAdmin: "admin@test.com",
       });
 
       expect(data).toEqual({
         message: "Tenant created successfully",
-        tenantId: "test-tenant-id",
-        shortName: "test-tenant",
+        tenant: {
+          id: "test-tenant-id",
+          shortName: "test-tenant",
+        },
       });
       expect(response.status).toBe(201);
     });
@@ -142,8 +142,10 @@ describe("/api/tenants", () => {
 
       expect(data).toEqual({
         message: "Tenant created successfully",
-        tenantId: "test-tenant-id-2",
-        shortName: "test-tenant-2",
+        tenant: {
+          id: "test-tenant-id-2",
+          shortName: "test-tenant-2",
+        },
       });
       expect(response.status).toBe(201);
     });
