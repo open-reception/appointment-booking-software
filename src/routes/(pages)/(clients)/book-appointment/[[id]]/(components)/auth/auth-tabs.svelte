@@ -2,14 +2,11 @@
   import { m } from "$i18n/messages";
   import * as Tabs from "$lib/components/ui/tabs";
   import { Text } from "$lib/components/ui/typography";
-  import { publicStore } from "$lib/stores/public.js";
   import type { TPublicAppointment } from "$lib/types/public.js";
   import BookAppointmentLoginForm from "./book-appointment-login-form.svelte";
   import BookAppointmentRegisterForm from "./book-appointment-register-form.svelte";
 
   const { proceed }: { proceed: (a: Partial<TPublicAppointment>) => void } = $props();
-
-  const appointment = $derived($publicStore.newAppointment);
 </script>
 
 <div class="flex flex-col gap-4 pb-1">
