@@ -17,6 +17,8 @@ const scheduleRequestSchema = z.object({
   startDate: z.string().datetime({ offset: true }), // ISO date string with timezone
   endDate: z.string().datetime({ offset: true }), // ISO date string with timezone
   tenantId: z.string().uuid({ message: "Invalid tenant ID format" }),
+  channelId: z.string().uuid({ message: "Invalid channel ID format" }).optional(),
+  agentId: z.string().uuid({ message: "Invalid agent ID format" }).optional(),
 });
 
 export type ScheduleRequest = z.infer<typeof scheduleRequestSchema>;
@@ -96,12 +98,15 @@ export class ScheduleService {
       const db = await this.getDb();
 
       // 1. Get all channels for the tenant
-      const channels = await db
+      let channels = await db
         .select()
         .from(tenantSchema.channel)
         .where(
           and(eq(tenantSchema.channel.pause, false), eq(tenantSchema.channel.archived, false)),
         ); // Only active channels
+      if (request.channelId) {
+        channels = channels.filter((channel) => channel.id === request.channelId);
+      }
 
       // 2. Get all slot templates associated with channels
       const slotTemplates = await db
@@ -159,7 +164,7 @@ export class ScheduleService {
         );
 
       // 5. Get channel-agent assignments
-      const channelAgents = await db
+      let channelAgents = await db
         .select({
           channelId: tenantSchema.channelAgent.channelId,
           agent: tenantSchema.agent,
@@ -169,6 +174,9 @@ export class ScheduleService {
           tenantSchema.agent,
           eq(tenantSchema.channelAgent.agentId, tenantSchema.agent.id),
         );
+      if (request.agentId) {
+        channelAgents = channelAgents.filter((ca) => ca.agent.id === request.agentId);
+      }
 
       // 6. Generate daily schedules
       const schedule = await this.generateDailySchedules({

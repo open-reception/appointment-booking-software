@@ -115,8 +115,8 @@ export const POST: RequestHandler = async ({ params, cookies, request }) => {
       throw new ValidationError("Invalid or missing registration challenge cookie");
     }
 
-    // Clear the registration cookie after validation (challenge cookie is cleared by login route)
-    cookies.delete("webauthn-registration-email", { path: "/" });
+    // Note: Cookie is not deleted here to allow subsequent crypto key storage.
+    // It will expire automatically after 5 minutes (set in /api/auth/challenge)
 
     // Extract counter from WebAuthn credential
     const counter = WebAuthnService.extractCounterFromCredential(body.passkey);

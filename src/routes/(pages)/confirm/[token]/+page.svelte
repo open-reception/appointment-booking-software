@@ -66,7 +66,11 @@
               class="w-full"
               onclick={() =>
                 goto(ROUTES.SETUP_PASSKEY, {
-                  state: { id: confirmation.id, email: confirmation.email },
+                  state: {
+                    id: confirmation.id,
+                    email: confirmation.email,
+                    tenantId: confirmation.tenantId,
+                  },
                 })}
             >
               {m["confirm.success.action"]()}

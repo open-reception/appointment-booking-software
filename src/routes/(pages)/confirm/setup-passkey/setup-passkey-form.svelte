@@ -17,6 +17,7 @@
   import { superForm } from "sveltekit-superforms/client";
   import { formSchema, type FormSchema } from "./schema";
   import { onMount } from "svelte";
+  import { UnifiedAppointmentCrypto } from "$lib/client/appointment-crypto";
 
   let {
     data,
@@ -24,6 +25,10 @@
     onEvent,
   }: { formId: string; onEvent: EventReporter; data: { form: SuperValidated<Infer<FormSchema>> } } =
     $props();
+
+  let tenantId: string | undefined = $state();
+  let passkeyId: string | undefined = $state();
+  let authenticatorData: ArrayBuffer | undefined = $state();
 
   const form = superForm(data.form, {
     validators: zodClient(formSchema),
@@ -35,6 +40,7 @@
     onResult: async (event) => {
       if (event.result.type === "success") {
         toast.success(m["setupPasskey.success"]());
+        await storeStaffKeyPair();
         await goto(ROUTES.LOGIN);
       } else {
         toast.error(m["setupPasskey.error"]());
@@ -88,17 +94,21 @@
       }
 
       // May include device name and counter
-      const authenticatorData = passkeyResp.response.getAuthenticatorData();
+      const authenticatorDataResp = passkeyResp.response.getAuthenticatorData();
 
       // Update form data with passkey info
       const publicKeyBase64 = arrayBufferToBase64(publicKey);
-      const authenticatorDataBase64 = arrayBufferToBase64(authenticatorData);
+      const authenticatorDataBase64 = arrayBufferToBase64(authenticatorDataResp);
       $formData = {
         ...$formData,
         id: passkeyResp.id,
         publicKeyBase64,
         authenticatorDataBase64,
       };
+
+      // Set for later use
+      passkeyId = passkeyResp.id;
+      authenticatorData = authenticatorDataResp;
 
       // Update UI to show passkey is ready
       $passkeyLoading = "success";
@@ -113,9 +123,37 @@
         userId: navState.id,
         email: navState.email,
       };
+      tenantId = navState.tenantId;
       history.replaceState({}, "");
     }
   });
+
+  const storeStaffKeyPair = async () => {
+    if (tenantId && passkeyId && authenticatorData) {
+      const crypto = new UnifiedAppointmentCrypto();
+      return await crypto
+        .storeStaffKeyPair(tenantId, $formData.userId, passkeyId, authenticatorData)
+        .then(() => {
+          toast.success(m["setupPasskey.successKeyPairSaved"]());
+        })
+        .catch((error) => {
+          toast.error(m["setupPasskey.errorKeyPairNotSaved"]());
+          logger.error("Failed to store staff key pair", {
+            tenantId,
+            userId: $formData.userId,
+            passkeyId,
+            error,
+          });
+        });
+    } else {
+      logger.error("Failed to store staff key pair", {
+        tenantId,
+        userId: $formData.userId,
+        passkeyId,
+      });
+      toast.error(m["setupPasskey.errorKeyPairDataMissing"]());
+    }
+  };
 </script>
 
 <Form.Root {formId} {enhance}>

@@ -7,20 +7,33 @@
   import { Text } from "../typography";
   import HorizontalPagePadding from "./horizontal-page-padding.svelte";
   import { LanguageSwitch } from "$lib/components/templates/language-switch";
+  import type { Snippet } from "svelte";
+  import type { supportedLocales } from "$lib/const/locales";
 
   let {
     ref = $bindable(null),
     class: className,
     children,
+    left,
+    footer,
+    languages,
     isWithLanguageSwitch = false,
     ...restProps
-  }: WithElementRef<HTMLAttributes<HTMLDivElement>> & { isWithLanguageSwitch?: boolean } = $props();
+  }: WithElementRef<HTMLAttributes<HTMLDivElement>> & {
+    left?: Snippet;
+    footer?: Snippet;
+    languages?: (typeof supportedLocales)[];
+    isWithLanguageSwitch?: boolean;
+  } = $props();
 </script>
 
 <div bind:this={ref} class={cn("flex min-h-dvh flex-col", className)} {...restProps}>
   {#if isWithLanguageSwitch}
     <HorizontalPagePadding class="flex pt-4">
-      <LanguageSwitch class="ml-auto" triggerSize="sm" />
+      {#if left}
+        {@render left()}
+      {/if}
+      <LanguageSwitch class="ml-auto" triggerSize="sm" locales={languages} />
     </HorizontalPagePadding>
   {/if}
   {@render children?.()}
@@ -40,10 +53,15 @@
         <div class="hidden 2xl:block">2xl</div>
       </Text>
     {/if}
-    <Text style="xs" class="mx-auto">
-      {m.poweredBy()}
-      <a href="https://open-reception.org" target="_blank" class="underline">OpenReception</a>
-    </Text>
+    <div class="mx-auto flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+      {#if footer}
+        {@render footer()}
+      {/if}
+      <Text style="xs">
+        {m.poweredBy()}
+        <a href="https://open-reception.org" target="_blank" class="underline">OpenReception</a>
+      </Text>
+    </div>
     {#if dev}
       <button onclick={toggleMode} class="cursor-pointer text-xs">
         {mode?.current === "dark" ? "dark" : "light"}Mode
