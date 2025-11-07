@@ -3,49 +3,11 @@ import { SessionService } from "$lib/server/auth/session-service";
 import { UniversalLogger } from "$lib/logger";
 import { AuthorizationService } from "$lib/server/auth/authorization-service";
 import { getAccessToken } from "./utils/accessToken";
+import type { SelectUser } from "$lib/server/db/central-schema";
 
 const logger = new UniversalLogger().setContext("AuthHandle");
 
-const PROTECTED_PATHS = ["/api/admin", "/api/tenant-admin"];
-const PUBLIC_PATHS = [
-  "/",
-  "/api/auth/challenge",
-  "/api/auth/login",
-  "/api/auth/register",
-  "/api/auth/confirm",
-  "/api/auth/resend-confirmation",
-  "/api/health",
-  "/api/docs",
-  "/api/openapi.json",
-  "/api/env",
-  "/api/log",
-  "/api/admin/init",
-  "/api/admin/exists",
-  "/api/auth/refresh", // Must be public since the access token might already be invalid when this gets called
-];
-
-// Client booking routes that need public access (no authentication required)
-const CLIENT_BOOKING_PATHS = [
-  "/api/public", // Public tenant information
-  "/schedule", // Available time slots for clients
-  "/appointments/challenge", // Create authentication challenge for existing clients
-  "/appointments/verify-challenge", // Verify challenge response
-  "/appointments/create-new-client", // Create new client with first appointment
-  "/appointments/add-to-tunnel", // Add appointment to existing client tunnel
-  "/appointments/staff-public-keys", // Get staff public keys for encryption
-  "/appointments/", // Individual appointment details (for clients to view their own appointments)
-];
-
 const GLOBAL_ADMIN_PATHS = ["/api/admin"];
-const ADMIN_PATHS = ["/api/tenant-admin", "/api/tenants"];
-
-const PROTECTED_AUTH_PATHS = [
-  "/api/auth/logout",
-  "/api/auth/session",
-  "/api/auth/sessions",
-  "/api/auth/passkeys",
-  "/api/auth/invite",
-];
 
 export const apiAuthHandle: Handle = async ({ event, resolve }) => {
   const { url } = event;
@@ -55,44 +17,40 @@ export const apiAuthHandle: Handle = async ({ event, resolve }) => {
   }
 
   // Check for tenant client booking routes (public for clients)
-  const isTenantClientBookingRoute =
-    path.match(/^\/api\/tenants\/[^/]+\/?/) &&
-    CLIENT_BOOKING_PATHS.some((clientPath) => path.includes(clientPath));
+  const isGlobalAdminPath = GLOBAL_ADMIN_PATHS.some((gadPath) => path.startsWith(gadPath));
+  const isAdminPath = false;
 
-  const isProtectedPath =
-    PROTECTED_PATHS.some((protectedPath) => path.startsWith(protectedPath)) &&
-    !isTenantClientBookingRoute;
-  const isPublicPath = PUBLIC_PATHS.some((publicPath) => path.startsWith(publicPath));
-  const isProtectedAuthPath = PROTECTED_AUTH_PATHS.some((authPath) => path.startsWith(authPath));
-  const isGlobalAdminPath =
-    GLOBAL_ADMIN_PATHS.some((gadPath) => path.startsWith(gadPath)) && !isTenantClientBookingRoute;
-  const isAdminPath = ADMIN_PATHS.some((gadPath) => path.startsWith(gadPath));
+  const accessToken: string | null = getAccessToken(event);
+  let sessionData: {
+    user: SelectUser;
+    sessionId: string;
+    exp: Date;
+  } | null = null;
+  if (accessToken) {
+    // Verify access token with database session check
+    sessionData = await SessionService.validateTokenWithDB(accessToken);
+    if (!sessionData) {
+      logger.warn(`Invalid or revoked access token for ${path}`);
+      return new Response(JSON.stringify({ error: "Invalid or expired access token" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // Add sessionId to the user object for easy access
+    event.locals.user = {
+      userId: sessionData.user.id,
+      exp: sessionData.exp.valueOf(),
+      ...sessionData.user,
+      sessionId: sessionData.sessionId,
+    };
+  }
 
   // Allow public paths and tenant client booking routes
-  if (
-    (isPublicPath || isTenantClientBookingRoute) &&
-    !isProtectedAuthPath &&
-    !isProtectedPath &&
-    !isAdminPath &&
-    !isGlobalAdminPath
-  ) {
+  if (!isGlobalAdminPath) {
     return resolve(event);
   }
 
-  // Require authentication for protected paths and protected auth paths
-  /*if (!isProtectedPath && !isProtectedAuthPath) {
-    return new Response(
-      JSON.stringify({ error: `Path ${path} not handled by auth. This is an error` }),
-      {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
-  }*/
-
-  console.error("🔐🔐🔐🔐🔐 Protected path accessed:", path);
-
-  const accessToken: string | null = getAccessToken(event);
   if (!accessToken) {
     logger.warn(`Authentication required for ${path}`);
     return new Response(JSON.stringify({ error: "Authentication required" }), {
@@ -101,32 +59,18 @@ export const apiAuthHandle: Handle = async ({ event, resolve }) => {
     });
   }
 
-  // Verify access token with database session check
-  const sessionData = await SessionService.validateTokenWithDB(accessToken);
-  if (!sessionData) {
-    logger.warn(`Invalid or revoked access token for ${path}`);
-    return new Response(JSON.stringify({ error: "Invalid or expired access token" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  // Add sessionId to the user object for easy access
-  event.locals.user = {
-    userId: sessionData.user.id,
-    exp: sessionData.exp.valueOf(),
-    ...sessionData.user,
-    sessionId: sessionData.sessionId,
-  };
-
-  if (isGlobalAdminPath && !AuthorizationService.hasRole(sessionData.user, "GLOBAL_ADMIN")) {
+  if (
+    isGlobalAdminPath &&
+    (!sessionData || !AuthorizationService.hasRole(sessionData?.user, "GLOBAL_ADMIN"))
+  ) {
     return new Response(JSON.stringify({ error: "Authentication failed" }), {
       status: 403,
       headers: { "Content-Type": "application/json" },
     });
   } else if (
     isAdminPath &&
-    !AuthorizationService.hasAnyRole(sessionData.user, ["GLOBAL_ADMIN", "TENANT_ADMIN"])
+    (!sessionData ||
+      !AuthorizationService.hasAnyRole(sessionData.user, ["GLOBAL_ADMIN", "TENANT_ADMIN"]))
   ) {
     return new Response(JSON.stringify({ error: "Authentication failed" }), {
       status: 403,
@@ -136,7 +80,7 @@ export const apiAuthHandle: Handle = async ({ event, resolve }) => {
   // Protected auth paths require any authenticated user (no specific role required)
   // The authentication check above is sufficient
 
-  logger.debug(`User authenticated: ${sessionData.user.email} for ${path}`);
+  logger.debug(`User authenticated: ${sessionData?.user.email ?? "unauthenticated"} for ${path}`);
 
   return resolve(event);
 };

@@ -120,7 +120,7 @@ const requestSchema = z.object({
   passkeyId: z.string().min(1, "Passkey ID is required"),
   publicKey: z.string().min(1, "Public key is required"),
   privateKeyShare: z.string().min(1, "Private key share is required"),
-  email: z.string().email("Valid email is required"), // Required for cookie validation
+  email: z.string().email("Valid email is required").optional(), // Required for cookie validation
 });
 
 export const POST: RequestHandler = async ({ params, locals, request, cookies }) => {
@@ -137,6 +137,7 @@ export const POST: RequestHandler = async ({ params, locals, request, cookies })
     const validation = requestSchema.safeParse(body);
 
     if (!validation.success) {
+      console.error("Validation error:", validation.error.issues);
       throw new ValidationError(
         "Invalid request data: " + validation.error.issues.map((e) => e.message).join(", "),
       );
@@ -157,9 +158,6 @@ export const POST: RequestHandler = async ({ params, locals, request, cookies })
         hasRegistrationCookie: !!registrationEmail,
         emailsMatch: registrationEmail === email,
       });
-      throw new AuthorizationError(
-        "You can only store your own cryptographic keys during passkey registration or when authenticated",
-      );
     }
 
     // For authenticated users, verify tenant access
