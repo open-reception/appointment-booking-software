@@ -6,7 +6,7 @@ import { getAccessToken } from "./utils/accessToken";
 
 const logger = new UniversalLogger().setContext("AuthHandle");
 
-const PROTECTED_PATHS = ["/api/admin", "/api/tenant-admin", "/api/tenants"];
+const PROTECTED_PATHS = ["/api/admin", "/api/tenant-admin"];
 const PUBLIC_PATHS = [
   "/",
   "/api/auth/challenge",
@@ -36,8 +36,8 @@ const CLIENT_BOOKING_PATHS = [
   "/appointments/", // Individual appointment details (for clients to view their own appointments)
 ];
 
-const GLOBAL_ADMIN_PATHS = ["/api/admin", "/api/tenants"];
-const ADMIN_PATHS = ["/api/tenant-admin"];
+const GLOBAL_ADMIN_PATHS = ["/api/admin"];
+const ADMIN_PATHS = ["/api/tenant-admin", "/api/tenants"];
 
 const PROTECTED_AUTH_PATHS = [
   "/api/auth/logout",
@@ -80,7 +80,7 @@ export const apiAuthHandle: Handle = async ({ event, resolve }) => {
   }
 
   // Require authentication for protected paths and protected auth paths
-  if (!isProtectedPath && !isProtectedAuthPath) {
+  /*if (!isProtectedPath && !isProtectedAuthPath) {
     return new Response(
       JSON.stringify({ error: `Path ${path} not handled by auth. This is an error` }),
       {
@@ -88,7 +88,9 @@ export const apiAuthHandle: Handle = async ({ event, resolve }) => {
         headers: { "Content-Type": "application/json" },
       },
     );
-  }
+  }*/
+
+  console.error("🔐🔐🔐🔐🔐 Protected path accessed:", path);
 
   const accessToken: string | null = getAccessToken(event);
   if (!accessToken) {
