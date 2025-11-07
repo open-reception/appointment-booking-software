@@ -729,5 +729,18 @@
 		"loading": "Loading staff members"
 	},
 	"yes": "Yes",
-	"no": "No"
+	"no": "No",
+	"calendar": {
+		"today": "Today",
+		"loading": "Loading calendar",
+		"shownAppointments": {
+			"title": "Appointments",
+			"options": {
+				"all": "all",
+				"available": "available",
+				"booked": "booked",
+				"reserved": "reserved"
+			}
+		}
+	}
 }

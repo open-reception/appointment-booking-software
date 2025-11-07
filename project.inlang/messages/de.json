@@ -720,5 +720,18 @@
 		"loading": "Lade Personal"
 	},
 	"yes": "Ja",
-	"no": "Nein"
+	"no": "Nein",
+	"calendar": {
+		"today": "Heute",
+		"loading": "Loading calendar",
+		"shownAppointments": {
+			"title": "Termine",
+			"options": {
+				"all": "alle",
+				"available": "verfügbar",
+				"booked": "gebucht",
+				"reserved": "reserviert"
+			}
+		}
+	}
 }

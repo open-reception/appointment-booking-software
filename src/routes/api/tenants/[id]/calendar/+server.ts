@@ -138,7 +138,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
       );
     }
 
-    if (startDate >= endDate) {
+    if (startDate > endDate) {
       throw new ValidationError("Start date must be before end date");
     }
 

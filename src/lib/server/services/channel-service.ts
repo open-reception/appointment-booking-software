@@ -9,7 +9,18 @@ import { type SelectAgent, type SelectChannel, type SelectSlotTemplate } from ".
 import { NotFoundError, ValidationError } from "../utils/errors";
 import { TenantAdminService } from "./tenant-admin-service";
 
-const CHANNEL_COLORS = ["#FF0000", "#00FF00", "#0000FF"] as const;
+const CHANNEL_COLORS = [
+  "#8AA3E5",
+  "#E56E83",
+  "#E6BE67",
+  "#9CE587",
+  "#6A526B",
+  "#81E5CB",
+  "#81E5CB",
+  "#E68574",
+  "#345F7F",
+  "#C28F6C",
+] as const;
 const NEXT_COLOR_KEY = "nextChannelColor";
 
 const slotTemplateSchema = z.object({
