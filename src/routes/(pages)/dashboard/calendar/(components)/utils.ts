@@ -1,4 +1,6 @@
 import { browser } from "$app/environment";
+import { goto } from "$app/navigation";
+import { ROUTES } from "$lib/const/routes";
 import type { TCalendar, TCalendarItem } from "$lib/types/calendar";
 import { toCalendarDateTime, toZoned, type CalendarDate } from "@internationalized/date";
 
@@ -29,7 +31,11 @@ export const fetchCalendar = async (opts: { tenant: string; startDate: CalendarD
       console.error("Unable to parse calendar response", error);
     }
   } else {
-    console.error("Invalid calendar response");
+    if (res.status === 401) {
+      goto(ROUTES.LOGIN);
+    } else {
+      console.error("Unable to fetch calendar", res.status, res.statusText);
+    }
   }
 };
 
