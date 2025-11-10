@@ -796,7 +796,8 @@ export class UnifiedAppointmentCrypto {
     const results = [];
 
     for (const staff of staffKeys) {
-      const staffPublicKeyBytes = this.hexToUint8Array(staff.publicKey);
+      // Public key is stored as Base64, not Hex
+      const staffPublicKeyBytes = this.base64ToUint8Array(staff.publicKey);
       const encryptedKey = KyberCrypto.encapsulate(staffPublicKeyBytes);
 
       results.push({
