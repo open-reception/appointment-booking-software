@@ -11,6 +11,19 @@ export const proceed = (
 ): Partial<TPublicAppointment> => {
   const curAppointment = get(publicStore).newAppointment;
   switch (true) {
+    case newAppointment.step === "SUMMARY": {
+      const updatedAppointment: TPublicAppointment = {
+        ...newAppointment,
+        step: "SUMMARY",
+      };
+      if (curAppointment.step !== "SUMMARY") {
+        publicStore.update((state) => ({
+          ...state,
+          newAppointment: updatedAppointment,
+        }));
+      }
+      return updatedAppointment;
+    }
     case Boolean(newAppointment.data) &&
       Boolean(newAppointment.slot) &&
       Boolean(newAppointment.channel) &&

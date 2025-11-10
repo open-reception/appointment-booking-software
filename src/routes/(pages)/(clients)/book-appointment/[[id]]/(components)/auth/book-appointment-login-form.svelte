@@ -36,7 +36,7 @@
               toast.error(m["public.login.error"]());
               isSubmitting = false;
             });
-          proceed({ ...appointment.data, isNewClient: false, step: "SUMMARY" });
+          proceed({ ...appointment, isNewClient: false, step: "SUMMARY" });
           cancel();
         }
         isSubmitting = false;

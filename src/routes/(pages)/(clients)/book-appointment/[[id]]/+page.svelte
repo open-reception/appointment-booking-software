@@ -22,8 +22,6 @@
   $effect(() => {
     if (data.channelId && appointment?.step === "SELECT_CHANNEL") {
       proceed({ ...appointment, channel: data.channelId });
-    } else {
-      proceed({});
     }
   });
 </script>
