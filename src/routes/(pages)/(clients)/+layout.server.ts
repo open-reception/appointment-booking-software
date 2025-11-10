@@ -16,8 +16,7 @@ export const load: LayoutServerLoad = async (event) => {
     .then(async (res) => {
       try {
         const body = await res.json();
-        // TODO: Change setupState
-        return { ...body.tenant, setupState: "READY" } as TPublicTenant;
+        return body.tenant as TPublicTenant;
       } catch (error) {
         log.error("Failed to parse settings base response", { error });
       }
