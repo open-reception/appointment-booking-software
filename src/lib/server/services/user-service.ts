@@ -355,7 +355,17 @@ export class UserService {
       }
 
       // Check if this is the first tenant admin for the tenant
-      const shouldGrantAccess = resultData.role === "GLOBAL_ADMIN"; // Global admins always get ACCESS_GRANTED
+      const numberOfUsers = await centralDb
+        .select({ count: count() })
+        .from(centralSchema.user)
+        .where(
+          and(
+            eq(centralSchema.user.tenantId, resultData.tenantId!),
+            eq(centralSchema.user.role, "TENANT_ADMIN"),
+          ),
+        );
+
+      const shouldGrantAccess = resultData.role === "GLOBAL_ADMIN" || numberOfUsers[0].count === 1;
       const confirmationState = shouldGrantAccess ? "ACCESS_GRANTED" : "CONFIRMED";
 
       // Update the user to confirmed and active, and clear the recovery passphrase
