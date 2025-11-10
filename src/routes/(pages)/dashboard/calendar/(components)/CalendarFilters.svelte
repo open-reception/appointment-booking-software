@@ -2,6 +2,7 @@
   import { m } from "$i18n/messages";
   import { getLocale } from "$i18n/runtime";
   import { Button } from "$lib/components/ui/button";
+  import * as ButtonGroup from "$lib/components/ui/button-group";
   import { CheckboxWithLabel } from "$lib/components/ui/checkbox-with-label";
   import { Label } from "$lib/components/ui/label";
   import { HorizontalPagePadding } from "$lib/components/ui/page";
@@ -13,19 +14,21 @@
   import { sidebar as sidebarStore } from "$lib/stores/sidebar";
   import type { TAppointmentFilter } from "$lib/types/calendar";
   import { cn } from "$lib/utils";
-  import { PanelRightClose } from "@lucide/svelte";
+  import { PanelRightClose, ZoomIn, ZoomOut } from "@lucide/svelte";
   import { type ComponentProps } from "svelte";
 
   let {
     shownAppointments = $bindable(),
     shownChannels = $bindable(),
     shownAgents = $bindable(),
+    scale = $bindable(),
     ref = $bindable(null),
     ...restProps
   }: ComponentProps<typeof Sidebar.Root> & {
     shownAppointments: TAppointmentFilter;
     shownChannels: string[];
     shownAgents: string[];
+    scale: number;
   } = $props();
 
   const appointmentStates: { value: TAppointmentFilter; label: string }[] = [
@@ -37,6 +40,15 @@
   let sidebar = $derived($sidebarStore);
   let channels = $derived($channelsStore.channels.filter((x) => !x.archived));
   let agents = $derived($agentsStore.agents.filter((x) => !x.archived));
+
+  const zoomSteps = [1, 2, 3, 4];
+
+  const zoom = (direction: number) => {
+    const currentIndex = zoomSteps.indexOf(scale);
+    if (currentIndex === -1) return;
+    const nextIndex = currentIndex + direction;
+    scale = zoomSteps[nextIndex];
+  };
 </script>
 
 <Sidebar.Root
@@ -48,15 +60,34 @@
   )}
   {...restProps}
 >
-  <Sidebar.Header class="border-sidebar-border h-16 border-b lg:hidden">
-    <div class="flex h-full items-center">
+  <Sidebar.Header class="border-sidebar-border h-16 border-b">
+    <div class="flex h-full items-center gap-5">
       <Button
         size="sm"
         variant="ghost"
         onclick={() => sidebarStore.setCalendarExpanded(!sidebar.isCalendarExpanded)}
+        class="lg:hidden"
       >
         <PanelRightClose />
       </Button>
+      <ButtonGroup.Root aria-label="Media controls">
+        <Button
+          variant="outline"
+          size="icon"
+          disabled={zoomSteps[0] === scale}
+          onclick={() => zoom(-1)}
+        >
+          <ZoomOut />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          disabled={zoomSteps.slice(-1)[0] === scale}
+          onclick={() => zoom(1)}
+        >
+          <ZoomIn />
+        </Button>
+      </ButtonGroup.Root>
     </div>
   </Sidebar.Header>
   <Sidebar.Content>

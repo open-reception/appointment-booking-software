@@ -1,118 +1,72 @@
 <script lang="ts">
+  import { m } from "$i18n/messages";
   import { getLocale } from "$i18n/runtime";
   import { Separator } from "$lib/components/ui/separator";
   import { Text } from "$lib/components/ui/typography";
-  import { cn } from "$lib/utils";
+  import { clock } from "$lib/stores/time";
   import { type TCalendarItem } from "$lib/types/calendar";
-  import { CalendarDate, getLocalTimeZone, toCalendarDateTime } from "@internationalized/date";
+  import { cn } from "$lib/utils";
+  import {
+    CalendarDate,
+    getLocalTimeZone,
+    toCalendarDate,
+    toCalendarDateTime,
+    today,
+  } from "@internationalized/date";
   import Loader from "@lucide/svelte/icons/loader-2";
-  import { m } from "$i18n/messages";
+  import { tv } from "tailwind-variants";
+  import { positionItems } from "./utils";
 
   let {
     day = $bindable(),
     items,
     earliestStartHour,
     latestEndHour,
+    scale = $bindable(),
   }: {
     day: CalendarDate;
     items: TCalendarItem[] | undefined;
     earliestStartHour: number;
     latestEndHour: number;
+    scale: number;
   } = $props();
 
-  // Convert time string to minutes since midnight
-  function timeToMinutes(time: string): number {
-    const [hours, minutes] = time.split(":").map(Number);
-    return hours * 60 + minutes;
-  }
-
   // Process items to handle overlaps
-  function processItems(items: TCalendarItem[] | undefined) {
-    if (!items) return [];
+  let processedItems = $derived(positionItems(items));
 
-    // Sort items by start time
-    const sortedItems = [...items].sort((a, b) => timeToMinutes(a.start) - timeToMinutes(b.start));
-
-    // Calculate layout positions
-    const processedItems = sortedItems.map((item) => {
-      const startMinutes = timeToMinutes(item.start);
-      const endMinutes = startMinutes + item.duration;
-
-      return {
-        ...item,
-        startMinutes,
-        endMinutes,
-        totalColumns: 1,
-      };
-    });
-
-    // Find overlapping groups and assign columns
-    for (let i = 0; i < processedItems.length; i++) {
-      const currentItem = processedItems[i];
-      const overlappingItems = [currentItem];
-
-      // Find all items that overlap with current item's time range
-      for (let j = i + 1; j < processedItems.length; j++) {
-        const nextItem = processedItems[j];
-
-        // Check if items overlap
-        if (nextItem.startMinutes < currentItem.endMinutes) {
-          overlappingItems.push(nextItem);
-        } else {
-          break;
-        }
-      }
-
-      // Assign columns to overlapping items
-      if (overlappingItems.length > 1) {
-        const columns: number[] = [];
-
-        overlappingItems.forEach((item, index) => {
-          // Find the first available column
-          let column = 0;
-          while (columns[column] !== undefined && columns[column] > item.startMinutes) {
-            column++;
-          }
-        });
-
-        // Update totalColumns for all overlapping items
-        const maxColumns = Math.max(...overlappingItems.map((item) => item.column)) + 1;
-        overlappingItems.forEach((item) => {
-          item.totalColumns = maxColumns;
-        });
-      }
-    }
-
-    return processedItems;
-  }
-  let processedItems = $derived(processItems(items));
-
+  const hourSize = $derived(60 * scale);
   const hours = Array.from({ length: 25 }, (_, i) => i);
   const shownHours = $derived(hours.slice(0, latestEndHour + 1).slice(earliestStartHour));
-  const focusAdjustment = 30;
+  const focusAdjustment = $derived(30 * scale);
+  const curTimeIndicator = $derived(
+    today(getLocalTimeZone()).toString() === day.toString() ? $clock : undefined,
+  );
 
-  // Calculate position and height for items
-  function getItemStyle(item: ReturnType<typeof processItems>[0]) {
-    const top = item.startMinutes - earliestStartHour * 60 + focusAdjustment;
-    const height = item.duration;
-    const width = 100 / item.totalColumns;
-    const left = item.column * width;
-
-    return {
-      top: `${top}px`,
-      height: `${height}px`,
-      left: `${left}%`,
-      width: `${width}%`,
-    };
-  }
+  const slotVariants = tv({
+    base: "",
+    variants: {
+      status: {
+        available: "border-1 border-[var(--channel-color)] bg-background",
+        booked: "bg-[var(--channel-color)] cursor-pointer",
+        reserved:
+          "bg-[var(--channel-color)]/20 border-1 border-[var(--channel-color)] border-dashed cursor-pointer",
+      },
+    },
+  });
 </script>
 
 <div class="relative flex w-full flex-col">
-  <div class="relative flex min-h-[30px] w-full items-start justify-between">
+  <div
+    class="relative flex w-full items-start justify-between"
+    style:height={`${focusAdjustment}px`}
+  >
     <Separator class="bg-secondary absolute top-0 right-0 left-16 h-0.25 !w-auto" />
   </div>
   {#each shownHours as hour}
-    <div class="relative flex h-[60px] w-full items-start justify-between select-none">
+    <div
+      class="relative flex w-full items-start justify-between select-none"
+      style:height={`${hourSize}px`}
+    >
       <Text style="xs" class="text-muted-foreground -mt-2 w-16 shrink-0">
         {Intl.DateTimeFormat(getLocale(), {
           hour: "2-digit",
@@ -136,23 +90,54 @@
   <!-- Day content area -->
   <div class="absolute top-0 right-0 bottom-0 left-16">
     {#each processedItems as item}
-      {@const style = getItemStyle(item)}
+      {@const top =
+        (item.startMinutes / 60) * hourSize + focusAdjustment - earliestStartHour * hourSize}
+      {@const height = item.duration * scale}
+      {@const width = 100 / item.totalColumns}
+      {@const left = item.column * width}
       <div
-        class={cn(
-          "absolute flex cursor-pointer items-center overflow-hidden rounded p-0.25 transition-all duration-200 hover:z-10 hover:min-h-5 hover:scale-[1.02] hover:shadow-md",
-        )}
-        style:top={style.top}
-        style:height={style.height}
-        style:left={style.left}
-        style:width={style.width}
+        class="absolute flex items-center rounded p-0.25 transition-all duration-200 hover:z-10 hover:min-h-5 hover:scale-[1.02] hover:shadow-md"
+        style:top={`${top}px`}
+        style:height={`${height}px`}
+        style:left={`${left}%`}
+        style:width={`${width}%`}
         data-id={item.id}
       >
-        <div style:background={item.color} class="h-full w-full rounded">
-          <!-- <Text style="xs" class="leading-tight">
-            {item.id}
-            </Text> -->
+        <div
+          style="--channel-color: {item.color}"
+          class={cn(
+            "h-full w-full overflow-hidden rounded px-1 leading-none",
+            slotVariants({ status: item.status }),
+          )}
+        >
+          {#if ["booked", "reserved"].includes(item.status)}
+            <Text style="xs" class="leading-none">
+              {item.id}
+            </Text>
+          {/if}
         </div>
       </div>
     {/each}
   </div>
+
+  {#if curTimeIndicator && toCalendarDate($clock).toString() === today(getLocalTimeZone()).toString() && latestEndHour > curTimeIndicator.hour}
+    {@const top =
+      focusAdjustment +
+      curTimeIndicator.hour * hourSize +
+      (curTimeIndicator.minute / 60) * hourSize -
+      earliestStartHour * hourSize}
+    <div
+      class="absolute right-0 left-0 z-10 flex h-1 items-center select-none"
+      style:top={`${top}px`}
+    >
+      <Text style="xs" class="z-10 -ml-1 rounded-full bg-red-500 px-1 text-white">
+        {Intl.DateTimeFormat(getLocale(), {
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZone: getLocalTimeZone().toString(),
+        }).format(toCalendarDateTime($clock).toDate(getLocalTimeZone()))}
+      </Text>
+      <div class="absolute right-0 left-0 h-0.25 bg-red-500"></div>
+    </div>
+  {/if}
 </div>

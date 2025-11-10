@@ -22,6 +22,7 @@
   let shownAgents: string[] = $state(["1"]);
   let startHour = $state(0);
   let prevLatestEndHour = $state(24);
+  let scale = $state(1);
 
   $effect(() => {
     updateCalendar();
@@ -52,7 +53,7 @@
             duration: slot.duration,
             channelId,
             color: channelData.channel.color,
-            column: channelIndex,
+            column: 0,
             status: "available",
           });
         });
@@ -105,6 +106,7 @@
           {items}
           earliestStartHour={startHour}
           latestEndHour={prevLatestEndHour}
+          bind:scale
         />
       </div>
     </div>
@@ -120,6 +122,6 @@
     </Button>
   {/snippet}
   {#snippet sidebarRight()}
-    <CalendarFilters bind:shownAppointments bind:shownChannels bind:shownAgents />
+    <CalendarFilters bind:shownAppointments bind:shownChannels bind:shownAgents bind:scale />
   {/snippet}
 </SidebarLayout>
