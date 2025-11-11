@@ -10,16 +10,16 @@ import { NotFoundError, ValidationError } from "../utils/errors";
 import { TenantAdminService } from "./tenant-admin-service";
 
 const CHANNEL_COLORS = [
-  "#8AA3E5",
-  "#E56E83",
-  "#E6BE67",
-  "#9CE587",
-  "#6A526B",
-  "#81E5CB",
-  "#81E5CB",
-  "#E68574",
-  "#345F7F",
-  "#C28F6C",
+  "#F3835C",
+  "#C8CA79",
+  "#F6DD74",
+  "#AAABC0",
+  "#E9A56D",
+  "#D89CC8",
+  "#B0B49B",
+  "#F9A1B4",
+  "#88D7EF",
+  "#AB8A7A",
 ] as const;
 const NEXT_COLOR_KEY = "nextChannelColor";
 

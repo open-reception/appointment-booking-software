@@ -127,7 +127,7 @@
       (curTimeIndicator.minute / 60) * hourSize -
       earliestStartHour * hourSize}
     <div
-      class="absolute right-0 left-0 z-10 flex h-1 items-center select-none"
+      class="absolute right-0 left-0 z-10 flex h-1 items-center transition-all duration-200 select-none"
       style:top={`${top}px`}
     >
       <Text style="xs" class="z-10 -ml-1 rounded-full bg-red-500 px-1 text-white">
