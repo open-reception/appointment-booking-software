@@ -820,7 +820,8 @@
 				"request": {
 					"title": "Appointment requested",
 					"description": "{name} will confirm or deny your request soon. You will be informed via e-mail."
-				}
+				},
+				"action": "Proceed to Homepage"
 			}
 		},
 		"anyAgent": "Anyone available",

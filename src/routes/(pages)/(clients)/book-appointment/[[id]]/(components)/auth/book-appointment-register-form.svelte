@@ -31,14 +31,14 @@
             .initNewClient(appointment.data?.email, $formData.pin, tenant.id)
             .then(() => {
               toast.success(m["public.register.success"]());
+              proceed({ ...appointment, isNewClient: true, step: "SUMMARY" });
+              cancel();
             })
             .catch(() => {
               $formData.pin = "";
               toast.error(m["public.register.error"]());
               isSubmitting = false;
             });
-          proceed({ ...appointment, isNewClient: true, step: "SUMMARY" });
-          cancel();
         }
         isSubmitting = false;
       },

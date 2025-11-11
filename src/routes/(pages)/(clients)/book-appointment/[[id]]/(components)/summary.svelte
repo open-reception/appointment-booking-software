@@ -7,7 +7,6 @@
   import { publicStore } from "$lib/stores/public.js";
   import { getLocalTimeZone, toZoned } from "@internationalized/date";
   import { toast } from "svelte-sonner";
-  import { th } from "zod/locales";
 
   const tenant = $derived($publicStore.tenant);
   const channels = $derived($publicStore.channels);
@@ -21,6 +20,7 @@
       appointment &&
       appointment.data &&
       appointment.slot &&
+      appointment.agent &&
       $publicStore.crypto &&
       tenant &&
       channel
@@ -29,14 +29,13 @@
         .createAppointment(
           appointment.data,
           toZoned(appointment.slot.datetime, getLocalTimeZone()).toAbsoluteString(),
-          appointment.agent?.id!,
+          appointment.agent.id,
           channel.id,
           tenant.id,
           Boolean(appointment.isNewClient),
         )
         .then(() => {
           const isRequest = channel.requiresConfirmation;
-          publicStore.reset();
           goto(ROUTES.APPOINTMENT_BOOKED, { state: { isRequest } });
         })
         .catch(() => {

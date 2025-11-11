@@ -811,7 +811,8 @@
 				"request": {
 					"title": "Termin angefragt",
 					"description": "{name} wird Ihren Termin in Kürze bestätigen oder absagen. Sie werden per E-Mail informiert."
-				}
+				},
+				"action": "Weiter zur Startseite"
 			}
 		},
 		"anyAgent": "Jede verfügbare Person",

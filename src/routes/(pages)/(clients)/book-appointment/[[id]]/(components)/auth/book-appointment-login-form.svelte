@@ -30,14 +30,14 @@
             .loginExistingClient(appointment.data?.email, $formData.pin, tenant.id)
             .then(() => {
               toast.success(m["public.login.success"]());
+              proceed({ ...appointment, isNewClient: false, step: "SUMMARY" });
+              cancel();
             })
             .catch(() => {
               $formData.pin = "";
               toast.error(m["public.login.error"]());
               isSubmitting = false;
             });
-          proceed({ ...appointment, isNewClient: false, step: "SUMMARY" });
-          cancel();
         }
         isSubmitting = false;
       },
