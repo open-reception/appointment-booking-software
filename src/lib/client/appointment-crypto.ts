@@ -229,6 +229,7 @@ export class UnifiedAppointmentCrypto {
   async createAppointment(
     appointmentData: AppointmentData,
     appointmentDate: string,
+    agentId: string,
     channelId: string,
     tenantId: string,
     isFirstAppointment: boolean = false,
@@ -250,6 +251,7 @@ export class UnifiedAppointmentCrypto {
         ? {
             // New client
             tunnelId: this.tunnelId,
+            agentId,
             channelId,
             appointmentDate,
             emailHash: this.emailHash,
@@ -258,6 +260,7 @@ export class UnifiedAppointmentCrypto {
             encryptedAppointment,
             staffKeyShares: await this.getStaffKeyShares(tenantId),
             clientKeyShare: await this.getClientKeyShare(),
+            clientEncryptedTunnelKey: await this.encryptTunnelKeyForClient(),
           }
         : {
             // Existing client
@@ -756,7 +759,7 @@ export class UnifiedAppointmentCrypto {
   // ===== UTILITY METHODS =====
 
   private generateTunnelId(): string {
-    return "tunnel_" + crypto.randomUUID();
+    return crypto.randomUUID();
   }
 
   private async createPrivateKeyShare(privateKey: string, pin: string): Promise<string> {
