@@ -19,6 +19,7 @@
   import { AddAgentForm } from "./(components)/add-agent-form";
   import { DeleteAgentForm } from "./(components)/delete-agent-form";
   import { EditAgentForm } from "./(components)/edit-agent-form";
+  import { tenants } from "$lib/stores/tenants";
 
   const { data } = $props();
   let curItem: TAgent | null = $state(null);
@@ -60,6 +61,7 @@
           <AddAgentForm
             done={() => {
               agents.load();
+              tenants.reload();
               invalidate(ROUTES.DASHBOARD.AGENTS);
               closeDialog("add");
             }}

@@ -9,10 +9,10 @@
     actions?: {
       label: string;
       onClick?: (e: MouseEvent) => void;
-      href?: string;
       variant?: ButtonVariant;
     }[];
     isDone: boolean;
+    isLaterStep?: boolean;
   };
 
   type Props = {
@@ -47,15 +47,10 @@
               {step.description}
             </Text>
           {/if}
-          {#if step.actions && !step.isDone}
+          {#if step.actions && !step.isDone && step.isLaterStep !== true}
             <div class="mt-2 flex max-w-100 justify-between gap-2">
               {#each step.actions as action, index (`action-${index}`)}
-                <Button
-                  variant={action.variant}
-                  href={action.href}
-                  onclick={action.onClick}
-                  class="w-full"
-                >
+                <Button variant={action.variant} onclick={action.onClick} class="w-full">
                   {action.label}
                 </Button>
               {/each}

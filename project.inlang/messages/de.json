@@ -327,6 +327,7 @@
 	"select": "Auswählen",
 	"close": "Schließen",
 	"dashboard": {
+		"title": "Übersicht",
 		"hello": "Hallo",
 		"tenants": {
 			"currentTenant": "Du verwaltest gerade den Mandanten {name}.",
@@ -344,6 +345,36 @@
 		"sidebar": {
 			"title": "Zum ersten Mal hier?",
 			"description": "Tippe {name} um die Seitenleiste umzustellen"
+		},
+		"onboarding": {
+			"title": "Mach' Dich bereit für Termine",
+			"notification": {
+				"title": "Einrichtung noch nicht abgeschlossen",
+				"description": "Nächste Schritte anzeigen",
+				"action": "Weiter"
+			},
+			"sections": {
+				"settings": {
+					"title": "Prüfe und speichere Einstellungen",
+					"description": "Stelle sicher, dass die Einstellungen Deiner Organisation korrekt sind, bevor Du Akteure oder Kanäle einrichtest.",
+					"action": "Gehe zu Einstellungen"
+				},
+				"agents": {
+					"title": "Akteur:in hinzufügen",
+					"description": "Akteure sind die Personen, Teams oder Gruppen mit denen Deine Kunden einen Termin vereinbaren können.",
+					"action": "Add Agent"
+				},
+				"channels": {
+					"title": "Ersten Kanal hinzufügen",
+					"description": "Kanäle sind Deine Möglichkeit, verschiedene Arten von Terminen anzubieten.",
+					"action": "Kanal hinzufügen"
+				},
+				"staff": {
+					"title": "Personal hinzufügen & aktivieren",
+					"description": "Stelle sicher, dass Dein Team Zugriff auf die verschlüsselten Termine hat. Erst wenn sich die erste Person angemeldet hat, können Termine entgegengenommen werden.",
+					"action": "Person hinzufügen"
+				}
+			}
 		}
 	},
 	"agents": {

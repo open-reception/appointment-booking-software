@@ -284,7 +284,7 @@ export class TenantAdminService {
   /**
    * Set the setup state of the tenant
    */
-  async setSetupState(setupState: "SETTINGS" | "AGENTS" | "CHANNELS" | "STAFF" | "READY") {
+  async setSetupState(setupState: centralSchema.SelectTenant["setupState"]) {
     const log = logger.setContext("TenantAdminService");
     log.debug("Setting tenant setup state", {
       tenantId: this.tenantId,
@@ -382,7 +382,7 @@ export class TenantAdminService {
         .from(agent)
         .where(eq(agent.archived, false));
 
-      if (agentCount.length === 0) {
+      if (agentCount[0].count === 0) {
         newState = "AGENTS";
       } else {
         // Check for channels
@@ -390,7 +390,7 @@ export class TenantAdminService {
           .select({ count: count() })
           .from(channel)
           .where(eq(channel.archived, false));
-        if (channelCount.length === 0) {
+        if (channelCount[0].count === 0) {
           newState = "CHANNELS";
         } else {
           // Check for staff members
@@ -406,8 +406,7 @@ export class TenantAdminService {
                 ),
               ),
             );
-
-          if (staffCount.length === 0) {
+          if (staffCount[0].count === 0) {
             newState = "STAFF";
           } else {
             newState = "READY";

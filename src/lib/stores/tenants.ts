@@ -71,13 +71,25 @@ const createTenantsStore = () => {
         const body = await res.json();
         const tenants = body.tenants ?? ([] as TTenant[]);
         const newCurrentTenantId = auth.getTenant();
+        const newCurrentTenant = tenants.find((t: TTenant) => t.id === newCurrentTenantId) || null;
+
+        if (newCurrentTenant?.setupState !== "READY") {
+          toast.info(m["dashboard.onboarding.notification.title"](), {
+            duration: 4000,
+            description: m["dashboard.onboarding.notification.description"](),
+            action: {
+              label: m["dashboard.onboarding.notification.action"](),
+              onClick: () => goto(ROUTES.DASHBOARD.MAIN),
+            },
+          });
+        }
 
         store.update((state) => {
           return {
             ...state,
             tenants,
             isLoading: false,
-            currentTenant: tenants.find((t: TTenant) => t.id === newCurrentTenantId) || null,
+            currentTenant: newCurrentTenant,
           };
         });
       } catch (error) {
