@@ -30,7 +30,6 @@
           await $publicStore.crypto
             .initNewClient(appointment.data?.email, $formData.pin, tenant.id)
             .then(() => {
-              toast.success(m["public.register.success"]());
               proceed({ ...appointment, isNewClient: true, step: "SUMMARY" });
               cancel();
             })
@@ -64,9 +63,6 @@
     </Form.Description>
   </Form.Field>
   <div class="mt-6 flex flex-col gap-4">
-    <Text style="xs" class="text-muted-foreground text-center">
-      {m["public.steps.auth.register.hint"]()}
-    </Text>
     <Form.Button size="lg" type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
       {m["public.steps.auth.register.action"]()}
     </Form.Button>

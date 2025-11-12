@@ -70,6 +70,10 @@
         : null,
     });
   };
+
+  const getLeft = () => {
+    return firstAgents.length === 3 ? `left-2.5` : `left-0`;
+  };
 </script>
 
 <div class="flex flex-col gap-4 pb-1">
@@ -90,7 +94,7 @@
                 class={cn(
                   "absolute top-0 z-1 size-10 overflow-visible",
                   index === 0 && `left-5`,
-                  index === 1 && `left-2.5`,
+                  index === 1 && getLeft(),
                   index === 2 && `left-0`,
                 )}
               >

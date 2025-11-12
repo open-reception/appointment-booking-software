@@ -37,9 +37,11 @@
             <Text style="md" class="font-medium">
               <LocalizedText translations={channel.names} />
             </Text>
-            <Text style="md" class="text-muted-foreground font-normal whitespace-pre-line">
-              <LocalizedText translations={channel.descriptions} />
-            </Text>
+            {#if Object.keys(channel.descriptions).length > 0}
+              <Text style="md" class="text-muted-foreground font-normal whitespace-pre-line">
+                <LocalizedText translations={channel.descriptions} />
+              </Text>
+            {/if}
           </Button>
         </li>
       {/each}

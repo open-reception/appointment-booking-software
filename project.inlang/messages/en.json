@@ -748,6 +748,9 @@
 			"privacyStatement": "Privacy Statement"
 		},
 		"bookAppointment": "Book Appointment",
+		"appointment": {
+			"requiresConfirmation": "Requires cofirmation by {name}"
+		},
 		"tenantNotReady": {
 			"title": "Not ready to accept appointments.",
 			"description": "If this is yours, please login and complete onboarding."
@@ -792,7 +795,6 @@
 				"register": {
 					"title": "It's my first time here",
 					"description": "Please add an PIN number so you can change your appointment later.",
-					"hint": "Proceeding will create an account",
 					"action": "Show summary"
 				},
 				"login": {
@@ -826,8 +828,7 @@
 		},
 		"anyAgent": "Anyone available",
 		"register": {
-			"success": "Account created",
-			"error": "Account was not created. Please retry"
+			"error": "Encryption could not be set up. Please retry"
 		},
 		"login": {
 			"success": "Login successful",

@@ -739,6 +739,9 @@
 			"privacyStatement": "Datenschutz"
 		},
 		"bookAppointment": "Termin buchen",
+		"appointment": {
+			"requiresConfirmation": "Erfordert Bestätigung durch {name}"
+		},
 		"tenantNotReady": {
 			"title": "Diese Seite ist noch nicht bereit",
 			"description": "Falls dies Ihre Seite ist, loggen Sie sich ein und schließen Sie das Onboarding ab."
@@ -783,7 +786,6 @@
 				"register": {
 					"title": "Ich bin das erste Mal hier",
 					"description": "Bitte legen Sie eine PIN fest:",
-					"hint": "Fortfahren erstellt ein Konto für Sie.",
 					"action": "Zusammenfassung anzeigen"
 				},
 				"login": {
@@ -817,8 +819,7 @@
 		},
 		"anyAgent": "Jede verfügbare Person",
 		"register": {
-			"success": "Konto erstellt",
-			"error": "Konto konnte nicht erstellt werden. Bitte erneut versuchen"
+			"error": "Verschlüsselung konnte nicht vorbereitet werden. Bitte erneut versuchen"
 		},
 		"login": {
 			"success": "Anmeldung erfolgreich",

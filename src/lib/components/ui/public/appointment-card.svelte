@@ -4,12 +4,13 @@
   import { Headline, Text } from "$lib/components/ui/typography";
   import { publicStore } from "$lib/stores/public";
   import type { TPublicAppointment } from "$lib/types/public";
+  import { cn } from "$lib/utils";
+  import { getLocalTimeZone } from "@internationalized/date";
+  import { Eye, User, Calendar, FileText } from "@lucide/svelte";
   import type { HTMLAttributes } from "svelte/elements";
   import { resest } from "../../../../routes/(pages)/(clients)/book-appointment/[[id]]/(components)/utils";
   import { Button } from "../button";
   import LocalizedText from "./localized-text.svelte";
-  import { cn } from "$lib/utils";
-  import { getLocalTimeZone } from "@internationalized/date";
 
   let {
     class: className,
@@ -41,7 +42,7 @@
           </Text>
         </div>
         {#if channel}
-          <div class="flex flex-col gap-3">
+          <div class="flex flex-col gap-1">
             <div>
               <Text style="sm">
                 <LocalizedText translations={channel.names} />
@@ -54,15 +55,26 @@
               >
                 {m.edit()}
               </Button>
-              {#if appointment.agent || appointment.agent === null}
-                <br />
+            </div>
+            {#if channel.requiresConfirmation}
+              <div class="flex max-w-4/5 items-start gap-2">
+                <Eye class="text-muted-foreground mt-0.5 size-3 shrink-0" />
+                <Text style="xs" class="text-muted-foreground font-normal">
+                  {m["public.appointment.requiresConfirmation"]({ name: tenant.longName })}
+                </Text>
+              </div>
+            {/if}
+            {#if appointment.agent || appointment.agent === null}
+              <div class="flex items-center gap-2">
+                <User class="size-3" />
                 <Text style="sm" class="font-normal">
                   {appointment.agent?.name || m["public.anyAgent"]()}
                 </Text>
-              {/if}
-            </div>
+              </div>
+            {/if}
             {#if appointment.slot}
-              <div>
+              <div class="flex items-center gap-2">
+                <Calendar class="size-3" />
                 <Text style="sm" class="font-normal">
                   {Intl.DateTimeFormat($publicStore.locale, {
                     year: "numeric",
@@ -76,7 +88,8 @@
               </div>
             {/if}
             {#if appointment.data}
-              <div>
+              <div class="flex items-start gap-2">
+                <FileText class="mt-1 size-3" />
                 <Text style="sm" class="font-normal">
                   {appointment.data.name}<br />
                   {appointment.data.email}
