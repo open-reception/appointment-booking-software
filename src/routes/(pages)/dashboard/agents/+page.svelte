@@ -129,6 +129,7 @@
                   closeDialog("delete");
                   curItem = null;
                   agents.load();
+                  tenants.reload();
                   invalidate(ROUTES.DASHBOARD.AGENTS);
                 }}
               />

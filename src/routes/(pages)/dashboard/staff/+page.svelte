@@ -146,6 +146,7 @@
                 done={() => {
                   closeDialog("delete");
                   curItem = null;
+                  tenants.reload();
                   invalidate(ROUTES.DASHBOARD.STAFF);
                 }}
               />

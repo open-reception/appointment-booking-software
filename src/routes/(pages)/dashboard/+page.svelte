@@ -94,6 +94,7 @@
     {#if $auth.user && ["GLOBAL_ADMIN", "TENANT_ADMIN"].includes($auth.user?.role) && tenant && tenant.setupState !== "READY"}
       <OnboardingGuide
         title={m["dashboard.onboarding.title"]()}
+        description={m["dashboard.onboarding.description"]()}
         steps={[
           {
             title: m["dashboard.onboarding.sections.settings.title"](),

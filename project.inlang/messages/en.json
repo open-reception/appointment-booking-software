@@ -356,10 +356,18 @@
 		},
 		"onboarding": {
 			"title": "Get ready to collect appointments",
+			"description": "Follow this step-by-step to get the best results:",
 			"notification": {
-				"title": "Onboarding not complete",
-				"description": "Review next steps",
-				"action": "Proceed"
+				"ongoing": {
+					"title": "Onboarding not complete",
+					"description": "Review next steps",
+					"action": "Proceed"
+				},
+				"done": {
+					"title": "Onboarding complete!",
+					"description": "You can now collect appointments",
+					"action": "Open Homepage"
+				}
 			},
 			"sections": {
 				"settings": {

@@ -348,10 +348,18 @@
 		},
 		"onboarding": {
 			"title": "Mach' Dich bereit für Termine",
+			"description": "Für das beste Ergebnis folge dieser Anleitung Schritt für Schritt:",
 			"notification": {
-				"title": "Einrichtung noch nicht abgeschlossen",
-				"description": "Nächste Schritte anzeigen",
-				"action": "Weiter"
+				"ongoing": {
+					"title": "Einrichtung noch nicht abgeschlossen",
+					"description": "Nächste Schritte anzeigen",
+					"action": "Weiter"
+				},
+				"done": {
+					"title": "Einrichtung abgeschlossen!",
+					"description": "Sie können jetzt Termine entgegennehmen",
+					"action": "Startseite öffnen"
+				}
 			},
 			"sections": {
 				"settings": {

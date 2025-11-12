@@ -17,14 +17,22 @@
 
   type Props = {
     title: string;
+    description?: string;
     steps: Step[];
   };
 
-  let { title, steps }: Props = $props();
+  let { title, description, steps }: Props = $props();
 </script>
 
 <div class="flex max-w-[50ch] flex-col gap-4">
-  <Headline level="h2" style="h4">{title}</Headline>
+  <div class="flex flex-col gap-0.5">
+    <Headline level="h2" style="h4">{title}</Headline>
+    {#if description}
+      <Text style="sm" class="text-muted-foreground">
+        {description}
+      </Text>
+    {/if}
+  </div>
   <div class="flex flex-col gap-4">
     {#each steps as step, index (`step-${index}`)}
       <div class="flex flex-col gap-1">
