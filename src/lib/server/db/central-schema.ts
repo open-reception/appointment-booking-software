@@ -28,6 +28,7 @@ export const confirmationStateEnum = pgEnum("confirmation_state", [
   "ACCESS_GRANTED",
 ]);
 
+// Warning: Duplication in src/lib/const/tenants.ts
 export const tenantSetupState = pgEnum("setup_state", [
   "SETTINGS", // Settings need to be saved initially
   "AGENTS", // At least one agent needs to be created

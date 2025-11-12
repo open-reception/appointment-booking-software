@@ -2,7 +2,7 @@ import logger from "$lib/logger";
 import type { TTenant } from "$lib/types/tenant";
 import { changeTenantUsingApi } from "$lib/utils/tenants";
 import { toast } from "svelte-sonner";
-import { writable } from "svelte/store";
+import { get, writable } from "svelte/store";
 import { auth } from "./auth";
 import { m } from "$i18n/messages";
 import { goto } from "$app/navigation";
@@ -71,13 +71,37 @@ const createTenantsStore = () => {
         const body = await res.json();
         const tenants = body.tenants ?? ([] as TTenant[]);
         const newCurrentTenantId = auth.getTenant();
+        const newCurrentTenant = tenants.find((t: TTenant) => t.id === newCurrentTenantId) || null;
+
+        if (newCurrentTenant?.setupState !== "READY") {
+          toast.info(m["dashboard.onboarding.notification.ongoing.title"](), {
+            duration: 4000,
+            description: m["dashboard.onboarding.notification.ongoing.description"](),
+            action: {
+              label: m["dashboard.onboarding.notification.ongoing.action"](),
+              onClick: () => goto(ROUTES.DASHBOARD.MAIN),
+            },
+          });
+        } else {
+          const curState = get(store);
+          if (curState && curState.currentTenant?.setupState !== "READY") {
+            toast.info(m["dashboard.onboarding.notification.done.title"](), {
+              duration: 4000,
+              description: m["dashboard.onboarding.notification.done.description"](),
+              action: {
+                label: m["dashboard.onboarding.notification.done.action"](),
+                onClick: () => goto(ROUTES.MAIN),
+              },
+            });
+          }
+        }
 
         store.update((state) => {
           return {
             ...state,
             tenants,
             isLoading: false,
-            currentTenant: tenants.find((t: TTenant) => t.id === newCurrentTenantId) || null,
+            currentTenant: newCurrentTenant,
           };
         });
       } catch (error) {

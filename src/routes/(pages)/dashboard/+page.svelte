@@ -12,9 +12,16 @@
   import { auth } from "$lib/stores/auth";
   import { sidebar } from "$lib/stores/sidebar";
   import { tenants } from "$lib/stores/tenants";
+  import { isSetupStateDone } from "$lib/utils/tenants";
   import MenuPositionIcon from "@lucide/svelte/icons/corner-left-up";
   import CloseIcon from "@lucide/svelte/icons/x";
+
+  const tenant = $derived($tenants.currentTenant);
 </script>
+
+<svelte:head>
+  <title>{m["dashboard.title"]()} - OpenReception</title>
+</svelte:head>
 
 <SidebarLayout
   breakcrumbs={[
@@ -64,11 +71,9 @@
               actions: [
                 {
                   label: m["dashboard.tenants.setup.sections.tenants.action"](),
-                  onClick: (e: MouseEvent) => {
-                    e.preventDefault();
+                  onClick: () => {
                     goto(ROUTES.DASHBOARD.TENANTS, { state: { action: "add" } });
                   },
-                  href: ROUTES.DASHBOARD.TENANTS,
                 },
               ],
               isDone: false,
@@ -85,6 +90,69 @@
           />
         </Text>
       {/if}
+    {/if}
+    {#if $auth.user && ["GLOBAL_ADMIN", "TENANT_ADMIN"].includes($auth.user?.role) && tenant && tenant.setupState !== "READY"}
+      <OnboardingGuide
+        title={m["dashboard.onboarding.title"]()}
+        description={m["dashboard.onboarding.description"]()}
+        steps={[
+          {
+            title: m["dashboard.onboarding.sections.settings.title"](),
+            description: m["dashboard.onboarding.sections.settings.description"](),
+            actions: [
+              {
+                label: m["dashboard.onboarding.sections.settings.action"](),
+                onClick: () => {
+                  goto(ROUTES.DASHBOARD.SETTINGS);
+                },
+              },
+            ],
+            isDone: isSetupStateDone(tenant, "SETTINGS"),
+          },
+          {
+            title: m["dashboard.onboarding.sections.agents.title"](),
+            description: m["dashboard.onboarding.sections.agents.description"](),
+            actions: [
+              {
+                label: m["dashboard.onboarding.sections.agents.action"](),
+                onClick: () => {
+                  goto(ROUTES.DASHBOARD.AGENTS, { state: { action: "add" } });
+                },
+              },
+            ],
+            isDone: isSetupStateDone(tenant, "AGENTS"),
+            isLaterStep: !isSetupStateDone(tenant, "SETTINGS"),
+          },
+          {
+            title: m["dashboard.onboarding.sections.channels.title"](),
+            description: m["dashboard.onboarding.sections.channels.description"](),
+            actions: [
+              {
+                label: m["dashboard.onboarding.sections.channels.action"](),
+                onClick: () => {
+                  goto(ROUTES.DASHBOARD.CHANNELS, { state: { action: "add" } });
+                },
+              },
+            ],
+            isDone: isSetupStateDone(tenant, "CHANNELS"),
+            isLaterStep: !isSetupStateDone(tenant, "AGENTS"),
+          },
+          {
+            title: m["dashboard.onboarding.sections.staff.title"](),
+            description: m["dashboard.onboarding.sections.staff.description"](),
+            actions: [
+              {
+                label: m["dashboard.onboarding.sections.staff.action"](),
+                onClick: () => {
+                  goto(ROUTES.DASHBOARD.STAFF, { state: { action: "add" } });
+                },
+              },
+            ],
+            isDone: isSetupStateDone(tenant, "STAFF"),
+            isLaterStep: !isSetupStateDone(tenant, "CHANNELS"),
+          },
+        ]}
+      />
     {/if}
   </div>
 </SidebarLayout>

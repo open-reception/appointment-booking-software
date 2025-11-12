@@ -335,6 +335,7 @@
 	"delete": "Delete",
 	"select": "Select",
 	"dashboard": {
+		"title": "Dashboard",
 		"hello": "Hello",
 		"tenants": {
 			"currentTenant": "You are currently managing tenant {name}.",
@@ -352,6 +353,44 @@
 		"sidebar": {
 			"title": "Zum ersten Mal hier?",
 			"description": "Tippe {name} um die Seitenleiste umzustellen"
+		},
+		"onboarding": {
+			"title": "Get ready to collect appointments",
+			"description": "Follow this step-by-step to get the best results:",
+			"notification": {
+				"ongoing": {
+					"title": "Onboarding not complete",
+					"description": "Review next steps",
+					"action": "Proceed"
+				},
+				"done": {
+					"title": "Onboarding complete!",
+					"description": "You can now collect appointments",
+					"action": "Open Homepage"
+				}
+			},
+			"sections": {
+				"settings": {
+					"title": "Review and save settings",
+					"description": "Make sure your organization's details are correct, before you add agents or channels.",
+					"action": "Go to Settings"
+				},
+				"agents": {
+					"title": "Set up your agents",
+					"description": "Agents let your clients choose which person, team or group they want to make an appointment with.",
+					"action": "Add Agent"
+				},
+				"channels": {
+					"title": "Set up your first channel",
+					"description": "Channels are your way to collect different types of appointments",
+					"action": "Add channel"
+				},
+				"staff": {
+					"title": "Add & Activate Staff Members",
+					"description": "Make sure your team can decrypt appointment data by adding staff members. Only when the first person added has logged in, appointments can be received.",
+					"action": "Add Staff Member"
+				}
+			}
 		}
 	},
 	"close": "Schließen",

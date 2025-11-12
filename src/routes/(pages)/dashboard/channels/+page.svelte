@@ -9,12 +9,13 @@
   import { Button } from "$lib/components/ui/button";
   import { ResponsiveDialog, closeDialog, openDialog } from "$lib/components/ui/responsive-dialog";
   import { ROUTES } from "$lib/const/routes";
+  import { tenants } from "$lib/stores/tenants";
   import { type TChannelWithFullAgents } from "$lib/types/channel";
   import { getCurrentTranlslation } from "$lib/utils/localizations";
-  import EditIcon from "@lucide/svelte/icons/pencil";
-  import PlusIcon from "@lucide/svelte/icons/plus";
   import PauseIcon from "@lucide/svelte/icons/pause";
+  import EditIcon from "@lucide/svelte/icons/pencil";
   import PlayIcon from "@lucide/svelte/icons/play";
+  import PlusIcon from "@lucide/svelte/icons/plus";
   import UnknownItemIcon from "@lucide/svelte/icons/split";
   import DeleteIcon from "@lucide/svelte/icons/trash-2";
   import { onMount } from "svelte";
@@ -61,6 +62,7 @@
           {/snippet}
           <AddChannelForm
             done={() => {
+              tenants.reload();
               invalidate(ROUTES.DASHBOARD.CHANNELS);
               closeDialog("add");
             }}
@@ -153,6 +155,7 @@
                 done={() => {
                   closeDialog("delete");
                   curItem = null;
+                  tenants.reload();
                   invalidate(ROUTES.DASHBOARD.CHANNELS);
                 }}
               />
