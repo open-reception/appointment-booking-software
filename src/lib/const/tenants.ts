@@ -1,0 +1,1 @@
+export const SETUP_STATES_LIST = ["SETTINGS", "AGENTS", "CHANNELS", "STAFF", "READY"];

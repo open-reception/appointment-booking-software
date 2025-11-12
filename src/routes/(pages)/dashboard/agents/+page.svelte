@@ -20,6 +20,7 @@
   import { DeleteAgentForm } from "./(components)/delete-agent-form";
   import { EditAgentForm } from "./(components)/edit-agent-form";
   import { channels } from "$lib/stores/channels";
+  import { tenants } from "$lib/stores/tenants";
 
   const { data } = $props();
   let curItem: TAgent | null = $state(null);
@@ -62,6 +63,7 @@
             done={() => {
               agents.load();
               channels.load();
+              tenants.reload();
               invalidate(ROUTES.DASHBOARD.AGENTS);
               closeDialog("add");
             }}
@@ -131,6 +133,7 @@
                   curItem = null;
                   agents.load();
                   channels.load();
+                  tenants.reload();
                   invalidate(ROUTES.DASHBOARD.AGENTS);
                 }}
               />

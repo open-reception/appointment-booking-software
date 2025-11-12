@@ -10,18 +10,19 @@
   import { ResponsiveDialog, closeDialog, openDialog } from "$lib/components/ui/responsive-dialog";
   import { ROUTES } from "$lib/const/routes";
   import { auth } from "$lib/stores/auth";
+  import { tenants } from "$lib/stores/tenants";
   import type { TStaff } from "$lib/types/users.js";
+  import AccessIcon from "@lucide/svelte/icons/key-round";
   import EditIcon from "@lucide/svelte/icons/pencil";
   import PlusIcon from "@lucide/svelte/icons/plus";
   import DeleteIcon from "@lucide/svelte/icons/trash-2";
-  import AccessIcon from "@lucide/svelte/icons/key-round";
   import UnknownItemIcon from "@lucide/svelte/icons/user-star";
   import { onMount } from "svelte";
   import { AddStaffMemberForm } from "./(components)/add-staff-member-form";
   import { DeleteStaffMemberForm } from "./(components)/delete-staff-member-form";
   import { EditStaffMemberForm } from "./(components)/edit-staff-member-form";
-  import { roles } from "./(components)/utils";
   import { GrantAccessForm } from "./(components)/grant-access-form";
+  import { roles } from "./(components)/utils";
 
   const { data } = $props();
   let curItem: TStaff | null = $state(null);
@@ -63,6 +64,7 @@
           {/snippet}
           <AddStaffMemberForm
             done={() => {
+              tenants.reload();
               invalidate(ROUTES.DASHBOARD.STAFF);
               closeDialog("add");
             }}
@@ -144,6 +146,7 @@
                 done={() => {
                   closeDialog("delete");
                   curItem = null;
+                  tenants.reload();
                   invalidate(ROUTES.DASHBOARD.STAFF);
                 }}
               />
