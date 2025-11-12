@@ -42,6 +42,11 @@
   let slots = $state<TPublicSlot[] | undefined | null>(null);
   let year = $state<number>(today(getLocalTimeZone()).year);
   let month = $state<number>(today(getLocalTimeZone()).month);
+  let scrollAreaRef: HTMLDivElement | null = $state(null);
+
+  const scrollToTop = () => {
+    scrollAreaRef?.firstElementChild?.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   $effect(() => {
     if (tenant) {
@@ -86,21 +91,43 @@
     }
     const newSlots = getSlots(toCalendarDate(date));
     slots = newSlots;
+    scrollToTop();
   };
 
   const getSlots = (date: CalendarDate) => {
     if (!schedule || schedule.length === 0) return undefined;
     const dateStr = date.toString();
+    const curDateStr = today(getLocalTimeZone()).toString();
     const dateSchedule = schedule.find((s) => s.date === dateStr);
     // @ts-expect-error typing of channelId not definitive enough
-    const slots = dateSchedule?.channels[channel].availableSlots || [];
-    return slots;
+    const slots = (dateSchedule?.channels[channel].availableSlots || []) as TPublicSlot[];
+
+    // If selected date is today, filter out slots that are already past
+    const filteredSlots =
+      curDateStr === dateStr
+        ? slots.filter((slot) => {
+            if (dateStr === curDateStr) {
+              const now = new Date();
+              const slotTime = new Date(
+                date.year,
+                date.month - 1,
+                date.day,
+                parseInt(slot.from.split(":")[0], 10),
+                parseInt(slot.from.split(":")[1], 10),
+              );
+              return slotTime > now;
+            }
+            return true;
+          })
+        : slots;
+
+    return filteredSlots;
   };
 
   const isDateUnavailable: DateMatcher = (date) => {
     if (!schedule || schedule.length === 0) return true;
     const slots = getSlots(toCalendarDate(date));
-    if (slots.length > 0) return false;
+    if (slots && slots.length > 0) return false;
     return true;
   };
 
@@ -179,7 +206,7 @@
             {m["public.steps.slot.empty"]()}
           </Text>
         {:else}
-          <ScrollArea class="w-full md:h-65">
+          <ScrollArea bind:ref={scrollAreaRef} class="w-full md:h-65">
             <div class="flex h-full flex-col gap-3">
               <Text style="md" class="text-muted-foreground text-center">
                 {m["public.steps.slot.selectTime"]()}
