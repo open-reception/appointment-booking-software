@@ -103,6 +103,7 @@ export class UnifiedAppointmentCrypto {
   private emailHash: string | null = null;
   private tunnelId: string | null = null;
   private clientAuthenticated: boolean = false;
+  private serverPrivateKeyShare: string | null = null; // Server share of the private key
 
   // Staff-specific properties
   private staffKeyPair: StaffKeyPair | null = null;
@@ -117,6 +118,28 @@ export class UnifiedAppointmentCrypto {
   private shamirSharing: ShamirSecretSharing = new ShamirSecretSharing();
 
   // ===== CLIENT (PATIENT) METHODS =====
+
+  /**
+   * Check if a client with this email already exists
+   */
+  async checkClientExists(email: string, tenantId: string): Promise<boolean> {
+    try {
+      const emailHash = await this.hashEmail(email);
+
+      const response = await fetch(`/api/tenants/${tenantId}/appointments/challenge`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emailHash }),
+      });
+
+      // If challenge endpoint returns 200, client exists
+      // If it returns 404, client doesn't exist
+      return response.ok;
+    } catch (error) {
+      console.error("❌ Error checking client existence:", error);
+      return false;
+    }
+  }
 
   /**
    * Initializes a new client with E2E encryption
@@ -135,9 +158,12 @@ export class UnifiedAppointmentCrypto {
       // 4. Generate tunnel key for AES encryption
       this.tunnelKey = await this.generateTunnelKey();
 
-      // 5. Split private key into Shamir shares (2-of-2)
-      // Note: privateKeyShare will be used during actual appointment creation
-      await this.createPrivateKeyShare(this.clientKeyPair.privateKey, pin);
+      // 5. Create server share of private key (PIN-based split)
+      // Server share will be sent to server during appointment creation
+      this.serverPrivateKeyShare = await this.createPrivateKeyShare(
+        this.clientKeyPair.privateKey,
+        pin,
+      );
 
       // 6. Fetch staff public keys from server
       const staffPublicKeys = await this.fetchStaffPublicKeys(tenantId);
@@ -200,22 +226,24 @@ export class UnifiedAppointmentCrypto {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            emailHash: this.emailHash,
+            challengeId: challengeData.challengeId,
             challengeResponse: decryptedChallenge,
           }),
         },
       );
 
       if (!verificationResponse.ok) {
+        const errorData = await verificationResponse.json();
+        console.error("❌ Challenge verification failed:", errorData);
         throw new Error("Challenge verification failed");
       }
 
       const verificationData = await verificationResponse.json();
 
-      // 6. Decrypt tunnel key
+      // 6. Decrypt tunnel key and store tunnel ID
       this.tunnelKey = await this.decryptTunnelKey(verificationData.encryptedTunnelKey, privateKey);
+      this.tunnelId = verificationData.tunnelId;
 
-      console.log("✅ Existing client authenticated");
       this.clientAuthenticated = true;
     } catch (error) {
       console.error("❌ Error during client login:", error);
@@ -266,6 +294,7 @@ export class UnifiedAppointmentCrypto {
             // Existing client
             emailHash: this.emailHash,
             tunnelId: this.tunnelId!,
+            agentId,
             channelId,
             appointmentDate,
             encryptedAppointment,
@@ -524,6 +553,7 @@ export class UnifiedAppointmentCrypto {
     this.clientKeyPair = null;
     this.emailHash = null;
     this.tunnelId = null;
+    this.serverPrivateKeyShare = null;
     this.clientAuthenticated = false;
     console.log("🔒 Client logged out");
   }
@@ -762,17 +792,51 @@ export class UnifiedAppointmentCrypto {
     return crypto.randomUUID();
   }
 
+  /**
+   * Creates a server share of the private key using Shamir Secret Sharing (2-of-2)
+   *
+   * This implements a 2-party key splitting scheme where:
+   * - PIN-derived share (x=1): Deterministically derived from PIN + email hash (client can always recreate)
+   * - Server share (x=2): Stored in database
+   *
+   * Reconstruction requires both shares (2-of-2 threshold).
+   *
+   * Security properties:
+   * - Each share reveals NO information about the private key (information-theoretic security)
+   * - Both shares are required for reconstruction
+   * - Server share is useless without the PIN
+   *
+   * This allows the client to authenticate from any device:
+   * 1. Client provides email + PIN
+   * 2. Server returns the server share via challenge API
+   * 3. Client derives PIN share deterministically and reconstructs the private key
+   *
+   * @param privateKey - The ML-KEM-768 private key (hex string)
+   * @param pin - User's PIN for deterministic share derivation
+   * @returns Server share (hex string) to be stored in database
+   */
   private async createPrivateKeyShare(privateKey: string, pin: string): Promise<string> {
-    // Use Shamir Secret Sharing for private key
     const privateKeyBytes = this.hexToUint8Array(privateKey);
-    const shares = ShamirSecretSharing.splitSecret(privateKeyBytes, 2, 2);
 
-    // One share is PIN-encrypted and stored on client
-    const clientShare = shares[0].y;
-    const pinHash = await OptimizedArgon2.deriveKeyFromPIN(pin, this.emailHash || "");
-    const encryptedShare = await AESCrypto.encrypt(this.uint8ArrayToHex(clientShare), pinHash);
+    // Derive a deterministic y-value for the PIN-based share (x=1)
+    // ML-KEM-768 private key is 2400 bytes, so we need a hash of that length
+    const pinHash = await OptimizedArgon2.deriveKeyFromPIN(pin, this.emailHash || "", {
+      hashLength: privateKeyBytes.length,
+    });
 
-    return this.uint8ArrayToHex(encryptedShare.encrypted);
+    // Use ShamirSecretSharing to create the shares with deterministic first share
+    const shares = ShamirSecretSharing.splitSecretWithDeterministicShare(privateKeyBytes, pinHash);
+
+    // TEST: Immediately reconstruct to verify
+    const testReconstruct = ShamirSecretSharing.reconstructSecret(shares);
+    const match = privateKeyBytes.every((v, i) => v === testReconstruct[i]);
+
+    if (!match) {
+      console.error("❌ CRITICAL: Shamir reconstruction failed immediately after split!");
+    }
+
+    // Return the server share (x=2)
+    return this.uint8ArrayToHex(shares[1].y);
   }
 
   private async fetchStaffPublicKeys(tenantId: string): Promise<StaffPublicKey[]> {
@@ -823,30 +887,51 @@ export class UnifiedAppointmentCrypto {
   }
 
   private async reconstructPrivateKey(pin: string, serverShare: string): Promise<string> {
-    // For now, simplified reconstruction - in real implementation this would be more complex
-    // TODO: Implement proper Shamir reconstruction with PIN-derived decryption
+    if (!this.emailHash) {
+      throw new Error("Email hash not available for key reconstruction");
+    }
+    // 1. Derive PIN-based share deterministically (x=1, y=pinShareY)
     const serverShareBytes = this.hexToUint8Array(serverShare);
-    const clientShareBytes = serverShareBytes; // Simplified for now
+    // ML-KEM-768 private key is 2400 bytes, derive hash of same length
+    const pinHash = await OptimizedArgon2.deriveKeyFromPIN(pin, this.emailHash, {
+      hashLength: serverShareBytes.length,
+    });
 
-    // In future: derive pinHash and use it to decrypt the client share
-    // const pinHash = await OptimizedArgon2.deriveKeyFromPIN(pin, this.emailHash || "");
-
-    // Reconstruct private key from both shares
+    // 2. Reconstruct using proper Shamir Secret Sharing
     const shares = [
-      { x: 1, y: clientShareBytes },
+      { x: 1, y: pinHash },
       { x: 2, y: serverShareBytes },
     ];
-    const reconstructedKey = ShamirSecretSharing.reconstructSecret(shares);
+    const privateKey = ShamirSecretSharing.reconstructSecret(shares);
 
-    return this.uint8ArrayToHex(reconstructedKey);
+    return this.uint8ArrayToHex(privateKey);
   }
 
   private async decryptChallenge(encryptedChallenge: string, privateKey: string): Promise<string> {
     const privateKeyBytes = this.hexToUint8Array(privateKey);
-    const challengeBytes = this.hexToUint8Array(encryptedChallenge);
+    const fullChallengeBytes = this.hexToUint8Array(encryptedChallenge);
 
-    const sharedSecret = KyberCrypto.decapsulate(privateKeyBytes, challengeBytes);
-    return this.uint8ArrayToHex(sharedSecret);
+    // Split the encryptedChallenge into:
+    // 1. Encapsulated secret (first 1088 bytes for ML-KEM-768)
+    // 2. Encrypted challenge (remaining bytes)
+    const encapsulatedSecret = fullChallengeBytes.slice(0, 1088);
+    const encryptedChallengeBuffer = fullChallengeBytes.slice(1088);
+
+    // Decapsulate to get the shared secret
+    const sharedSecret = KyberCrypto.decapsulate(privateKeyBytes, encapsulatedSecret);
+
+    // XOR the encrypted challenge with the shared secret to decrypt
+    const challenge = new Uint8Array(encryptedChallengeBuffer.length);
+    for (let i = 0; i < encryptedChallengeBuffer.length; i++) {
+      challenge[i] = encryptedChallengeBuffer[i] ^ sharedSecret[i];
+    }
+
+    // The decrypted challenge is raw bytes (32 bytes from randomBytes)
+    // Convert to base64 string for server verification
+    const challengeBase64 = this.uint8ArrayToBase64(challenge);
+
+    // Return the base64-encoded challenge (server expects it in base64 format)
+    return challengeBase64;
   }
 
   private async decryptTunnelKey(
@@ -869,9 +954,8 @@ export class UnifiedAppointmentCrypto {
 
   // Helper methods for completing the API
   private async getPrivateKeyShare(): Promise<string> {
-    if (!this.clientKeyPair) throw new Error("Client keypair not available");
-    // TODO: Return the actual server share from Shamir splitting
-    return this.clientKeyPair.privateKey; // Simplified for now
+    if (!this.serverPrivateKeyShare) throw new Error("Server private key share not available");
+    return this.serverPrivateKeyShare;
   }
 
   private async getStaffKeyShares(
