@@ -44,6 +44,7 @@
       {side}
     >
       <Sheet.Header class="sr-only">
+        <!-- TODO translate -->
         <Sheet.Title>Sidebar</Sheet.Title>
         <Sheet.Description>Displays the mobile sidebar.</Sheet.Description>
       </Sheet.Header>

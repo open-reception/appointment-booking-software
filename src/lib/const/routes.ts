@@ -18,6 +18,12 @@ export const ROUTES = {
     CHANNELS: "/dashboard/channels",
     ABSENCES: "/dashboard/absences",
     SETTINGS: "/dashboard/settings",
-    ACCOUNT: "/dashboard/account",
+    ACCOUNT: {
+      MAIN: "/dashboard/account",
+      GENERAL: "/dashboard/account/general",
+      PASSKEYS: "/dashboard/account/passkeys",
+      CHANGE_EMAIL: "/dashboard/account/change-email",
+      CHANGE_PASSPHRASE: "/dashboard/account/change-passphrase",
+    },
   },
 };
