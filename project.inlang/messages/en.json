@@ -795,7 +795,11 @@
 				"register": {
 					"title": "It's my first time here",
 					"description": "Please add an PIN number so you can change your appointment later.",
-					"action": "Show summary"
+					"hint": "Proceeding will create an account",
+					"action": "Show summary",
+					"success": "Account created successfully!",
+					"error": "Failed to create account. Please try again.",
+					"alreadyExists": "This email is already registered. Please use the login option to book additional appointments."
 				},
 				"login": {
 					"title": "Login",

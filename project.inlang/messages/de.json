@@ -786,7 +786,11 @@
 				"register": {
 					"title": "Ich bin das erste Mal hier",
 					"description": "Bitte legen Sie eine PIN fest:",
-					"action": "Zusammenfassung anzeigen"
+					"hint": "Fortfahren erstellt ein Konto für Sie.",
+					"action": "Zussammenfassung anzeigen",
+					"success": "Konto erfolgreich erstellt!",
+					"error": "Konto konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+					"alreadyExists": "Diese E-Mail ist bereits registriert. Bitte nutzen Sie die Login-Option, um weitere Termine zu buchen."
 				},
 				"login": {
 					"title": "Anmelden",

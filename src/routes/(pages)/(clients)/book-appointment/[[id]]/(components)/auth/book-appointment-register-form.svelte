@@ -26,16 +26,41 @@
         isSubmitting = true;
         const validation = await validateForm();
         if (validation.valid && appointment.data && tenant) {
-          $publicStore.crypto = new UnifiedAppointmentCrypto();
+          // Check if client already exists before proceeding
+          const crypto = new UnifiedAppointmentCrypto();
+          const clientExists = await crypto.checkClientExists(appointment.data?.email, tenant.id);
+
+          if (clientExists) {
+            toast.error(
+              m["public.register.alreadyExists"]?.() ||
+                "This email is already registered. Please use the login option.",
+            );
+            $formData.pin = "";
+            isSubmitting = false;
+            cancel();
+            return;
+          }
+
+          $publicStore.crypto = crypto;
           await $publicStore.crypto
             .initNewClient(appointment.data?.email, $formData.pin, tenant.id)
             .then(() => {
               proceed({ ...appointment, isNewClient: true, step: "SUMMARY" });
               cancel();
             })
-            .catch(() => {
+            .catch((error) => {
               $formData.pin = "";
-              toast.error(m["public.register.error"]());
+              // Check if error is due to existing client (409 Conflict)
+              if (error.message?.includes("already registered") || error.message?.includes("409")) {
+                toast.error(
+                  m["public.register.alreadyExists"]?.() ||
+                    "This email is already registered. Please use the login option.",
+                );
+              } else {
+                toast.error(
+                  m["public.register.error"]?.() || "Failed to create account. Please try again.",
+                );
+              }
               isSubmitting = false;
             });
         }
