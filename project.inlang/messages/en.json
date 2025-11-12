@@ -656,6 +656,31 @@
 			}
 		}
 	},
+	"account": {
+		"overview": {
+			"title": "Your Account"
+		},
+		"general": {
+			"navItem": "Settings",
+			"title": "Account Settings",
+			"description": "Change your name."
+		},
+		"change-email": {
+			"navItem": "E-Mail Address",
+			"title": "Change E-Mail Address",
+			"description": "Change your e-mail address."
+		},
+		"passkeys": {
+			"navItem": "Passkeys",
+			"title": "Manage Passkeys",
+			"description": "You can add up to three passkeys."
+		},
+		"change-passphrase": {
+			"navItem": "Passphrase",
+			"title": "Change Passphrase",
+			"description": "Global Admins can set strong passphrases as a backup login method."
+		}
+	},
 	"staff": {
 		"title": "Staff",
 		"roles": {

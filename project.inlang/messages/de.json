@@ -647,6 +647,31 @@
 			}
 		}
 	},
+	"account": {
+		"overview": {
+			"title": "Dein Konto"
+		},
+		"general": {
+			"navItem": "Einstellungen",
+			"title": "Kontoeinstellungen",
+			"description": "Ändere Deinen Namen."
+		},
+		"change-email": {
+			"navItem": "E-Mail Adresse",
+			"title": "E-Mail Adresse ändern",
+			"description": "Ändere Deine E-Mail Adresse."
+		},
+		"passkeys": {
+			"navItem": "Passkeys",
+			"title": "Passkeys verwalten",
+			"description": "Du kannst bis zu drei Passkeys für Dein Konto hinzufügen."
+		},
+		"change-passphrase": {
+			"navItem": "Passphrase",
+			"title": "Change Passphrase",
+			"description": "Globale Admins können einen Passphrase als Backup-Methode verwenden."
+		}
+	},
 	"staff": {
 		"title": "Personal",
 		"roles": {
