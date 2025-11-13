@@ -120,9 +120,9 @@ export class UnifiedAppointmentCrypto {
   // ===== CLIENT (PATIENT) METHODS =====
 
   /**
-   * Check if a client with this email already exists
+   * Run a precheck
    */
-  async checkClientExists(email: string, tenantId: string): Promise<boolean> {
+  async preCheck(email: string, tenantId: string): Promise<boolean> {
     try {
       const emailHash = await this.hashEmail(email);
 
@@ -132,11 +132,9 @@ export class UnifiedAppointmentCrypto {
         body: JSON.stringify({ emailHash }),
       });
 
-      // If challenge endpoint returns 200, client exists
-      // If it returns 404, client doesn't exist
       return response.ok;
     } catch (error) {
-      console.error("❌ Error checking client existence:", error);
+      console.error("❌ Error running pre-check:", error);
       return false;
     }
   }

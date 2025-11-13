@@ -12,13 +12,7 @@ import type { RequestHandler } from "@sveltejs/kit";
 import { StaffCryptoService } from "$lib/server/services/staff-crypto.service";
 import { logger } from "$lib/logger";
 import { checkPermission } from "$lib/server/utils/permissions";
-import {
-  BackendError,
-  ValidationError,
-  AuthorizationError,
-  InternalError,
-  logError,
-} from "$lib/server/utils/errors";
+import { BackendError, ValidationError, InternalError, logError } from "$lib/server/utils/errors";
 import { z } from "zod";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 

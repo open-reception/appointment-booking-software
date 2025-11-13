@@ -3,7 +3,6 @@
   import { UnifiedAppointmentCrypto } from "$lib/client/appointment-crypto";
   import * as Form from "$lib/components/ui/form";
   import InputOtpCustomized from "$lib/components/ui/input-top-customized/input-otp-customized.svelte";
-  import { Text } from "$lib/components/ui/typography";
   import { publicStore } from "$lib/stores/public";
   import type { TPublicAppointment } from "$lib/types/public";
   import { toast } from "svelte-sonner";
@@ -26,15 +25,12 @@
         isSubmitting = true;
         const validation = await validateForm();
         if (validation.valid && appointment.data && tenant) {
-          // Check if client already exists before proceeding
+          // Check if client passes precheck
           const crypto = new UnifiedAppointmentCrypto();
-          const clientExists = await crypto.checkClientExists(appointment.data?.email, tenant.id);
+          const isOk = await crypto.preCheck(appointment.data?.email, tenant.id);
 
-          if (clientExists) {
-            toast.error(
-              m["public.register.alreadyExists"]?.() ||
-                "This email is already registered. Please use the login option.",
-            );
+          if (isOk) {
+            toast.error(m["public.register.error"]());
             $formData.pin = "";
             isSubmitting = false;
             cancel();
@@ -48,19 +44,9 @@
               proceed({ ...appointment, isNewClient: true, step: "SUMMARY" });
               cancel();
             })
-            .catch((error) => {
+            .catch(() => {
               $formData.pin = "";
-              // Check if error is due to existing client (409 Conflict)
-              if (error.message?.includes("already registered") || error.message?.includes("409")) {
-                toast.error(
-                  m["public.register.alreadyExists"]?.() ||
-                    "This email is already registered. Please use the login option.",
-                );
-              } else {
-                toast.error(
-                  m["public.register.error"]?.() || "Failed to create account. Please try again.",
-                );
-              }
+              toast.error(m["public.register.error"]());
               isSubmitting = false;
             });
         }
