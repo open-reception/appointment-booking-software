@@ -27,7 +27,7 @@ export const secHeaderHandle: Handle = async ({ event, resolve }) => {
   }
 
   const cspDirectives = [
-    "script-src 'self' 'unsafe-inline' https://unpkg.com", // Allow inline scripts and unpkg CDN (for Swagger)
+    "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://unpkg.com", // Allow inline scripts, WASM modules, and unpkg CDN (for Swagger)
     "style-src 'self' 'unsafe-inline' https://unpkg.com",
     "font-src 'self' data: https://unpkg.com",
     "connect-src 'self'",
@@ -39,7 +39,7 @@ export const secHeaderHandle: Handle = async ({ event, resolve }) => {
     "upgrade-insecure-requests",
   ];
   if (!dev) {
-    cspDirectives.unshift("default-src 'self'");
+    cspDirectives.unshift("default-src 'self' 'wasm-unsafe-eval'");
     cspDirectives.push("img-src 'self' data: https:");
   }
   response.headers.set("Content-Security-Policy", cspDirectives.join("; "));

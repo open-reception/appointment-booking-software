@@ -205,7 +205,7 @@ describe("hooks.server", () => {
       expect(response.headers.get("X-XSS-Protection")).toBe("1; mode=block");
       expect(response.headers.get("Referrer-Policy")).toBe("strict-origin-when-cross-origin");
       expect(response.headers.get("Content-Security-Policy")).toContain(
-        "script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; font-src 'self' data: https://unpkg.com; connect-src 'self'; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+        "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; font-src 'self' data: https://unpkg.com; connect-src 'self'; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
       );
     });
 

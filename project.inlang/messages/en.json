@@ -40,7 +40,10 @@
 		"description": "Create your passkey to secure your account.",
 		"action": "Set Passkey",
 		"success": "Passkey set. Login with it now.",
-		"error": "Passkey could not be set"
+		"successKeyPairSaved": "Key pair saved successfully.",
+		"error": "Passkey could not be set",
+		"errorKeyPairDataMissing": "Could not generate key pair. Missing data.",
+		"errorKeyPairNotSaved": "Key pair could not be saved."
 	},
 	"slogan": "End-to-End encrypted appointment booking platform.",
 	"logo": "OpenReception Logo: A 3D pixel art with calendar that's also a lock",
@@ -69,11 +72,19 @@
 			"url": "Invalid URL Format",
 			"languages": "Select at least one language",
 			"language": "Select a default language",
-			"deleteAfterDays": "Choose a point in time"
+			"deleteAfterDays": "Choose a point in time",
+			"phoneNoRequired": "Phone number is required",
+			"phoneNoInvalid": "Phone number format is invalid",
+			"pinLength": "PIN must be 6 digits",
+			"pinDigitsOnly": "PIN must contain only digits",
+			"pinInsecure": "This PIN is too insecure"
 		},
 		"noPassAtAll": "Either passphrase or passkey is required",
 		"passkey": "Passkey",
-		"name": "Name"
+		"name": "Name",
+		"phone": "Phone Number",
+		"pin": "PIN",
+		"pinHint": "Save your PIN in a secure place, like a password-manager."
 	},
 	"login": {
 		"or": "Or",
@@ -794,6 +805,104 @@
 	},
 	"yes": "Yes",
 	"no": "No",
+	"public": {
+		"links": {
+			"website": "Go to Website",
+			"imprint": "Imprint",
+			"privacyStatement": "Privacy Statement"
+		},
+		"bookAppointment": "Book Appointment",
+		"appointment": {
+			"requiresConfirmation": "Requires cofirmation by {name}"
+		},
+		"tenantNotReady": {
+			"title": "Not ready to accept appointments.",
+			"description": "If this is yours, please login and complete onboarding."
+		},
+		"steps": {
+			"channel": {
+				"title": "Please select an appointment type:",
+				"empty": "Currently we don't have available appointments. Please check again later."
+			},
+			"agent": {
+				"title": "Please select who you want your appointment with:",
+				"anyone": {
+					"title": "No preference",
+					"description": "Choose this option to get the fastest appointment."
+				}
+			},
+			"slot": {
+				"title": "Please select an available appointment:",
+				"today": "Today",
+				"selectDate": "Select a date",
+				"selectTime": "Select a time:",
+				"loading": "Loading available appointments...",
+				"empty": "No appointments available. Please select another date.",
+				"action": "Select appointment"
+			},
+			"data": {
+				"title": "Please add your information:",
+				"alert": {
+					"title": "Your data is safe",
+					"description": "Only you and {name} will be able to access this information. It is end-to-end encrypted."
+				},
+				"email": {
+					"description": "We will use this to send you the appointment details."
+				},
+				"phone": {
+					"description": "Format: +1234567890. We may contact you, if there are questions or changes regarding your appointment.",
+					"optional": "(optional)"
+				},
+				"action": "Add personal data"
+			},
+			"auth": {
+				"register": {
+					"title": "It's my first time here",
+					"description": "Please add an PIN number so you can change your appointment later.",
+					"hint": "Proceeding will create an account",
+					"action": "Show summary",
+					"success": "Account created successfully!",
+					"error": "Failed to create account. Please try again.",
+					"alreadyExists": "This email is already registered. Please use the login option to book additional appointments."
+				},
+				"login": {
+					"title": "Login",
+					"description": "Please enter the PIN number, you've set:",
+					"action": "Show summary"
+				}
+			},
+			"summary": {
+				"title": "Please review your appointment, before confirming.",
+				"book": {
+					"action": "Book appointment"
+				},
+				"request": {
+					"action": "Request appointment",
+					"hint": "This appointment will have to be manually confirmed. You will receive an E-Mail once it's confirmed."
+				},
+				"error": "Operation failed. Please retry."
+			},
+			"complete": {
+				"book": {
+					"title": "Appointment booked",
+					"description": "We’ve sent you an e-mail with the details."
+				},
+				"request": {
+					"title": "Appointment requested",
+					"description": "{name} will confirm or deny your request soon. You will be informed via e-mail."
+				},
+				"action": "Proceed to Homepage"
+			}
+		},
+		"anyAgent": "Anyone available",
+		"register": {
+			"error": "Encryption could not be set up. Please retry"
+		},
+		"login": {
+			"success": "Login successful",
+			"error": "Login failed. Please retry"
+		}
+	},
 	"calendar": {
 		"today": "Today",
 		"loading": "Loading calendar",

@@ -61,10 +61,18 @@
 			"url": "Ungültige URL",
 			"languages": "Wähle mindestens eine Sprache",
 			"language": "Wähle eine Sprache",
-			"deleteAfterDays": "Wähle einen Zeitpunkt"
+			"deleteAfterDays": "Wähle einen Zeitpunkt",
+			"phoneNoRequired": "Telefonnummer ist erforderlich",
+			"phoneNoInvalid": "Format der Telefonnummer ist ungültig",
+			"pinLength": "PIN muss 6 Ziffern lang sein",
+			"pinDigitsOnly": "PIN darf nur Ziffern enthalten",
+			"pinInsecure": "Diese PIN ist zu unsicher"
 		},
 		"passkey": "Passkey",
-		"name": "Name"
+		"name": "Name",
+		"phone": "Telefonnummer",
+		"pin": "PIN",
+		"pinHint": "Speichere Deine PIN an einem sicheren Ort, z.B. in einem Passwort-Manager."
 	},
 	"login": {
 		"or": "Oder",
@@ -99,7 +107,10 @@
 		"description": "Erstelle Deinen Passkey, um Dein Konto zu sichern.",
 		"action": "Passkey setzen",
 		"success": "Passkey eingerichtet. Logge Dich damit jetzt ein.",
-		"error": "Passkey konnte nicht gesetzt werden"
+		"successKeyPairSaved": "Schlüsselpaar erfolgreich gespeichert.",
+		"error": "Passkey konnte nicht gesetzt werden",
+		"errorKeyPairDataMissing": "Konnte Schlüsselpaar nicht generieren. Fehlende Daten.",
+		"errorKeyPairNotSaved": "Schlüsselpaar konnte nicht gespeichert werden."
 	},
 	"logout": {
 		"title": "Erfolgreich abgemeldet",
@@ -785,6 +796,104 @@
 	},
 	"yes": "Ja",
 	"no": "Nein",
+	"public": {
+		"links": {
+			"website": "Webseite aufrufen",
+			"imprint": "Impressum",
+			"privacyStatement": "Datenschutz"
+		},
+		"bookAppointment": "Termin buchen",
+		"appointment": {
+			"requiresConfirmation": "Erfordert Bestätigung durch {name}"
+		},
+		"tenantNotReady": {
+			"title": "Diese Seite ist noch nicht bereit",
+			"description": "Falls dies Ihre Seite ist, loggen Sie sich ein und schließen Sie das Onboarding ab."
+		},
+		"steps": {
+			"channel": {
+				"title": "Bitte wählen Sie eine Terminart aus:",
+				"empty": "Aktuell keine Termine verfügbar. Bitte versuchen Sie es später erneut."
+			},
+			"agent": {
+				"title": "Mit wem möchten Sie Ihren Termin vereinbaren?",
+				"anyone": {
+					"title": "Keinen Wunsch äußern",
+					"description": "Wählen Sie diese Option, wenn Sie den frühsten Termin suchen."
+				}
+			},
+			"slot": {
+				"title": "Bitte wählen Sie einen verfügbaren Termin aus:",
+				"today": "Heute",
+				"selectDate": "Wähle Sie ein Datum aus",
+				"selectTime": "Wähle Sie eine Uhrzeit aus:",
+				"loading": "Lade verfügbare Termine...",
+				"empty": "Keine Termine verfügbar. Bitte wählen Sie ein anderes Datum.",
+				"action": "Termin auswählen"
+			},
+			"data": {
+				"title": "Bitte fügen Sie Ihre Informationen hinzu:",
+				"alert": {
+					"title": "Ihre Daten sind sicher",
+					"description": "Nur Sie und {name} können diese Informationen sehen. Die Daten sind Ende-zu-Ende verschlüsselt."
+				},
+				"email": {
+					"description": "Wir senden Ihnen eine Bestätigungs-E-Mail mit den Termindetails."
+				},
+				"phone": {
+					"description": "Format: +491234567890. Wir kontaktieren Sie, falls es Fragen/Anderungen zu Ihrem Termin gibt.",
+					"optional": "(optional)"
+				},
+				"action": "Daten hinzufügen"
+			},
+			"auth": {
+				"register": {
+					"title": "Ich bin das erste Mal hier",
+					"description": "Bitte legen Sie eine PIN fest:",
+					"hint": "Fortfahren erstellt ein Konto für Sie.",
+					"action": "Zussammenfassung anzeigen",
+					"success": "Konto erfolgreich erstellt!",
+					"error": "Konto konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+					"alreadyExists": "Diese E-Mail ist bereits registriert. Bitte nutzen Sie die Login-Option, um weitere Termine zu buchen."
+				},
+				"login": {
+					"title": "Anmelden",
+					"description": "Bitte geben Sie Ihre PIN ein:",
+					"action": "Zusammenfassung anzeigen"
+				}
+			},
+			"summary": {
+				"title": "Bitte prüfen Sie Ihren Termin, bevor Sie buchen",
+				"book": {
+					"action": "Termin buchen"
+				},
+				"request": {
+					"action": "Termin anfragen",
+					"hint": "Dieser Termin muss manuell bestätigt werden. Sie erhalten per E-Mail informiert."
+				},
+				"error": "Buchung fehlgeschlagen. Bitte erneut versuchen."
+			},
+			"complete": {
+				"book": {
+					"title": "Termin gebucht",
+					"description": "Wir haben Ihnen eine E-Mail mit den Details gesendet."
+				},
+				"request": {
+					"title": "Termin angefragt",
+					"description": "{name} wird Ihren Termin in Kürze bestätigen oder absagen. Sie werden per E-Mail informiert."
+				},
+				"action": "Weiter zur Startseite"
+			}
+		},
+		"anyAgent": "Jede verfügbare Person",
+		"register": {
+			"error": "Verschlüsselung konnte nicht vorbereitet werden. Bitte erneut versuchen"
+		},
+		"login": {
+			"success": "Anmeldung erfolgreich",
+			"error": "Anmeldung fehlgeschlagen. Bitte erneut versuchen"
+		}
+	},
 	"calendar": {
 		"today": "Heute",
 		"loading": "Loading calendar",

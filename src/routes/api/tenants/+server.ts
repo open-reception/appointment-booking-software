@@ -202,7 +202,11 @@ export const GET: RequestHandler = async ({ locals }) => {
 
   try {
     // Check if user is authenticated and is a global admin
-    checkPermission(locals, null, true, true);
+    checkPermission(
+      locals,
+      locals.user?.role === "TENANT_ADMIN" ? locals.user.tenantId : null,
+      true,
+    );
 
     log.debug("Getting all tenants", {
       requestedBy: locals.user?.userId,

@@ -237,6 +237,23 @@ export class AppointmentService {
 
     const db = await this.getDb();
 
+    // Check if client already exists
+    const existingTunnel = await db
+      .select({ id: tenantSchema.clientAppointmentTunnel.id })
+      .from(tenantSchema.clientAppointmentTunnel)
+      .where(eq(tenantSchema.clientAppointmentTunnel.emailHash, clientData.emailHash))
+      .limit(1);
+
+    if (existingTunnel.length > 0) {
+      log.warn("Client creation failed: Email already registered", {
+        tenantId: this.tenantId,
+        emailHashPrefix: clientData.emailHash.slice(0, 8),
+      });
+      throw new ConflictError(
+        "This email address is already registered. Please use the login option to book additional appointments.",
+      );
+    }
+
     // Transactional: Create tunnel and appointment
     const result = await db.transaction(async (tx) => {
       // 1. Create client appointment tunnel

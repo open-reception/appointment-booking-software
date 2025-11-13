@@ -260,6 +260,7 @@ export class UserService {
     isSetup: boolean;
     id: string;
     email: string;
+    tenantId: string | null;
     name?: string;
     language?: string;
   }> {
@@ -354,7 +355,17 @@ export class UserService {
       }
 
       // Check if this is the first tenant admin for the tenant
-      const shouldGrantAccess = resultData.role === "GLOBAL_ADMIN"; // Global admins always get ACCESS_GRANTED
+      const numberOfUsers = await centralDb
+        .select({ count: count() })
+        .from(centralSchema.user)
+        .where(
+          and(
+            eq(centralSchema.user.tenantId, resultData.tenantId!),
+            eq(centralSchema.user.role, "TENANT_ADMIN"),
+          ),
+        );
+
+      const shouldGrantAccess = resultData.role === "GLOBAL_ADMIN" || numberOfUsers[0].count === 1;
       const confirmationState = shouldGrantAccess ? "ACCESS_GRANTED" : "CONFIRMED";
 
       // Update the user to confirmed and active, and clear the recovery passphrase
@@ -387,6 +398,7 @@ export class UserService {
         email: resultData.email,
         name: resultData.name,
         language: resultData.language,
+        tenantId: resultData.tenantId,
       };
     } catch (error) {
       if (error instanceof NotFoundError) throw error;

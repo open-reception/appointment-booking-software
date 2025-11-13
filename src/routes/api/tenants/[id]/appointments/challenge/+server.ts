@@ -159,8 +159,8 @@ export const POST: RequestHandler = async ({ request, params }) => {
     const clientPublicKeyBuffer = BufferUtils.from(tunnel.clientPublicKey, "hex");
     const encapsulation = KyberCrypto.encapsulate(clientPublicKeyBuffer);
 
-    // Use the shared secret to encrypt the challenge
-    const challengeBuffer = BufferUtils.from(challenge);
+    // Use the shared secret to encrypt the challenge (decode base64 first!)
+    const challengeBuffer = Buffer.from(challenge, "base64");
     const encryptedChallengeBuffer = BufferUtils.xor(
       challengeBuffer,
       encapsulation.sharedSecret.slice(0, challengeBuffer.length),

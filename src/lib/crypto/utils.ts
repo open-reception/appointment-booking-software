@@ -183,15 +183,22 @@ export class AESCrypto {
     // Use Web Crypto API if available (browser), otherwise fall back to Node.js
     if (typeof crypto !== "undefined" && crypto.subtle) {
       // Browser implementation using Web Crypto API
-      const cryptoKey = await crypto.subtle.importKey("raw", key, { name: "AES-GCM" }, false, [
-        "encrypt",
-      ]);
+      // Ensure native Uint8Array with ArrayBuffer for Web Crypto API compatibility
+      const nativeKey = new Uint8Array(key);
+      const cryptoKey = await crypto.subtle.importKey(
+        "raw",
+        nativeKey,
+        { name: "AES-GCM" },
+        false,
+        ["encrypt"],
+      );
 
-      const additionalData = BufferUtils.from("appointment-data");
+      const additionalData = new Uint8Array(BufferUtils.from("appointment-data"));
+      const nativeIv = new Uint8Array(iv);
       const encrypted = await crypto.subtle.encrypt(
-        { name: "AES-GCM", iv, additionalData },
+        { name: "AES-GCM", iv: nativeIv, additionalData },
         cryptoKey,
-        BufferUtils.from(data),
+        new Uint8Array(BufferUtils.from(data)),
       );
 
       // Extract tag from encrypted data (last 16 bytes)
@@ -238,17 +245,24 @@ export class AESCrypto {
   ): Promise<string> {
     if (typeof crypto !== "undefined" && crypto.subtle) {
       // Browser implementation using Web Crypto API
-      const cryptoKey = await crypto.subtle.importKey("raw", key, { name: "AES-GCM" }, false, [
-        "decrypt",
-      ]);
+      // Ensure native Uint8Array with ArrayBuffer for Web Crypto API compatibility
+      const nativeKey = new Uint8Array(key);
+      const cryptoKey = await crypto.subtle.importKey(
+        "raw",
+        nativeKey,
+        { name: "AES-GCM" },
+        false,
+        ["decrypt"],
+      );
 
-      const additionalData = BufferUtils.from("appointment-data");
+      const additionalData = new Uint8Array(BufferUtils.from("appointment-data"));
+      const nativeIv = new Uint8Array(iv);
 
       // Combine encrypted data and tag for Web Crypto API
-      const encryptedWithTag = BufferUtils.concat([encrypted, tag]);
+      const encryptedWithTag = new Uint8Array(BufferUtils.concat([encrypted, tag]));
 
       const decrypted = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv, additionalData },
+        { name: "AES-GCM", iv: nativeIv, additionalData },
         cryptoKey,
         encryptedWithTag,
       );
@@ -280,45 +294,151 @@ export interface ShamirShare {
 }
 
 /**
- * Simple Shamir Secret Sharing implementation
- * Note: This is a basic implementation for demonstration purposes
+ * Shamir Secret Sharing implementation using Lagrange interpolation over GF(256)
+ *
+ * This implementation uses polynomial interpolation in Galois Field 256 to split
+ * a secret into n shares where any k shares can reconstruct the secret, but
+ * k-1 shares reveal no information about the secret (information-theoretic security).
+ *
+ * Mathematical basis:
+ * - Secret is encoded as f(0) where f is a polynomial of degree k-1
+ * - Each share is a point (x, f(x)) on the polynomial
+ * - Lagrange interpolation reconstructs f(0) from k points
  */
 export class ShamirSecretSharing {
+  // Cache for GF(256) multiplicative inverses
+  private static invCache: Map<number, number> = new Map();
+
   /**
-   * Splits a secret into multiple shares
-   * @param secret - The secret to split
-   * @param threshold - Minimum number of shares needed to reconstruct
-   * @param totalShares - Total number of shares to create
+   * Splits a secret into multiple shares using Shamir's Secret Sharing scheme
+   *
+   * For a k-of-n threshold scheme:
+   * - Generates a random polynomial f(x) of degree k-1 where f(0) = secret
+   * - Creates n shares as points (i, f(i)) for i = 1, 2, ..., n
+   * - Any k shares can reconstruct the secret via Lagrange interpolation
+   *
+   * @param secret - The secret to split (any length)
+   * @param threshold - Minimum number of shares needed to reconstruct (k)
+   * @param totalShares - Total number of shares to create (n)
    * @returns Array of ShamirShare objects
    */
   static splitSecret(secret: CryptoBuffer, threshold: number, totalShares: number): ShamirShare[] {
+    return this.splitSecretInternal(secret, threshold, totalShares);
+  }
+
+  /**
+   * Splits a secret into shares with a deterministic first share (2-of-2 scheme)
+   *
+   * Special case for client key splitting where:
+   * - Share 1 (x=1): Deterministically derived from PIN + email (y₁ provided)
+   * - Share 2 (x=2): Calculated to maintain the secret relationship
+   *
+   * This enables cross-device authentication:
+   * - Client can always recreate share 1 from their PIN
+   * - Server stores share 2 in database
+   * - Both shares required for reconstruction (2-of-2 threshold)
+   *
+   * @param secret - The private key to split
+   * @param deterministicShareY - The deterministic y-value for x=1 (from PIN derivation)
+   * @returns Array with 2 shares: [pinShare, serverShare]
+   */
+  static splitSecretWithDeterministicShare(
+    secret: CryptoBuffer,
+    deterministicShareY: Uint8Array,
+  ): ShamirShare[] {
+    if (!secret || secret.length === 0) {
+      throw new Error("Secret cannot be empty");
+    }
+    if (deterministicShareY.length !== secret.length) {
+      throw new Error("Deterministic share must have same length as secret");
+    }
+
+    // For 2-of-2 Shamir: f(x) = a₀ + a₁·x where f(0) = secret
+    // We have: f(1) = deterministicShareY (given)
+    // From f(1) = a₀ + a₁·1: a₁ = f(1) - a₀ = deterministicShareY - secret (in GF(256))
+    // Calculate f(2) = a₀ + a₁·2 = secret + 2·(deterministicShareY - secret)
+    //                = 2·deterministicShareY - secret (in GF(256))
+
+    const serverShareY = new Uint8Array(secret.length);
+
+    for (let i = 0; i < secret.length; i++) {
+      // a₁ = deterministicShareY[i] - secret[i] in GF(256)
+      // Since subtraction in GF(256) is XOR (same as addition):
+      const a1 = this.gf256Add(deterministicShareY[i], secret[i]);
+
+      // f(2) = secret[i] + 2·a₁ in GF(256)
+      const twoTimesA1 = this.gf256Mul(2, a1);
+      serverShareY[i] = this.gf256Add(secret[i], twoTimesA1);
+    }
+
+    return [
+      { x: 1, y: deterministicShareY },
+      { x: 2, y: serverShareY },
+    ];
+  }
+
+  /**
+   * Internal implementation for splitting secrets
+   */
+  private static splitSecretInternal(
+    secret: CryptoBuffer,
+    threshold: number,
+    totalShares: number,
+  ): ShamirShare[] {
     if (!secret || secret.length === 0) {
       throw new Error("Secret cannot be empty for Shamir secret sharing");
     }
-
-    const originalLength = secret.length;
-    const lengthBytes = new Uint8Array(4);
-    new DataView(lengthBytes.buffer).setUint32(0, originalLength, true);
+    if (threshold < 2) {
+      throw new Error("Threshold must be at least 2");
+    }
+    if (threshold > totalShares) {
+      throw new Error("Threshold cannot be greater than total shares");
+    }
+    if (totalShares > 255) {
+      throw new Error("Cannot create more than 255 shares (GF(256) limitation)");
+    }
 
     const shares: ShamirShare[] = [];
 
-    for (let i = 0; i < totalShares; i++) {
-      const shareData = new Uint8Array(4 + secret.length);
-      shareData.set(lengthBytes, 0);
-      shareData.set(secret, 4);
+    // Process each byte of the secret independently
+    for (let shareIndex = 0; shareIndex < totalShares; shareIndex++) {
+      const x = shareIndex + 1; // x-coordinates: 1, 2, 3, ..., n (never 0, as f(0) = secret)
+      const y = new Uint8Array(secret.length);
 
-      shares.push({
-        x: i + 1,
-        y: shareData,
-      });
+      for (let byteIndex = 0; byteIndex < secret.length; byteIndex++) {
+        // For this byte, create a polynomial f(x) = a₀ + a₁x + a₂x² + ... + a_{k-1}x^{k-1}
+        // where a₀ = secret[byteIndex] and a₁, ..., a_{k-1} are random
+        const coefficients = new Uint8Array(threshold);
+        coefficients[0] = secret[byteIndex]; // f(0) = secret byte
+
+        // Generate random coefficients for higher degree terms
+        for (let i = 1; i < threshold; i++) {
+          coefficients[i] = Math.floor(Math.random() * 256);
+        }
+
+        // Evaluate polynomial at x: f(x) = a₀ + a₁x + a₂x² + ... in GF(256)
+        let result = 0;
+        for (let i = threshold - 1; i >= 0; i--) {
+          result = this.gf256Add(this.gf256Mul(result, x), coefficients[i]);
+        }
+
+        y[byteIndex] = result;
+      }
+
+      shares.push({ x, y });
     }
 
     return shares;
   }
 
   /**
-   * Reconstructs a secret from shares
-   * @param shareArray - Array of shares to reconstruct from
+   * Reconstructs a secret from shares using Lagrange interpolation
+   *
+   * Given k shares (x₁, y₁), (x₂, y₂), ..., (xₖ, yₖ), reconstructs f(0) where:
+   * f(0) = Σᵢ yᵢ · Lᵢ(0)
+   * where Lᵢ(0) = Πⱼ≠ᵢ (0 - xⱼ) / (xᵢ - xⱼ) (computed in GF(256))
+   *
+   * @param shareArray - Array of shares to reconstruct from (must have at least threshold shares)
    * @returns The reconstructed secret
    */
   static reconstructSecret(shareArray: ShamirShare[]): CryptoBuffer {
@@ -326,13 +446,145 @@ export class ShamirSecretSharing {
       throw new Error("Need at least 2 shares to reconstruct the secret");
     }
 
-    const firstShare = shareArray[0];
+    const secretLength = shareArray[0].y.length;
+    const secret = new Uint8Array(secretLength);
 
-    const lengthBytes = firstShare.y.slice(0, 4);
-    const originalLength = new DataView(lengthBytes.buffer).getUint32(0, true);
+    // Reconstruct each byte independently
+    for (let byteIndex = 0; byteIndex < secretLength; byteIndex++) {
+      let secretByte = 0;
 
-    const secret = firstShare.y.slice(4, 4 + originalLength);
+      // Lagrange interpolation: f(0) = Σᵢ yᵢ · Lᵢ(0)
+      for (let i = 0; i < shareArray.length; i++) {
+        const xi = shareArray[i].x;
+        const yi = shareArray[i].y[byteIndex];
+
+        // Calculate Lagrange basis polynomial Lᵢ(0)
+        let basis = 1;
+        for (let j = 0; j < shareArray.length; j++) {
+          if (i !== j) {
+            const xj = shareArray[j].x;
+            // Lᵢ(0) *= (0 - xⱼ) / (xᵢ - xⱼ) in GF(256)
+            // In GF(256), subtraction is XOR (same as addition)
+            const numerator = this.gf256Add(0, xj); // 0 - xⱼ = 0 ⊕ xⱼ = xⱼ
+            const denominator = this.gf256Add(xi, xj); // xᵢ - xⱼ = xᵢ ⊕ xⱼ
+            basis = this.gf256Mul(basis, this.gf256Div(numerator, denominator));
+          }
+        }
+
+        // Add yᵢ · Lᵢ(0) to the result
+        secretByte = this.gf256Add(secretByte, this.gf256Mul(yi, basis));
+      }
+
+      secret[byteIndex] = secretByte;
+    }
 
     return secret;
+  }
+
+  /**
+   * Addition in GF(256) - simply XOR
+   */
+  private static gf256Add(a: number, b: number): number {
+    return (a ^ b) & 0xff;
+  }
+
+  /**
+   * Multiplication in GF(256) using the rijndael polynomial
+   * This is the same multiplication used in AES
+   */
+  private static gf256Mul(a: number, b: number): number {
+    let result = 0;
+    a = a & 0xff;
+    b = b & 0xff;
+
+    for (let i = 0; i < 8; i++) {
+      if (b & 1) {
+        result ^= a;
+      }
+      const hiBitSet = a & 0x80;
+      a = (a << 1) & 0xff;
+      if (hiBitSet) {
+        a ^= 0x1b; // Rijndael's Galois field polynomial
+      }
+      b >>= 1;
+    }
+
+    return result & 0xff;
+  }
+
+  /**
+   * Division in GF(256) - multiply by multiplicative inverse
+   */
+  private static gf256Div(a: number, b: number): number {
+    if (b === 0) {
+      throw new Error("Division by zero in GF(256)");
+    }
+    return this.gf256Mul(a, this.gf256Inv(b));
+  }
+
+  /**
+   * Multiplicative inverse in GF(256) using Extended Euclidean Algorithm
+   */
+  private static gf256Inv(a: number): number {
+    if (a === 0) {
+      throw new Error("Zero has no multiplicative inverse in GF(256)");
+    }
+
+    // Check cache first
+    if (this.invCache.has(a)) {
+      return this.invCache.get(a)!;
+    }
+
+    // Extended Euclidean Algorithm in GF(256)
+    let u = a & 0xff;
+    let v = 0x11b; // GF(256) irreducible polynomial: x^8 + x^4 + x^3 + x + 1
+    let g1 = 1;
+    let g2 = 0;
+
+    let iterations = 0;
+    const maxIterations = 16; // Should never need more than this
+
+    while (u !== 1 && iterations < maxIterations) {
+      iterations++;
+
+      if (u === 0) {
+        // This shouldn't happen, but safety check
+        throw new Error(`GF(256) inverse failed for ${a}`);
+      }
+
+      const j = this.bitLength(u) - this.bitLength(v);
+
+      if (j < 0) {
+        [u, v] = [v, u];
+        [g1, g2] = [g2, g1];
+        continue;
+      }
+
+      u ^= v << j;
+      g1 ^= g2 << j;
+    }
+
+    if (iterations >= maxIterations) {
+      throw new Error(`GF(256) inverse calculation did not converge for ${a}`);
+    }
+
+    const result = g1 & 0xff;
+
+    // Cache the result
+    this.invCache.set(a, result);
+
+    return result;
+  }
+
+  /**
+   * Helper: Calculate bit length of a number
+   */
+  private static bitLength(n: number): number {
+    let length = 0;
+    while (n > 0) {
+      length++;
+      n >>= 1;
+    }
+    return length;
   }
 }
