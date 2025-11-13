@@ -26,11 +26,11 @@ export class TenantService {
   }
 
   /**
-   * Get all clients for this tenant
+   * Get all client tunnels for this tenant
    */
-  async getClients() {
+  async getClientTunnels() {
     const db = await this.getDb();
-    return await db.select().from(tenantSchema.client);
+    return await db.select().from(tenantSchema.clientAppointmentTunnel);
   }
 
   /**

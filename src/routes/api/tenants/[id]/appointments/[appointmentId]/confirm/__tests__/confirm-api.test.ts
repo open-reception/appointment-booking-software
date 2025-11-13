@@ -75,7 +75,11 @@ describe("Appointment Confirm API Route", () => {
       expect(response.status).toBe(200);
       expect(data.message).toBe("Appointment confirmed successfully");
       expect(data.appointment).toEqual(mockConfirmedAppointment);
-      expect(mockAppointmentService.confirmAppointment).toHaveBeenCalledWith(mockAppointmentId);
+      expect(mockAppointmentService.confirmAppointment).toHaveBeenCalledWith(
+        mockAppointmentId,
+        undefined,
+        "de",
+      );
     });
 
     it("should allow staff to confirm appointments", async () => {

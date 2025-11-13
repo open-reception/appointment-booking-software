@@ -30,6 +30,8 @@ describe("Create New Client API Route", () => {
     agentId: "agent-123", // Missing field added
     appointmentDate: "2024-12-25T14:30:00.000Z",
     emailHash: "test-email-hash",
+    clientEmail: "test@example.com",
+    clientLanguage: "de",
     clientPublicKey: "test-public-key",
     privateKeyShare: "test-private-key-share",
     encryptedAppointment: {

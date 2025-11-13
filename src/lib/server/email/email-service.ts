@@ -5,11 +5,16 @@ import {
   type TemplateData,
   type Language,
 } from "./template-engine";
-import type { SelectClient, SelectAppointment } from "$lib/server/db/tenant-schema";
+import type { SelectAppointment } from "$lib/server/db/tenant-schema";
 import type { SelectTenant, SelectUser } from "$lib/server/db/central-schema";
 import { getTenantDb } from "$lib/server/db";
 import * as tenantSchema from "$lib/server/db/tenant-schema";
 import { eq } from "drizzle-orm";
+
+type SelectClient = {
+  email: string;
+  language: string;
+};
 
 /**
  * Get channel title in the user's preferred language
@@ -169,7 +174,7 @@ export async function sendAppointmentReminderEmail(
 
 /**
  * Send appointment confirmation email for newly created appointments
- * @param {SelectClient | SelectUser} user - Database user object
+ * @param {SelectClient | SelectUser} user - Database user object or client data
  * @param {SelectTenant} tenant - Tenant information for branding
  * @param {SelectAppointment} appointment - Appointment details
  * @param {string} [channelTitle] - Optional channel title/name
@@ -184,7 +189,12 @@ export async function sendAppointmentCreatedEmail(
   channelTitle?: string,
   cancelUrl?: string,
 ): Promise<void> {
-  const recipient = createEmailRecipient(user);
+  // Create recipient directly for SelectClient type, use helper for SelectUser
+  const recipient: EmailRecipient =
+    "email" in user && typeof user.email === "string" && "language" in user && !("name" in user)
+      ? { email: user.email, language: user.language }
+      : createEmailRecipient(user);
+
   const language = (recipient.language as Language) || "en";
   const subject = language === "en" ? "Appointment Confirmed" : "Termin bestätigt";
 
@@ -198,7 +208,7 @@ export async function sendAppointmentCreatedEmail(
 
 /**
  * Send appointment request email (when staff confirmation is required)
- * @param {SelectClient | SelectUser} user - Database user object
+ * @param {SelectClient | SelectUser} user - Database user object or client data
  * @param {SelectTenant} tenant - Tenant information for branding
  * @param {SelectAppointment} appointment - Appointment details
  * @param {string} [channelTitle] - Optional channel title/name
@@ -213,7 +223,12 @@ export async function sendAppointmentRequestEmail(
   channelTitle?: string,
   cancelUrl?: string,
 ): Promise<void> {
-  const recipient = createEmailRecipient(user);
+  // Create recipient directly for SelectClient type, use helper for SelectUser
+  const recipient: EmailRecipient =
+    "email" in user && typeof user.email === "string" && "language" in user && !("name" in user)
+      ? { email: user.email, language: user.language }
+      : createEmailRecipient(user);
+
   const language = (recipient.language as Language) || "en";
   const subject = language === "en" ? "Appointment Request Received" : "Terminanfrage erhalten";
 

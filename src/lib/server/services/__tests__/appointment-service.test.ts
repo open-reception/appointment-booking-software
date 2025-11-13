@@ -39,6 +39,8 @@ const mockClientTunnelData = {
   agentId: "agent-123",
   appointmentDate: "2024-01-15T10:00:00Z",
   emailHash: "email-hash-123",
+  clientEmail: "test@example.com",
+  clientLanguage: "de",
   clientPublicKey: "client-public-key",
   privateKeyShare: "private-key-share",
   encryptedAppointment: {
