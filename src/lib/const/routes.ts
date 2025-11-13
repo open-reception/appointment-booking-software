@@ -1,5 +1,7 @@
 export const ROUTES = {
   MAIN: "/",
+  BOOK_APPOINTMENT: "/book-appointment",
+  APPOINTMENT_BOOKED: "/book-appointment/complete",
   SETUP: {
     MAIN: "/setup",
     CREATE_ADMIN_ACCOUNT: "/setup/create-admin-account",

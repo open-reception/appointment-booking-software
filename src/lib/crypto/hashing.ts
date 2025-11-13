@@ -171,12 +171,14 @@ export class OptimizedArgon2 {
   ): Promise<CryptoBuffer> {
     const { argon2id } = await import("@noble/hashes/argon2");
 
-    return argon2id(BufferUtils.from(pin), new Uint8Array(salt), {
+    const result = argon2id(BufferUtils.from(pin), new Uint8Array(salt), {
       m: options.memoryCost,
       t: options.timeCost,
       p: options.parallelism,
       dkLen: options.hashLength,
     });
+
+    return result;
   }
 
   /**

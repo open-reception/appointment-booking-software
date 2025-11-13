@@ -132,6 +132,13 @@ describe("AppointmentService", () => {
       };
       vi.mocked(centralDb.select).mockReturnValue(mockAuthBuilder as any);
 
+      // Mock existing tunnel check (client doesn't exist yet)
+      const mockExistingTunnelBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([]), // No existing tunnel
+      };
+
       // Mock tenant database transaction
       const mockTransaction = vi.fn().mockImplementation(async (callback) => {
         const tx = {
@@ -167,7 +174,10 @@ describe("AppointmentService", () => {
         return await callback(tx);
       });
 
-      const mockDb = { transaction: mockTransaction };
+      const mockDb = {
+        select: vi.fn().mockReturnValue(mockExistingTunnelBuilder as any),
+        transaction: mockTransaction,
+      };
       vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
 
       const service = await AppointmentService.forTenant("tenant-123");
@@ -196,6 +206,39 @@ describe("AppointmentService", () => {
       );
     });
 
+    it("should throw ConflictError when client already exists", async () => {
+      const { getTenantDb, centralDb } = await import("../../db");
+
+      // Mock authorization check - users exist
+      const mockAuthBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([{ count: "1" }]),
+      };
+      vi.mocked(centralDb.select).mockReturnValue(mockAuthBuilder as any);
+
+      // Mock existing tunnel check (client already exists)
+      const mockExistingTunnelBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([{ id: "existing-tunnel-123" }]), // Existing tunnel found
+      };
+
+      const mockDb = {
+        select: vi.fn().mockReturnValue(mockExistingTunnelBuilder as any),
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+
+      await expect(service.createNewClientWithAppointment(mockClientTunnelData)).rejects.toThrow(
+        ConflictError,
+      );
+      await expect(service.createNewClientWithAppointment(mockClientTunnelData)).rejects.toThrow(
+        "This email address is already registered",
+      );
+    });
+
     it("should throw NotFoundError when channel not found", async () => {
       const { getTenantDb, centralDb } = await import("../../db");
 
@@ -206,6 +249,13 @@ describe("AppointmentService", () => {
         limit: vi.fn().mockResolvedValue([{ count: "1" }]),
       };
       vi.mocked(centralDb.select).mockReturnValue(mockAuthBuilder as any);
+
+      // Mock existing tunnel check (client doesn't exist yet)
+      const mockExistingTunnelBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([]), // No existing tunnel
+      };
 
       // Mock tenant database transaction with channel not found
       const mockTransaction = vi.fn().mockImplementation(async (callback) => {
@@ -231,7 +281,10 @@ describe("AppointmentService", () => {
         return await callback(tx);
       });
 
-      const mockDb = { transaction: mockTransaction };
+      const mockDb = {
+        select: vi.fn().mockReturnValue(mockExistingTunnelBuilder as any),
+        transaction: mockTransaction,
+      };
       vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
 
       const service = await AppointmentService.forTenant("tenant-123");
@@ -241,7 +294,7 @@ describe("AppointmentService", () => {
       );
     });
 
-    it("should create appointment with CONFIRMED status when channel doesn't require confirmation", async () => {
+    it("should create appointment with CONFIRMED status when staff user creates it", async () => {
       const { getTenantDb, centralDb } = await import("../../db");
 
       // Mock authorization check - users exist
@@ -252,7 +305,14 @@ describe("AppointmentService", () => {
       };
       vi.mocked(centralDb.select).mockReturnValue(mockAuthBuilder as any);
 
-      // Mock tenant database transaction with channel that doesn't require confirmation
+      // Mock existing tunnel check (client doesn't exist yet)
+      const mockExistingTunnelBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([]), // No existing tunnel
+      };
+
+      // Mock tenant database transaction with successful creation
       const mockTransaction = vi.fn().mockImplementation(async (callback) => {
         const tx = {
           insert: vi
@@ -269,8 +329,8 @@ describe("AppointmentService", () => {
               values: vi.fn().mockReturnValue({
                 returning: vi.fn().mockResolvedValue([
                   {
-                    id: "appointment-123",
-                    appointmentDate: new Date("2024-01-15T10:00:00Z"),
+                    id: "apt-123",
+                    appointmentDate: new Date("2024-01-01T10:00:00Z"),
                     status: "CONFIRMED",
                   },
                 ]),
@@ -279,7 +339,7 @@ describe("AppointmentService", () => {
           select: vi.fn().mockReturnValue({
             from: vi.fn().mockReturnValue({
               where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([{ requiresConfirmation: false }]),
+                limit: vi.fn().mockResolvedValue([{ id: "channel-456" }]), // Channel found
               }),
             }),
           }),
@@ -287,13 +347,17 @@ describe("AppointmentService", () => {
         return await callback(tx);
       });
 
-      const mockDb = { transaction: mockTransaction };
+      const mockDb = {
+        select: vi.fn().mockReturnValue(mockExistingTunnelBuilder as any),
+        transaction: mockTransaction,
+      };
       vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
 
       const service = await AppointmentService.forTenant("tenant-123");
       const result = await service.createNewClientWithAppointment(mockClientTunnelData);
 
       expect(result.status).toBe("CONFIRMED");
+      expect(mockTransaction).toHaveBeenCalled();
     });
   });
 

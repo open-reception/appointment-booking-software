@@ -179,6 +179,11 @@ describe("UserService", () => {
       };
 
       const mockCountSelectBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue([{ count: 1 }]),
+      };
+
+      const mockTotalCountSelectBuilder = {
         from: vi.fn().mockResolvedValue([{ count: 1 }]),
       };
 
@@ -188,18 +193,19 @@ describe("UserService", () => {
         execute: vi.fn().mockResolvedValue({ count: 1 }),
       };
 
-      // First call for user lookup, second call for count query
+      // First call for user lookup, second call for tenant admin count, third for total count
       mockCentralDb.select
         .mockReturnValueOnce(mockSelectBuilder)
-        .mockReturnValueOnce(mockCountSelectBuilder);
+        .mockReturnValueOnce(mockCountSelectBuilder)
+        .mockReturnValueOnce(mockTotalCountSelectBuilder);
       mockCentralDb.update.mockReturnValue(mockUpdateBuilder);
 
       const result = await UserService.confirm(token);
 
-      expect(mockCentralDb.select).toHaveBeenCalledTimes(2);
+      expect(mockCentralDb.select).toHaveBeenCalledTimes(3);
       expect(mockCentralDb.update).toHaveBeenCalled();
       expect(mockUpdateBuilder.set).toHaveBeenCalledWith({
-        confirmationState: "CONFIRMED" as const,
+        confirmationState: "ACCESS_GRANTED" as const,
         isActive: true,
         recoveryPassphrase: null,
       });
