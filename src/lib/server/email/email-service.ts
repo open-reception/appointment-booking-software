@@ -7,6 +7,43 @@ import {
 } from "./template-engine";
 import type { SelectClient, SelectAppointment } from "$lib/server/db/tenant-schema";
 import type { SelectTenant, SelectUser } from "$lib/server/db/central-schema";
+import { getTenantDb } from "$lib/server/db";
+import * as tenantSchema from "$lib/server/db/tenant-schema";
+import { eq } from "drizzle-orm";
+
+/**
+ * Get channel title in the user's preferred language
+ * @param {string} tenantId - Tenant ID
+ * @param {string} channelId - Channel ID
+ * @param {string} [userLanguage="de"] - User's preferred language
+ * @returns {Promise<string | undefined>} Channel title or undefined if not found
+ */
+export async function getChannelTitle(
+  tenantId: string,
+  channelId: string,
+  userLanguage: string = "de",
+): Promise<string | undefined> {
+  try {
+    const db = await getTenantDb(tenantId);
+    const channelResult = await db
+      .select({
+        names: tenantSchema.channel.names,
+      })
+      .from(tenantSchema.channel)
+      .where(eq(tenantSchema.channel.id, channelId))
+      .limit(1);
+
+    if (channelResult.length === 0 || !channelResult[0].names) {
+      return undefined;
+    }
+
+    const names = channelResult[0].names as Record<string, string>;
+    return names[userLanguage] || names["de"] || names["en"] || Object.values(names)[0];
+  } catch {
+    // Return undefined on error, don't throw - this is optional information for emails
+    return undefined;
+  }
+}
 
 /**
  * Send a templated email using the template engine
@@ -135,6 +172,7 @@ export async function sendAppointmentReminderEmail(
  * @param {SelectClient | SelectUser} user - Database user object
  * @param {SelectTenant} tenant - Tenant information for branding
  * @param {SelectAppointment} appointment - Appointment details
+ * @param {string} [channelTitle] - Optional channel title/name
  * @param {string} [cancelUrl] - Optional URL to cancel appointment
  * @throws {Error} When email sending fails
  * @returns {Promise<void>}
@@ -143,6 +181,7 @@ export async function sendAppointmentCreatedEmail(
   user: SelectClient | SelectUser,
   tenant: SelectTenant,
   appointment: SelectAppointment,
+  channelTitle?: string,
   cancelUrl?: string,
 ): Promise<void> {
   const recipient = createEmailRecipient(user);
@@ -152,7 +191,36 @@ export async function sendAppointmentCreatedEmail(
   await sendTemplatedEmail("appointment-created", recipient, subject, language, tenant, {
     appointment,
     appointmentDate: appointment.appointmentDate,
-    title: appointment.channelId, // TODO: Get the channel to give back a proper title
+    title: channelTitle || appointment.channelId,
+    cancelUrl,
+  });
+}
+
+/**
+ * Send appointment request email (when staff confirmation is required)
+ * @param {SelectClient | SelectUser} user - Database user object
+ * @param {SelectTenant} tenant - Tenant information for branding
+ * @param {SelectAppointment} appointment - Appointment details
+ * @param {string} [channelTitle] - Optional channel title/name
+ * @param {string} [cancelUrl] - Optional URL to cancel appointment
+ * @throws {Error} When email sending fails
+ * @returns {Promise<void>}
+ */
+export async function sendAppointmentRequestEmail(
+  user: SelectClient | SelectUser,
+  tenant: SelectTenant,
+  appointment: SelectAppointment,
+  channelTitle?: string,
+  cancelUrl?: string,
+): Promise<void> {
+  const recipient = createEmailRecipient(user);
+  const language = (recipient.language as Language) || "en";
+  const subject = language === "en" ? "Appointment Request Received" : "Terminanfrage erhalten";
+
+  await sendTemplatedEmail("appointment-request", recipient, subject, language, tenant, {
+    appointment,
+    appointmentDate: appointment.appointmentDate,
+    title: channelTitle || appointment.channelId,
     cancelUrl,
   });
 }
@@ -162,6 +230,7 @@ export async function sendAppointmentCreatedEmail(
  * @param {SelectClient | SelectUser} user - Database user object
  * @param {SelectTenant} tenant - Tenant information for branding
  * @param {SelectAppointment} appointment - Updated appointment details
+ * @param {string} [channelTitle] - Optional channel title/name
  * @param {string} [cancelUrl] - Optional URL to cancel appointment
  * @throws {Error} When email sending fails
  * @returns {Promise<void>}
@@ -170,6 +239,7 @@ export async function sendAppointmentUpdatedEmail(
   user: SelectClient | SelectUser,
   tenant: SelectTenant,
   appointment: SelectAppointment,
+  channelTitle?: string,
   cancelUrl?: string,
 ): Promise<void> {
   const recipient = createEmailRecipient(user);
@@ -179,7 +249,7 @@ export async function sendAppointmentUpdatedEmail(
   await sendTemplatedEmail("appointment-updated", recipient, subject, language, tenant, {
     appointment,
     appointmentDate: appointment.appointmentDate,
-    title: appointment.channelId, // TODO: Get the channel to give back a proper title
+    title: channelTitle || appointment.channelId,
     cancelUrl,
   });
 }

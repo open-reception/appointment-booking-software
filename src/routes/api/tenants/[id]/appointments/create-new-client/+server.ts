@@ -11,6 +11,8 @@ const requestSchema = z.object({
   agentId: z.string(),
   appointmentDate: z.string(),
   emailHash: z.string(),
+  clientEmail: z.string().email(),
+  clientLanguage: z.string().optional().default("de"),
   clientPublicKey: z.string(),
   privateKeyShare: z.string(),
   encryptedAppointment: z.object({
@@ -68,6 +70,18 @@ registerOpenAPIRoute("/tenants/{id}/appointments/create-new-client", "POST", {
               type: "string",
               description: "SHA-256 hash of client email",
             },
+            clientEmail: {
+              type: "string",
+              format: "email",
+              description: "Client email address for sending confirmation",
+              example: "client@example.com",
+            },
+            clientLanguage: {
+              type: "string",
+              description: "Client's preferred language (de or en)",
+              example: "de",
+              default: "de",
+            },
             clientPublicKey: {
               type: "string",
               description: "Client's ML-KEM-768 public key (hex encoded)",
@@ -123,6 +137,7 @@ registerOpenAPIRoute("/tenants/{id}/appointments/create-new-client", "POST", {
             "channelId",
             "appointmentDate",
             "emailHash",
+            "clientEmail",
             "clientPublicKey",
             "privateKeyShare",
             "encryptedAppointment",

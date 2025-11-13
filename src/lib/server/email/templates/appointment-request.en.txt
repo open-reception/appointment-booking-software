@@ -1,0 +1,28 @@
+Appointment Request Received - {{tenant.longName}}
+
+ℹ️ Your appointment request is being reviewed
+
+Thank you for your appointment request. We have received your request and will review it shortly.
+
+You will receive another email once your appointment has been confirmed or declined.
+
+REQUESTED APPOINTMENT DETAILS
+==============================
+Date: {{appointmentDate}}
+{{#if title}}
+Appointment: {{title}}
+{{/if}}
+{{#if location}}
+Location: {{location}}
+{{/if}}
+
+{{#if cancelUrl}}
+Withdraw request: {{cancelUrl}}
+{{/if}}
+
+We will get back to you as soon as possible.
+
+If you have any questions, please contact us.
+
+--
+{{tenant.longName}}

@@ -1,10 +1,16 @@
 import { json } from "@sveltejs/kit";
+import { z } from "zod";
 import { AppointmentService } from "$lib/server/services/appointment-service";
 import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 import { checkPermission } from "$lib/server/utils/permissions";
+
+const requestSchema = z.object({
+  clientEmail: z.string().email().optional(),
+  clientLanguage: z.string().optional().default("de"),
+});
 
 // Register OpenAPI documentation for PUT
 registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}/confirm", "PUT", {
@@ -28,6 +34,31 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}/confirm", "PUT"
       description: "Appointment ID",
     },
   ],
+  requestBody: {
+    description: "Optional client email and language for sending confirmation email",
+    content: {
+      "application/json": {
+        schema: {
+          type: "object",
+          properties: {
+            clientEmail: {
+              type: "string",
+              format: "email",
+              description:
+                "Client email address (required for sending confirmation email after staff confirmation)",
+              example: "client@example.com",
+            },
+            clientLanguage: {
+              type: "string",
+              description: "Client's preferred language (de or en)",
+              example: "de",
+              default: "de",
+            },
+          },
+        },
+      },
+    },
+  },
   responses: {
     "200": {
       description: "Appointment confirmed successfully",
@@ -133,7 +164,7 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}/confirm", "PUT"
   },
 });
 
-export const PUT: RequestHandler = async ({ params, locals }) => {
+export const PUT: RequestHandler = async ({ request, params, locals }) => {
   const log = logger.setContext("API");
 
   try {
@@ -146,14 +177,36 @@ export const PUT: RequestHandler = async ({ params, locals }) => {
 
     checkPermission(locals, tenantId);
 
+    // Parse optional request body for email notification
+    let clientEmail: string | undefined;
+    let clientLanguage = "de";
+
+    try {
+      const body = await request.json();
+      const validatedData = requestSchema.parse(body);
+      clientEmail = validatedData.clientEmail;
+      clientLanguage = validatedData.clientLanguage;
+    } catch {
+      // Body is optional, so ignore parsing errors
+      log.debug("No valid request body provided for confirmation email", {
+        tenantId,
+        appointmentId,
+      });
+    }
+
     log.debug("Confirming appointment", {
       tenantId,
       appointmentId,
       requestedBy: locals.user?.userId,
+      willSendEmail: !!clientEmail,
     });
 
     const appointmentService = await AppointmentService.forTenant(tenantId);
-    const confirmedAppointment = await appointmentService.confirmAppointment(appointmentId);
+    const confirmedAppointment = await appointmentService.confirmAppointment(
+      appointmentId,
+      clientEmail,
+      clientLanguage,
+    );
 
     log.debug("Appointment confirmed successfully", {
       tenantId,

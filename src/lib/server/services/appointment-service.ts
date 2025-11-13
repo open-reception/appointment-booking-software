@@ -1,11 +1,17 @@
 import { getTenantDb, centralDb } from "../db";
 import * as tenantSchema from "../db/tenant-schema";
 import { type SelectAppointment } from "../db/tenant-schema";
-import { user } from "../db/central-schema";
+import * as centralSchema from "../db/central-schema";
 import logger from "$lib/logger";
 import { ValidationError, NotFoundError, InternalError, ConflictError } from "../utils/errors";
 import { and, eq, gte, lte, asc } from "drizzle-orm";
 import type { AppointmentResponse } from "$lib/types/appointment";
+import {
+  sendAppointmentCreatedEmail,
+  sendAppointmentRequestEmail,
+  getChannelTitle,
+} from "../email/email-service";
+import { TenantAdminService } from "./tenant-admin-service";
 
 export interface ClientTunnelData {
   tunnelId: string;
@@ -13,6 +19,8 @@ export interface ClientTunnelData {
   agentId: string;
   appointmentDate: string;
   emailHash: string;
+  clientEmail: string;
+  clientLanguage?: string;
   clientPublicKey: string;
   privateKeyShare: string;
   encryptedAppointment: {
@@ -62,21 +70,72 @@ export class AppointmentService {
   }
 
   /**
-   * Send appointment notification email
+   * Send appointment notification email to client
+   * @param appointmentId - The appointment ID
+   * @param channelId - The channel ID
+   * @param clientEmail - Client's email address
+   * @param clientLanguage - Client's preferred language
+   * @param requiresConfirmation - Whether the appointment requires staff confirmation
    */
   private async sendAppointmentNotification(
-    email: string,
-    appointment: SelectAppointment,
-    status: "NEW" | "CONFIRMED",
+    appointmentId: string,
+    channelId: string,
+    clientEmail: string,
+    clientLanguage: string,
+    requiresConfirmation: boolean,
   ): Promise<void> {
-    // TODO: Implement email service integration
     const log = logger.setContext("AppointmentService");
     log.debug("Sending appointment notification", {
-      email,
-      appointmentId: appointment.id,
-      status,
+      appointmentId,
+      clientEmail,
+      requiresConfirmation,
       tenantId: this.tenantId,
     });
+
+    try {
+      // Get tenant information
+      const tenantService = await TenantAdminService.getTenantById(this.tenantId);
+      const tenant = tenantService.tenantData;
+
+      if (!tenant) {
+        log.warn("Cannot send email: Tenant not found", { tenantId: this.tenantId });
+        return;
+      }
+
+      // Get full appointment data
+      const appointment = await this.getAppointmentById(appointmentId);
+
+      // Create client data object
+      const clientData = {
+        email: clientEmail,
+        language: clientLanguage,
+      };
+
+      // Get channel title for the email
+      const channelTitle = await getChannelTitle(this.tenantId, channelId, clientLanguage);
+
+      // Send appropriate email based on whether confirmation is required
+      if (requiresConfirmation) {
+        await sendAppointmentRequestEmail(clientData, tenant, appointment, channelTitle);
+        log.info("Appointment request email sent", {
+          appointmentId: appointment.id,
+          tenantId: this.tenantId,
+        });
+      } else {
+        await sendAppointmentCreatedEmail(clientData, tenant, appointment, channelTitle);
+        log.info("Appointment confirmation email sent", {
+          appointmentId: appointment.id,
+          tenantId: this.tenantId,
+        });
+      }
+    } catch (error) {
+      log.error("Failed to send appointment notification email", {
+        appointmentId,
+        tenantId: this.tenantId,
+        error: String(error),
+      });
+      // Don't throw - email failure shouldn't fail the appointment creation
+    }
   }
 
   public async getAppointmentById(id: string): Promise<SelectAppointment> {
@@ -99,7 +158,11 @@ export class AppointmentService {
     return row;
   }
 
-  public async confirmAppointment(id: string): Promise<SelectAppointment> {
+  public async confirmAppointment(
+    id: string,
+    clientEmail?: string,
+    clientLanguage?: string,
+  ): Promise<SelectAppointment> {
     const log = logger.setContext("AppointmentService");
     log.debug("Confirming appointment by ID", { appointmentId: id, tenantId: this.tenantId });
     const db = await this.getDb();
@@ -120,6 +183,23 @@ export class AppointmentService {
     }
 
     const row = result[0];
+
+    // Send confirmation email to client if email is provided (async, don't wait)
+    if (clientEmail) {
+      this.sendAppointmentNotification(
+        row.id,
+        row.channelId,
+        clientEmail,
+        clientLanguage || "de",
+        false,
+      ).catch((error) => {
+        log.error("Failed to send appointment confirmation email", {
+          appointmentId: row.id,
+          error: String(error),
+        });
+      });
+    }
+
     return row;
   }
 
@@ -219,9 +299,14 @@ export class AppointmentService {
 
     // Check if there are any authorized users (ACCESS_GRANTED) in this tenant
     const authorizedUsers = await centralDb
-      .select({ count: user.id })
-      .from(user)
-      .where(and(eq(user.tenantId, this.tenantId), eq(user.confirmationState, "ACCESS_GRANTED")))
+      .select({ count: centralSchema.user.id })
+      .from(centralSchema.user)
+      .where(
+        and(
+          eq(centralSchema.user.tenantId, this.tenantId),
+          eq(centralSchema.user.confirmationState, "ACCESS_GRANTED"),
+        ),
+      )
       .limit(1);
 
     if (authorizedUsers.length === 0) {
@@ -299,6 +384,7 @@ export class AppointmentService {
       }
 
       const initialStatus = channelResult[0].requiresConfirmation ? "NEW" : "CONFIRMED";
+      const requiresConfirmation = channelResult[0].requiresConfirmation || false;
 
       // 4. Create encrypted appointment
       const appointmentResult = await tx
@@ -317,26 +403,50 @@ export class AppointmentService {
           id: tenantSchema.appointment.id,
           appointmentDate: tenantSchema.appointment.appointmentDate,
           status: tenantSchema.appointment.status,
+          tunnelId: tenantSchema.appointment.tunnelId,
+          channelId: tenantSchema.appointment.channelId,
+          agentId: tenantSchema.appointment.agentId,
+          encryptedPayload: tenantSchema.appointment.encryptedPayload,
+          iv: tenantSchema.appointment.iv,
+          authTag: tenantSchema.appointment.authTag,
+          expiryDate: tenantSchema.appointment.expiryDate,
+          createdAt: tenantSchema.appointment.createdAt,
+          updatedAt: tenantSchema.appointment.updatedAt,
         });
 
       if (appointmentResult.length === 0) {
         throw new InternalError("Failed to create appointment");
       }
 
-      return appointmentResult[0];
+      return { appointment: appointmentResult[0], requiresConfirmation };
     });
 
     const response: AppointmentResponse = {
-      id: result.id,
-      appointmentDate: result.appointmentDate.toISOString(),
-      status: result.status,
+      id: result.appointment.id,
+      appointmentDate: result.appointment.appointmentDate.toISOString(),
+      status: result.appointment.status,
     };
 
     log.info("Successfully created new client appointment tunnel", {
       tenantId: this.tenantId,
       tunnelId: clientData.tunnelId,
-      appointmentId: result.id,
+      appointmentId: result.appointment.id,
       staffSharesCount: clientData.staffKeyShares.length,
+    });
+
+    // Send email notification to client (async, don't wait)
+    this.sendAppointmentNotification(
+      result.appointment.id,
+      clientData.channelId,
+      clientData.clientEmail,
+      clientData.clientLanguage || "de",
+      result.requiresConfirmation,
+    ).catch((error) => {
+      log.error("Failed to send appointment notification", {
+        tunnelId: clientData.tunnelId,
+        appointmentId: result.appointment.id,
+        error: String(error),
+      });
     });
 
     return response;
