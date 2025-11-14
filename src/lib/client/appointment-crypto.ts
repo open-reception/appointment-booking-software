@@ -230,6 +230,7 @@ export class UnifiedAppointmentCrypto {
     appointmentData: AppointmentData,
     appointmentDate: string,
     channelId: string,
+    duration: number,
     tenantId: string,
     isFirstAppointment: boolean = false,
   ): Promise<string> {
@@ -252,6 +253,7 @@ export class UnifiedAppointmentCrypto {
             tunnelId: this.tunnelId,
             channelId,
             appointmentDate,
+            duration,
             emailHash: this.emailHash,
             clientPublicKey: this.clientKeyPair?.publicKey,
             privateKeyShare: await this.getPrivateKeyShare(),
@@ -265,6 +267,7 @@ export class UnifiedAppointmentCrypto {
             tunnelId: this.tunnelId!,
             channelId,
             appointmentDate,
+            duration,
             encryptedAppointment,
           };
 

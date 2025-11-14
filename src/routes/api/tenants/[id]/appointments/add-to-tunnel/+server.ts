@@ -20,6 +20,7 @@ const requestSchema = z.object({
   channelId: z.string(),
   agentId: z.string(),
   appointmentDate: z.string(),
+  duration: z.number().int().positive(),
   encryptedAppointment: z.object({
     encryptedPayload: z.string(),
     iv: z.string(),
@@ -229,6 +230,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
         channelId: validatedData.channelId,
         agentId: validatedData.agentId,
         appointmentDate: new Date(validatedData.appointmentDate),
+        duration: validatedData.duration,
         encryptedPayload: validatedData.encryptedAppointment.encryptedPayload,
         iv: validatedData.encryptedAppointment.iv,
         authTag: validatedData.encryptedAppointment.authTag,

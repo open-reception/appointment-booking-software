@@ -1,0 +1,1 @@
+ALTER TABLE "appointment" ADD COLUMN "duration" integer NOT NULL;
