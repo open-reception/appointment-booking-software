@@ -36,6 +36,7 @@ export type TPublicAppointment = {
   } | null;
   slot?: {
     datetime: CalendarDateTime;
+    duration: number;
   };
   data?: {
     name: string;

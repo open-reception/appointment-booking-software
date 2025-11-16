@@ -897,6 +897,7 @@
 	"calendar": {
 		"today": "Heute",
 		"loading": "Loading calendar",
+		"decrypting": "wird entschlüsselt...",
 		"shownAppointments": {
 			"title": "Termine",
 			"options": {

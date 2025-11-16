@@ -145,6 +145,7 @@
             hour: parseInt(slot.from.split(":")[0], 10),
             minute: parseInt(slot.from.split(":")[1], 10),
           }),
+          duration: slot.duration,
         },
       });
     }

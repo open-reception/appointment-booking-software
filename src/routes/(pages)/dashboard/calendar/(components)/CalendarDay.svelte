@@ -16,6 +16,7 @@
   import Loader from "@lucide/svelte/icons/loader-2";
   import { tv } from "tailwind-variants";
   import { positionItems } from "./utils";
+  import AppointmentPreview from "./AppointmentPreview.svelte";
 
   let {
     day = $bindable(),
@@ -47,9 +48,9 @@
     variants: {
       status: {
         available: "border-1 border-[var(--channel-color)] bg-background",
-        booked: "bg-[var(--channel-color)] cursor-pointer",
+        booked: "border-none bg-[var(--channel-color)]",
         reserved:
-          "bg-[var(--channel-color)]/20 border-1 border-[var(--channel-color)] border-dashed cursor-pointer",
+          "bg-[var(--channel-color)]/20 border-1 border-[var(--channel-color)] border-dashed",
       },
     },
   });
@@ -57,14 +58,14 @@
 
 <div class="relative flex w-full flex-col">
   <div
-    class="relative flex w-full items-start justify-between"
+    class="relative flex w-full items-start justify-between transition-all duration-200"
     style:height={`${focusAdjustment}px`}
   >
     <Separator class="bg-secondary absolute top-0 right-0 left-16 h-0.25 !w-auto" />
   </div>
   {#each shownHours as hour}
     <div
-      class="relative flex w-full items-start justify-between select-none"
+      class="relative flex w-full items-start justify-between transition-all duration-200 select-none"
       style:height={`${hourSize}px`}
     >
       <Text style="xs" class="text-muted-foreground -mt-2 w-16 shrink-0">
@@ -96,7 +97,7 @@
       {@const width = 100 / item.totalColumns}
       {@const left = item.column * width}
       <div
-        class="absolute flex items-center rounded p-0.25 transition-all duration-200 hover:z-10 hover:min-h-5 hover:scale-[1.02] hover:shadow-md"
+        class="absolute flex items-center rounded p-0.25 transition-all duration-200 focus-within:z-10 focus-within:min-h-5 focus-within:scale-[1.02] focus-within:shadow-md focus-within:outline-3 hover:z-10 hover:min-h-5 hover:scale-[1.02] hover:shadow-md"
         style:top={`${top}px`}
         style:height={`${height}px`}
         style:left={`${left}%`}
@@ -106,21 +107,19 @@
         <div
           style="--channel-color: {item.color}"
           class={cn(
-            "h-full w-full overflow-hidden rounded px-1 leading-none",
+            "h-full w-full overflow-hidden rounded leading-none",
             slotVariants({ status: item.status }),
           )}
         >
           {#if ["booked", "reserved"].includes(item.status)}
-            <Text style="xs" class="leading-none">
-              {item.id}
-            </Text>
+            <AppointmentPreview {item} />
           {/if}
         </div>
       </div>
     {/each}
   </div>
 
-  {#if curTimeIndicator && toCalendarDate($clock).toString() === today(getLocalTimeZone()).toString() && latestEndHour > curTimeIndicator.hour}
+  {#if curTimeIndicator && toCalendarDate($clock).toString() === today(getLocalTimeZone()).toString() && latestEndHour + hourSize / 2 > curTimeIndicator.hour}
     {@const top =
       focusAdjustment +
       curTimeIndicator.hour * hourSize +

@@ -1,20 +1,31 @@
 <script lang="ts">
   import { m } from "$i18n/messages";
+  import { MaxPageWidth } from "$lib/components/layouts/max-page-width";
   import { SidebarLayout } from "$lib/components/layouts/sidebar-layout";
   import { Button } from "$lib/components/ui/button";
+  import { ResponsiveDialog } from "$lib/components/ui/responsive-dialog";
   import { ROUTES } from "$lib/const/routes";
   import { auth } from "$lib/stores/auth";
+  import { calendarStore } from "$lib/stores/calendar";
+  import { channels } from "$lib/stores/channels";
   import { sidebar } from "$lib/stores/sidebar";
   import type { TAppointmentFilter, TCalendar, TCalendarItem } from "$lib/types/calendar";
-  import { getLocalTimeZone, now, today, type CalendarDate } from "@internationalized/date";
+  import { getCurrentTranlslation } from "$lib/utils/localizations";
+  import {
+    DateFormatter,
+    getLocalTimeZone,
+    today,
+    type CalendarDate,
+  } from "@internationalized/date";
   import { Funnel } from "@lucide/svelte";
+  import AppointmentDetail from "./(components)/AppointmentDetail.svelte";
   import CalendarDay from "./(components)/CalendarDay.svelte";
   import CalendarFilters from "./(components)/CalendarFilters.svelte";
   import CalendarHeader from "./(components)/CalendarHeader.svelte";
   import { fetchCalendar } from "./(components)/utils";
-  import { MaxPageWidth } from "$lib/components/layouts/max-page-width";
 
   const tenantId = $derived($auth.user?.tenantId);
+  const curItem = $derived($calendarStore.curItem);
   let startDate: CalendarDate = $state(today(getLocalTimeZone()));
   let calender: TCalendar | undefined = $state();
   let shownAppointments: TAppointmentFilter = $state("all");
@@ -39,31 +50,52 @@
     if (!calender) return undefined;
     const dayEntry = calender.calendar.find((d) => d.date === startDate.toString());
     if (!dayEntry) return [];
-    return Object.keys(dayEntry.channels).reduce<TCalendarItem[]>(
-      (allItems, channelId, channelIndex) => {
-        const channelData = dayEntry.channels[channelId];
-        const channelItems: TCalendarItem[] = [];
+    return Object.keys(dayEntry.channels).reduce<TCalendarItem[]>((allItems, channelId) => {
+      const channelData = dayEntry.channels[channelId];
+      const channelItems: TCalendarItem[] = [];
 
-        // Available slots
-        channelData.availableSlots.forEach((slot) => {
-          channelItems.push({
-            id: `${channelId}-${slot.from}`,
-            date: dayEntry.date,
-            start: slot.from,
-            duration: slot.duration,
-            channelId,
-            color: channelData.channel.color,
-            column: 0,
-            status: "available",
-          });
+      // Available slots
+      channelData.availableSlots.forEach((slot) => {
+        channelItems.push({
+          id: `${channelId}-${slot.from}`,
+          date: dayEntry.date,
+          start: slot.from,
+          duration: slot.duration,
+          channelId,
+          color: channelData.channel.color,
+          column: 0,
+          status: "available",
         });
+      });
 
-        // TODO: Booked and reserved appointments
+      // Appointments
+      const formatter = new DateFormatter(navigator.language, {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+      channelData.appointments.forEach((appointment) => {
+        channelItems.push({
+          id: appointment.id,
+          date: dayEntry.date,
+          // TODO: Fix incoming date type is actually string
+          start: formatter.format(new Date(appointment.appointmentDate)),
+          duration: appointment.duration,
+          channelId,
+          color: channelData.channel.color,
+          column: 0,
+          status: appointment.status === "CONFIRMED" ? "booked" : "reserved",
+          appointment: {
+            dateTime: new Date(appointment.appointmentDate),
+            encryptedData: appointment.encryptedPayload,
+            tunnelId: appointment.tunnelId,
+            agentId: appointment.agentId,
+          },
+        });
+      });
 
-        return [...allItems, ...channelItems];
-      },
-      [],
-    );
+      return [...allItems, ...channelItems];
+    }, []);
   });
 
   let earliestStartHour = $derived.by(() => {
@@ -125,3 +157,15 @@
     <CalendarFilters bind:shownAppointments bind:shownChannels bind:shownAgents bind:scale />
   {/snippet}
 </SidebarLayout>
+
+{#if curItem}
+  {@const channel = $channels.channels.find((c) => c.id === curItem.appointment.channelId)}
+  <ResponsiveDialog
+    id="current-calendar-item"
+    title={curItem.decrypted.name}
+    description={channel ? getCurrentTranlslation(channel.names) : undefined}
+    triggerHidden={true}
+  >
+    <AppointmentDetail item={curItem} />
+  </ResponsiveDialog>
+{/if}

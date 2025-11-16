@@ -67,7 +67,7 @@ interface EncryptedData {
   authTag: string;
 }
 
-interface AppointmentData {
+export interface AppointmentData {
   name: string;
   email: string;
   phone?: string;

@@ -55,7 +55,7 @@
   bind:ref
   collapsible="none"
   class={cn(
-    "fixed top-0 right-0 h-svh border-l shadow-xl lg:sticky lg:flex lg:shadow-none",
+    "fixed top-0 right-0 z-50 h-svh border-l shadow-xl lg:sticky lg:flex lg:shadow-none",
     !sidebar.isCalendarExpanded ? "hidden lg:sticky" : "lg:sticky",
   )}
   {...restProps}

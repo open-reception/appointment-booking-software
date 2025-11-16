@@ -20,4 +20,10 @@ export type TCalendarItem = {
   color: string | null;
   column: number;
   channelId: string;
+  appointment?: {
+    dateTime: Date;
+    encryptedData: string | null;
+    tunnelId: string;
+    agentId: string;
+  };
 };

@@ -906,6 +906,7 @@
 	"calendar": {
 		"today": "Today",
 		"loading": "Loading calendar",
+		"decrypting": "decrypting...",
 		"shownAppointments": {
 			"title": "Appointments",
 			"options": {
