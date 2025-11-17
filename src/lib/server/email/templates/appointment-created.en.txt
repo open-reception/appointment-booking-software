@@ -1,0 +1,26 @@
+Appointment Confirmed - {{tenant.longName}}
+
+✓ Your appointment has been successfully booked!
+
+Thank you for your booking. Your appointment has been confirmed.
+
+APPOINTMENT DETAILS
+===================
+Date: {{appointmentDate}}
+{{#if title}}
+Appointment: {{title}}
+{{/if}}
+{{#if location}}
+Location: {{location}}
+{{/if}}
+
+{{#if cancelUrl}}
+Cancel appointment: {{cancelUrl}}
+{{/if}}
+
+We look forward to seeing you!
+
+If you have any questions, please contact us.
+
+--
+{{tenant.longName}}
