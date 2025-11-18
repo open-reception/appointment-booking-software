@@ -3,7 +3,10 @@ import { generateBaseUrl } from "../email-service";
 import type { SelectTenant } from "$lib/server/db/central-schema";
 
 // Mock NODE_ENV
-const mockEnv = vi.hoisted(() => ({ NODE_ENV: "development" }));
+const mockEnv = vi.hoisted(() => ({
+  NODE_ENV: "development",
+  DATABASE_URL: "postgresql://test:test@localhost:5432/test",
+}));
 
 vi.mock("$env/dynamic/private", () => ({
   env: mockEnv,

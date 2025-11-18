@@ -260,6 +260,7 @@ export class UnifiedAppointmentCrypto {
     duration: number,
     tenantId: string,
     isFirstAppointment: boolean = false,
+    clientLanguage: string = "de",
   ): Promise<string> {
     if (!this.clientAuthenticated || !this.tunnelKey) {
       throw new Error("Client not authenticated");
@@ -283,6 +284,8 @@ export class UnifiedAppointmentCrypto {
             appointmentDate,
             duration,
             emailHash: this.emailHash,
+            clientEmail: appointmentData.email,
+            clientLanguage,
             clientPublicKey: this.clientKeyPair?.publicKey,
             privateKeyShare: await this.getPrivateKeyShare(),
             encryptedAppointment,
@@ -298,6 +301,8 @@ export class UnifiedAppointmentCrypto {
             channelId,
             appointmentDate,
             duration,
+            clientEmail: appointmentData.email,
+            clientLanguage,
             encryptedAppointment,
           };
 

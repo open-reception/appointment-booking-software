@@ -1,8 +1,15 @@
 import nodemailer from "nodemailer";
 import { env } from "$env/dynamic/private";
-import type { SelectClient } from "$lib/server/db/tenant-schema";
 import type Mail from "nodemailer/lib/mailer";
 import type { SelectUser } from "../db/central-schema";
+
+/**
+ * Simple client data type for email sending
+ */
+type SelectClient = {
+  email: string;
+  language?: string;
+};
 
 /**
  * Email recipient interface
@@ -29,19 +36,19 @@ export function createEmailRecipient(
     | SelectUser
     | { id: string; email: string | null; name: string | null; language?: string | null },
 ): EmailRecipient {
-  // Handle SelectUser type (from central schema)
-  if ("email" in user && !("publicKey" in user)) {
+  // Handle SelectClient type (simple object with just email and language)
+  if ("email" in user && !("name" in user) && !("id" in user)) {
     return {
       email: user.email || "",
-      name: user.name || undefined,
-      language: user.language || "de", // Use user's language preference
+      name: undefined, // Clients don't have names for privacy
+      language: user.language || "de",
     };
   }
-  // Handle SelectClient type (no name property)
+  // Handle SelectUser or generic user type (has name and id)
   else {
     return {
-      email: user.email || "", // Client email is optional
-      name: undefined, // Clients don't have names for privacy
+      email: user.email || "",
+      name: "name" in user ? user.name || undefined : undefined,
       language: user.language || "de",
     };
   }

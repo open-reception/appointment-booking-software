@@ -10,6 +10,7 @@ vi.mock("$env/dynamic/private", () => ({
     SMTP_PASS: "test-password",
     SMTP_FROM_NAME: "Test App",
     SMTP_FROM_EMAIL: "noreply@test.com",
+    DATABASE_URL: "postgresql://test:test@localhost:5432/test",
   },
 }));
 

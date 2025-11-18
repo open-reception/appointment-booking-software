@@ -126,27 +126,6 @@ export const channelSlotTemplate = pgTable("channel_slot_template", {
 });
 
 /**
- * Client table - represents end users who book appointments
- * Uses end-to-end encryption for privacy protection
- * Stored in tenant-specific database
- * @table client
- */
-export const client = pgTable("client", {
-  /** Primary key - unique identifier */
-  id: uuid("id").primaryKey().defaultRandom(),
-  /** Hash of client email for identification without storing plaintext */
-  hashKey: text("hash_key").notNull().unique(),
-  /** Client's public key for end-to-end encryption */
-  publicKey: text("public_key").notNull(),
-  /** Server-side share of client's private key for recovery */
-  privateKeyShare: text("private_key_share").notNull(),
-  /** Client email address (optional for privacy) */
-  email: text("email"),
-  /** Preferred language for communications (de/en) */
-  language: text("language"),
-});
-
-/**
  * Appointment table - represents scheduled appointments between clients and channels
  * Uses hybrid encryption: symmetric key for data, asymmetric for key sharing
  * Stored in tenant-specific database
@@ -236,9 +215,6 @@ export const appointmentKeyShare = pgTable("appointment_key_share", {
  * TypeScript type exports for use in application code
  * These types represent the shape of data when queried from the database
  */
-
-/** Client record type for database queries */
-export type SelectClient = InferSelectModel<typeof client>;
 
 /** Channel record type for database queries */
 export type SelectChannel = InferSelectModel<typeof channel>;

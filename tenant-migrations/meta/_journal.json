@@ -50,6 +50,13 @@
       "when": 1763111569823,
       "tag": "0006_flimsy_zarek",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1763455361426,
+      "tag": "0007_mighty_tinkerer",
+      "breakpoints": true
     }
   ]
 }
