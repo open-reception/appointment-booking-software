@@ -1,3 +1,4 @@
+import { browser } from "$app/environment";
 import type { UserRole } from "$lib/server/auth/authorization-service";
 import { writable } from "svelte/store";
 
@@ -37,6 +38,14 @@ function createAuthStore() {
     },
     setUser: (user: AuthState["user"]) => {
       store.update((state) => ({ ...state, isAuthenticated: true, user }));
+
+      if (browser && user) {
+        const storageItem = sessionStorage.getItem("passkeyAuthData");
+        if (storageItem) {
+          const passkeyAuthData: PasskeyAuthData = JSON.parse(storageItem);
+          store.update((state) => ({ ...state, passkeyAuthData }));
+        }
+      }
     },
     setTenantId: (tenantId: string | null) => {
       store.update((state) => {
@@ -54,6 +63,7 @@ function createAuthStore() {
     },
     setPasskeyAuthData: (data: PasskeyAuthData) => {
       store.update((state) => ({ ...state, passkeyAuthData: data }));
+      sessionStorage.setItem("passkeyAuthData", JSON.stringify(data));
     },
     getPasskeyAuthData: (): PasskeyAuthData | undefined => {
       let authState: AuthState;
@@ -65,6 +75,7 @@ function createAuthStore() {
     },
     clearPasskeyAuthData: () => {
       store.update((state) => ({ ...state, passkeyAuthData: undefined }));
+      sessionStorage.removeItem("passkeyAuthData");
     },
     isAuthenticated: () => {
       let authState: AuthState;

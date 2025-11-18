@@ -17,7 +17,6 @@
 
   let decrypted = $state<AppointmentData | undefined>();
   let error = $state<string | undefined>();
-  let isWaitingForCrypto = $state(false);
 
   onMount(() => {
     decrypt();
@@ -46,15 +45,12 @@
 
     // Wait for crypto to be initialized (max 5 seconds)
     if (!$staffCrypto.isAuthenticated || !$staffCrypto.crypto) {
-      isWaitingForCrypto = true;
       const maxWaitTime = 5000; // 5 seconds
       const startTime = Date.now();
 
       while (!$staffCrypto.isAuthenticated && Date.now() - startTime < maxWaitTime) {
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
-
-      isWaitingForCrypto = false;
 
       if (!$staffCrypto.isAuthenticated || !$staffCrypto.crypto) {
         error = "Crypto not initialized";

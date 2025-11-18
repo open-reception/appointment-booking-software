@@ -63,7 +63,7 @@
   >
     <Separator class="bg-secondary absolute top-0 right-0 left-16 h-0.25 !w-auto" />
   </div>
-  {#each shownHours as hour}
+  {#each shownHours as hour (`hour-${hour}`)}
     <div
       class="relative flex w-full items-start justify-between transition-all duration-200 select-none"
       style:height={`${hourSize}px`}
@@ -90,7 +90,7 @@
 
   <!-- Day content area -->
   <div class="absolute top-0 right-0 bottom-0 left-16">
-    {#each processedItems as item}
+    {#each processedItems as item (item.id)}
       {@const top =
         (item.startMinutes / 60) * hourSize + focusAdjustment - earliestStartHour * hourSize}
       {@const height = item.duration * scale}
