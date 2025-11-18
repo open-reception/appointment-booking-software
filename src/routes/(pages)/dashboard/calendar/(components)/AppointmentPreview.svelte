@@ -93,7 +93,7 @@
   </div>
 {:else if decrypted}
   <Button
-    class="m-0 h-full w-full cursor-pointer justify-start rounded-none px-1 leading-none hover:bg-transparent focus:ring-1"
+    class="m-0 h-full w-full cursor-pointer justify-start rounded-none px-1 leading-none text-black hover:!bg-transparent hover:text-black focus:ring-1"
     variant="ghost"
     onclick={setCalendarItem}
   >

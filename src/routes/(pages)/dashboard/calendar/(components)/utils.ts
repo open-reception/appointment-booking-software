@@ -49,7 +49,9 @@ export function positionItems(items: TCalendarItem[] | undefined) {
   if (!items) return [];
 
   // Sort items by start time
-  const sortedItems = [...items].sort((a, b) => timeToMinutes(a.start) - timeToMinutes(b.start));
+  const sortedItems = [...items]
+    .sort((a, b) => b.duration - a.duration)
+    .sort((a, b) => timeToMinutes(a.start) - timeToMinutes(b.start));
 
   // Calculate layout positions
   const processedItems = sortedItems.map((item) => {
