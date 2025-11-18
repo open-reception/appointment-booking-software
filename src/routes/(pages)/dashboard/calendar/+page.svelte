@@ -7,7 +7,7 @@
   import { ROUTES } from "$lib/const/routes";
   import { auth } from "$lib/stores/auth";
   import { calendarStore } from "$lib/stores/calendar";
-  import { channels } from "$lib/stores/channels";
+  import { channels as channelsStore } from "$lib/stores/channels";
   import { sidebar } from "$lib/stores/sidebar";
   import type { TAppointmentFilter, TCalendar, TCalendarItem } from "$lib/types/calendar";
   import { getCurrentTranlslation } from "$lib/utils/localizations";
@@ -26,13 +26,29 @@
 
   const tenantId = $derived($auth.user?.tenantId);
   const curItem = $derived($calendarStore.curItem);
+  const channels = $derived($channelsStore.channels);
   let startDate: CalendarDate = $state(today(getLocalTimeZone()));
   let calender: TCalendar | undefined = $state();
   let shownAppointments: TAppointmentFilter = $state("all");
   let shownChannels: string[] = $state([]);
   let shownAgents: string[] = $state([]);
-  let startHour = $state(0);
-  let prevLatestEndHour = $state(24);
+  let hours = $derived.by(() => {
+    const from = channels
+      .map((c) => c.slotTemplates.map((t) => t.from))
+      .flat()
+      .map((time) => {
+        const [hourStr] = time.split(":");
+        return parseInt(hourStr, 10);
+      });
+    const to = channels
+      .map((c) => c.slotTemplates.map((t) => t.to))
+      .flat()
+      .map((time) => {
+        const [hourStr] = time.split(":");
+        return parseInt(hourStr, 10);
+      });
+    return { from: Math.min(...from), to: Math.max(...to) };
+  });
   let scale = $state(1);
 
   $effect(() => {
@@ -118,35 +134,6 @@
       return [...allItems, ...channelItems];
     }, []);
   });
-
-  let earliestStartHour = $derived.by(() => {
-    if (!items || items.length === 0) return 0;
-    return Math.min(
-      ...items.map((item) => {
-        const [hour, minute] = item.start.split(":").map(Number);
-        return Math.floor(hour + minute / 60);
-      }),
-    );
-  });
-  let latestEndHour = $derived.by(() => {
-    if (!items || items.length === 0) return 24;
-    return Math.max(
-      ...items.map((item) => {
-        const [hour, minute] = item.start.split(":").map(Number);
-        const durationHours = item.duration / 60;
-        return Math.ceil(hour + minute / 60 + durationHours);
-      }),
-    );
-  });
-
-  $effect(() => {
-    if (items && items.length > 0 && earliestStartHour !== startHour) {
-      startHour = earliestStartHour;
-    }
-    if (items && items.length > 0 && latestEndHour !== prevLatestEndHour) {
-      prevLatestEndHour = latestEndHour;
-    }
-  });
 </script>
 
 <SidebarLayout breakcrumbs={[{ label: m["nav.calendar"](), href: ROUTES.DASHBOARD.CALENDAR }]}>
@@ -157,8 +144,8 @@
         <CalendarDay
           day={startDate}
           {items}
-          earliestStartHour={startHour}
-          latestEndHour={prevLatestEndHour}
+          earliestStartHour={hours.from}
+          latestEndHour={hours.to}
           bind:scale
         />
       </div>
@@ -180,7 +167,7 @@
 </SidebarLayout>
 
 {#if curItem}
-  {@const channel = $channels.channels.find((c) => c.id === curItem.appointment.channelId)}
+  {@const channel = channels.find((c) => c.id === curItem.appointment.channelId)}
   <ResponsiveDialog
     id="current-calendar-item"
     title={curItem.decrypted.name}
