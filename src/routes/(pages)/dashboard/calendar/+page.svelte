@@ -87,9 +87,12 @@
           status: appointment.status === "CONFIRMED" ? "booked" : "reserved",
           appointment: {
             dateTime: new Date(appointment.appointmentDate),
-            encryptedData: appointment.encryptedPayload,
+            encryptedPayload: appointment.encryptedPayload,
             tunnelId: appointment.tunnelId,
             agentId: appointment.agentId,
+            staffKeyShare: appointment.staffKeyShare,
+            iv: appointment.iv || undefined,
+            authTag: appointment.authTag || undefined,
           },
         });
       });

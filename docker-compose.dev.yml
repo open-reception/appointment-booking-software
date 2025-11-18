@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "${POSTGRES_PORT:-5434}:5432"
+      - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
       - postgres_run_dev:/var/run/postgresql

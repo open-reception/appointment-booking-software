@@ -110,7 +110,7 @@ registerOpenAPIRoute("/tenants/{id}/calendar", "GET", {
   },
 });
 
-export const GET: RequestHandler = async ({ params, url }) => {
+export const GET: RequestHandler = async ({ params, url, locals }) => {
   const log = logger.setContext("CalendarAPI");
 
   try {
@@ -155,10 +155,15 @@ export const GET: RequestHandler = async ({ params, url }) => {
     });
 
     const scheduleService = await ScheduleService.forTenant(tenantId);
+    
+    // Get the staff user ID if authenticated (for including staffKeyShares)
+    const staffUserId = locals.user?.id;
+    
     const schedule = await scheduleService.getSchedule({
       tenantId,
       startDate: startDateParam,
       endDate: endDateParam,
+      staffUserId,
     });
 
     // Return full calendar data (including appointments and detailed agent info)

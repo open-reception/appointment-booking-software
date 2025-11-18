@@ -1,6 +1,12 @@
 import type { UserRole } from "$lib/server/auth/authorization-service";
 import { writable } from "svelte/store";
 
+export interface PasskeyAuthData {
+  authenticatorData: string;
+  passkeyId: string;
+  email: string;
+}
+
 export interface AuthState {
   isAuthenticated: boolean;
   isRefreshing: boolean;
@@ -12,6 +18,7 @@ export interface AuthState {
     // The currently selected tenant
     tenantId?: string | null;
   };
+  passkeyAuthData?: PasskeyAuthData;
 }
 
 function createAuthStore() {
@@ -42,7 +49,22 @@ function createAuthStore() {
         isAuthenticated: false,
         isRefreshing: false,
         user: undefined,
+        passkeyAuthData: undefined,
       });
+    },
+    setPasskeyAuthData: (data: PasskeyAuthData) => {
+      store.update((state) => ({ ...state, passkeyAuthData: data }));
+    },
+    getPasskeyAuthData: (): PasskeyAuthData | undefined => {
+      let authState: AuthState;
+      const unsubscribe = store.subscribe((state) => {
+        authState = state;
+      });
+      unsubscribe();
+      return authState!.passkeyAuthData;
+    },
+    clearPasskeyAuthData: () => {
+      store.update((state) => ({ ...state, passkeyAuthData: undefined }));
     },
     isAuthenticated: () => {
       let authState: AuthState;

@@ -22,8 +22,11 @@ export type TCalendarItem = {
   channelId: string;
   appointment?: {
     dateTime: Date;
-    encryptedData: string | null;
+    encryptedPayload: string | null;
     tunnelId: string;
     agentId: string;
+    staffKeyShare?: string;
+    iv?: string;
+    authTag?: string;
   };
 };

@@ -48,7 +48,7 @@
  */
 
 import { OptimizedArgon2 } from "$lib/crypto/hashing";
-import { KyberCrypto, AESCrypto, ShamirSecretSharing } from "$lib/crypto/utils";
+import { KyberCrypto, AESCrypto, ShamirSecretSharing, BufferUtils } from "$lib/crypto/utils";
 
 // Type definitions for unified cryptography
 interface ClientKeyPair {
@@ -374,8 +374,6 @@ export class UnifiedAppointmentCrypto {
    */
   async authenticateStaff(staffId: string, tenantId: string): Promise<void> {
     try {
-      console.log("🔐 Authenticasting staff member:", staffId, "for tenant:", tenantId);
-
       // 1. Perform WebAuthn authentication
       const webAuthnResponse = await this.performWebAuthnAuthentication(staffId);
 
@@ -427,6 +425,67 @@ export class UnifiedAppointmentCrypto {
   }
 
   /**
+   * Reconstruct staff keys from session data (after login)
+   * This avoids requiring WebAuthn on every page load
+   */
+  async reconstructStaffKeysFromSession(
+    staffId: string,
+    tenantId: string,
+    passkeyId: string,
+    authenticatorDataBase64: string,
+  ): Promise<void> {
+    try {
+      // 1. Fetch database shard from server
+      const shardResponse = await fetch(`/api/tenants/${tenantId}/staff/${staffId}/key-shard`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!shardResponse.ok) {
+        throw new Error(`Failed to fetch key shard: ${shardResponse.status}`);
+      }
+
+      const shardData = await shardResponse.json();
+
+      // 2. Convert base64 authenticatorData back to ArrayBuffer
+      const authenticatorDataBytes = this.base64ToUint8Array(authenticatorDataBase64);
+
+      // 3. Derive passkey-based shard from stored authenticator data
+      const passkeyBasedShard = await this.derivePasskeyBasedShard(
+        passkeyId,
+        authenticatorDataBytes.buffer,
+      );
+
+      // 4. Decode database shard
+      const dbShard = this.base64ToUint8Array(shardData.privateKeyShare);
+
+      // 5. Reconstruct private key by XORing the two shards
+      const privateKey = new Uint8Array(dbShard.length);
+      for (let i = 0; i < dbShard.length; i++) {
+        privateKey[i] = dbShard[i] ^ passkeyBasedShard[i];
+      }
+
+      // 6. Store reconstructed key pair
+      this.staffKeyPair = {
+        publicKey: this.base64ToUint8Array(shardData.publicKey),
+        privateKey: privateKey,
+      };
+
+      this.staffId = staffId;
+      this.tenantId = tenantId;
+      this.staffAuthenticated = true;
+      this.keyExpiry = Date.now() + 60 * 60 * 1000; // 1 hour
+
+      console.log("✅ Staff keys reconstructed from session");
+    } catch (error) {
+      console.error("❌ Failed to reconstruct staff keys:", error);
+      throw new Error(
+        `Key reconstruction failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  /**
    * Decrypt appointment data for staff members
    */
   async decryptStaffAppointment(encryptedData: {
@@ -442,24 +501,59 @@ export class UnifiedAppointmentCrypto {
     }
 
     try {
-      // 1. Decrypt the symmetric key using staff's private key
-      const encapsulatedSecret = this.hexToUint8Array(encryptedData.staffKeyShare);
+      // Parse the staffKeyShare which now contains: encapsulatedSecret || iv || encryptedTunnelKey
+      const staffKeyShareBytes = this.hexToUint8Array(encryptedData.staffKeyShare);
+
+      // ML-KEM-768 encapsulated secret is 1088 bytes
+      const ENCAPSULATED_SECRET_LENGTH = 1088;
+      const IV_LENGTH = 12;
+
+      if (staffKeyShareBytes.length < ENCAPSULATED_SECRET_LENGTH + IV_LENGTH) {
+        throw new Error(
+          `staffKeyShare too short: ${staffKeyShareBytes.length} bytes, expected at least ${ENCAPSULATED_SECRET_LENGTH + IV_LENGTH}`,
+        );
+      }
+
+      const encapsulatedSecret = staffKeyShareBytes.slice(0, ENCAPSULATED_SECRET_LENGTH);
+      const iv = staffKeyShareBytes.slice(
+        ENCAPSULATED_SECRET_LENGTH,
+        ENCAPSULATED_SECRET_LENGTH + IV_LENGTH,
+      );
+      const encryptedTunnelKey = staffKeyShareBytes.slice(ENCAPSULATED_SECRET_LENGTH + IV_LENGTH);
+
+      // 1. Decapsulate to get shared secret
       const sharedSecret = KyberCrypto.decapsulate(
         this.staffKeyPair.privateKey,
         encapsulatedSecret,
       );
 
-      // 2. Import the symmetric key
-      const symmetricKey = await crypto.subtle.importKey(
+      // 2. Use first 32 bytes of shared secret as AES key
+      const aesKeyBytes = sharedSecret.slice(0, 32);
+
+      // Import as CryptoKey for Web Crypto API
+      const aesKey = await crypto.subtle.importKey("raw", aesKeyBytes, { name: "AES-GCM" }, false, [
+        "decrypt",
+      ]);
+
+      // 3. Decrypt the tunnel key with AES-GCM (encrypted already includes authTag)
+      const decryptedTunnelKey = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv },
+        aesKey,
+        encryptedTunnelKey,
+      );
+      const tunnelKeyBytes = new Uint8Array(decryptedTunnelKey);
+
+      // 4. Import tunnel key as CryptoKey
+      const tunnelKey = await crypto.subtle.importKey(
         "raw",
-        new Uint8Array(sharedSecret),
+        tunnelKeyBytes,
         { name: "AES-GCM" },
         false,
         ["decrypt"],
       );
 
-      // 3. Decrypt the appointment data
-      const iv = this.hexToUint8Array(encryptedData.encryptedAppointment.iv);
+      // 5. Now decrypt the actual appointment data
+      const appointmentIv = this.hexToUint8Array(encryptedData.encryptedAppointment.iv);
       const ciphertext = this.hexToUint8Array(encryptedData.encryptedAppointment.encryptedPayload);
       const authTag = this.hexToUint8Array(encryptedData.encryptedAppointment.authTag);
 
@@ -469,8 +563,8 @@ export class UnifiedAppointmentCrypto {
       encrypted.set(authTag, ciphertext.length);
 
       const decrypted = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: new Uint8Array(iv) },
-        symmetricKey,
+        { name: "AES-GCM", iv: appointmentIv },
+        tunnelKey,
         encrypted,
       );
 
@@ -543,7 +637,6 @@ export class UnifiedAppointmentCrypto {
     this.tenantId = null;
     this.staffAuthenticated = false;
     this.keyExpiry = null;
-    console.log("🔒 Staff logged out");
   }
 
   /**
@@ -556,7 +649,6 @@ export class UnifiedAppointmentCrypto {
     this.tunnelId = null;
     this.serverPrivateKeyShare = null;
     this.clientAuthenticated = false;
-    console.log("🔒 Client logged out");
   }
 
   // ===== SHARED PRIVATE METHODS =====
@@ -616,9 +708,8 @@ export class UnifiedAppointmentCrypto {
     staffId: string,
     passkeyId: string,
     authenticatorData: ArrayBuffer,
+    keyPair: { publicKey: Uint8Array; privateKey: Uint8Array },
   ): Promise<void> {
-    const keyPair = KyberCrypto.generateKeyPair();
-
     const passkeyBasedShard = await this.derivePasskeyBasedShard(passkeyId, authenticatorData);
 
     const dbShard = new Uint8Array(keyPair.privateKey.length);
@@ -652,7 +743,7 @@ export class UnifiedAppointmentCrypto {
    * - During authentication: Recreate same shard to reconstruct private key
    *
    * Uses HKDF (HMAC-based Key Derivation Function) with:
-   * - IKM: WebAuthn authenticatorData (contains randomness from authenticator)
+   * - IKM: First 32 bytes of authenticatorData (rpIdHash only, excluding flags and signCount)
    * - Salt: "staff-crypto-shard-v1" (version-specific salt)
    * - Info: "passkey:{passkeyId}" (domain separation per passkey)
    * - Length: 2400 bytes (ML-KEM-768 private key size)
@@ -662,7 +753,16 @@ export class UnifiedAppointmentCrypto {
     authenticatorData: ArrayBuffer,
   ): Promise<Uint8Array> {
     // Extract randomness from authenticator data
-    const inputKeyMaterial = new Uint8Array(authenticatorData);
+    // IMPORTANT: Use only the first 32 bytes (rpIdHash)
+    // We CANNOT use flags (byte 32) because the AT flag differs between registration and authentication!
+    // We CANNOT use signCount (bytes 33-36) because it increments on every authentication!
+    // authenticatorData structure:
+    // - Bytes 0-31: rpIdHash (SHA-256 of RP ID) - CONSTANT ✓
+    // - Byte 32: flags - DIFFERS (AT flag set during registration) ✗
+    // - Bytes 33-36: signCount - CHANGES on every login ✗
+    // - Bytes 37+: attestedCredentialData (only during registration) ✗
+    const fullData = new Uint8Array(authenticatorData);
+    const inputKeyMaterial = fullData.slice(0, 32); // Only first 32 bytes (rpIdHash only)
 
     // Import the IKM as a CryptoKey for HKDF
     const ikmKey = await crypto.subtle.importKey("raw", inputKeyMaterial, "HKDF", false, [
@@ -861,16 +961,94 @@ export class UnifiedAppointmentCrypto {
   ): Promise<Array<{ userId: string; encryptedTunnelKey: string }>> {
     if (!this.tunnelKey) throw new Error("No tunnel key available");
 
+    // Export tunnel key as raw bytes
+    const tunnelKeyBytes = await crypto.subtle.exportKey("raw", this.tunnelKey);
+    const tunnelKeyArray = new Uint8Array(tunnelKeyBytes);
+
     const results = [];
 
     for (const staff of staffKeys) {
       // Public key is stored as Base64, not Hex
       const staffPublicKeyBytes = this.base64ToUint8Array(staff.publicKey);
-      const encryptedKey = KyberCrypto.encapsulate(staffPublicKeyBytes);
+
+      console.log("🔐 Encrypting tunnel key for staff:", {
+        userId: staff.userId,
+        publicKeyLength: staffPublicKeyBytes.length,
+        publicKeyHex:
+          Array.from(staffPublicKeyBytes)
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("")
+            .substring(0, 64) + "...",
+        tunnelKeyLength: tunnelKeyArray.length,
+      });
+
+      // Kyber encapsulation creates a shared secret
+      const { sharedSecret, encapsulatedSecret } = KyberCrypto.encapsulate(staffPublicKeyBytes);
+
+      console.log("🔑 Kyber encapsulation done:", {
+        sharedSecretLength: sharedSecret.length,
+        encapsulatedSecretLength: encapsulatedSecret.length,
+      });
+
+      // Use the first 32 bytes of shared secret as AES key (same as decryption)
+      const aesKeyBytes = sharedSecret.slice(0, 32);
+
+      console.log(
+        "🔑 AES key for encryption (hex):",
+        Array.from(aesKeyBytes)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join(""),
+      );
+
+      // Import as CryptoKey for Web Crypto API
+      const aesKey = await crypto.subtle.importKey("raw", aesKeyBytes, { name: "AES-GCM" }, false, [
+        "encrypt",
+      ]);
+
+      // Generate IV for AES-GCM
+      const iv = BufferUtils.randomBytes(12);
+
+      console.log(
+        "📍 IV for encryption (hex):",
+        Array.from(iv)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join(""),
+      );
+      console.log(
+        "🔒 Tunnel key to encrypt (hex):",
+        Array.from(tunnelKeyArray)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join(""),
+      );
+
+      // Encrypt tunnel key with AES-GCM
+      const encrypted = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        aesKey,
+        tunnelKeyArray,
+      );
+
+      // encrypted contains ciphertext + 16-byte auth tag
+      const encryptedArray = new Uint8Array(encrypted);
+
+      console.log(
+        "🔒 Encrypted tunnel key (hex):",
+        Array.from(encryptedArray)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join(""),
+      );
+
+      // Store: encapsulatedSecret || iv || encrypted (ciphertext+authTag)
+      const combined = new Uint8Array(
+        encapsulatedSecret.length + iv.length + encryptedArray.length,
+      );
+      combined.set(encapsulatedSecret, 0);
+      combined.set(iv, encapsulatedSecret.length);
+      combined.set(encryptedArray, encapsulatedSecret.length + iv.length);
 
       results.push({
         userId: staff.userId,
-        encryptedTunnelKey: this.uint8ArrayToHex(encryptedKey.encapsulatedSecret),
+        encryptedTunnelKey: this.uint8ArrayToHex(combined),
       });
     }
 
@@ -881,10 +1059,39 @@ export class UnifiedAppointmentCrypto {
     if (!this.tunnelKey || !this.clientKeyPair)
       throw new Error("Tunnel key or client key not available");
 
-    const clientPublicKeyBytes = this.hexToUint8Array(this.clientKeyPair.publicKey);
-    const encryptedKey = KyberCrypto.encapsulate(clientPublicKeyBytes);
+    // Export tunnel key as raw bytes
+    const tunnelKeyBytes = await crypto.subtle.exportKey("raw", this.tunnelKey);
+    const tunnelKeyArray = new Uint8Array(tunnelKeyBytes);
 
-    return this.uint8ArrayToHex(encryptedKey.encapsulatedSecret);
+    const clientPublicKeyBytes = this.hexToUint8Array(this.clientKeyPair.publicKey);
+
+    // Kyber encapsulation creates a shared secret
+    const { sharedSecret, encapsulatedSecret } = KyberCrypto.encapsulate(clientPublicKeyBytes);
+
+    // Use the first 32 bytes of shared secret as AES key
+    const aesKeyBytes = sharedSecret.slice(0, 32);
+
+    // Import as CryptoKey for Web Crypto API
+    const aesKey = await crypto.subtle.importKey("raw", aesKeyBytes, { name: "AES-GCM" }, false, [
+      "encrypt",
+    ]);
+
+    // Generate IV for AES-GCM
+    const iv = BufferUtils.randomBytes(12);
+
+    // Encrypt tunnel key with AES-GCM
+    const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, aesKey, tunnelKeyArray);
+
+    // encrypted contains ciphertext + 16-byte auth tag
+    const encryptedArray = new Uint8Array(encrypted);
+
+    // Store: encapsulatedSecret || iv || encrypted (ciphertext+authTag)
+    const combined = new Uint8Array(encapsulatedSecret.length + iv.length + encryptedArray.length);
+    combined.set(encapsulatedSecret, 0);
+    combined.set(iv, encapsulatedSecret.length);
+    combined.set(encryptedArray, encapsulatedSecret.length + iv.length);
+
+    return this.uint8ArrayToHex(combined);
   }
 
   private async reconstructPrivateKey(pin: string, serverShare: string): Promise<string> {
@@ -942,11 +1149,45 @@ export class UnifiedAppointmentCrypto {
     const privateKeyBytes = this.hexToUint8Array(privateKey);
     const encryptedKeyBytes = this.hexToUint8Array(encryptedTunnelKey);
 
-    const tunnelKeyBytes = KyberCrypto.decapsulate(privateKeyBytes, encryptedKeyBytes);
+    // Parse the encrypted data: encapsulatedSecret || iv || encryptedTunnelKey
+    const ENCAPSULATED_SECRET_LENGTH = 1088;
+    const IV_LENGTH = 12;
 
+    if (encryptedKeyBytes.length < ENCAPSULATED_SECRET_LENGTH + IV_LENGTH) {
+      throw new Error(
+        `encryptedTunnelKey too short: ${encryptedKeyBytes.length} bytes, expected at least ${ENCAPSULATED_SECRET_LENGTH + IV_LENGTH}`,
+      );
+    }
+
+    const encapsulatedSecret = encryptedKeyBytes.slice(0, ENCAPSULATED_SECRET_LENGTH);
+    const iv = encryptedKeyBytes.slice(
+      ENCAPSULATED_SECRET_LENGTH,
+      ENCAPSULATED_SECRET_LENGTH + IV_LENGTH,
+    );
+    const encryptedTunnel = encryptedKeyBytes.slice(ENCAPSULATED_SECRET_LENGTH + IV_LENGTH);
+
+    // 1. Decapsulate to get shared secret
+    const sharedSecret = KyberCrypto.decapsulate(privateKeyBytes, encapsulatedSecret);
+
+    // 2. Use first 32 bytes as AES key
+    const aesKeyBytes = sharedSecret.slice(0, 32);
+
+    // 3. Import as CryptoKey
+    const aesKey = await crypto.subtle.importKey("raw", aesKeyBytes, { name: "AES-GCM" }, false, [
+      "decrypt",
+    ]);
+
+    // 4. Decrypt the tunnel key
+    const decryptedTunnelKey = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv },
+      aesKey,
+      encryptedTunnel,
+    );
+
+    // 5. Import tunnel key as CryptoKey
     return await crypto.subtle.importKey(
       "raw",
-      new Uint8Array(tunnelKeyBytes),
+      new Uint8Array(decryptedTunnelKey),
       { name: "AES-GCM" },
       true,
       ["encrypt", "decrypt"],
