@@ -65,16 +65,16 @@
               </div>
             {/if}
             {#if appointment.agent || appointment.agent === null}
-              <div class="flex items-center gap-2">
-                <User class="size-3" />
+              <div class="flex items-start gap-2">
+                <User class="mt-1 size-3 shrink-0" />
                 <Text style="sm" class="font-normal">
                   {appointment.agent?.name || m["public.anyAgent"]()}
                 </Text>
               </div>
             {/if}
             {#if appointment.slot}
-              <div class="flex items-center gap-2">
-                <Calendar class="size-3" />
+              <div class="flex items-start gap-2">
+                <Calendar class="mt-1 size-3 shrink-0" />
                 <Text style="sm" class="font-normal">
                   {Intl.DateTimeFormat($publicStore.locale, {
                     year: "numeric",
@@ -89,13 +89,17 @@
             {/if}
             {#if appointment.data}
               <div class="flex items-start gap-2">
-                <FileText class="mt-1 size-3" />
+                <FileText class="mt-1 size-3 shrink-0" />
                 <Text style="sm" class="font-normal">
                   {appointment.data.name}<br />
-                  {appointment.data.email}
+                  <a class="break-all underline" href={`mailto:${appointment.data.email}`}>
+                    {appointment.data.email}
+                  </a>
                   {#if appointment.data.phone}
                     <br />
-                    {appointment.data.phone}
+                    <a class="break-all underline" href={`tel:${appointment.data.phone}`}>
+                      {appointment.data.phone}
+                    </a>
                   {/if}
                 </Text>
               </div>
