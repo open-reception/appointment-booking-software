@@ -29,8 +29,8 @@
   let startDate: CalendarDate = $state(today(getLocalTimeZone()));
   let calender: TCalendar | undefined = $state();
   let shownAppointments: TAppointmentFilter = $state("all");
-  let shownChannels: string[] = $state(["1"]);
-  let shownAgents: string[] = $state(["1"]);
+  let shownChannels: string[] = $state([]);
+  let shownAgents: string[] = $state([]);
   let startHour = $state(0);
   let prevLatestEndHour = $state(24);
   let scale = $state(1);
@@ -55,47 +55,65 @@
       const channelItems: TCalendarItem[] = [];
 
       // Available slots
-      channelData.availableSlots.forEach((slot) => {
-        channelItems.push({
-          id: `${channelId}-${slot.from}`,
-          date: dayEntry.date,
-          start: slot.from,
-          duration: slot.duration,
-          channelId,
-          color: channelData.channel.color,
-          column: 0,
-          status: "available",
-        });
-      });
+      if (["all", "available"].includes(shownAppointments)) {
+        if (shownChannels.length === 0 || shownChannels.includes(channelId)) {
+          channelData.availableSlots.forEach((slot) => {
+            if (
+              shownAgents.length === 0 ||
+              shownAgents.some((id) => slot.availableAgents.map((a) => a.id).includes(id))
+            ) {
+              channelItems.push({
+                id: `${channelId}-${slot.from}`,
+                date: dayEntry.date,
+                start: slot.from,
+                duration: slot.duration,
+                channelId,
+                color: channelData.channel.color,
+                column: 0,
+                status: "available",
+              });
+            }
+          });
+        }
+      }
 
       // Appointments
-      const formatter = new DateFormatter(navigator.language, {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      });
-      channelData.appointments.forEach((appointment) => {
-        channelItems.push({
-          id: appointment.id,
-          date: dayEntry.date,
-          // TODO: Fix incoming date type is actually string
-          start: formatter.format(new Date(appointment.appointmentDate)),
-          duration: appointment.duration,
-          channelId,
-          color: channelData.channel.color,
-          column: 0,
-          status: appointment.status === "CONFIRMED" ? "booked" : "reserved",
-          appointment: {
-            dateTime: new Date(appointment.appointmentDate),
-            encryptedPayload: appointment.encryptedPayload,
-            tunnelId: appointment.tunnelId,
-            agentId: appointment.agentId,
-            staffKeyShare: appointment.staffKeyShare,
-            iv: appointment.iv || undefined,
-            authTag: appointment.authTag || undefined,
-          },
+      if (["all", "booked", "reserved"].includes(shownAppointments)) {
+        const formatter = new DateFormatter(navigator.language, {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
         });
-      });
+        channelData.appointments.forEach((appointment) => {
+          const status = appointment.status === "CONFIRMED" ? "booked" : "reserved";
+          if (shownAppointments === "all" || shownAppointments === status) {
+            if (shownChannels.length === 0 || shownChannels.includes(channelId)) {
+              if (shownAgents.length === 0 || shownAgents.includes(appointment.agentId)) {
+                channelItems.push({
+                  id: appointment.id,
+                  date: dayEntry.date,
+                  // TODO: Fix incoming date type is actually string
+                  start: formatter.format(new Date(appointment.appointmentDate)),
+                  duration: appointment.duration,
+                  channelId,
+                  color: channelData.channel.color,
+                  column: 0,
+                  status,
+                  appointment: {
+                    dateTime: new Date(appointment.appointmentDate),
+                    encryptedPayload: appointment.encryptedPayload,
+                    tunnelId: appointment.tunnelId,
+                    agentId: appointment.agentId,
+                    staffKeyShare: appointment.staffKeyShare,
+                    iv: appointment.iv || undefined,
+                    authTag: appointment.authTag || undefined,
+                  },
+                });
+              }
+            }
+          }
+        });
+      }
 
       return [...allItems, ...channelItems];
     }, []);
