@@ -155,10 +155,10 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
     });
 
     const scheduleService = await ScheduleService.forTenant(tenantId);
-    
+
     // Get the staff user ID if authenticated (for including staffKeyShares)
     const staffUserId = locals.user?.id;
-    
+
     const schedule = await scheduleService.getSchedule({
       tenantId,
       startDate: startDateParam,

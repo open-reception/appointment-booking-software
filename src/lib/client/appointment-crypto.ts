@@ -458,7 +458,7 @@ export class UnifiedAppointmentCrypto {
       // 3. Derive passkey-based shard from stored authenticator data
       const passkeyBasedShard = await this.derivePasskeyBasedShard(
         passkeyId,
-        authenticatorDataBytes.buffer,
+        authenticatorDataBytes.buffer as ArrayBuffer,
       );
 
       // 4. Decode database shard
