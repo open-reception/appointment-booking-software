@@ -1,0 +1,28 @@
+Terminanfrage erhalten - {{tenant.longName}}
+
+ℹ️ Ihre Terminanfrage wird geprüft
+
+Vielen Dank für Ihre Terminanfrage. Wir haben Ihre Anfrage erhalten und werden diese in Kürze prüfen.
+
+Sie erhalten eine weitere E-Mail, sobald Ihr Termin bestätigt oder abgelehnt wurde.
+
+ANGEFORDERTE TERMINDETAILS
+==========================
+Datum: {{appointmentDate}}
+{{#if title}}
+Termin: {{title}}
+{{/if}}
+{{#if location}}
+Ort: {{location}}
+{{/if}}
+
+{{#if cancelUrl}}
+Anfrage zurückziehen: {{cancelUrl}}
+{{/if}}
+
+Wir werden uns so schnell wie möglich bei Ihnen melden.
+
+Bei Fragen kontaktieren Sie uns bitte.
+
+--
+{{tenant.longName}}

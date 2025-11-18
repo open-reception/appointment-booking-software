@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { m } from "$i18n/messages";
+  import { getLocale } from "$i18n/runtime";
   import { Button } from "$lib/components/ui/button";
   import { Text } from "$lib/components/ui/typography";
   import { ROUTES } from "$lib/const/routes";
@@ -34,6 +35,7 @@
           appointment.slot.duration,
           tenant.id,
           Boolean(appointment.isNewClient),
+          getLocale() || "de",
         )
         .then(() => {
           const isRequest = channel.requiresConfirmation;

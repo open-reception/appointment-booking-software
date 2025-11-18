@@ -13,6 +13,12 @@ import {
   logError,
 } from "$lib/server/utils/errors";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
+import {
+  sendAppointmentCreatedEmail,
+  sendAppointmentRequestEmail,
+  getChannelTitle,
+} from "$lib/server/email/email-service";
+import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
 
 const requestSchema = z.object({
   emailHash: z.string(),
@@ -21,6 +27,8 @@ const requestSchema = z.object({
   agentId: z.string(),
   appointmentDate: z.string(),
   duration: z.number().int().positive(),
+  clientEmail: z.string().email(),
+  clientLanguage: z.string().optional().default("de"),
   encryptedAppointment: z.object({
     encryptedPayload: z.string(),
     iv: z.string(),
@@ -73,6 +81,18 @@ registerOpenAPIRoute("/tenants/{id}/appointments/add-to-tunnel", "POST", {
               description: "Appointment date and time (ISO 8601)",
               example: "2024-12-31T14:30:00.000Z",
             },
+            clientEmail: {
+              type: "string",
+              format: "email",
+              description: "Client email address for sending confirmation",
+              example: "client@example.com",
+            },
+            clientLanguage: {
+              type: "string",
+              description: "Client's preferred language (de or en)",
+              example: "de",
+              default: "de",
+            },
             encryptedAppointment: {
               type: "object",
               properties: {
@@ -101,6 +121,7 @@ registerOpenAPIRoute("/tenants/{id}/appointments/add-to-tunnel", "POST", {
             "tunnelId",
             "channelId",
             "appointmentDate",
+            "clientEmail",
             "encryptedAppointment",
           ],
         },
@@ -238,8 +259,20 @@ export const POST: RequestHandler = async ({ request, params }) => {
       })
       .returning({
         id: appointment.id,
+        tunnelId: appointment.tunnelId,
+        channelId: appointment.channelId,
+        agentId: appointment.agentId,
         appointmentDate: appointment.appointmentDate,
+        expiryDate: appointment.expiryDate,
         status: appointment.status,
+        encryptedPayload: appointment.encryptedPayload,
+        duration: appointment.duration,
+        iv: appointment.iv,
+        authTag: appointment.authTag,
+        encryptedData: appointment.encryptedData,
+        dataKey: appointment.dataKey,
+        createdAt: appointment.createdAt,
+        updatedAt: appointment.updatedAt,
       });
 
     if (appointmentResult.length === 0) {
@@ -259,6 +292,57 @@ export const POST: RequestHandler = async ({ request, params }) => {
       tunnelId: validatedData.tunnelId,
       appointmentId: result.id,
     });
+
+    // Send email notification to client
+    try {
+      const requiresConfirmation = channelResult[0].requiresConfirmation || false;
+
+      // Get tenant information
+      const tenantService = await TenantAdminService.getTenantById(tenantId);
+      const tenant = tenantService.tenantData;
+
+      if (!tenant) {
+        logger.warn("Cannot send email: Tenant not found", { tenantId });
+      } else {
+        // Create client data object from request
+        const clientData = {
+          email: validatedData.clientEmail,
+          language: validatedData.clientLanguage,
+        };
+
+        // Get channel title for the email
+        const channelTitle = await getChannelTitle(
+          tenantId,
+          validatedData.channelId,
+          validatedData.clientLanguage,
+        );
+
+        // Send appropriate email based on whether confirmation is required
+        if (requiresConfirmation) {
+          await sendAppointmentRequestEmail(clientData, tenant, result, channelTitle);
+          logger.info("Appointment request email sent", {
+            tunnelId: validatedData.tunnelId,
+            appointmentId: result.id,
+            tenantId,
+          });
+        } else {
+          await sendAppointmentCreatedEmail(clientData, tenant, result, channelTitle);
+          logger.info("Appointment confirmation email sent", {
+            tunnelId: validatedData.tunnelId,
+            appointmentId: result.id,
+            tenantId,
+          });
+        }
+      }
+    } catch (emailError) {
+      logger.error("Failed to send appointment notification email", {
+        tunnelId: validatedData.tunnelId,
+        appointmentId: result.id,
+        tenantId,
+        error: String(emailError),
+      });
+      // Don't throw - email failure shouldn't fail the appointment creation
+    }
 
     return json(response);
   } catch (error) {

@@ -1,0 +1,26 @@
+Termin bestätigt - {{tenant.longName}}
+
+✓ Ihr Termin wurde erfolgreich gebucht!
+
+Vielen Dank für Ihre Buchung. Ihr Termin wurde bestätigt.
+
+TERMINDETAILS
+=============
+Datum: {{appointmentDate}}
+{{#if title}}
+Termin: {{title}}
+{{/if}}
+{{#if location}}
+Ort: {{location}}
+{{/if}}
+
+{{#if cancelUrl}}
+Termin absagen: {{cancelUrl}}
+{{/if}}
+
+Wir freuen uns auf Ihren Besuch!
+
+Bei Fragen kontaktieren Sie uns bitte.
+
+--
+{{tenant.longName}}
