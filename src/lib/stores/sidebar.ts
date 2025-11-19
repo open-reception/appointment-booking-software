@@ -4,6 +4,7 @@ import { writable } from "svelte/store";
 
 interface AuthState {
   isOpen: boolean;
+  isCalendarExpanded: boolean;
   isEducated: boolean;
 }
 
@@ -15,6 +16,7 @@ function createSidebarStore() {
   const isEducatedValue = browser ? getCookie(SIDEBAR_EDUCATION_STORAGE_KEY) : null;
   const store = writable<AuthState>({
     isOpen: isOpenValue === "true" ? true : false,
+    isCalendarExpanded: false,
     isEducated: isEducatedValue === "true" ? true : false,
   });
 
@@ -25,6 +27,9 @@ function createSidebarStore() {
         document.cookie = `${SIDEBAR_OPEN_STORAGE_KEY}=${isOpen}; path=/; max-age=604800`;
       }
       store.update((state) => ({ ...state, isOpen }));
+    },
+    setCalendarExpanded: (isCalendarExpanded: boolean) => {
+      store.update((state) => ({ ...state, isCalendarExpanded }));
     },
     setEducated: (isEducated: boolean, isFinal?: boolean) => {
       if (browser && isFinal) {

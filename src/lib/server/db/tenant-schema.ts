@@ -148,6 +148,8 @@ export const appointment = pgTable("appointment", {
     .references(() => agent.id),
   /** Date and time of the appointment */
   appointmentDate: timestamp("appointment_date").notNull(),
+  /** Duration of the appointment in minutes */
+  duration: integer("duration").notNull(),
   /** When appointment data expires and can be auto-deleted */
   expiryDate: date("expiry_date"),
   /** Current status of the appointment - defaults depend on channel's requiresConfirmation setting */

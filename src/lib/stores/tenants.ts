@@ -8,6 +8,7 @@ import { m } from "$i18n/messages";
 import { goto } from "$app/navigation";
 import { ROUTES } from "$lib/const/routes";
 import { agents } from "./agents";
+import { channels } from "./channels";
 
 const log = logger.setContext("TenantsStore");
 
@@ -49,6 +50,7 @@ const createTenantsStore = () => {
         return { ...state, currentTenant };
       });
       agents.load();
+      channels.load();
 
       // Redirect to dashboard main if tenant changed to avaoid showing data from previous tenant
       if (tenantId !== curTenant) {

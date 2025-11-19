@@ -351,7 +351,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
       throw new ValidationError(ERRORS.TENANTS.NO_TENANT_ID);
     }
 
-    checkPermission(locals, tenantId, true);
+    checkPermission(locals, tenantId);
 
     log.debug("Getting all channels", {
       tenantId,

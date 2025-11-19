@@ -32,6 +32,7 @@
           toZoned(appointment.slot.datetime, getLocalTimeZone()).toAbsoluteString(),
           appointment.agent.id,
           channel.id,
+          appointment.slot.duration,
           tenant.id,
           Boolean(appointment.isNewClient),
           getLocale() || "de",

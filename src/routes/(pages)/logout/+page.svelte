@@ -7,6 +7,7 @@
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { ROUTES } from "$lib/const/routes.js";
   import { auth } from "$lib/stores/auth.js";
+  import { staffCrypto } from "$lib/stores/staff-crypto.js";
   import Check from "@lucide/svelte/icons/check";
   import { onMount } from "svelte";
 
@@ -14,6 +15,7 @@
 
   onMount(() => {
     auth.reset();
+    staffCrypto.clear();
   });
 </script>
 

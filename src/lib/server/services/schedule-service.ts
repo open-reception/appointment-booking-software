@@ -8,7 +8,7 @@ import {
   type SelectAgentAbsence,
 } from "../db/tenant-schema";
 
-import { eq, and, between, sql, or } from "drizzle-orm";
+import { eq, and, between, sql, or, inArray } from "drizzle-orm";
 import logger from "$lib/logger";
 import { z } from "zod";
 import { ValidationError } from "../utils/errors";
@@ -19,6 +19,7 @@ const scheduleRequestSchema = z.object({
   tenantId: z.string().uuid({ message: "Invalid tenant ID format" }),
   channelId: z.string().uuid({ message: "Invalid channel ID format" }).optional(),
   agentId: z.string().uuid({ message: "Invalid agent ID format" }).optional(),
+  staffUserId: z.string().uuid({ message: "Invalid staff user ID format" }).optional(),
 });
 
 export type ScheduleRequest = z.infer<typeof scheduleRequestSchema>;
@@ -30,12 +31,16 @@ export interface TimeSlot {
   availableAgents: SelectAgent[];
 }
 
+export interface AppointmentWithKeyShare extends SelectAppointment {
+  staffKeyShare?: string;
+}
+
 export interface DaySchedule {
   date: string; // YYYY-MM-DD format
   channels: {
     [channelId: string]: {
       channel: SelectChannel;
-      appointments: SelectAppointment[];
+      appointments: AppointmentWithKeyShare[];
       availableSlots: TimeSlot[];
     };
   };
@@ -139,6 +144,30 @@ export class ScheduleService {
           ),
         );
 
+      // 3a. If staffUserId is provided, get staffKeyShares for all appointment tunnels
+      let staffKeyShares: Record<string, string> = {};
+      if (request.staffUserId && appointments.length > 0) {
+        const tunnelIds = [...new Set(appointments.map((apt) => apt.tunnelId))];
+        const keyShares = await db
+          .select()
+          .from(tenantSchema.clientTunnelStaffKeyShare)
+          .where(
+            and(
+              eq(tenantSchema.clientTunnelStaffKeyShare.userId, request.staffUserId),
+              inArray(tenantSchema.clientTunnelStaffKeyShare.tunnelId, tunnelIds),
+            ),
+          );
+
+        // Create a map of tunnelId -> encryptedTunnelKey
+        staffKeyShares = keyShares.reduce(
+          (acc, share) => {
+            acc[share.tunnelId] = share.encryptedTunnelKey;
+            return acc;
+          },
+          {} as Record<string, string>,
+        );
+      }
+
       // 4. Get agent absences in the date range
       const absences = await db
         .select()
@@ -187,6 +216,7 @@ export class ScheduleService {
         appointments,
         absences,
         channelAgents,
+        staffKeyShares,
       });
 
       log.debug("Schedule generated successfully", {
@@ -221,6 +251,7 @@ export class ScheduleService {
     appointments,
     absences,
     channelAgents,
+    staffKeyShares,
   }: {
     startDate: Date;
     endDate: Date;
@@ -229,6 +260,7 @@ export class ScheduleService {
     appointments: SelectAppointment[];
     absences: SelectAgentAbsence[];
     channelAgents: { channelId: string; agent: SelectAgent }[];
+    staffKeyShares: Record<string, string>;
   }): Promise<DaySchedule[]> {
     const dailySchedules: DaySchedule[] = [];
 
@@ -247,13 +279,18 @@ export class ScheduleService {
       // Process each channel
       for (const channel of channels) {
         // Get appointments for this channel on this day
-        const dayAppointments = appointments.filter(
-          (appointment) =>
-            appointment.channelId === channel.id &&
-            (typeof appointment.appointmentDate === "string"
-              ? (appointment.appointmentDate as string).startsWith(dateString)
-              : appointment.appointmentDate.toISOString().startsWith(dateString)),
-        );
+        const dayAppointments = appointments
+          .filter(
+            (appointment) =>
+              appointment.channelId === channel.id &&
+              (typeof appointment.appointmentDate === "string"
+                ? (appointment.appointmentDate as string).startsWith(dateString)
+                : appointment.appointmentDate.toISOString().startsWith(dateString)),
+          )
+          .map((appointment) => ({
+            ...appointment,
+            staffKeyShare: staffKeyShares[appointment.tunnelId],
+          }));
 
         // Get slot templates for this channel that apply to this weekday
         const channelSlotTemplates = slotTemplates

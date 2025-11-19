@@ -10,6 +10,7 @@ const requestSchema = z.object({
   channelId: z.string(),
   agentId: z.string(),
   appointmentDate: z.string(),
+  duration: z.number().int().positive(),
   emailHash: z.string(),
   clientEmail: z.string().email(),
   clientLanguage: z.string().optional().default("de"),
@@ -232,6 +233,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
       tenantId,
       tunnelId: validatedData.tunnelId,
       appointmentDate: validatedData.appointmentDate,
+      duration: validatedData.duration,
       emailHashPrefix: validatedData.emailHash.slice(0, 8),
     });
 

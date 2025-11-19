@@ -118,6 +118,14 @@
         signatureBase64,
       };
 
+      // Store authenticatorData for later key reconstruction
+      const passkeyId = credentialResp.id;
+      auth.setPasskeyAuthData({
+        authenticatorData: authenticatorDataBase64,
+        passkeyId,
+        email: $formData.email,
+      });
+
       // Update UI to show passkey is ready
       $passkeyLoading = "success";
 

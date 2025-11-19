@@ -19,6 +19,7 @@
   import { AddAgentForm } from "./(components)/add-agent-form";
   import { DeleteAgentForm } from "./(components)/delete-agent-form";
   import { EditAgentForm } from "./(components)/edit-agent-form";
+  import { channels } from "$lib/stores/channels";
   import { tenants } from "$lib/stores/tenants";
 
   const { data } = $props();
@@ -61,6 +62,7 @@
           <AddAgentForm
             done={() => {
               agents.load();
+              channels.load();
               tenants.reload();
               invalidate(ROUTES.DASHBOARD.AGENTS);
               closeDialog("add");
@@ -116,6 +118,7 @@
                   closeDialog("edit");
                   curItem = null;
                   agents.load();
+                  channels.load();
                   invalidate(ROUTES.DASHBOARD.AGENTS);
                 }}
               />
@@ -129,6 +132,7 @@
                   closeDialog("delete");
                   curItem = null;
                   agents.load();
+                  channels.load();
                   tenants.reload();
                   invalidate(ROUTES.DASHBOARD.AGENTS);
                 }}

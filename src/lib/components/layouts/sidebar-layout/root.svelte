@@ -6,12 +6,18 @@
   import * as Sidebar from "$lib/components/ui/sidebar";
   import type { HTMLAttributes } from "svelte/elements";
   import { sidebar } from "$lib/stores/sidebar";
+  import type { Snippet } from "svelte";
 
   let {
     children,
+    sidebarRight,
+    headerRight,
     breakcrumbs,
-  }: HTMLAttributes<HTMLDivElement> & { breakcrumbs?: Array<{ label: string; href: string }> } =
-    $props();
+  }: HTMLAttributes<HTMLDivElement> & {
+    breakcrumbs?: Array<{ label: string; href: string }>;
+    headerRight?: Snippet;
+    sidebarRight?: Snippet;
+  } = $props();
 </script>
 
 <Sidebar.Provider bind:open={$sidebar.isOpen} onOpenChange={(open) => sidebar.setOpen(open)}>
@@ -22,7 +28,7 @@
         <header
           class="mb-3 flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12"
         >
-          <div class="flex items-center gap-2">
+          <div class="flex w-full items-center gap-2">
             <Sidebar.Trigger
               class="-ml-1"
               onclick={() => {
@@ -52,10 +58,18 @@
                 </Breadcrumb.List>
               </Breadcrumb.Root>
             {/if}
+            {#if headerRight}
+              <div class="ml-auto">
+                {@render headerRight?.()}
+              </div>
+            {/if}
           </div>
         </header>
         {@render children?.()}
       </HorizontalPagePadding>
     </PageWithClaim>
   </Sidebar.Inset>
+  {#if sidebarRight}
+    {@render sidebarRight?.()}
+  {/if}
 </Sidebar.Provider>

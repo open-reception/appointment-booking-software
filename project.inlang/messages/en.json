@@ -902,5 +902,19 @@
 			"success": "Login successful",
 			"error": "Login failed. Please retry"
 		}
+	},
+	"calendar": {
+		"today": "Today",
+		"loading": "Loading calendar",
+		"decrypting": "decrypting...",
+		"shownAppointments": {
+			"title": "Appointments",
+			"options": {
+				"all": "all",
+				"available": "available",
+				"booked": "booked",
+				"reserved": "reserved"
+			}
+		}
 	}
 }

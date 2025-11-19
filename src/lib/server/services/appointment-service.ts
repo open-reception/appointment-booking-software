@@ -18,6 +18,7 @@ export interface ClientTunnelData {
   channelId: string;
   agentId: string;
   appointmentDate: string;
+  duration: number;
   emailHash: string;
   clientEmail: string;
   clientLanguage?: string;
@@ -394,6 +395,7 @@ export class AppointmentService {
           channelId: clientData.channelId,
           agentId: clientData.agentId,
           appointmentDate: new Date(clientData.appointmentDate),
+          duration: clientData.duration,
           encryptedPayload: clientData.encryptedAppointment.encryptedPayload,
           iv: clientData.encryptedAppointment.iv,
           authTag: clientData.encryptedAppointment.authTag,

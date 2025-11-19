@@ -29,6 +29,7 @@
   let tenantId: string | undefined = $state();
   let passkeyId: string | undefined = $state();
   let authenticatorData: ArrayBuffer | undefined = $state();
+  let kyberKeyPair: { publicKey: Uint8Array; privateKey: Uint8Array } | undefined = $state();
 
   const form = superForm(data.form, {
     validators: zodClient(formSchema),
@@ -65,6 +66,12 @@
 
   const onSetPasskey = async () => {
     $passkeyLoading = "loading";
+
+    // Generate Kyber keypair BEFORE passkey registration
+    // This keypair will be used to create the dbShard after authenticatorData is available
+    const { KyberCrypto } = await import("$lib/crypto/utils");
+    kyberKeyPair = KyberCrypto.generateKeyPair();
+
     const challenge = await fetchChallenge($formData.email);
 
     if (!challenge) {
@@ -129,10 +136,10 @@
   });
 
   const storeStaffKeyPair = async () => {
-    if (tenantId && passkeyId && authenticatorData) {
+    if (tenantId && passkeyId && authenticatorData && kyberKeyPair) {
       const crypto = new UnifiedAppointmentCrypto();
       return await crypto
-        .storeStaffKeyPair(tenantId, $formData.userId, passkeyId, authenticatorData)
+        .storeStaffKeyPair(tenantId, $formData.userId, passkeyId, authenticatorData, kyberKeyPair)
         .then(() => {
           toast.success(m["setupPasskey.successKeyPairSaved"]());
         })
@@ -150,6 +157,7 @@
         tenantId,
         userId: $formData.userId,
         passkeyId,
+        hasKyberKeyPair: !!kyberKeyPair,
       });
       toast.error(m["setupPasskey.errorKeyPairDataMissing"]());
     }

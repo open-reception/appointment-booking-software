@@ -1,6 +1,6 @@
 {
-  "id": "f77f8d01-2ffd-4f99-a059-665ca5f6f4c3",
-  "prevId": "7c47f4a4-f7e8-4a25-933e-4c1356fb8f35",
+  "id": "29c30482-bb21-472c-acbc-6b802aaf0614",
+  "prevId": "f77f8d01-2ffd-4f99-a059-665ca5f6f4c3",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -492,62 +492,6 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.client": {
-      "name": "client",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "hash_key": {
-          "name": "hash_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "public_key": {
-          "name": "public_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "private_key_share": {
-          "name": "private_key_share",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "email": {
-          "name": "email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "language": {
-          "name": "language",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "client_hash_key_unique": {
-          "name": "client_hash_key_unique",
-          "nullsNotDistinct": false,
-          "columns": ["hash_key"]
-        }
-      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

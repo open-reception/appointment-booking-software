@@ -22,12 +22,17 @@ vi.mock("$lib/logger", () => ({
 }));
 
 describe("Calendar API", () => {
+  const mockGetSchedule = vi.fn();
+
   const mockScheduleService = {
-    getSchedule: vi.fn(),
+    getSchedule: mockGetSchedule,
+    tenantId: "tenant-123",
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset the mock implementation
+    mockGetSchedule.mockReset();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(ScheduleService.forTenant).mockResolvedValue(mockScheduleService as any);
   });
@@ -40,6 +45,7 @@ describe("Calendar API", () => {
     return {
       params: { id: tenantId },
       url,
+      locals: {}, // Add locals object
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
   };
@@ -110,7 +116,7 @@ describe("Calendar API", () => {
 
   describe("GET", () => {
     it("should return calendar with full schedule data", async () => {
-      mockScheduleService.getSchedule.mockResolvedValue(mockScheduleResponse);
+      mockGetSchedule.mockResolvedValue(mockScheduleResponse);
 
       const request = createRequest(
         "tenant-123",
@@ -132,15 +138,16 @@ describe("Calendar API", () => {
       });
 
       expect(ScheduleService.forTenant).toHaveBeenCalledWith("tenant-123");
-      expect(mockScheduleService.getSchedule).toHaveBeenCalledWith({
+      expect(mockGetSchedule).toHaveBeenCalledWith({
         tenantId: "tenant-123",
         startDate: "2024-01-01T00:00:00.000Z",
         endDate: "2024-01-02T00:00:00.000Z",
+        staffUserId: undefined,
       });
     });
 
     it("should include full appointment and agent information in calendar response", async () => {
-      mockScheduleService.getSchedule.mockResolvedValue(mockScheduleResponse);
+      mockGetSchedule.mockResolvedValue(mockScheduleResponse);
 
       const request = createRequest(
         "tenant-123",
@@ -213,7 +220,7 @@ describe("Calendar API", () => {
     });
 
     it("should handle ScheduleService errors", async () => {
-      mockScheduleService.getSchedule.mockRejectedValue(new Error("Database error"));
+      mockGetSchedule.mockRejectedValue(new Error("Database error"));
 
       const request = createRequest(
         "tenant-123",
@@ -234,7 +241,7 @@ describe("Calendar API", () => {
         schedule: [],
       };
 
-      mockScheduleService.getSchedule.mockResolvedValue(emptyScheduleResponse);
+      mockGetSchedule.mockResolvedValue(emptyScheduleResponse);
 
       const request = createRequest(
         "tenant-123",
@@ -277,7 +284,7 @@ describe("Calendar API", () => {
         ],
       };
 
-      mockScheduleService.getSchedule.mockResolvedValue(scheduleWithNoSlots);
+      mockGetSchedule.mockResolvedValue(scheduleWithNoSlots);
 
       const request = createRequest(
         "tenant-123",

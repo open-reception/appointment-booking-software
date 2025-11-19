@@ -893,5 +893,19 @@
 			"success": "Anmeldung erfolgreich",
 			"error": "Anmeldung fehlgeschlagen. Bitte erneut versuchen"
 		}
+	},
+	"calendar": {
+		"today": "Heute",
+		"loading": "Loading calendar",
+		"decrypting": "wird entschlüsselt...",
+		"shownAppointments": {
+			"title": "Termine",
+			"options": {
+				"all": "alle",
+				"available": "verfügbar",
+				"booked": "gebucht",
+				"reserved": "reserviert"
+			}
+		}
 	}
 }
