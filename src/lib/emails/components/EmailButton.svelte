@@ -15,8 +15,7 @@
     .button {
       font-size: 16px;
       line-height: 1.5;
-      color: #ffffff;
-      background-color: #000000;
+      border: 1px solid #000000;
       padding: 12px 32px;
       padding: 0.75rem 2rem;
       text-decoration: none;
@@ -24,8 +23,8 @@
       border-radius: 12px;
     }
     .button:hover {
-      background-color: #333333;
       cursor: pointer;
+      background-color: rgb(0 0 0 / 0.1);
     }
   </style>
 </svelte:head>

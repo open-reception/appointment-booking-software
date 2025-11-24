@@ -907,5 +907,16 @@
 				"reserved": "reserviert"
 			}
 		}
+	},
+	"emails": {
+		"poweredBy": "Betrieben mit",
+		"greeting": "Hallo {name},",
+		"oclock": "Uhr",
+		"appointmentBooked": {
+			"subject": "{channel} bei {tenant} gebucht",
+			"introduction": "Ihr Termin wurde gebucht.",
+			"action": "Termin absagen",
+			"reason": "Sie erhalten diese E-Mail, weil jemand mit Ihrer E-Mail Adresse einen Termin bei gebucht hat."
+		}
 	}
 }

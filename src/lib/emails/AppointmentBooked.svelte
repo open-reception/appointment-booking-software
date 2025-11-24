@@ -1,33 +1,65 @@
-<script lang="js">
+<script lang="ts">
   import { m } from "$i18n/messages";
-  import { getLocale, setLocale } from "$i18n/runtime";
+  import { setLocale } from "$i18n/runtime";
+  import type { SupportedLocale } from "$lib/const/locales";
+  import type { SelectTenant } from "$lib/server/db/central-schema";
+  import { type SelectAppointment } from "$lib/server/db/tenant-schema";
+  import type { SelectClient } from "$lib/server/email/email-service";
   import EmailButton from "./components/EmailButton.svelte";
+  import EmailHeadline from "./components/EmailHeadline.svelte";
   import EmailLayout from "./components/EmailLayout.svelte";
   import EmailText from "./components/EmailText.svelte";
+  import { renderAppointmentDate, renderAppointmentTime } from "./utils";
 
-  let { name, locale } = $props();
+  let {
+    locale,
+    user,
+    tenant,
+    channel,
+    appointment,
+    address,
+    cancelUrl,
+  }: {
+    locale: SupportedLocale;
+    user: SelectClient;
+    tenant: SelectTenant;
+    channel: string;
+    appointment: SelectAppointment & { agentName: string };
+    address: {
+      street: string;
+      number: string;
+      additionalAddressInfo?: string;
+      zip: string;
+      city: string;
+    };
+    cancelUrl: string;
+  } = $props();
 
   setLocale(locale);
-  console.log("Locale in AppointmentBooked:", getLocale());
 </script>
 
 <EmailLayout>
-  <p>{m["absences.add.description"]()} {name},</p>
-  <p>your appointment has been booked.</p>
-  <h2>Vaccination Appointment</h2>
-  <p>
-    Dr. John Doe<br />
-    June 30, 2024<br />
-    10:00 AM - 10:15 AM
-  </p>
-  <h2>Praxis Dr. Jane Doe</h2>
-  <p>
-    Musterstraße 10<br />
-    Etage 4<br />
-    12345 Musterstadt
-  </p>
-  <EmailButton href="https://open-reception.org/appointments">View Appointments</EmailButton>
+  <EmailText variant="md">{m["emails.greeting"]({ name: user.email })}</EmailText>
+  <EmailText variant="md">
+    {m["emails.appointmentBooked.introduction"]()}
+  </EmailText>
+  <EmailHeadline>{channel}</EmailHeadline>
+  <EmailText variant="md">
+    {appointment.agentName}<br />
+    {renderAppointmentDate(appointment.appointmentDate, locale)}<br />
+    {renderAppointmentTime(appointment.appointmentDate, locale)}
+    {m["emails.oclock"]()}
+  </EmailText>
+  <EmailHeadline>{tenant.longName}</EmailHeadline>
+  <EmailText variant="md">
+    {address.street}
+    {address.number}<br />
+    {#if address.additionalAddressInfo}{address.additionalAddressInfo}<br />{/if}
+    {address.zip}
+    {address.city}
+  </EmailText>
+  <EmailButton href={cancelUrl}>{m["emails.appointmentBooked.action"]()}</EmailButton>
   <EmailText variant="md" color="text-light">
-    You are receiving this email because someone booked an appointment with your e-mail address.
+    {m["emails.appointmentBooked.reason"]()}
   </EmailText>
 </EmailLayout>

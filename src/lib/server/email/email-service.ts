@@ -10,8 +10,13 @@ import type { SelectTenant, SelectUser } from "$lib/server/db/central-schema";
 import { getTenantDb } from "$lib/server/db";
 import * as tenantSchema from "$lib/server/db/tenant-schema";
 import { eq } from "drizzle-orm";
+import { setLocale } from "$i18n/runtime";
+import { m } from "$i18n/messages";
+import { render } from "svelte/server";
+import AppointmentBooked from "$lib/emails/AppointmentBooked.svelte";
+import { htmlToText, renderOutputToHtml } from "$lib/emails/utils";
 
-type SelectClient = {
+export type SelectClient = {
   email: string;
   language: string;
 };
@@ -195,15 +200,39 @@ export async function sendAppointmentCreatedEmail(
       ? { email: user.email, language: user.language }
       : createEmailRecipient(user);
 
+  // Set language
   const language = (recipient.language as Language) || "en";
-  const subject = language === "en" ? "Appointment Confirmed" : "Termin bestätigt";
+  setLocale(language);
 
-  await sendTemplatedEmail("appointment-created", recipient, subject, language, tenant, {
-    appointment,
-    appointmentDate: appointment.appointmentDate,
-    title: channelTitle || appointment.channelId,
-    cancelUrl,
+  // Generate email
+  const subject = m["emails.appointmentBooked.subject"]({
+    channel: channelTitle || appointment.channelId,
+    tenant: tenant.longName,
   });
+  const emailRender = render(AppointmentBooked, {
+    props: {
+      locale: language,
+      channel: channelTitle || appointment.channelId,
+      user,
+      tenant,
+      // TODO: Add agentName
+      appointment: { ...appointment, agentName: "Dr. John Doe" },
+      // TODO: Add address info
+      address: {
+        street: "Musterstraße",
+        number: "1",
+        additionalAddressInfo: "Hinterhaus",
+        zip: "20000",
+        city: "Hamburg",
+      },
+      // TODO: Shouldn't cancelUrl always be defined?
+      cancelUrl: cancelUrl || "",
+    },
+  });
+  const html = renderOutputToHtml(emailRender);
+  const text = htmlToText(html);
+
+  await sendEmail(recipient, subject, html, text);
 }
 
 /**

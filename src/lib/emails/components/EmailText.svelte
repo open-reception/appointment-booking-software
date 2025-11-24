@@ -1,8 +1,8 @@
 <script lang="js">
-  let { children, variant, color } = $props();
+  let { children, variant, color = "text-darkest", class: className = "" } = $props();
 </script>
 
-<span class={[variant, color].join(" ")}>{@render children?.()}</span>
+<p class={[variant, color, className].filter((it) => it).join(" ")}>{@render children?.()}</p>
 
 <svelte:head>
   <style>
@@ -21,6 +21,9 @@
     .xs {
       font-size: 10px;
       line-height: 1.25;
+    }
+    .text-darkest {
+      color: #000000;
     }
     .text-light {
       color: #888888;

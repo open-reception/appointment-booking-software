@@ -1,4 +1,5 @@
 <script lang="js">
+  import { m } from "$i18n/messages";
   import EmailText from "./EmailText.svelte";
 
   let { children } = $props();
@@ -6,16 +7,12 @@
 
 <div class="page">
   <div class="container">
-    <div class="paper">
-      <div class="content">
-        {@render children?.()}
-      </div>
+    <div class="content">
+      {@render children?.()}
     </div>
-    <div class="branding">
-      <EmailText variant="sm" color="text-light">
-        Powered by <a href="https://open-reception.org">OpenReception</a>
-      </EmailText>
-    </div>
+    <EmailText variant="sm" color="text-light" class="branding">
+      {m["emails.poweredBy"]()} <a href="https://open-reception.org">OpenReception</a>
+    </EmailText>
   </div>
 </div>
 
@@ -53,36 +50,19 @@
       margin-top: 0;
     }
     .page {
-      background-color: #f6f6f6;
       min-height: 100%;
       min-height: 100vh;
       box-sizing: border-box;
       width: 100%;
-      padding: 0 16px 16px;
-      padding: 0 1rem 1rem;
     }
     .container {
       max-width: 600px;
       margin: 0 auto;
     }
-    .content {
-      padding: 24px;
-      padding: 1.5rem;
-    }
-    .paper {
-      background-color: white;
-      width: 100%;
-      box-shadow: 0 0 2px 2px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-      border-bottom-right-radius: 6px;
-      border-bottom-left-radius: 6px;
-    }
     .branding {
       margin: 16px 0;
       margin: 1rem 0;
-      padding: 0 16px;
-      padding: 0 1rem;
-      text-align: center;
+      width: 100%;
     }
   </style>
 </svelte:head>
