@@ -850,7 +850,7 @@
 					"description": "We will use this to send you the appointment details."
 				},
 				"phone": {
-					"description": "Format: +1234567890. We may contact you, if there are questions or changes regarding your appointment.",
+					"description": "Format: +1234567890. {name} may contact you by phone, if there are questions or changes regarding your appointment.",
 					"optional": "(optional)"
 				},
 				"action": "Add personal data"

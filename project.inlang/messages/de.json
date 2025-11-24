@@ -841,7 +841,7 @@
 					"description": "Wir senden Ihnen eine Bestätigungs-E-Mail mit den Termindetails."
 				},
 				"phone": {
-					"description": "Format: +491234567890. Wir kontaktieren Sie, falls es Fragen/Anderungen zu Ihrem Termin gibt.",
+					"description": "Format: +491234567890. {name} kontaktiert Sie ggf. telefonisch, falls es Fragen/Änderungen zu Ihrem Termin gibt.",
 					"optional": "(optional)"
 				},
 				"action": "Daten hinzufügen"
