@@ -108,7 +108,7 @@ describe("POST /api/auth/invite", () => {
 
   it("should allow global admin to invite to any tenant", async () => {
     const globalAdmin = {
-      userId: "admin-id",
+      id: "admin-id",
       role: "GLOBAL_ADMIN",
       tenantId: null,
     };
@@ -139,7 +139,7 @@ describe("POST /api/auth/invite", () => {
       "Test User",
       "STAFF",
       "12345678-1234-4234-8234-123456789012",
-      undefined,
+      "admin-id",
       "de",
     );
     expect(vi.mocked(sendUserInviteEmail)).toHaveBeenCalled();
@@ -147,7 +147,7 @@ describe("POST /api/auth/invite", () => {
 
   it("should allow tenant admin to invite to their own tenant", async () => {
     const tenantAdmin = {
-      userId: "tenant-admin-id",
+      id: "admin-id",
       role: "TENANT_ADMIN",
       tenantId: "12345678-1234-4234-8234-123456789012",
     };
@@ -173,7 +173,7 @@ describe("POST /api/auth/invite", () => {
       "Test User",
       "STAFF",
       "12345678-1234-4234-8234-123456789012",
-      undefined,
+      "admin-id",
       "de",
     );
     expect(vi.mocked(sendUserInviteEmail)).toHaveBeenCalledWith(
