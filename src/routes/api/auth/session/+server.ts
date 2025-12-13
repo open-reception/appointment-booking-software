@@ -73,18 +73,18 @@ export const GET: RequestHandler = async ({ locals }) => {
       return json({ authenticated: false, message: "Not authenticated" }, { status: 401 });
     }
 
-    logger.debug("Session check", { userId: locals.user.userId });
+    logger.debug("Session check", { userId: locals.user.id });
 
     return json({
       authenticated: true,
       user: {
-        id: locals.user.userId,
+        id: locals.user.id,
         email: locals.user.email,
         name: locals.user.name,
         role: locals.user.role,
         tenantId: locals.user.tenantId,
       },
-      expiresAt: new Date(locals.user.exp ?? 0).toISOString(),
+      expiresAt: new Date(locals.user.session.exp ?? 0).toISOString(),
     });
   } catch (error) {
     logger.error("Session check error:", { error: String(error) });

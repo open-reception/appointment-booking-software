@@ -149,7 +149,7 @@ export const PUT: RequestHandler = async ({ params, locals }) => {
     log.debug("Cancelling appointment", {
       tenantId,
       appointmentId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     const appointmentService = await AppointmentService.forTenant(tenantId);
@@ -158,7 +158,7 @@ export const PUT: RequestHandler = async ({ params, locals }) => {
     log.debug("Appointment cancelled successfully", {
       tenantId,
       appointmentId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     return json({
@@ -166,7 +166,7 @@ export const PUT: RequestHandler = async ({ params, locals }) => {
       appointment: cancelledAppointment,
     });
   } catch (error) {
-    logError(log)("Error cancelling appointment", error, locals.user?.userId, params.id);
+    logError(log)("Error cancelling appointment", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();

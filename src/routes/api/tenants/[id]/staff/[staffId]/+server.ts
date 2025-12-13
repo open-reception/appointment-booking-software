@@ -269,13 +269,13 @@ export const DELETE: RequestHandler = async ({ request, params, locals }) => {
     const result = await StaffService.deleteStaffMember(
       tenantId,
       staffId,
-      locals.user?.userId,
+      locals.user?.id,
       confirmationState,
     );
 
     return json(result);
   } catch (error) {
-    logError(log)("Error deleting staff member", error, locals.user?.userId, tenantId);
+    logError(log)("Error deleting staff member", error, locals.user?.id, tenantId);
 
     if (error instanceof BackendError) {
       return error.toJson();
@@ -325,12 +325,12 @@ export const PUT: RequestHandler = async ({ params, locals, request }) => {
       tenantId,
       staffId,
       updateData,
-      locals.user?.userId,
+      locals.user?.id,
     );
 
     return json(updatedUser);
   } catch (error) {
-    logError(log)("Error updating staff member", error, locals.user?.userId, params.id);
+    logError(log)("Error updating staff member", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();
