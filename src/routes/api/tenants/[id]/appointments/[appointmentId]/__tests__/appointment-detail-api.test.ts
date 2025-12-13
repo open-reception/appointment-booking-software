@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { GET, DELETE } from "../+server";
+import { DELETE } from "../+server";
 import type { RequestEvent } from "@sveltejs/kit";
 
 // Mock dependencies
@@ -19,8 +19,18 @@ vi.mock("$lib/logger", () => ({
   },
 }));
 
+vi.mock("$lib/server/utils/permissions", () => ({
+  checkPermission: vi.fn(),
+}));
+
 import { AppointmentService } from "$lib/server/services/appointment-service";
-import { NotFoundError, ValidationError } from "$lib/server/utils/errors";
+import {
+  NotFoundError,
+  ValidationError,
+  AuthenticationError,
+  AuthorizationError,
+} from "$lib/server/utils/errors";
+import { checkPermission } from "$lib/server/utils/permissions";
 
 describe("Appointment Detail API Routes", () => {
   const mockTenantId = "123e4567-e89b-12d3-a456-426614174000";
@@ -33,6 +43,8 @@ describe("Appointment Detail API Routes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (AppointmentService.forTenant as any).mockResolvedValue(mockAppointmentService);
+    // Default: checkPermission passes
+    vi.mocked(checkPermission).mockImplementation(() => {});
   });
 
   function createMockRequestEvent(overrides: Partial<RequestEvent> = {}): RequestEvent {
@@ -64,119 +76,6 @@ describe("Appointment Detail API Routes", () => {
     createdAt: "2024-01-01T09:00:00.000Z",
     updatedAt: "2024-01-01T09:00:00.000Z",
   } as any;
-
-  describe("GET /api/tenants/[id]/appointments/[appointmentId]", () => {
-    it("should return appointment for authenticated user", async () => {
-      mockAppointmentService.getAppointmentById.mockResolvedValue(mockAppointment);
-
-      const event = createMockRequestEvent();
-      const response = await GET(event);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.appointment).toEqual(mockAppointment);
-      expect(mockAppointmentService.getAppointmentById).toHaveBeenCalledWith(mockAppointmentId);
-    });
-
-    it("should allow staff to view appointments", async () => {
-      mockAppointmentService.getAppointmentById.mockResolvedValue(mockAppointment);
-
-      const event = createMockRequestEvent({
-        locals: {
-          user: {
-            userId: "user123",
-            role: "STAFF",
-            tenantId: mockTenantId,
-          },
-        } as any,
-      });
-
-      const response = await GET(event);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.appointment).toEqual(mockAppointment);
-    });
-
-    it("should allow global admin to view any tenant's appointments", async () => {
-      mockAppointmentService.getAppointmentById.mockResolvedValue(mockAppointment);
-
-      const event = createMockRequestEvent({
-        locals: {
-          user: {
-            userId: "user123",
-            role: "GLOBAL_ADMIN",
-            tenantId: "different-tenant",
-          },
-        } as any,
-      });
-
-      const response = await GET(event);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.appointment).toEqual(mockAppointment);
-    });
-
-    it("should handle missing tenant ID", async () => {
-      const event = createMockRequestEvent({
-        params: { id: undefined, appointmentId: mockAppointmentId },
-      });
-
-      const response = await GET(event);
-      const data = await response.json();
-
-      expect(response.status).toBe(422);
-      expect(data.error).toBe("Tenant ID and appointment ID are required");
-    });
-
-    it("should handle missing appointment ID", async () => {
-      const event = createMockRequestEvent({
-        params: { id: mockTenantId, appointmentId: undefined },
-      });
-
-      const response = await GET(event);
-      const data = await response.json();
-
-      expect(response.status).toBe(422);
-      expect(data.error).toBe("Tenant ID and appointment ID are required");
-    });
-
-    it("should handle appointment not found", async () => {
-      mockAppointmentService.getAppointmentById.mockResolvedValue(null);
-
-      const event = createMockRequestEvent();
-      const response = await GET(event);
-      const data = await response.json();
-
-      expect(response.status).toBe(404);
-      expect(data.error).toBe("Appointment not found");
-    });
-
-    it("should handle service errors", async () => {
-      mockAppointmentService.getAppointmentById.mockRejectedValue(
-        new ValidationError("Invalid appointment ID"),
-      );
-
-      const event = createMockRequestEvent();
-      const response = await GET(event);
-      const data = await response.json();
-
-      expect(response.status).toBe(422);
-      expect(data.error).toBe("Invalid appointment ID");
-    });
-
-    it("should handle internal server errors", async () => {
-      mockAppointmentService.getAppointmentById.mockRejectedValue(new Error("Database error"));
-
-      const event = createMockRequestEvent();
-      const response = await GET(event);
-      const data = await response.json();
-
-      expect(response.status).toBe(500);
-      expect(data.error).toBe("Internal server error");
-    });
-  });
 
   describe("DELETE /api/tenants/[id]/appointments/[appointmentId]", () => {
     it("should delete appointment for tenant admin", async () => {
@@ -212,6 +111,10 @@ describe("Appointment Detail API Routes", () => {
     });
 
     it("should return 403 for staff users trying to delete appointments", async () => {
+      vi.mocked(checkPermission).mockImplementationOnce(() => {
+        throw new AuthorizationError("Insufficient permissions");
+      });
+
       const event = createMockRequestEvent({
         locals: {
           user: {
@@ -231,6 +134,10 @@ describe("Appointment Detail API Routes", () => {
     });
 
     it("should return 401 for unauthenticated requests", async () => {
+      vi.mocked(checkPermission).mockImplementationOnce(() => {
+        throw new AuthenticationError("Authentication required");
+      });
+
       const event = createMockRequestEvent({ locals: { user: null } as any });
       const response = await DELETE(event);
       const result = await response.json();

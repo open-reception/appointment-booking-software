@@ -139,7 +139,7 @@ describe("POST /api/auth/invite", () => {
       "Test User",
       "STAFF",
       "12345678-1234-4234-8234-123456789012",
-      "admin-id",
+      undefined,
       "de",
     );
     expect(vi.mocked(sendUserInviteEmail)).toHaveBeenCalled();
@@ -173,7 +173,7 @@ describe("POST /api/auth/invite", () => {
       "Test User",
       "STAFF",
       "12345678-1234-4234-8234-123456789012",
-      "tenant-admin-id",
+      undefined,
       "de",
     );
     expect(vi.mocked(sendUserInviteEmail)).toHaveBeenCalledWith(

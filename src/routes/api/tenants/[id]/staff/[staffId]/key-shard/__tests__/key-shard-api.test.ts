@@ -108,8 +108,10 @@ describe("Staff Key Shard API Route", () => {
       request: {} as any,
       locals: {
         user: {
-          userId: mockUserId,
-          sessionId: "session-123",
+          id: mockUserId,
+          session: {
+            sessionId: "session-123",
+          },
         },
       } as any,
       ...overrides,
@@ -155,8 +157,8 @@ describe("Staff Key Shard API Route", () => {
       const event = createMockRequestEvent({
         locals: {
           user: {
-            userId: "different-user-id",
-            sessionId: "session-123",
+            id: "different-user-id",
+            session: { sessionId: "session-123" },
           },
         } as any,
       });
@@ -350,8 +352,8 @@ describe("Staff Key Shard API Route", () => {
           params: { id: mockTenantId, staffId: testCase.targetStaffId },
           locals: {
             user: {
-              userId: testCase.requestingUserId,
-              sessionId: "session-123",
+              id: testCase.requestingUserId,
+              session: { sessionId: "session-123" },
             },
           } as any,
         });

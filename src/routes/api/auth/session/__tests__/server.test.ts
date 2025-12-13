@@ -36,6 +36,27 @@ const createMockRequestEvent = (locals: any): RequestEvent =>
     parent: vi.fn(),
   }) as any;
 
+// Helper to convert old mock user format to new format
+const convertUserToLocals = (mockUser: any) => {
+  if (!mockUser) return { user: null };
+
+  return {
+    user: {
+      id: mockUser.userId,
+      email: mockUser.email,
+      name: mockUser.name,
+      role: mockUser.role,
+      tenantId: mockUser.tenantId,
+      isActive: mockUser.isActive,
+      confirmed: mockUser.confirmed,
+      session: {
+        sessionId: mockUser.sessionId,
+        exp: mockUser.exp,
+      },
+    },
+  };
+};
+
 describe("/api/auth/session GET endpoint", () => {
   it("should return user session data with correct exp field when user is authenticated", async () => {
     const mockUser = {
@@ -50,7 +71,7 @@ describe("/api/auth/session GET endpoint", () => {
       confirmed: true,
     };
 
-    const event = createMockRequestEvent({ user: mockUser });
+    const event = createMockRequestEvent(convertUserToLocals(mockUser));
     const response = await GET(event as any);
     const data = await response.json();
 
@@ -81,7 +102,7 @@ describe("/api/auth/session GET endpoint", () => {
       confirmed: true,
     };
 
-    const event = createMockRequestEvent({ user: mockUser });
+    const event = createMockRequestEvent(convertUserToLocals(mockUser));
     const response = await GET(event as any);
     const data = await response.json();
 
@@ -112,7 +133,7 @@ describe("/api/auth/session GET endpoint", () => {
       confirmed: true,
     };
 
-    const event = createMockRequestEvent({ user: mockUser });
+    const event = createMockRequestEvent(convertUserToLocals(mockUser));
     const response = await GET(event as any);
     const data = await response.json();
 
@@ -131,7 +152,7 @@ describe("/api/auth/session GET endpoint", () => {
   });
 
   it("should return 401 when user is not authenticated", async () => {
-    const event = createMockRequestEvent({ user: null });
+    const event = createMockRequestEvent(convertUserToLocals(null));
     const response = await GET(event as any);
 
     expect(response.status).toBe(401);
@@ -155,7 +176,7 @@ describe("/api/auth/session GET endpoint", () => {
       confirmed: true,
     };
 
-    const event = createMockRequestEvent({ user: mockGlobalAdmin });
+    const event = createMockRequestEvent(convertUserToLocals(mockGlobalAdmin));
     const response = await GET(event as any);
     const data = await response.json();
 
@@ -186,7 +207,7 @@ describe("/api/auth/session GET endpoint", () => {
       confirmed: true,
     };
 
-    const event = createMockRequestEvent({ user: mockUser });
+    const event = createMockRequestEvent(convertUserToLocals(mockUser));
     const response = await GET(event as any);
     const data = await response.json();
 
