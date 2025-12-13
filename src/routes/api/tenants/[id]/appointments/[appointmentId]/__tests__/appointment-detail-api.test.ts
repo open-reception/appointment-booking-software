@@ -24,12 +24,7 @@ vi.mock("$lib/server/utils/permissions", () => ({
 }));
 
 import { AppointmentService } from "$lib/server/services/appointment-service";
-import {
-  NotFoundError,
-  ValidationError,
-  AuthenticationError,
-  AuthorizationError,
-} from "$lib/server/utils/errors";
+import { NotFoundError, AuthenticationError, AuthorizationError } from "$lib/server/utils/errors";
 import { checkPermission } from "$lib/server/utils/permissions";
 
 describe("Appointment Detail API Routes", () => {
@@ -60,22 +55,6 @@ describe("Appointment Detail API Routes", () => {
       ...overrides,
     } as RequestEvent;
   }
-
-  const mockAppointment = {
-    id: mockAppointmentId,
-    tunnelId: "tunnel-123",
-    channelId: "channel-123",
-    appointmentDate: "2024-01-01T10:00:00.000Z",
-    expiryDate: null,
-    status: "CONFIRMED",
-    encryptedData: null,
-    dataKey: null,
-    encryptedPayload: "encrypted-payload",
-    iv: "iv-data",
-    authTag: "auth-tag",
-    createdAt: "2024-01-01T09:00:00.000Z",
-    updatedAt: "2024-01-01T09:00:00.000Z",
-  } as any;
 
   describe("DELETE /api/tenants/[id]/appointments/[appointmentId]", () => {
     it("should delete appointment for tenant admin", async () => {
