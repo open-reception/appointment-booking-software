@@ -323,21 +323,6 @@ export const authChallenge = pgTable("auth_challenge", {
   consumed: boolean("consumed").default(false).notNull(),
 });
 
-/**
- * @table challengeThrottle
- * Tracks failed authentication attempts for challenge-based authentication
- */
-export const challengeThrottle = pgTable("challenge_throttle", {
-  /** Primary key - unique identifier (emailHash or email depending on challenge type) */
-  id: text("id").primaryKey(),
-  /** Number of failed attempts */
-  failedAttempts: integer("failed_attempts").default(0).notNull(),
-  /** When the throttle was last updated */
-  lastAttemptAt: timestamp("last_attempt_at").defaultNow().notNull(),
-  /** When the throttle should reset/expire */
-  resetAt: timestamp("reset_at").notNull(),
-});
-
 /** StaffCrypto record type for database queries */
 export type SelectStaffCrypto = InferSelectModel<typeof staffCrypto>;
 

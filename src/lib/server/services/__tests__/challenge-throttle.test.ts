@@ -48,7 +48,7 @@ describe("ChallengeThrottleService", () => {
     const emailHash = "test-email-hash";
 
     it("should allow request when no throttle record exists", async () => {
-      const mockDb = await getTenantDb(tenantId);
+      const mockDb = getCentralDb();
       (mockDb.limit as any).mockResolvedValue([]);
 
       const result = await challengeThrottleService.checkThrottle(emailHash, "pin", tenantId);
@@ -59,7 +59,7 @@ describe("ChallengeThrottleService", () => {
     });
 
     it("should allow request when throttle has expired", async () => {
-      const mockDb = await getTenantDb(tenantId);
+      const mockDb = getCentralDb();
       const expiredRecord = {
         id: emailHash,
         failedAttempts: 3,
@@ -75,7 +75,7 @@ describe("ChallengeThrottleService", () => {
     });
 
     it("should throttle request when delay has not passed (1st failure)", async () => {
-      const mockDb = await getTenantDb(tenantId);
+      const mockDb = getCentralDb();
       const now = Date.now();
       const record = {
         id: emailHash,
@@ -93,7 +93,7 @@ describe("ChallengeThrottleService", () => {
     });
 
     it("should throttle request when delay has not passed (3rd failure)", async () => {
-      const mockDb = await getTenantDb(tenantId);
+      const mockDb = getCentralDb();
       const now = Date.now();
       const record = {
         id: emailHash,
@@ -111,7 +111,7 @@ describe("ChallengeThrottleService", () => {
     });
 
     it("should allow request when enough time has passed", async () => {
-      const mockDb = await getTenantDb(tenantId);
+      const mockDb = getCentralDb();
       const now = Date.now();
       const record = {
         id: emailHash,
@@ -128,7 +128,7 @@ describe("ChallengeThrottleService", () => {
     });
 
     it("should record first failed attempt", async () => {
-      const mockDb = await getTenantDb(tenantId);
+      const mockDb = getCentralDb();
       (mockDb.limit as any).mockResolvedValue([]);
 
       await challengeThrottleService.recordFailedAttempt(emailHash, "pin", tenantId);
@@ -143,7 +143,7 @@ describe("ChallengeThrottleService", () => {
     });
 
     it("should increment failed attempts on subsequent failures", async () => {
-      const mockDb = await getTenantDb(tenantId);
+      const mockDb = getCentralDb();
       const record = {
         id: emailHash,
         failedAttempts: 2,
@@ -163,7 +163,7 @@ describe("ChallengeThrottleService", () => {
     });
 
     it("should clear throttle on successful authentication", async () => {
-      const mockDb = await getTenantDb(tenantId);
+      const mockDb = getCentralDb();
 
       await challengeThrottleService.clearThrottle(emailHash, "pin", tenantId);
 
@@ -243,16 +243,10 @@ describe("ChallengeThrottleService", () => {
   });
 
   describe("Edge cases", () => {
-    it("should throw error when tenantId missing for PIN throttle", async () => {
-      await expect(challengeThrottleService.checkThrottle("hash", "pin")).rejects.toThrow(
-        "Tenant ID required",
-      );
-    });
-
     it("should handle cleanup of expired records", async () => {
       const mockDb = getCentralDb();
 
-      await challengeThrottleService.cleanupExpired("passkey");
+      await challengeThrottleService.cleanupExpired();
 
       expect(mockDb.delete).toHaveBeenCalled();
     });

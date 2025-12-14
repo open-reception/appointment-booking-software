@@ -2,13 +2,13 @@
  * Challenge Throttling Service
  *
  * Implements throttling for challenge-based authentication to prevent brute force attacks.
- * - PIN challenges (appointments): Exponential backoff (2 seconds, 10 seconds, 60 seconds, up to 30 minutes)
+ * All throttle data is stored centrally in the central database.
+ * - PIN challenges (appointments): Escalating delays (2s, 10s, 1m, 5m, 30m)
  * - Passkey challenges (auth): Fixed delay after 3 attempts (1 minute)
  */
 
-import { getTenantDb, getCentralDb } from "$lib/server/db";
-import { challengeThrottle } from "$lib/server/db/tenant-schema";
-import { passkeyChallengeThrottle } from "$lib/server/db/central-schema";
+import { getCentralDb } from "$lib/server/db";
+import { challengeThrottle } from "$lib/server/db/central-schema";
 import { eq, lt } from "drizzle-orm";
 import { logger } from "$lib/logger";
 
@@ -57,7 +57,7 @@ class ChallengeThrottleService {
    * Check if a challenge request should be throttled
    * @param identifier - Email hash for PIN challenges, email for passkey challenges
    * @param type - Type of challenge (pin or passkey)
-   * @param tenantId - Tenant ID (required for PIN challenges, optional for passkey)
+   * @param tenantId - Tenant ID (optional, no longer used but kept for API compatibility)
    */
   async checkThrottle(
     identifier: string,
@@ -65,107 +65,58 @@ class ChallengeThrottleService {
     tenantId?: string,
   ): Promise<ThrottleResult> {
     const now = new Date();
+    const db = getCentralDb();
 
-    if (type === "pin") {
-      if (!tenantId) {
-        throw new Error("Tenant ID required for PIN challenge throttling");
-      }
+    // Get throttle record from central DB
+    const records = await db
+      .select()
+      .from(challengeThrottle)
+      .where(eq(challengeThrottle.id, identifier))
+      .limit(1);
 
-      const db = await getTenantDb(tenantId);
+    if (records.length === 0) {
+      // No throttle record, allow request
+      return { allowed: true, retryAfterMs: 0, failedAttempts: 0 };
+    }
 
-      // Get throttle record
-      const records = await db
-        .select()
-        .from(challengeThrottle)
-        .where(eq(challengeThrottle.id, identifier))
-        .limit(1);
+    const record = records[0];
 
-      if (records.length === 0) {
-        // No throttle record, allow request
-        return { allowed: true, retryAfterMs: 0, failedAttempts: 0 };
-      }
+    // Check if throttle has expired
+    if (now > record.resetAt) {
+      // Throttle expired, clean up and allow
+      await db.delete(challengeThrottle).where(eq(challengeThrottle.id, identifier));
+      return { allowed: true, retryAfterMs: 0, failedAttempts: 0 };
+    }
 
-      const record = records[0];
+    // Calculate how long to wait based on challenge type
+    const delay =
+      type === "pin"
+        ? calculatePinThrottleDelay(record.failedAttempts)
+        : calculatePasskeyThrottleDelay(record.failedAttempts);
+    const timeSinceLastAttempt = now.getTime() - record.lastAttemptAt.getTime();
 
-      // Check if throttle has expired
-      if (now > record.resetAt) {
-        // Throttle expired, clean up and allow
-        await db.delete(challengeThrottle).where(eq(challengeThrottle.id, identifier));
-        return { allowed: true, retryAfterMs: 0, failedAttempts: 0 };
-      }
-
-      // Calculate how long to wait
-      const delay = calculatePinThrottleDelay(record.failedAttempts);
-      const timeSinceLastAttempt = now.getTime() - record.lastAttemptAt.getTime();
-
-      if (timeSinceLastAttempt < delay) {
-        // Still throttled
-        return {
-          allowed: false,
-          retryAfterMs: delay - timeSinceLastAttempt,
-          failedAttempts: record.failedAttempts,
-        };
-      }
-
-      // Enough time has passed, allow the request
+    if (timeSinceLastAttempt < delay) {
+      // Still throttled
       return {
-        allowed: true,
-        retryAfterMs: 0,
-        failedAttempts: record.failedAttempts,
-      };
-    } else {
-      // Passkey throttling (central DB)
-      const db = getCentralDb();
-
-      const records = await db
-        .select()
-        .from(passkeyChallengeThrottle)
-        .where(eq(passkeyChallengeThrottle.id, identifier))
-        .limit(1);
-
-      if (records.length === 0) {
-        // No throttle record, allow request
-        return { allowed: true, retryAfterMs: 0, failedAttempts: 0 };
-      }
-
-      const record = records[0];
-
-      // Check if throttle has expired
-      if (now > record.resetAt) {
-        // Throttle expired, clean up and allow
-        await db
-          .delete(passkeyChallengeThrottle)
-          .where(eq(passkeyChallengeThrottle.id, identifier));
-        return { allowed: true, retryAfterMs: 0, failedAttempts: 0 };
-      }
-
-      // Calculate how long to wait
-      const delay = calculatePasskeyThrottleDelay(record.failedAttempts);
-      const timeSinceLastAttempt = now.getTime() - record.lastAttemptAt.getTime();
-
-      if (timeSinceLastAttempt < delay) {
-        // Still throttled
-        return {
-          allowed: false,
-          retryAfterMs: delay - timeSinceLastAttempt,
-          failedAttempts: record.failedAttempts,
-        };
-      }
-
-      // Enough time has passed, allow the request
-      return {
-        allowed: true,
-        retryAfterMs: 0,
+        allowed: false,
+        retryAfterMs: delay - timeSinceLastAttempt,
         failedAttempts: record.failedAttempts,
       };
     }
+
+    // Enough time has passed, allow the request
+    return {
+      allowed: true,
+      retryAfterMs: 0,
+      failedAttempts: record.failedAttempts,
+    };
   }
 
   /**
    * Record a failed challenge attempt
    * @param identifier - Email hash for PIN challenges, email for passkey challenges
    * @param type - Type of challenge (pin or passkey)
-   * @param tenantId - Tenant ID (required for PIN challenges)
+   * @param tenantId - Tenant ID (optional, no longer used but kept for API compatibility)
    */
   async recordFailedAttempt(
     identifier: string,
@@ -173,139 +124,72 @@ class ChallengeThrottleService {
     tenantId?: string,
   ): Promise<void> {
     const now = new Date();
+    const db = getCentralDb();
 
-    if (type === "pin") {
-      if (!tenantId) {
-        throw new Error("Tenant ID required for PIN challenge throttling");
-      }
+    // Try to get existing record
+    const records = await db
+      .select()
+      .from(challengeThrottle)
+      .where(eq(challengeThrottle.id, identifier))
+      .limit(1);
 
-      const db = await getTenantDb(tenantId);
-
-      // Try to get existing record
-      const records = await db
-        .select()
-        .from(challengeThrottle)
-        .where(eq(challengeThrottle.id, identifier))
-        .limit(1);
-
-      if (records.length === 0) {
-        // Create new throttle record
-        const resetAt = new Date(now.getTime() + THROTTLE_RESET_DURATION_MS);
-        await db.insert(challengeThrottle).values({
-          id: identifier,
-          failedAttempts: 1,
-          lastAttemptAt: now,
-          resetAt,
-        });
-      } else {
-        // Update existing record
-        const record = records[0];
-        await db
-          .update(challengeThrottle)
-          .set({
-            failedAttempts: record.failedAttempts + 1,
-            lastAttemptAt: now,
-          })
-          .where(eq(challengeThrottle.id, identifier));
-      }
-
-      logger.info("Recorded failed PIN challenge attempt", {
-        identifier: identifier.slice(0, 8),
-        tenantId,
+    if (records.length === 0) {
+      // Create new throttle record
+      const resetAt = new Date(now.getTime() + THROTTLE_RESET_DURATION_MS);
+      await db.insert(challengeThrottle).values({
+        id: identifier,
+        failedAttempts: 1,
+        lastAttemptAt: now,
+        resetAt,
       });
     } else {
-      // Passkey throttling (central DB)
-      const db = getCentralDb();
-
-      const records = await db
-        .select()
-        .from(passkeyChallengeThrottle)
-        .where(eq(passkeyChallengeThrottle.id, identifier))
-        .limit(1);
-
-      if (records.length === 0) {
-        // Create new throttle record
-        const resetAt = new Date(now.getTime() + THROTTLE_RESET_DURATION_MS);
-        await db.insert(passkeyChallengeThrottle).values({
-          id: identifier,
-          failedAttempts: 1,
+      // Update existing record
+      const record = records[0];
+      await db
+        .update(challengeThrottle)
+        .set({
+          failedAttempts: record.failedAttempts + 1,
           lastAttemptAt: now,
-          resetAt,
-        });
-      } else {
-        // Update existing record
-        const record = records[0];
-        await db
-          .update(passkeyChallengeThrottle)
-          .set({
-            failedAttempts: record.failedAttempts + 1,
-            lastAttemptAt: now,
-          })
-          .where(eq(passkeyChallengeThrottle.id, identifier));
-      }
-
-      logger.info("Recorded failed passkey challenge attempt", {
-        identifier: identifier.slice(0, 8),
-      });
+        })
+        .where(eq(challengeThrottle.id, identifier));
     }
+
+    logger.info(`Recorded failed ${type} challenge attempt`, {
+      identifier: identifier.slice(0, 8),
+      type,
+    });
   }
 
   /**
    * Clear throttle for successful authentication
    * @param identifier - Email hash for PIN challenges, email for passkey challenges
    * @param type - Type of challenge (pin or passkey)
-   * @param tenantId - Tenant ID (required for PIN challenges)
+   * @param tenantId - Tenant ID (optional, no longer used but kept for API compatibility)
    */
   async clearThrottle(identifier: string, type: ThrottleType, tenantId?: string): Promise<void> {
-    if (type === "pin") {
-      if (!tenantId) {
-        throw new Error("Tenant ID required for PIN challenge throttling");
-      }
+    const db = getCentralDb();
+    await db.delete(challengeThrottle).where(eq(challengeThrottle.id, identifier));
 
-      const db = await getTenantDb(tenantId);
-      await db.delete(challengeThrottle).where(eq(challengeThrottle.id, identifier));
-
-      logger.debug("Cleared PIN challenge throttle", {
-        identifier: identifier.slice(0, 8),
-        tenantId,
-      });
-    } else {
-      const db = getCentralDb();
-      await db.delete(passkeyChallengeThrottle).where(eq(passkeyChallengeThrottle.id, identifier));
-
-      logger.debug("Cleared passkey challenge throttle", {
-        identifier: identifier.slice(0, 8),
-      });
-    }
+    logger.debug(`Cleared ${type} challenge throttle`, {
+      identifier: identifier.slice(0, 8),
+      type,
+    });
   }
 
   /**
    * Clean up expired throttle records
    * Should be called periodically
    */
-  async cleanupExpired(type: ThrottleType, tenantId?: string): Promise<void> {
+  async cleanupExpired(): Promise<void> {
     const now = new Date();
 
     try {
-      if (type === "pin") {
-        if (!tenantId) {
-          throw new Error("Tenant ID required for PIN challenge throttle cleanup");
-        }
+      const db = getCentralDb();
+      await db.delete(challengeThrottle).where(lt(challengeThrottle.resetAt, now));
 
-        const db = await getTenantDb(tenantId);
-        await db.delete(challengeThrottle).where(lt(challengeThrottle.resetAt, now));
-
-        logger.debug("Cleaned up expired PIN challenge throttles", { tenantId });
-      } else {
-        const db = getCentralDb();
-        await db.delete(passkeyChallengeThrottle).where(lt(passkeyChallengeThrottle.resetAt, now));
-
-        logger.debug("Cleaned up expired passkey challenge throttles");
-      }
+      logger.debug("Cleaned up expired challenge throttles");
     } catch (error) {
       logger.warn("Failed to cleanup expired throttles", {
-        type,
-        tenantId,
         error: String(error),
       });
     }
