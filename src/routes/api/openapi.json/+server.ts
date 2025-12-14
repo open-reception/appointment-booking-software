@@ -10,6 +10,8 @@ import "../health/services/+server.js";
 import "../auth/challenge/+server.js";
 import "../auth/login/+server.js";
 import "../auth/passkeys/+server.js";
+import "../auth/passkeys/[passkeyId]/+server.js";
+import "../auth/passkeys/[passkeyId]/replicate-tunnels/+server.js";
 import "../auth/confirm/+server.js";
 import "../auth/register/[id]/+server.js";
 import "../auth/resend-confirmation/+server.js";

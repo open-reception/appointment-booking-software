@@ -228,6 +228,7 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
     }
 
     // Handle WebAuthn authentication
+    let passkeyId: string | undefined;
     if (body.credential) {
       // Get the challenge from the session
       const challengeFromSession = cookies.get("webauthn-challenge");
@@ -261,15 +262,17 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
           verificationResult.passkeyId,
           verificationResult.newCounter,
         );
+        passkeyId = verificationResult.passkeyId;
       }
 
-      logger.debug("WebAuthn authentication successful", { userId: user.id });
+      logger.debug("WebAuthn authentication successful", { userId: user.id, passkeyId });
     }
 
     const sessionData = await SessionService.createSession(
       user.id,
       ipAddress,
       userAgent || undefined,
+      passkeyId,
     );
 
     // Set HTTP-only cookie for access token
