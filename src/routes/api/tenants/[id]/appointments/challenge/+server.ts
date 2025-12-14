@@ -10,6 +10,7 @@ import { KyberCrypto, BufferUtils } from "$lib/crypto/utils";
 import { challengeStore } from "$lib/server/services/challenge-store";
 import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
+import { challengeThrottleService } from "$lib/server/services/challenge-throttle";
 
 const requestSchema = z.object({
   emailHash: z.string(),
@@ -93,6 +94,23 @@ registerOpenAPIRoute("/tenants/{id}/appointments/challenge", "POST", {
         },
       },
     },
+    "429": {
+      description: "Too many failed attempts - rate limited",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              error: { type: "string", description: "Error message" },
+              retryAfterMs: {
+                type: "number",
+                description: "Milliseconds to wait before retrying",
+              },
+            },
+          },
+        },
+      },
+    },
     "500": {
       description: "Internal server error",
       content: {
@@ -119,6 +137,35 @@ export const POST: RequestHandler = async ({ request, params }) => {
 
     const body = await request.json();
     const { emailHash } = requestSchema.parse(body);
+
+    // Check throttling
+    const throttleResult = await challengeThrottleService.checkThrottle(
+      emailHash,
+      "pin",
+      tenantId,
+    );
+
+    if (!throttleResult.allowed) {
+      logger.warn("PIN challenge throttled", {
+        tenantId,
+        emailHashPrefix: emailHash.slice(0, 8),
+        retryAfterMs: throttleResult.retryAfterMs,
+        failedAttempts: throttleResult.failedAttempts,
+      });
+
+      return json(
+        {
+          error: "Too many failed attempts. Please try again later.",
+          retryAfterMs: throttleResult.retryAfterMs,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": Math.ceil(throttleResult.retryAfterMs / 1000).toString(),
+          },
+        },
+      );
+    }
 
     logger.info("Creating challenge for existing client", {
       tenantId,

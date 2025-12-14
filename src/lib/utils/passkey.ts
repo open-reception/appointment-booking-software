@@ -51,13 +51,31 @@ export const fetchChallenge = async (email: string) => {
 
   try {
     const data = await resp.json();
+
+    // Handle throttling
+    if (resp.status === 429) {
+      const retryAfterSeconds = Math.ceil((data.retryAfterMs || 60000) / 1000);
+      logger.error("Challenge request throttled", {
+        email,
+        retryAfterSeconds,
+      });
+      throw new Error(
+        `Too many failed attempts. Please try again in ${retryAfterSeconds} seconds.`,
+      );
+    }
+
+    if (!resp.ok) {
+      logger.error("Failed to fetch challenge", { email, status: resp.status });
+      return null;
+    }
+
     return {
       id: data.rpId,
       challenge: data.challenge,
     };
-  } catch {
-    logger.error("Failed to fetch challenge", { email, status: resp.status });
-    return null;
+  } catch (error) {
+    logger.error("Failed to fetch challenge", { email, status: resp.status, error });
+    throw error;
   }
 };
 

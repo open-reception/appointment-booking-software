@@ -230,6 +230,22 @@ export const userInvite = pgTable(
 );
 
 /**
+ * Passkey Challenge Throttle table - tracks failed passkey authentication attempts
+ * Used to implement exponential backoff for failed authentication attempts
+ * @table passkey_challenge_throttle
+ */
+export const passkeyChallengeThrottle = pgTable("passkey_challenge_throttle", {
+  /** Primary key - email address of the user attempting authentication */
+  id: text("id").primaryKey(),
+  /** Number of failed attempts */
+  failedAttempts: integer("failed_attempts").default(0).notNull(),
+  /** When the throttle was last updated */
+  lastAttemptAt: timestamp("last_attempt_at").defaultNow().notNull(),
+  /** When the throttle should reset/expire */
+  resetAt: timestamp("reset_at").notNull(),
+});
+
+/**
  * TypeScript type exports for use in application code
  */
 

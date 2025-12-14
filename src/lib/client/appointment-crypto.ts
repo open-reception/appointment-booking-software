@@ -203,6 +203,13 @@ export class UnifiedAppointmentCrypto {
       });
 
       if (!challengeResponse.ok) {
+        if (challengeResponse.status === 429) {
+          const errorData = await challengeResponse.json();
+          const retryAfterSeconds = Math.ceil((errorData.retryAfterMs || 0) / 1000);
+          throw new Error(
+            `Too many failed attempts. Please try again in ${retryAfterSeconds} seconds.`,
+          );
+        }
         throw new Error("Challenge could not be retrieved");
       }
 
@@ -233,6 +240,12 @@ export class UnifiedAppointmentCrypto {
       if (!verificationResponse.ok) {
         const errorData = await verificationResponse.json();
         console.error("❌ Challenge verification failed:", errorData);
+        if (verificationResponse.status === 429 && errorData.retryAfterMs) {
+          const retryAfterSeconds = Math.ceil(errorData.retryAfterMs / 1000);
+          throw new Error(
+            `Too many failed attempts. Please try again in ${retryAfterSeconds} seconds.`,
+          );
+        }
         throw new Error("Challenge verification failed");
       }
 
