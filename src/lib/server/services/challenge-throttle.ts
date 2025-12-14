@@ -20,11 +20,17 @@ interface ThrottleResult {
   failedAttempts: number;
 }
 
+// Throttle reset duration: 1 hour
+const THROTTLE_RESET_DURATION_MS = 60 * 60 * 1000;
+
 /**
- * Calculate exponential backoff delay for PIN challenges
- * First 2 retries: wait for a few seconds
- * Third retry: wait for one minute
- * Scale up to thirty minutes
+ * Calculate escalating delay for PIN challenges
+ * Uses a fixed escalation pattern that increases with each failed attempt:
+ * - 1st failure: 2 seconds
+ * - 2nd failure: 10 seconds
+ * - 3rd failure: 1 minute
+ * - 4th failure: 5 minutes
+ * - 5+ failures: 30 minutes
  */
 function calculatePinThrottleDelay(failedAttempts: number): number {
   if (failedAttempts === 0) return 0;
@@ -184,7 +190,7 @@ class ChallengeThrottleService {
 
       if (records.length === 0) {
         // Create new throttle record
-        const resetAt = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
+        const resetAt = new Date(now.getTime() + THROTTLE_RESET_DURATION_MS);
         await db.insert(challengeThrottle).values({
           id: identifier,
           failedAttempts: 1,
@@ -219,7 +225,7 @@ class ChallengeThrottleService {
 
       if (records.length === 0) {
         // Create new throttle record
-        const resetAt = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
+        const resetAt = new Date(now.getTime() + THROTTLE_RESET_DURATION_MS);
         await db.insert(passkeyChallengeThrottle).values({
           id: identifier,
           failedAttempts: 1,
