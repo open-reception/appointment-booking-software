@@ -35,3 +35,5 @@ vite.config.ts.timestamp-*
 
 CLAUDE.md
 .claude/
+
+security-audit*
