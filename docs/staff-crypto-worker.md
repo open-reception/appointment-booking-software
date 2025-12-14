@@ -21,43 +21,65 @@ Browser (Staff App) ↔ StaffCryptoService API ↔ Tenant Database
 
 - **Browser-Based Cryptography**: All key generation and crypto operations in browser
 - **Split-Key Architecture**: Private keys split using XOR between database and passkey shards
-- **WebAuthn Integration**: Hardware-backed deterministic key derivation from passkey data
-- **Zero-Knowledge Server**: Server never sees complete private keys
+- **WebAuthn PRF Extension**: Hardware-backed deterministic secret derivation using PRF (Pseudo-Random Function)
+- **Zero-Knowledge Server**: Server never sees complete private keys or PRF outputs
 - **Per-Passkey Keys**: Each staff passkey has its own unique keypair
 - **ML-KEM-768 Encryption**: Post-quantum cryptography using Kyber
+- **Modern Authenticator Required**: Requires CTAP 2.1+ authenticators with PRF support
 
 ## Browser Integration Workflow
 
 ### 1. Staff Passkey Registration & Key Generation
 
-When a staff member registers a new passkey, the browser automatically generates crypto keys:
+When a staff member registers a new passkey, the browser automatically generates crypto keys using the WebAuthn PRF extension:
 
 ```javascript
 import { UnifiedAppointmentCrypto } from "$lib/client/appointment-crypto";
+import { generatePasskey, getPRFOutputAfterRegistration } from "$lib/utils/passkey";
 
-async function registerStaffPasskey(userId, tenantId) {
-  // 1. Complete WebAuthn passkey registration
-  const credential = await navigator.credentials.create({
-    publicKey: registrationOptions,
+async function registerStaffPasskey(userId, tenantId, email) {
+  // 1. Complete WebAuthn passkey registration WITH PRF extension
+  const credential = await generatePasskey({
+    id: rpId,
+    challenge: challengeBase64,
+    email: email,
+    enablePRF: true, // CRITICAL: Enable PRF for zero-knowledge key derivation
   });
+
+  // Verify PRF extension is enabled
+  const extensionResults = credential.getClientExtensionResults();
+  if (!extensionResults.prf?.enabled) {
+    throw new Error(
+      "PRF extension not supported. Please use a modern authenticator " +
+        "(YubiKey 5.2.3+, Titan Gen2, Windows Hello, Touch ID, or Android)"
+    );
+  }
 
   // 2. Generate Kyber keypair in browser
   const keyPair = KyberCrypto.generateKeyPair();
 
-  // 3. Derive deterministic shard from WebAuthn authenticatorData
+  // 3. IMMEDIATELY retrieve PRF output after passkey creation
+  // This is the ONLY time we can get the PRF output for this passkey
+  const prfOutput = await getPRFOutputAfterRegistration({
+    passkeyId: credential.id,
+    rpId: rpId,
+    challengeBase64: freshChallengeBase64, // Fresh challenge from server
+  });
+
+  // 4. Derive deterministic shard from PRF output (SECRET, zero-knowledge!)
   const crypto = new UnifiedAppointmentCrypto();
-  const passkeyBasedShard = await crypto.derivePasskeyBasedShard(
-    credential.id,
-    credential.response.authenticatorData,
+  const passkeyBasedShard = await crypto.derivePasskeyBasedShardWithPRF(
+    prfOutput, // 32-byte secret from PRF extension
+    userId,
   );
 
-  // 4. Create database shard using XOR
+  // 5. Create database shard using XOR
   const dbShard = new Uint8Array(keyPair.privateKey.length);
   for (let i = 0; i < keyPair.privateKey.length; i++) {
     dbShard[i] = keyPair.privateKey[i] ^ passkeyBasedShard[i];
   }
 
-  // 5. Store via StaffCryptoService API
+  // 6. Store via StaffCryptoService API
   await fetch(`/api/tenants/${tenantId}/staff/${userId}/crypto`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -68,49 +90,98 @@ async function registerStaffPasskey(userId, tenantId) {
     }),
   });
 
-  console.log("Staff crypto keys generated and stored");
+  console.log("Staff crypto keys generated and stored (PRF-based)");
 }
 ```
 
+**SECURITY NOTE**: The PRF output is a **secret** 32-byte value that only the passkey owner can derive. Unlike the old `authenticatorData` approach (which used public `RP_ID_HASH`), PRF provides true zero-knowledge security - an attacker with database access **cannot** reconstruct the private key.
+
 ### 2. Staff Authentication & Key Reconstruction
 
-When a staff member authenticates, their private key is reconstructed from shards:
+When a staff member authenticates, their private key is reconstructed from shards using the WebAuthn PRF extension:
 
 ```javascript
 async function authenticateStaff(userId, tenantId) {
-  // 1. Perform WebAuthn authentication
-  const assertion = await navigator.credentials.get({
-    publicKey: authenticationOptions,
+  const crypto = new UnifiedAppointmentCrypto();
+
+  // This internally performs the following steps:
+  // 1. Perform WebAuthn authentication WITH PRF extension
+  // 2. Get database shard from API
+  // 3. Derive same passkey-based shard from PRF output
+  // 4. Reconstruct private key using XOR
+  await crypto.authenticateStaff(userId, tenantId);
+
+  console.log("Staff authenticated and keys reconstructed (PRF-based)");
+  return crypto;
+}
+```
+
+**Internal PRF Authentication Flow** (handled by `UnifiedAppointmentCrypto.authenticateStaff()`):
+
+```javascript
+async authenticateStaff(staffId, tenantId) {
+  // 1. Get passkey list from session storage
+  const availablePasskeys = this.getAvailablePasskeys(staffId);
+  const passkeyId = availablePasskeys[0]; // User can select which passkey to use
+
+  // 2. Perform WebAuthn authentication with PRF extension
+  const prfSalt = new TextEncoder().encode(passkeyId);
+
+  const credential = await navigator.credentials.get({
+    publicKey: {
+      challenge: challengeBuffer,
+      rpId: rpId,
+      allowCredentials: [{ id: passkeyIdBuffer, type: "public-key" }],
+      userVerification: "required",
+      extensions: {
+        prf: {
+          eval: { first: prfSalt }, // Request PRF output
+        },
+      },
+    },
   });
 
-  // 2. Get database shard from API
-  const response = await fetch(`/api/tenants/${tenantId}/staff/${userId}/key-shard`);
-  const { publicKey, privateKeyShare, passkeyId } = await response.json();
+  // 3. Extract PRF output from WebAuthn response
+  const extensionResults = credential.getClientExtensionResults();
+  const prfOutput = extensionResults.prf?.results?.first;
 
-  // 3. Derive same passkey-based shard
-  const crypto = new UnifiedAppointmentCrypto();
-  const passkeyBasedShard = await crypto.derivePasskeyBasedShard(
-    passkeyId,
-    assertion.response.authenticatorData,
+  if (!prfOutput) {
+    throw new Error("PRF extension not supported by this passkey");
+  }
+
+  // 4. Get database shard from API
+  const response = await fetch(`/api/tenants/${tenantId}/staff/${staffId}/key-shard`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ passkeyId }),
+  });
+  const { publicKey, privateKeyShare } = await response.json();
+
+  // 5. Derive passkey-based shard from PRF output (same as during registration)
+  const passkeyBasedShard = await this.derivePasskeyBasedShardWithPRF(
+    prfOutput, // Secret 32-byte PRF output
+    staffId,
   );
 
-  // 4. Reconstruct private key using XOR
+  // 6. Reconstruct private key using XOR
   const dbShard = base64ToBuffer(privateKeyShare);
   const privateKey = new Uint8Array(dbShard.length);
   for (let i = 0; i < dbShard.length; i++) {
     privateKey[i] = dbShard[i] ^ passkeyBasedShard[i];
   }
 
-  // 5. Store reconstructed keypair for session
-  crypto.staffKeyPair = {
+  // 7. Store reconstructed keypair for session
+  this.staffKeyPair = {
     publicKey: base64ToBuffer(publicKey),
     privateKey: privateKey,
   };
-
-  console.log("Staff authenticated and keys reconstructed");
-  return crypto;
 }
 ```
+
+**SECURITY NOTE**: The PRF output is derived fresh during each authentication using the same deterministic salt (`passkeyId`). This guarantees:
+- **Determinism**: Same passkey + same salt = same PRF output = same private key
+- **Zero-Knowledge**: PRF output never leaves the browser, server cannot derive it
+- **Hardware-Backed**: PRF computation happens inside the authenticator's secure element
 
 ## StaffCryptoService API
 

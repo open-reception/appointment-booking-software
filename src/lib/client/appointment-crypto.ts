@@ -375,14 +375,14 @@ export class UnifiedAppointmentCrypto {
   // ===== STAFF METHODS =====
 
   /**
-   * Authenticate staff member using WebAuthn and reconstruct private key from shards
+   * Authenticate staff member using WebAuthn with PRF and reconstruct private key from shards
+   *
+   * SECURITY: Uses PRF Extension for zero-knowledge key derivation.
+   * Requires modern authenticator with PRF support (CTAP 2.1+).
    */
   async authenticateStaff(staffId: string, tenantId: string): Promise<void> {
     try {
-      // 1. Perform WebAuthn authentication
-      const webAuthnResponse = await this.performWebAuthnAuthentication(staffId);
-
-      // 2. Fetch database shard from server
+      // 1. Fetch database shard from server (to get passkeyId)
       const shardResponse = await fetch(`/api/tenants/${tenantId}/staff/${staffId}/key-shard`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
@@ -394,11 +394,11 @@ export class UnifiedAppointmentCrypto {
 
       const shardData = await shardResponse.json();
 
-      // 3. Derive passkey-based shard from WebAuthn response
-      const passkeyBasedShard = await this.derivePasskeyBasedShard(
-        shardData.passkeyId,
-        webAuthnResponse.authenticatorData,
-      );
+      // 2. Get PRF output from session (stored during login)
+      const prfOutput = await this.getPRFOutputFromSession(staffId, shardData.passkeyId);
+
+      // 3. Derive passkey-based shard from PRF output
+      const passkeyBasedShard = await this.derivePasskeyBasedShardWithPRF(prfOutput, staffId);
 
       // 4. Decode database shard
       const dbShard = this.base64ToUint8Array(shardData.privateKeyShare);
@@ -420,72 +420,11 @@ export class UnifiedAppointmentCrypto {
       this.staffAuthenticated = true;
       this.keyExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-      console.log("✅ Staff authentication successful");
+      console.log("✅ Staff authentication successful with PRF");
     } catch (error) {
       console.error("❌ Staff authentication failed:", error);
       throw new Error(
         `Staff authentication failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
-  }
-
-  /**
-   * Reconstruct staff keys from session data (after login)
-   * This avoids requiring WebAuthn on every page load
-   */
-  async reconstructStaffKeysFromSession(
-    staffId: string,
-    tenantId: string,
-    passkeyId: string,
-    authenticatorDataBase64: string,
-  ): Promise<void> {
-    try {
-      // 1. Fetch database shard from server
-      const shardResponse = await fetch(`/api/tenants/${tenantId}/staff/${staffId}/key-shard`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (!shardResponse.ok) {
-        throw new Error(`Failed to fetch key shard: ${shardResponse.status}`);
-      }
-
-      const shardData = await shardResponse.json();
-
-      // 2. Convert base64 authenticatorData back to ArrayBuffer
-      const authenticatorDataBytes = this.base64ToUint8Array(authenticatorDataBase64);
-
-      // 3. Derive passkey-based shard from stored authenticator data
-      const passkeyBasedShard = await this.derivePasskeyBasedShard(
-        passkeyId,
-        authenticatorDataBytes.buffer as ArrayBuffer,
-      );
-
-      // 4. Decode database shard
-      const dbShard = this.base64ToUint8Array(shardData.privateKeyShare);
-
-      // 5. Reconstruct private key by XORing the two shards
-      const privateKey = new Uint8Array(dbShard.length);
-      for (let i = 0; i < dbShard.length; i++) {
-        privateKey[i] = dbShard[i] ^ passkeyBasedShard[i];
-      }
-
-      // 6. Store reconstructed key pair
-      this.staffKeyPair = {
-        publicKey: this.base64ToUint8Array(shardData.publicKey),
-        privateKey: privateKey,
-      };
-
-      this.staffId = staffId;
-      this.tenantId = tenantId;
-      this.staffAuthenticated = true;
-      this.keyExpiry = Date.now() + 60 * 60 * 1000; // 1 hour
-
-      console.log("✅ Staff keys reconstructed from session");
-    } catch (error) {
-      console.error("❌ Failed to reconstruct staff keys:", error);
-      throw new Error(
-        `Key reconstruction failed: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -659,69 +598,81 @@ export class UnifiedAppointmentCrypto {
   // ===== SHARED PRIVATE METHODS =====
 
   /**
-   * Perform WebAuthn authentication for staff
+   * Get PRF output for staff authentication
+   *
+   * SECURITY: PRF Extension is REQUIRED for zero-knowledge key derivation.
+   * This method retrieves PRF output from the auth session (stored during login).
+   *
+   * @param staffId - Staff member ID
+   * @param passkeyId - Passkey credential ID
+   * @returns PRF output as ArrayBuffer
+   * @throws Error if PRF output is not available in session
    */
-  private async performWebAuthnAuthentication(staffId: string): Promise<{
-    authenticatorData: ArrayBuffer;
-    signature: ArrayBuffer;
-    userHandle: ArrayBuffer | null;
-  }> {
-    // 1. Get authentication options from server
-    const optionsResponse = await fetch("/api/auth/webauthn/authenticate/begin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: staffId }),
-    });
+  private async getPRFOutputFromSession(staffId: string, passkeyId: string): Promise<ArrayBuffer> {
+    // Import auth store dynamically to avoid circular dependencies
+    const { auth } = await import("$lib/stores/auth");
 
-    if (!optionsResponse.ok) {
-      throw new Error("Failed to get WebAuthn options");
+    // Get PRF output from session storage (set during login)
+    const passkeyAuthData = auth.getPasskeyAuthData();
+
+    if (!passkeyAuthData) {
+      throw new Error(
+        "No passkey authentication data found in session. " +
+          "Please log in again with your passkey to access encrypted data.",
+      );
     }
 
-    const options = await optionsResponse.json();
-
-    // 2. Perform WebAuthn authentication
-    const credential = (await navigator.credentials.get({
-      publicKey: {
-        challenge: new Uint8Array(this.base64ToUint8Array(options.challenge)),
-        allowCredentials: options.allowCredentials?.map((cred: { id: string; type: string }) => ({
-          id: new Uint8Array(this.base64ToUint8Array(cred.id)),
-          type: cred.type as PublicKeyCredentialType,
-        })),
-        timeout: options.timeout,
-        userVerification: options.userVerification,
-      },
-    })) as PublicKeyCredential;
-
-    if (!credential) {
-      throw new Error("WebAuthn authentication failed");
+    if (!passkeyAuthData.prfOutput) {
+      throw new Error(
+        "PRF output not available in session. " +
+          "This passkey may not support the PRF extension. " +
+          "Please use a modern authenticator (YubiKey 5.2.3+, Titan Gen2, Windows Hello, Touch ID, or Android).",
+      );
     }
 
-    const response = credential.response as AuthenticatorAssertionResponse;
+    // Verify that the passkeyId matches (security check)
+    if (passkeyAuthData.passkeyId !== passkeyId) {
+      throw new Error(
+        `Passkey ID mismatch: expected ${passkeyId}, got ${passkeyAuthData.passkeyId}. ` +
+          "Please log out and log in again.",
+      );
+    }
 
-    return {
-      authenticatorData: response.authenticatorData,
-      signature: response.signature,
-      userHandle: response.userHandle,
-    };
+    // Decode PRF output from base64
+    const prfBytes = this.base64ToUint8Array(passkeyAuthData.prfOutput);
+    return prfBytes.buffer as ArrayBuffer;
   }
 
   /**
-   * Store the staff key pair after the registration of a new staff member
+   * Store the staff key pair after the registration of a new staff member with PRF
+   *
+   * SECURITY: Uses PRF Extension for zero-knowledge key derivation.
+   * The prfOutput parameter MUST come from a WebAuthn assertion with PRF extension.
+   *
+   * @param tenantId - Tenant ID
+   * @param staffId - Staff member ID
+   * @param passkeyId - Passkey credential ID
+   * @param prfOutput - 32-byte PRF output from WebAuthn assertion (secret!)
+   * @param keyPair - ML-KEM-768 keypair generated in browser
+   * @throws Error if PRF output is invalid or API call fails
    */
   public async storeStaffKeyPair(
     tenantId: string,
     staffId: string,
     passkeyId: string,
-    authenticatorData: ArrayBuffer,
+    prfOutput: ArrayBuffer,
     keyPair: { publicKey: Uint8Array; privateKey: Uint8Array },
   ): Promise<void> {
-    const passkeyBasedShard = await this.derivePasskeyBasedShard(passkeyId, authenticatorData);
+    // Derive passkey-based shard from PRF output
+    const passkeyBasedShard = await this.derivePasskeyBasedShardWithPRF(prfOutput, staffId);
 
+    // Create database shard by XORing private key with passkey-based shard
     const dbShard = new Uint8Array(keyPair.privateKey.length);
     for (let i = 0; i < keyPair.privateKey.length; i++) {
       dbShard[i] = keyPair.privateKey[i] ^ passkeyBasedShard[i];
     }
 
+    // Store public key and database shard on server
     await fetch(`/api/tenants/${tenantId}/staff/${staffId}/crypto`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -731,6 +682,8 @@ export class UnifiedAppointmentCrypto {
         privateKeyShare: this.uint8ArrayToBase64(dbShard),
       }),
     });
+
+    console.log("✅ Staff keypair stored with PRF-based security");
   }
 
   private uint8ArrayToBase64(array: Uint8Array): string {
@@ -738,47 +691,53 @@ export class UnifiedAppointmentCrypto {
   }
 
   /**
-   * Derive a deterministic shard from passkey authentication data
+   * Derive a deterministic shard from WebAuthn PRF Extension (CTAP 2.1+)
    *
-   * This method creates a consistent private key shard from WebAuthn authenticatorData.
+   * This method uses the PRF (Pseudo-Random Function) extension to derive a secret shard.
    * The same passkey will always produce the same shard, enabling key reconstruction.
+   *
+   * SECURITY: PRF provides ZERO-KNOWLEDGE guarantee:
+   * - PRF output is SECRET - only the passkey owner can derive it
+   * - Server NEVER sees the PRF output (only the database shard)
+   * - Database compromise does NOT reveal private keys (both shards needed)
    *
    * Used in Staff Key Management:
    * - During registration: Create shard to XOR with private key for database storage
    * - During authentication: Recreate same shard to reconstruct private key
    *
-   * Uses HKDF (HMAC-based Key Derivation Function) with:
-   * - IKM: First 32 bytes of authenticatorData (rpIdHash only, excluding flags and signCount)
-   * - Salt: "staff-crypto-shard-v1" (version-specific salt)
-   * - Info: "passkey:{passkeyId}" (domain separation per passkey)
-   * - Length: 2400 bytes (ML-KEM-768 private key size)
+   * Uses PRF Extension + HKDF expansion:
+   * - Input: 32-byte PRF output from authenticator (secret!)
+   * - HKDF Salt: "staff-prf-shard-v2" (version-specific)
+   * - HKDF Info: "staff:{staffId}" (domain separation)
+   * - Output: 2400 bytes (ML-KEM-768 private key size)
+   *
+   * @param prfOutput - 32-byte PRF output from assertion.getClientExtensionResults().prf.results.first
+   * @param staffId - Staff member ID for domain separation
+   * @returns 2400-byte shard for XOR-based key reconstruction
+   * @throws Error if PRF output is not exactly 32 bytes
    */
-  private async derivePasskeyBasedShard(
-    passkeyId: string,
-    authenticatorData: ArrayBuffer,
+  private async derivePasskeyBasedShardWithPRF(
+    prfOutput: ArrayBuffer,
+    staffId: string,
   ): Promise<Uint8Array> {
-    // Extract randomness from authenticator data
-    // IMPORTANT: Use only the first 32 bytes (rpIdHash)
-    // We CANNOT use flags (byte 32) because the AT flag differs between registration and authentication!
-    // We CANNOT use signCount (bytes 33-36) because it increments on every authentication!
-    // authenticatorData structure:
-    // - Bytes 0-31: rpIdHash (SHA-256 of RP ID) - CONSTANT ✓
-    // - Byte 32: flags - DIFFERS (AT flag set during registration) ✗
-    // - Bytes 33-36: signCount - CHANGES on every login ✗
-    // - Bytes 37+: attestedCredentialData (only during registration) ✗
-    const fullData = new Uint8Array(authenticatorData);
-    const inputKeyMaterial = fullData.slice(0, 32); // Only first 32 bytes (rpIdHash only)
+    // Validate PRF output length (should always be 32 bytes per CTAP 2.1 spec)
+    const prfBytes = new Uint8Array(prfOutput);
+    if (prfBytes.length !== 32) {
+      throw new Error(`Invalid PRF output length: ${prfBytes.length} bytes (expected 32)`);
+    }
 
-    // Import the IKM as a CryptoKey for HKDF
-    const ikmKey = await crypto.subtle.importKey("raw", inputKeyMaterial, "HKDF", false, [
+    // Import the PRF output as a CryptoKey for HKDF expansion
+    const ikmKey = await crypto.subtle.importKey("raw", prfBytes, "HKDF", false, [
       "deriveBits",
     ]);
 
-    // Salt for HKDF
-    const salt = new TextEncoder().encode("staff-crypto-shard-v1");
+    // Salt for HKDF (versioned to allow future rotation)
+    // v2: Uses email-based PRF salts for multi-passkey support
+    // Each passkey still produces unique PRF output (passkey private key is part of PRF)
+    const salt = new TextEncoder().encode("staff-prf-shard-v2");
 
-    // Info for HKDF (domain separation with passkey ID)
-    const info = new TextEncoder().encode(`passkey:${passkeyId}`);
+    // Info for HKDF (domain separation per staff member)
+    const info = new TextEncoder().encode(`staff:${staffId}`);
 
     // Derive key material with the length needed for Kyber private key (2400 bytes for ML-KEM-768)
     const keyMaterial = await crypto.subtle.deriveBits(
