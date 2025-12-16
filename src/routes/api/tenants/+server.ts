@@ -183,7 +183,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
       { status: 201 },
     );
   } catch (error) {
-    logError(log)("Tenant creation error", error, locals.user?.userId);
+    logError(log)("Tenant creation error", error, locals.user?.id);
 
     if (error instanceof BackendError) {
       return error.toJson();
@@ -209,7 +209,7 @@ export const GET: RequestHandler = async ({ locals }) => {
     );
 
     log.debug("Getting all tenants", {
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     // Get all tenants from database
@@ -226,14 +226,14 @@ export const GET: RequestHandler = async ({ locals }) => {
 
     log.debug("Retrieved tenants successfully", {
       tenantCount: tenants.length,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     return json({
       tenants: tenants,
     });
   } catch (error) {
-    logError(log)("Error getting tenants", error, locals.user?.userId);
+    logError(log)("Error getting tenants", error, locals.user?.id);
     return new InternalError().toJson();
   }
 };

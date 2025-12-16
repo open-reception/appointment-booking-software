@@ -51,8 +51,8 @@ export const POST: RequestHandler = async ({ locals, cookies }) => {
     }
 
     // Delete the session from database
-    if (locals.user.sessionId) {
-      await SessionService.revokeSession(locals.user.sessionId);
+    if (locals.user.session.sessionId) {
+      await SessionService.revokeSession(locals.user.session.sessionId);
     }
 
     // Clear the access token cookie

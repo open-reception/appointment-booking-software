@@ -214,7 +214,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 
     log.debug("Creating new agent", {
       tenantId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
       agentName: body.name,
     });
 
@@ -224,7 +224,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
     log.debug("Agent created successfully", {
       tenantId,
       agentId: newAgent.id,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     return json(
@@ -235,7 +235,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
       { status: 201 },
     );
   } catch (error) {
-    logError(log)("Error creating agent:", error, locals.user?.userId, params.id);
+    logError(log)("Error creating agent:", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();
@@ -260,7 +260,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
     log.debug("Getting all agents", {
       tenantId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     const agentService = await AgentService.forTenant(tenantId);
@@ -269,14 +269,14 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     log.debug("Agents retrieved successfully", {
       tenantId,
       count: agents.length,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     return json({
       agents,
     });
   } catch (error) {
-    logError(log)("Error getting agents:", error, locals.user?.userId, params.id);
+    logError(log)("Error getting agents:", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();

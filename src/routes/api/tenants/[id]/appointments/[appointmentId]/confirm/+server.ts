@@ -197,7 +197,7 @@ export const PUT: RequestHandler = async ({ request, params, locals }) => {
     log.debug("Confirming appointment", {
       tenantId,
       appointmentId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
       willSendEmail: !!clientEmail,
     });
 
@@ -211,7 +211,7 @@ export const PUT: RequestHandler = async ({ request, params, locals }) => {
     log.debug("Appointment confirmed successfully", {
       tenantId,
       appointmentId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     return json({
@@ -219,7 +219,7 @@ export const PUT: RequestHandler = async ({ request, params, locals }) => {
       appointment: confirmedAppointment,
     });
   } catch (error) {
-    logError(log)("Error confirming appointment", error, locals.user?.userId, params.id);
+    logError(log)("Error confirming appointment", error, locals.user?.id, params.id);
     if (error instanceof BackendError) {
       return error.toJson();
     }

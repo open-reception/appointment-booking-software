@@ -195,7 +195,7 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 
     return json(config);
   } catch (error) {
-    logError(log)("Error getting tenant configuration", error, locals.user?.userId, params.id);
+    logError(log)("Error getting tenant configuration", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();
@@ -236,7 +236,7 @@ export const PUT: RequestHandler = async ({ locals, params, request }) => {
       updatedKeys: Object.keys(body),
     });
   } catch (error) {
-    logError(log)("Error updating tenant configuration", error, locals.user?.userId, params.id);
+    logError(log)("Error updating tenant configuration", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();

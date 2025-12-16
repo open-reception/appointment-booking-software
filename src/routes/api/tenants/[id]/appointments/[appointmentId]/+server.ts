@@ -1,18 +1,13 @@
 import { json } from "@sveltejs/kit";
 import { AppointmentService } from "$lib/server/services/appointment-service";
-import {
-  BackendError,
-  InternalError,
-  logError,
-  NotFoundError,
-  ValidationError,
-} from "$lib/server/utils/errors";
+import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 import { checkPermission } from "$lib/server/utils/permissions";
 
 // Register OpenAPI documentation for GET
+/* No longer used?
 registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "GET", {
   summary: "Get appointment by ID",
   description:
@@ -135,7 +130,7 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "GET", {
       },
     },
   },
-});
+});*/
 
 // Register OpenAPI documentation for DELETE
 registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "DELETE", {
@@ -216,6 +211,7 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "DELETE", {
   },
 });
 
+/* No longer used?
 export const GET: RequestHandler = async ({ params, locals }) => {
   const log = logger.setContext("API");
 
@@ -227,10 +223,12 @@ export const GET: RequestHandler = async ({ params, locals }) => {
       throw new ValidationError("Tenant ID and appointment ID are required");
     }
 
+    // checkPermission(locals, tenantId, true);
+
     log.debug("Getting appointment by ID", {
       tenantId,
       appointmentId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     const appointmentService = await AppointmentService.forTenant(tenantId);
@@ -243,14 +241,14 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     log.debug("Appointment retrieved successfully", {
       tenantId,
       appointmentId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     return json({
       appointment,
     });
   } catch (error) {
-    logError(log)("Error getting appointment", error, locals.user?.userId, params.id);
+    logError(log)("Error getting appointment", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();
@@ -259,6 +257,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     return new InternalError().toJson();
   }
 };
+*/
 
 export const DELETE: RequestHandler = async ({ params, locals }) => {
   const log = logger.setContext("API");
@@ -276,7 +275,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
     log.debug("Deleting appointment", {
       tenantId,
       appointmentId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     const appointmentService = await AppointmentService.forTenant(tenantId);
@@ -289,14 +288,14 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
     log.debug("Appointment deleted successfully", {
       tenantId,
       appointmentId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     return json({
       message: "Appointment deleted successfully",
     });
   } catch (error) {
-    logError(log)("Error deleting appointment", error, locals.user?.userId, params.id);
+    logError(log)("Error deleting appointment", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();

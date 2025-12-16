@@ -138,7 +138,7 @@ export const PUT: RequestHandler = async ({ locals, params, request }) => {
       tenant: updatedTenant,
     });
   } catch (error) {
-    logError(log)("Error updating tenant setup state", error, locals.user?.userId, params.id);
+    logError(log)("Error updating tenant setup state", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();
