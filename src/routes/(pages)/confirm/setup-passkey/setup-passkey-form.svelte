@@ -35,6 +35,7 @@
   let passkeyId: string | undefined = $state();
   let prfOutput: ArrayBuffer | undefined = $state();
   let kyberKeyPair: { publicKey: Uint8Array; privateKey: Uint8Array } | undefined = $state();
+  let registrationChallenge: string | undefined = $state(); // Store first challenge for form submission
 
   const form = superForm(data.form, {
     validators: zodClient(formSchema),
@@ -83,6 +84,9 @@
       logger.error("Failed to fetch challenge", { email: $formData.email });
       $passkeyLoading = "error";
     } else {
+      // Store the registration challenge - will be sent with form to avoid cookie overwrite by PRF challenge
+      registrationChallenge = challenge.challenge;
+
       $passkeyLoading = "user";
       const passkeyResp = await generatePasskey({
         ...challenge,
@@ -113,16 +117,9 @@
         return;
       }
 
-      // Returns ArrayBuffer that has to be converted to base64 string
-      const publicKey = passkeyResp.response.getPublicKey();
-      if (!publicKey) {
-        $passkeyLoading = "error";
-        logger.error("Failed to get public key", { email: $formData.email });
-        return;
-      }
-
-      // Get authenticatorData for form submission (still needed for counter, etc.)
-      const authenticatorDataResp = passkeyResp.response.getAuthenticatorData();
+      // Get attestationObject and clientDataJSON for @simplewebauthn/server verification
+      const attestationObjectResp = passkeyResp.response.attestationObject;
+      const clientDataJSONResp = passkeyResp.response.clientDataJSON;
 
       // CRITICAL: Get PRF output immediately after passkey creation
       // This is the only time we can retrieve the PRF output
@@ -158,14 +155,15 @@
         return;
       }
 
-      // Update form data with passkey info
-      const publicKeyBase64 = arrayBufferToBase64(publicKey);
-      const authenticatorDataBase64 = arrayBufferToBase64(authenticatorDataResp);
+      // Update form data with passkey info - send full attestation for proper COSE key extraction
+      const attestationObjectBase64 = arrayBufferToBase64(attestationObjectResp);
+      const clientDataJSONBase64 = arrayBufferToBase64(clientDataJSONResp);
       $formData = {
         ...$formData,
         id: passkeyResp.id,
-        publicKeyBase64,
-        authenticatorDataBase64,
+        attestationObjectBase64,
+        clientDataJSONBase64,
+        challenge: registrationChallenge!, // Send original registration challenge (not PRF challenge)
       };
 
       // Set for later use
@@ -244,17 +242,24 @@
         {/snippet}
       </Form.Control>
     </Form.Field>
-    <Form.Field {form} name="publicKeyBase64" class="hidden">
+    <Form.Field {form} name="attestationObjectBase64" class="hidden">
       <Form.Control>
         {#snippet children({ props })}
-          <Input {...props} bind:value={$formData.publicKeyBase64} type="hidden" />
+          <Input {...props} bind:value={$formData.attestationObjectBase64} type="hidden" />
         {/snippet}
       </Form.Control>
     </Form.Field>
-    <Form.Field {form} name="authenticatorDataBase64" class="hidden">
+    <Form.Field {form} name="clientDataJSONBase64" class="hidden">
       <Form.Control>
         {#snippet children({ props })}
-          <Input {...props} bind:value={$formData.authenticatorDataBase64} type="hidden" />
+          <Input {...props} bind:value={$formData.clientDataJSONBase64} type="hidden" />
+        {/snippet}
+      </Form.Control>
+    </Form.Field>
+    <Form.Field {form} name="challenge" class="hidden">
+      <Form.Control>
+        {#snippet children({ props })}
+          <Input {...props} bind:value={$formData.challenge} type="hidden" />
         {/snippet}
       </Form.Control>
     </Form.Field>

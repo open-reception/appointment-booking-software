@@ -244,6 +244,7 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
       const verificationResult = await WebAuthnService.verifyAuthentication(
         body.credential,
         challengeFromSession,
+        url,
       );
 
       if (!verificationResult.verified) {

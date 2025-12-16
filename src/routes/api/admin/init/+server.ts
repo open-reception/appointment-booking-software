@@ -181,6 +181,7 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
         body.passkey.attestationObject,
         body.passkey.clientDataJSON,
         challengeFromSession,
+        url,
       );
 
       await UserService.addPasskey(admin.id, {

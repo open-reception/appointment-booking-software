@@ -91,7 +91,7 @@ registerOpenAPIRoute("/auth/register", "POST", {
   },
 });
 
-export const POST: RequestHandler = async ({ params, cookies, request }) => {
+export const POST: RequestHandler = async ({ params, cookies, request, url }) => {
   const log = logger.setContext("API");
 
   try {
@@ -138,6 +138,7 @@ export const POST: RequestHandler = async ({ params, cookies, request }) => {
       body.passkey.attestationObject,
       body.passkey.clientDataJSON,
       challengeFromSession,
+      url,
     );
 
     await UserService.addPasskey(userId, {
