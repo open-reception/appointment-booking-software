@@ -208,7 +208,10 @@ export const getPRFOutputAfterRegistration = async ({
     return prfOutput;
   } else {
     // Convert ArrayBufferView to ArrayBuffer
-    return prfOutput.buffer.slice(prfOutput.byteOffset, prfOutput.byteOffset + prfOutput.byteLength);
+    return prfOutput.buffer.slice(
+      prfOutput.byteOffset,
+      prfOutput.byteOffset + prfOutput.byteLength,
+    ) as ArrayBuffer;
   }
 };
 
@@ -278,8 +281,8 @@ export const getCredential = async ({
       } else {
         prfOutput = prfResult.buffer.slice(
           prfResult.byteOffset,
-          prfResult.byteOffset + prfResult.byteLength
-        );
+          prfResult.byteOffset + prfResult.byteLength,
+        ) as ArrayBuffer;
       }
     }
   }
