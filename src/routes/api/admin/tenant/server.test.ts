@@ -125,7 +125,17 @@ describe("POST /api/admin/tenant", () => {
     request: {
       json: () => Promise.resolve(body),
     } as Request,
-    locals: { user: user ? { ...user, sessionId: "session-123" } : null },
+    locals: {
+      user: user
+        ? {
+            ...user,
+            session: {
+              sessionId: "session-123",
+              exp: Date.now() + 3600000,
+            },
+          }
+        : null,
+    },
     cookies: mockCookies,
     params: {},
     url: new URL("http://localhost/api/admin/tenant"),
