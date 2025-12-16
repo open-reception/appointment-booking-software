@@ -111,26 +111,46 @@ export const POST: RequestHandler = async ({ params, cookies, request }) => {
     // Validate that this registration was preceded by a challenge request
     const registrationEmail = cookies.get("webauthn-registration-email");
 
+    // Challenge can come from:
+    // 1. Request body (for tenant admins with PRF - second challenge overwrites cookie)
+    // 2. Cookie (for global admins without PRF - only one challenge)
+    const challengeFromSession = body.challenge || cookies.get("webauthn-challenge");
+
     if (!registrationEmail || registrationEmail !== body.email) {
       throw new ValidationError("Invalid or missing registration challenge cookie");
     }
 
+    if (!challengeFromSession) {
+      throw new ValidationError("Invalid or missing WebAuthn challenge");
+    }
+
+    log.debug("Using challenge for verification", {
+      challengeSource: body.challenge ? "request body" : "cookie",
+      challengePreview: challengeFromSession.substring(0, 20) + "...",
+    });
+
     // Note: Cookie is not deleted here to allow subsequent crypto key storage.
     // It will expire automatically after 5 minutes (set in /api/auth/challenge)
 
-    // Extract counter from WebAuthn credential
-    const counter = WebAuthnService.extractCounterFromCredential(body.passkey);
+    // Verify registration and extract COSE public key
+    const verificationResult = await WebAuthnService.verifyRegistration(
+      body.passkey.id,
+      body.passkey.attestationObject,
+      body.passkey.clientDataJSON,
+      challengeFromSession,
+    );
 
     await UserService.addPasskey(userId, {
-      id: body.passkey.id,
-      publicKey: body.passkey.publicKey,
-      counter: counter - 1, // Should start at -1, first login is counter 0
+      id: verificationResult.credentialID,
+      publicKey: verificationResult.credentialPublicKey,
+      counter: verificationResult.counter,
       deviceName: body.passkey.deviceName || "Unknown Device",
     });
 
     log.debug("Passkey added to user account", {
       userId: userId,
-      passkeyId: body.passkey.id,
+      passkeyId: verificationResult.credentialID,
+      counter: verificationResult.counter,
     });
 
     return json(

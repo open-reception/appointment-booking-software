@@ -140,7 +140,6 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
     const challenge = WebAuthnService.generateChallenge();
 
     if (isRegistration) {
-      // For registration, only store the email for validation
       cookies.set("webauthn-registration-email", body.email, {
         httpOnly: true,
         secure: true,
@@ -148,16 +147,15 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
         path: "/",
         maxAge: 60 * 5, // 5 minutes
       });
-    } else {
-      // For login, store the challenge for signature verification
-      cookies.set("webauthn-challenge", challenge, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "strict",
-        path: "/",
-        maxAge: 60 * 5, // 5 minutes
-      });
     }
+    // For login and registration, store the challenge for signature verification
+    cookies.set("webauthn-challenge", challenge, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      path: "/",
+      maxAge: 60 * 5, // 5 minutes
+    });
 
     let allowCredentials: Array<{
       id: string;
