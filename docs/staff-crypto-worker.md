@@ -51,7 +51,7 @@ async function registerStaffPasskey(userId, tenantId, email) {
   if (!extensionResults.prf?.enabled) {
     throw new Error(
       "PRF extension not supported. Please use a modern authenticator " +
-        "(YubiKey 5.2.3+, Titan Gen2, Windows Hello, Touch ID, or Android)"
+        "(YubiKey 5.2.3+, Titan Gen2, Windows Hello, Touch ID, or Android)",
     );
   }
 
@@ -64,6 +64,7 @@ async function registerStaffPasskey(userId, tenantId, email) {
     passkeyId: credential.id,
     rpId: rpId,
     challengeBase64: freshChallengeBase64, // Fresh challenge from server
+    email: email,
   });
 
   // 4. Derive deterministic shard from PRF output (SECRET, zero-knowledge!)
@@ -125,7 +126,7 @@ async authenticateStaff(staffId, tenantId) {
   const passkeyId = availablePasskeys[0]; // User can select which passkey to use
 
   // 2. Perform WebAuthn authentication with PRF extension
-  const prfSalt = new TextEncoder().encode(passkeyId);
+  const prfSalt = new TextEncoder().encode(`open-reception-prf:${email}`);
 
   const credential = await navigator.credentials.get({
     publicKey: {
@@ -178,10 +179,12 @@ async authenticateStaff(staffId, tenantId) {
 }
 ```
 
-**SECURITY NOTE**: The PRF output is derived fresh during each authentication using the same deterministic salt (`passkeyId`). This guarantees:
+**SECURITY NOTE**: The PRF output is derived fresh during each authentication using the same deterministic salt (`open-reception-prf:${email}`). This guarantees:
+
 - **Determinism**: Same passkey + same salt = same PRF output = same private key
 - **Zero-Knowledge**: PRF output never leaves the browser, server cannot derive it
 - **Hardware-Backed**: PRF computation happens inside the authenticator's secure element
+- **Multi-Passkey Support**: Using email as salt allows all passkeys for the same user to work interchangeably
 
 ## StaffCryptoService API
 
