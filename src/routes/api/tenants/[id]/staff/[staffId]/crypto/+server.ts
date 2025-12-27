@@ -140,7 +140,7 @@ export const POST: RequestHandler = async ({ params, locals, request, cookies })
     const { passkeyId, publicKey, privateKeyShare, email } = validation.data;
 
     // Authentication: Accept either active session OR registration cookie
-    const isAuthenticated = locals.user && locals.user.userId === staffId;
+    const isAuthenticated = locals.user && locals.user.id === staffId;
     const registrationEmail = cookies.get("webauthn-registration-email");
     const isRegistration = registrationEmail === email;
 
@@ -148,7 +148,7 @@ export const POST: RequestHandler = async ({ params, locals, request, cookies })
       log.warn("Unauthorized crypto key storage attempt", {
         tenantId,
         staffId,
-        requesterId: locals.user?.userId,
+        requesterId: locals.user?.id,
         hasRegistrationCookie: !!registrationEmail,
         emailsMatch: registrationEmail === email,
       });
@@ -182,7 +182,7 @@ export const POST: RequestHandler = async ({ params, locals, request, cookies })
       message: "Cryptographic keys stored successfully",
     });
   } catch (error) {
-    logError(log)("Failed to store staff crypto keys", error, locals.user?.userId, params.id);
+    logError(log)("Failed to store staff crypto keys", error, locals.user?.id, params.id);
     log.error("Additional context", { tenantId, staffId });
 
     if (error instanceof BackendError) {

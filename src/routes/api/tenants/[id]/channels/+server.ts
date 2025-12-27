@@ -309,7 +309,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 
     log.debug("Creating new channel", {
       tenantId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
       channelNames: body.names,
       languages: body.languages,
     });
@@ -320,7 +320,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
     log.debug("Channel created successfully", {
       tenantId,
       channelId: newChannel.id,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     return json(
@@ -331,7 +331,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
       { status: 201 },
     );
   } catch (error) {
-    logError(log)("Error creating channel", error, locals.user?.userId, params.id);
+    logError(log)("Error creating channel", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();
@@ -355,7 +355,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
     log.debug("Getting all channels", {
       tenantId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     const channelService = await ChannelService.forTenant(tenantId);
@@ -364,14 +364,14 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     log.debug("Channels retrieved successfully", {
       tenantId,
       count: channels.length,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     return json({
       channels,
     });
   } catch (error) {
-    logError(log)("Error in getting channels", error, locals.user?.userId, params.id);
+    logError(log)("Error in getting channels", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();

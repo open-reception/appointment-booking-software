@@ -132,11 +132,11 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     checkPermission(locals, tenantId, false);
 
     // Additional security check: Only the passkey owner can access their own key shard
-    if (!locals.user || locals.user.userId !== staffId) {
+    if (!locals.user || locals.user.id !== staffId) {
       log.warn("Unauthorized key shard access attempt", {
         tenantId,
         staffId,
-        requesterId: locals.user?.userId,
+        requesterId: locals.user?.id,
       });
       throw new AuthorizationError("You can only access your own key shard");
     }
@@ -148,13 +148,13 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
     try {
       // Get the most recently used passkey for this authenticated user
-      const recentPasskey = await WebAuthnService.getMostRecentPasskey(locals.user.userId);
+      const recentPasskey = await WebAuthnService.getMostRecentPasskey(locals.user.id);
 
       if (!recentPasskey) {
         log.warn("No passkey found for authenticated user - security violation", {
           tenantId,
           staffId,
-          userId: locals.user.userId,
+          userId: locals.user.id,
           security: "User session exists but no passkey found",
         });
         throw new AuthorizationError("No valid passkey found for authenticated user");
@@ -183,7 +183,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
       tenantId,
       staffId,
       passkeyId,
-      requesterId: locals.user.userId,
+      requesterId: locals.user.id,
     });
 
     const staffCryptoService = new StaffCryptoService();
@@ -221,8 +221,8 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     });
   } catch (error) {
     // Note: passkeyId might not be available if error occurred before determination
-    const passkeyIdForError = locals.user?.sessionId || "unknown";
-    logError(log)("Failed to fetch staff key shard", error, locals.user?.userId, params.id);
+    const passkeyIdForError = locals.user?.session.sessionId || "unknown";
+    logError(log)("Failed to fetch staff key shard", error, locals.user?.id, params.id);
     log.error("Additional context", { tenantId, staffId, passkeyId: passkeyIdForError });
 
     if (error instanceof BackendError) {

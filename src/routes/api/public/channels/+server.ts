@@ -101,7 +101,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
       channels: filteredChannels,
     });
   } catch (error) {
-    logError(log)("Error getting public tenant data", error, locals.user?.userId);
+    logError(log)("Error getting public tenant data", error, locals.user?.id);
     return new InternalError().toJson();
   }
 };

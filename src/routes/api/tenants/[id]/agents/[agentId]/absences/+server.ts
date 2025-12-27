@@ -274,7 +274,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
     log.debug("Creating agent absence", {
       tenantId,
       agentId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
       absenceType: body.absenceType,
       startDate: body.startDate,
       endDate: body.endDate,
@@ -287,7 +287,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
       tenantId,
       agentId,
       absenceId: newAbsence.id,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     return json(
@@ -298,7 +298,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
       { status: 201 },
     );
   } catch (error) {
-    logError(log)("Creating agent absence failed", error, locals.user?.userId, params.id);
+    logError(log)("Creating agent absence failed", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();
@@ -328,7 +328,7 @@ export const GET: RequestHandler = async ({ params, locals, url }) => {
     log.debug("Getting agent absences", {
       tenantId,
       agentId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
       startDate,
       endDate,
     });
@@ -344,14 +344,14 @@ export const GET: RequestHandler = async ({ params, locals, url }) => {
       tenantId,
       agentId,
       count: absences.length,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     return json({
       absences,
     });
   } catch (error) {
-    logError(log)("Getting agent absences failed", error, locals.user?.userId, params.id);
+    logError(log)("Getting agent absences failed", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();

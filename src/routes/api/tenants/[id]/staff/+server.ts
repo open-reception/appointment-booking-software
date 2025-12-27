@@ -124,7 +124,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     const staff = await StaffService.getStaffMembers(tenantId);
     return json({ staff: staff });
   } catch (error) {
-    logError(log)("Error fetching staff data", error, locals.user?.userId, params.id);
+    logError(log)("Error fetching staff data", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();
