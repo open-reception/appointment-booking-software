@@ -4,7 +4,6 @@ import { zod4 as zod } from "sveltekit-superforms/adapters";
 import type { Actions, PageServerLoad } from "./$types";
 import { formSchema } from "./schema";
 import logger from "$lib/logger";
-import { base64ToArrayBuffer, getCounterFromAuthenticatorData } from "$lib/utils/passkey";
 
 const log = logger.setContext(import.meta.filename);
 
@@ -25,26 +24,20 @@ export const actions: Actions = {
       });
     }
 
-    const authenticatorData = base64ToArrayBuffer(form.data.authenticatorDataBase64);
-    const counter = getCounterFromAuthenticatorData(authenticatorData);
     const resp = await event.fetch(`/api/auth/register/${form.data.userId}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        id: form.data.id,
         email: form.data.email,
+        challenge: form.data.challenge, // Send original registration challenge
         passkey: {
           id: form.data.id,
-          publicKey: form.data.publicKeyBase64,
-          deviceName: "Unkown Device",
-          counter,
-          response: {
-            authenticatorData: form.data.authenticatorDataBase64,
-          },
+          attestationObject: form.data.attestationObjectBase64,
+          clientDataJSON: form.data.clientDataJSONBase64,
+          deviceName: "Unknown Device",
         },
-        counter,
       }),
     });
 

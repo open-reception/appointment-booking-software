@@ -9,7 +9,12 @@
   import type { PasskeyState } from "$lib/components/ui/passkey/state.svelte";
   import { ROUTES } from "$lib/const/routes";
   import logger from "$lib/logger";
-  import { arrayBufferToBase64, fetchChallenge, generatePasskey } from "$lib/utils/passkey";
+  import {
+    arrayBufferToBase64,
+    fetchChallenge,
+    generatePasskey,
+    getPRFOutputAfterRegistration,
+  } from "$lib/utils/passkey";
   import { toast } from "svelte-sonner";
   import { writable, type Writable } from "svelte/store";
   import { type Infer, type SuperValidated } from "sveltekit-superforms";
@@ -28,8 +33,9 @@
 
   let tenantId: string | undefined = $state();
   let passkeyId: string | undefined = $state();
-  let authenticatorData: ArrayBuffer | undefined = $state();
+  let prfOutput: ArrayBuffer | undefined = $state();
   let kyberKeyPair: { publicKey: Uint8Array; privateKey: Uint8Array } | undefined = $state();
+  let registrationChallenge: string | undefined = $state(); // Store first challenge for form submission
 
   const form = superForm(data.form, {
     validators: zodClient(formSchema),
@@ -68,7 +74,7 @@
     $passkeyLoading = "loading";
 
     // Generate Kyber keypair BEFORE passkey registration
-    // This keypair will be used to create the dbShard after authenticatorData is available
+    // This keypair will be used to create the dbShard after PRF output is available
     const { KyberCrypto } = await import("$lib/crypto/utils");
     kyberKeyPair = KyberCrypto.generateKeyPair();
 
@@ -78,13 +84,18 @@
       logger.error("Failed to fetch challenge", { email: $formData.email });
       $passkeyLoading = "error";
     } else {
+      // Store the registration challenge - will be sent with form to avoid cookie overwrite by PRF challenge
+      registrationChallenge = challenge.challenge;
+
       $passkeyLoading = "user";
-      const passkeyResp = await generatePasskey({ ...challenge, email: $formData.email }).catch(
-        (error) => {
-          $passkeyLoading = "error";
-          logger.error("Failed to generate passkey", { ...challenge, error });
-        },
-      );
+      const passkeyResp = await generatePasskey({
+        ...challenge,
+        email: $formData.email,
+        enablePRF: true, // CRITICAL: Enable PRF extension for zero-knowledge key derivation
+      }).catch((error) => {
+        $passkeyLoading = "error";
+        logger.error("Failed to generate passkey", { ...challenge, error });
+      });
 
       if (!passkeyResp) {
         $passkeyLoading = "error";
@@ -92,30 +103,71 @@
         return;
       }
 
-      // Returns ArrayBuffer that has to be converted to base64 string
-      const publicKey = passkeyResp.response.getPublicKey();
-      if (!publicKey) {
+      // Verify PRF extension is enabled
+      const extensionResults = passkeyResp.getClientExtensionResults();
+      if (!extensionResults.prf?.enabled) {
         $passkeyLoading = "error";
-        logger.error("Failed to get public key", { email: $formData.email });
+        logger.error("PRF extension not enabled - passkey rejected", {
+          email: $formData.email,
+          extensions: extensionResults,
+        });
+        toast.error(
+          "This authenticator does not support the required security extension (PRF). Please use a modern authenticator like YubiKey 5.2.3+, Titan Gen2, Windows Hello, Touch ID, or Android.",
+        );
         return;
       }
 
-      // May include device name and counter
-      const authenticatorDataResp = passkeyResp.response.getAuthenticatorData();
+      // Get attestationObject and clientDataJSON for @simplewebauthn/server verification
+      const attestationObjectResp = passkeyResp.response.attestationObject;
+      const clientDataJSONResp = passkeyResp.response.clientDataJSON;
 
-      // Update form data with passkey info
-      const publicKeyBase64 = arrayBufferToBase64(publicKey);
-      const authenticatorDataBase64 = arrayBufferToBase64(authenticatorDataResp);
+      // CRITICAL: Get PRF output immediately after passkey creation
+      // This is the only time we can retrieve the PRF output
+      // Uses email as salt for multi-passkey support
+      try {
+        const prfChallenge = await fetchChallenge($formData.email);
+        if (!prfChallenge) {
+          throw new Error("Failed to fetch PRF challenge");
+        }
+
+        const prfOutputResp = await getPRFOutputAfterRegistration({
+          passkeyId: passkeyResp.id,
+          rpId: prfChallenge.id,
+          challengeBase64: prfChallenge.challenge,
+          email: $formData.email, // Use email as PRF salt for multi-passkey support
+        });
+
+        prfOutput = prfOutputResp;
+        logger.info("PRF output retrieved successfully", {
+          passkeyId: passkeyResp.id,
+          prfOutputLength: prfOutputResp.byteLength,
+        });
+      } catch (error) {
+        $passkeyLoading = "error";
+        logger.error("Failed to get PRF output", {
+          email: $formData.email,
+          passkeyId: passkeyResp.id,
+          error,
+        });
+        toast.error(
+          "Failed to retrieve security data from passkey. Please use a modern authenticator that supports PRF extension.",
+        );
+        return;
+      }
+
+      // Update form data with passkey info - send full attestation for proper COSE key extraction
+      const attestationObjectBase64 = arrayBufferToBase64(attestationObjectResp);
+      const clientDataJSONBase64 = arrayBufferToBase64(clientDataJSONResp);
       $formData = {
         ...$formData,
         id: passkeyResp.id,
-        publicKeyBase64,
-        authenticatorDataBase64,
+        attestationObjectBase64,
+        clientDataJSONBase64,
+        challenge: registrationChallenge!, // Send original registration challenge (not PRF challenge)
       };
 
       // Set for later use
       passkeyId = passkeyResp.id;
-      authenticatorData = authenticatorDataResp;
 
       // Update UI to show passkey is ready
       $passkeyLoading = "success";
@@ -136,10 +188,10 @@
   });
 
   const storeStaffKeyPair = async () => {
-    if (tenantId && passkeyId && authenticatorData && kyberKeyPair) {
+    if (tenantId && passkeyId && prfOutput && kyberKeyPair) {
       const crypto = new UnifiedAppointmentCrypto();
       return await crypto
-        .storeStaffKeyPair(tenantId, $formData.userId, passkeyId, authenticatorData, kyberKeyPair)
+        .storeStaffKeyPair(tenantId, $formData.userId, passkeyId, prfOutput, kyberKeyPair)
         .then(() => {
           toast.success(m["setupPasskey.successKeyPairSaved"]());
         })
@@ -153,10 +205,11 @@
           });
         });
     } else {
-      logger.error("Failed to store staff key pair", {
+      logger.error("Failed to store staff key pair - missing required data", {
         tenantId,
         userId: $formData.userId,
         passkeyId,
+        hasPrfOutput: !!prfOutput,
         hasKyberKeyPair: !!kyberKeyPair,
       });
       toast.error(m["setupPasskey.errorKeyPairDataMissing"]());
@@ -189,17 +242,24 @@
         {/snippet}
       </Form.Control>
     </Form.Field>
-    <Form.Field {form} name="publicKeyBase64" class="hidden">
+    <Form.Field {form} name="attestationObjectBase64" class="hidden">
       <Form.Control>
         {#snippet children({ props })}
-          <Input {...props} bind:value={$formData.publicKeyBase64} type="hidden" />
+          <Input {...props} bind:value={$formData.attestationObjectBase64} type="hidden" />
         {/snippet}
       </Form.Control>
     </Form.Field>
-    <Form.Field {form} name="authenticatorDataBase64" class="hidden">
+    <Form.Field {form} name="clientDataJSONBase64" class="hidden">
       <Form.Control>
         {#snippet children({ props })}
-          <Input {...props} bind:value={$formData.authenticatorDataBase64} type="hidden" />
+          <Input {...props} bind:value={$formData.clientDataJSONBase64} type="hidden" />
+        {/snippet}
+      </Form.Control>
+    </Form.Field>
+    <Form.Field {form} name="challenge" class="hidden">
+      <Form.Control>
+        {#snippet children({ props })}
+          <Input {...props} bind:value={$formData.challenge} type="hidden" />
         {/snippet}
       </Form.Control>
     </Form.Field>

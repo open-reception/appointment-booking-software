@@ -15,7 +15,12 @@
   import { Passkey } from "$lib/components/ui/passkey";
   import { Text } from "$lib/components/ui/typography";
   import type { PasskeyState } from "$lib/components/ui/passkey/state.svelte";
-  import { arrayBufferToBase64, fetchChallenge, getCredential } from "$lib/utils/passkey";
+  import {
+    arrayBufferToBase64,
+    fetchChallenge,
+    getCredential,
+    getPRFOutputAfterRegistration,
+  } from "$lib/utils/passkey";
   import { Label } from "$lib/components/ui/label";
   import { auth } from "$lib/stores/auth";
   import logger from "$lib/logger";
@@ -88,12 +93,16 @@
       logger.error("Failed to fetch challenge", { email: $formData.email });
     } else {
       $passkeyLoading = "user";
-      const credentialResp = await getCredential({ ...challenge, email: $formData.email }).catch(
-        (error) => {
-          $passkeyLoading = "error";
-          logger.error("Failed to get credential", { ...challenge, error });
-        },
-      );
+
+      // Call WebAuthn with PRF enabled (uses email as salt for multi-passkey support)
+      const credentialResp = await getCredential({
+        ...challenge,
+        email: $formData.email,
+        enablePRF: true, // Always enable PRF for staff authentication
+      }).catch((error) => {
+        $passkeyLoading = "error";
+        logger.error("Failed to get credential", { ...challenge, error });
+      });
 
       if (!credentialResp) {
         $passkeyLoading = "error";
@@ -118,12 +127,29 @@
         signatureBase64,
       };
 
-      // Store authenticatorData for later key reconstruction
+      // Store authenticatorData and PRF output for later key reconstruction
       const passkeyId = credentialResp.id;
+
+      // Extract PRF output from WebAuthn response (if PRF was enabled)
+      let prfOutputBase64: string | undefined;
+      if (credentialResp.prfOutput) {
+        prfOutputBase64 = arrayBufferToBase64(credentialResp.prfOutput);
+        logger.info("PRF output retrieved from login", {
+          passkeyId,
+          prfOutputLength: credentialResp.prfOutput.byteLength,
+        });
+      } else {
+        logger.warn("No PRF output in login response - crypto features may not work", {
+          email: $formData.email,
+          passkeyId,
+        });
+      }
+
       auth.setPasskeyAuthData({
         authenticatorData: authenticatorDataBase64,
         passkeyId,
         email: $formData.email,
+        prfOutput: prfOutputBase64,
       });
 
       // Update UI to show passkey is ready

@@ -79,8 +79,8 @@
         ...$formData,
         type: "passkey",
         id: "",
-        publicKeyBase64: "",
-        authenticatorDataBase64: "",
+        attestationObjectBase64: "",
+        clientDataJSONBase64: "",
       };
       setProperPasskeyState();
     }
@@ -108,26 +108,19 @@
         return;
       }
 
-      // Returns ArrayBuffer that has to be converted to base64 string
-      const publicKey = passkeyResp.response.getPublicKey();
-      if (!publicKey) {
-        $passkeyLoading = "error";
-        logger.error("Failed to get public key", { email: $formData.email });
-        return;
-      }
+      // Get attestationObject and clientDataJSON for @simplewebauthn/server verification
+      const attestationObjectResp = passkeyResp.response.attestationObject;
+      const clientDataJSONResp = passkeyResp.response.clientDataJSON;
 
-      // May include device name and counter
-      const authenticatorData = passkeyResp.response.getAuthenticatorData();
-
-      // Update form data with passkey info
-      const publicKeyBase64 = arrayBufferToBase64(publicKey);
-      const authenticatorDataBase64 = arrayBufferToBase64(authenticatorData);
+      // Update form data with passkey info - send full attestation for proper COSE key extraction
+      const attestationObjectBase64 = arrayBufferToBase64(attestationObjectResp);
+      const clientDataJSONBase64 = arrayBufferToBase64(clientDataJSONResp);
       $formData = {
         ...$formData,
         type: "passkey",
         id: passkeyResp.id,
-        publicKeyBase64,
-        authenticatorDataBase64,
+        attestationObjectBase64,
+        clientDataJSONBase64,
       };
 
       // Update UI to show passkey is ready
@@ -198,19 +191,19 @@
           {/snippet}
         </Form.Control>
       </Form.Field>
-      <Form.Field {form} name="publicKeyBase64" class="hidden">
+      <Form.Field {form} name="attestationObjectBase64" class="hidden">
         <Form.Control>
           {#snippet children({ props })}
             <!-- prettier-ignore -->
-            <Input {...props} bind:value={($formData as FormDataPasskey).publicKeyBase64} type="hidden" />
+            <Input {...props} bind:value={($formData as FormDataPasskey).attestationObjectBase64} type="hidden" />
           {/snippet}
         </Form.Control>
       </Form.Field>
-      <Form.Field {form} name="authenticatorDataBase64" class="hidden">
+      <Form.Field {form} name="clientDataJSONBase64" class="hidden">
         <Form.Control>
           {#snippet children({ props })}
             <!-- prettier-ignore -->
-            <Input {...props} bind:value={($formData as FormDataPasskey).authenticatorDataBase64} type="hidden" />
+            <Input {...props} bind:value={($formData as FormDataPasskey).clientDataJSONBase64} type="hidden" />
           {/snippet}
         </Form.Control>
       </Form.Field>
