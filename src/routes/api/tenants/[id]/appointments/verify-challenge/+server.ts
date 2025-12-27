@@ -15,6 +15,7 @@ import {
   ValidationError,
 } from "$lib/server/utils/errors";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
+import { challengeThrottleService } from "$lib/server/services/challenge-throttle";
 
 const requestSchema = z.object({
   challengeId: z.string(),
@@ -161,6 +162,14 @@ export const POST: RequestHandler = async ({ request, params }) => {
         challengeId,
         emailHashPrefix: storedChallenge.emailHash.slice(0, 8),
       });
+
+      // Record failed attempt for throttling
+      await challengeThrottleService.recordFailedAttempt(
+        storedChallenge.emailHash,
+        "pin",
+        tenantId,
+      );
+
       throw new ValidationError("Invalid challenge response");
     }
 
@@ -192,6 +201,9 @@ export const POST: RequestHandler = async ({ request, params }) => {
       challengeId,
       tunnelId: tunnel.id,
     });
+
+    // Clear throttle on successful verification
+    await challengeThrottleService.clearThrottle(storedChallenge.emailHash, "pin", tenantId);
 
     const response: ChallengeVerificationResponse = {
       valid: true,

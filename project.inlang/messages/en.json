@@ -868,7 +868,9 @@
 				"login": {
 					"title": "Login",
 					"description": "Please enter the PIN number, you've set:",
-					"action": "Show summary"
+					"action": "Show summary",
+					"throttled": "Too many failed attempts. Please wait a few minutes before trying again.",
+					"retry": "Please try again in {seconds} seconds"
 				}
 			},
 			"summary": {

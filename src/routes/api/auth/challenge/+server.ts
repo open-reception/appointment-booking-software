@@ -6,6 +6,7 @@ import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { UniversalLogger } from "$lib/logger";
 import { env } from "$env/dynamic/private";
+import { challengeThrottleService } from "$lib/server/services/challenge-throttle";
 
 const logger = new UniversalLogger().setContext("AuthChallengeAPI");
 
@@ -75,6 +76,23 @@ registerOpenAPIRoute("/auth/challenge", "POST", {
         },
       },
     },
+    "429": {
+      description: "Too many failed attempts - rate limited",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              error: { type: "string", description: "Error message" },
+              retryAfterMs: {
+                type: "number",
+                description: "Milliseconds to wait before retrying",
+              },
+            },
+          },
+        },
+      },
+    },
     "500": {
       description: "Internal server error",
       content: {
@@ -113,6 +131,30 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
     const body = await request.json();
 
     logger.debug("Generating WebAuthn challenge", { email: body.email });
+
+    // Check throttling for passkey challenges
+    const throttleResult = await challengeThrottleService.checkThrottle(body.email, "passkey");
+
+    if (!throttleResult.allowed) {
+      logger.warn("Passkey challenge throttled", {
+        email: body.email,
+        retryAfterMs: throttleResult.retryAfterMs,
+        failedAttempts: throttleResult.failedAttempts,
+      });
+
+      return json(
+        {
+          error: "Too many failed attempts. Please try again later.",
+          retryAfterMs: throttleResult.retryAfterMs,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": Math.ceil(throttleResult.retryAfterMs / 1000).toString(),
+          },
+        },
+      );
+    }
 
     // Try to get user by email - but don't fail if not found
     let user = null;
