@@ -7,7 +7,7 @@
  * - Passkey challenges (auth): Fixed delay after 3 attempts (1 minute)
  */
 
-import { getCentralDb } from "$lib/server/db";
+import { centralDb } from "$lib/server/db";
 import { challengeThrottle } from "$lib/server/db/central-schema";
 import { eq, lt } from "drizzle-orm";
 import { logger } from "$lib/logger";
@@ -26,19 +26,13 @@ const THROTTLE_RESET_DURATION_MS = 60 * 60 * 1000;
 /**
  * Calculate escalating delay for PIN challenges
  * Uses a fixed escalation pattern that increases with each failed attempt:
- * - 1st failure: 2 seconds
- * - 2nd failure: 10 seconds
- * - 3rd failure: 1 minute
- * - 4th failure: 5 minutes
- * - 5+ failures: 30 minutes
  */
 function calculatePinThrottleDelay(failedAttempts: number): number {
-  if (failedAttempts === 0) return 0;
-  if (failedAttempts === 1) return 2 * 1000; // 2 seconds
-  if (failedAttempts === 2) return 10 * 1000; // 10 seconds
-  if (failedAttempts === 3) return 60 * 1000; // 1 minute
-  if (failedAttempts === 4) return 5 * 60 * 1000; // 5 minutes
-  if (failedAttempts >= 5) return 30 * 60 * 1000; // 30 minutes
+  if (failedAttempts < 4) return 0;
+  if (failedAttempts === 4) return 60 * 1000; // 1 minute
+  if (failedAttempts === 5) return 5 * 60 * 1000; // 5 minutes
+  if (failedAttempts === 6) return 30 * 60 * 1000; // 30 minutes
+  if (failedAttempts >= 7) return 60 * 60 * 1000; // 60 minutes
   return 0;
 }
 
@@ -57,18 +51,12 @@ class ChallengeThrottleService {
    * Check if a challenge request should be throttled
    * @param identifier - Email hash for PIN challenges, email for passkey challenges
    * @param type - Type of challenge (pin or passkey)
-   * @param tenantId - Tenant ID (optional, no longer used but kept for API compatibility)
    */
-  async checkThrottle(
-    identifier: string,
-    type: ThrottleType,
-    tenantId?: string,
-  ): Promise<ThrottleResult> {
+  async checkThrottle(identifier: string, type: ThrottleType): Promise<ThrottleResult> {
     const now = new Date();
-    const db = getCentralDb();
 
     // Get throttle record from central DB
-    const records = await db
+    const records = await centralDb
       .select()
       .from(challengeThrottle)
       .where(eq(challengeThrottle.id, identifier))
@@ -84,7 +72,7 @@ class ChallengeThrottleService {
     // Check if throttle has expired
     if (now > record.resetAt) {
       // Throttle expired, clean up and allow
-      await db.delete(challengeThrottle).where(eq(challengeThrottle.id, identifier));
+      await centralDb.delete(challengeThrottle).where(eq(challengeThrottle.id, identifier));
       return { allowed: true, retryAfterMs: 0, failedAttempts: 0 };
     }
 
@@ -116,18 +104,12 @@ class ChallengeThrottleService {
    * Record a failed challenge attempt
    * @param identifier - Email hash for PIN challenges, email for passkey challenges
    * @param type - Type of challenge (pin or passkey)
-   * @param tenantId - Tenant ID (optional, no longer used but kept for API compatibility)
    */
-  async recordFailedAttempt(
-    identifier: string,
-    type: ThrottleType,
-    tenantId?: string,
-  ): Promise<void> {
+  async recordFailedAttempt(identifier: string, type: ThrottleType): Promise<void> {
     const now = new Date();
-    const db = getCentralDb();
 
     // Try to get existing record
-    const records = await db
+    const records = await centralDb
       .select()
       .from(challengeThrottle)
       .where(eq(challengeThrottle.id, identifier))
@@ -136,7 +118,7 @@ class ChallengeThrottleService {
     if (records.length === 0) {
       // Create new throttle record
       const resetAt = new Date(now.getTime() + THROTTLE_RESET_DURATION_MS);
-      await db.insert(challengeThrottle).values({
+      await centralDb.insert(challengeThrottle).values({
         id: identifier,
         failedAttempts: 1,
         lastAttemptAt: now,
@@ -145,7 +127,7 @@ class ChallengeThrottleService {
     } else {
       // Update existing record
       const record = records[0];
-      await db
+      await centralDb
         .update(challengeThrottle)
         .set({
           failedAttempts: record.failedAttempts + 1,
@@ -164,11 +146,9 @@ class ChallengeThrottleService {
    * Clear throttle for successful authentication
    * @param identifier - Email hash for PIN challenges, email for passkey challenges
    * @param type - Type of challenge (pin or passkey)
-   * @param tenantId - Tenant ID (optional, no longer used but kept for API compatibility)
    */
-  async clearThrottle(identifier: string, type: ThrottleType, tenantId?: string): Promise<void> {
-    const db = getCentralDb();
-    await db.delete(challengeThrottle).where(eq(challengeThrottle.id, identifier));
+  async clearThrottle(identifier: string, type: ThrottleType): Promise<void> {
+    await centralDb.delete(challengeThrottle).where(eq(challengeThrottle.id, identifier));
 
     logger.debug(`Cleared ${type} challenge throttle`, {
       identifier: identifier.slice(0, 8),
@@ -184,8 +164,7 @@ class ChallengeThrottleService {
     const now = new Date();
 
     try {
-      const db = getCentralDb();
-      await db.delete(challengeThrottle).where(lt(challengeThrottle.resetAt, now));
+      await centralDb.delete(challengeThrottle).where(lt(challengeThrottle.resetAt, now));
 
       logger.debug("Cleaned up expired challenge throttles");
     } catch (error) {

@@ -232,7 +232,6 @@ export const POST: RequestHandler = async ({ request, params }) => {
     return json(response);
   } catch (error) {
     logError(logger)("Failed to create challenge", error);
-
     if (error instanceof z.ZodError) {
       return new ValidationError("Invalid request data").toJson();
     }
