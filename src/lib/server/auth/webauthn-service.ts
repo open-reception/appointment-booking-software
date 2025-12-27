@@ -175,7 +175,6 @@ export class WebAuthnService {
     }
   }
 
-
   /**
    * Verify a WebAuthn registration response using @simplewebauthn/server
    * Extracts the COSE public key from the attestation object
