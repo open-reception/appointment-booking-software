@@ -1,3 +1,4 @@
+import { browser } from "$app/environment";
 import { writable } from "svelte/store";
 
 /**
@@ -23,7 +24,7 @@ const createPinThrottleStore = () => {
     failedAttempts: 0,
   };
 
-  if (typeof window !== "undefined") {
+  if (!browser) {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {

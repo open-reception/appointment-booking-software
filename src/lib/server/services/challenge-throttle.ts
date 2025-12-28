@@ -9,7 +9,7 @@
 
 import { centralDb } from "$lib/server/db";
 import { challengeThrottle } from "$lib/server/db/central-schema";
-import { eq, lt } from "drizzle-orm";
+import { eq, lt, sql } from "drizzle-orm";
 import { logger } from "$lib/logger";
 
 export type ThrottleType = "pin" | "passkey";
@@ -108,33 +108,22 @@ class ChallengeThrottleService {
   async recordFailedAttempt(identifier: string, type: ThrottleType): Promise<void> {
     const now = new Date();
 
-    // Try to get existing record
-    const records = await centralDb
-      .select()
-      .from(challengeThrottle)
-      .where(eq(challengeThrottle.id, identifier))
-      .limit(1);
-
-    if (records.length === 0) {
-      // Create new throttle record
-      const resetAt = new Date(now.getTime() + THROTTLE_RESET_DURATION_MS);
-      await centralDb.insert(challengeThrottle).values({
+    const resetAt = new Date(now.getTime() + THROTTLE_RESET_DURATION_MS);
+    await centralDb
+      .insert(challengeThrottle)
+      .values({
         id: identifier,
         failedAttempts: 1,
         lastAttemptAt: now,
         resetAt,
-      });
-    } else {
-      // Update existing record
-      const record = records[0];
-      await centralDb
-        .update(challengeThrottle)
-        .set({
-          failedAttempts: record.failedAttempts + 1,
+      })
+      .onConflictDoUpdate({
+        target: challengeThrottle.id,
+        set: {
+          failedAttempts: sql`${challengeThrottle.failedAttempts} + 1`,
           lastAttemptAt: now,
-        })
-        .where(eq(challengeThrottle.id, identifier));
-    }
+        },
+      });
 
     logger.info(`Recorded failed ${type} challenge attempt`, {
       identifier: identifier.slice(0, 8),

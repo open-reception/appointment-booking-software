@@ -60,7 +60,7 @@ export const fetchChallenge = async (email: string) => {
   // Handle throttling
   if (resp.status === 429) {
     const retryAfterSeconds = Math.ceil((data.retryAfterMs || 60000) / 1000);
-    logger.error("Challenge request throttled", {
+    logger.warn("Challenge request throttled", {
       email,
       retryAfterSeconds,
     });

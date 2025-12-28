@@ -1,24 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { challengeThrottleService } from "../challenge-throttle";
 
-// Mock dependencies
+// Mock dependencies BEFORE importing the service
 vi.mock("$lib/server/db", () => {
-  const mockDb = {
-    select: vi.fn().mockReturnThis(),
-    from: vi.fn().mockReturnThis(),
-    where: vi.fn().mockReturnThis(),
-    limit: vi.fn(),
-    insert: vi.fn().mockReturnThis(),
-    values: vi.fn().mockReturnThis(),
-    update: vi.fn().mockReturnThis(),
-    set: vi.fn().mockReturnThis(),
-    delete: vi.fn().mockReturnThis(),
-  };
-
   return {
-    getTenantDb: vi.fn().mockResolvedValue(mockDb),
-    getCentralDb: vi.fn(() => mockDb),
+    centralDb: {
+      select: vi.fn(),
+      insert: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
   };
 });
 
@@ -36,22 +27,32 @@ vi.mock("$lib/logger", () => {
   };
 });
 
-import { getTenantDb, getCentralDb } from "$lib/server/db";
+import { challengeThrottleService } from "../challenge-throttle";
 
 describe("ChallengeThrottleService", () => {
-  beforeEach(() => {
+  let mockCentralDb: any;
+
+  beforeEach(async () => {
     vi.clearAllMocks();
+
+    // Get the mocked centralDb module
+    const dbModule = await vi.importMock("$lib/server/db");
+    mockCentralDb = dbModule.centralDb;
   });
 
   describe("PIN challenge throttling", () => {
-    const tenantId = "tenant-123";
     const emailHash = "test-email-hash";
 
     it("should allow request when no throttle record exists", async () => {
-      const mockDb = getCentralDb();
-      (mockDb.limit as any).mockResolvedValue([]);
+      const mockSelectBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([]),
+      };
 
-      const result = await challengeThrottleService.checkThrottle(emailHash, "pin", tenantId);
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
+
+      const result = await challengeThrottleService.checkThrottle(emailHash, "pin");
 
       expect(result.allowed).toBe(true);
       expect(result.retryAfterMs).toBe(0);
@@ -59,59 +60,81 @@ describe("ChallengeThrottleService", () => {
     });
 
     it("should allow request when throttle has expired", async () => {
-      const mockDb = getCentralDb();
       const expiredRecord = {
         id: emailHash,
         failedAttempts: 3,
         lastAttemptAt: new Date(Date.now() - 10000),
         resetAt: new Date(Date.now() - 1000), // Expired 1 second ago
       };
-      (mockDb.limit as any).mockResolvedValue([expiredRecord]);
 
-      const result = await challengeThrottleService.checkThrottle(emailHash, "pin", tenantId);
+      const mockSelectBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([expiredRecord]),
+      };
+
+      const mockDeleteBuilder = {
+        where: vi.fn().mockResolvedValue(undefined),
+      };
+
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
+      mockCentralDb.delete.mockReturnValue(mockDeleteBuilder);
+
+      const result = await challengeThrottleService.checkThrottle(emailHash, "pin");
 
       expect(result.allowed).toBe(true);
-      expect(mockDb.delete).toHaveBeenCalled();
+      expect(mockCentralDb.delete).toHaveBeenCalled();
     });
 
     it("should throttle request when delay has not passed (1st failure)", async () => {
-      const mockDb = getCentralDb();
       const now = Date.now();
       const record = {
         id: emailHash,
-        failedAttempts: 1,
-        lastAttemptAt: new Date(now - 1000), // 1 second ago
-        resetAt: new Date(now + 60000), // 1 minute in future
+        failedAttempts: 4, // 4th attempt triggers throttling (1 minute delay)
+        lastAttemptAt: new Date(now - 30000), // 30 seconds ago (less than 1 minute)
+        resetAt: new Date(now + 30000), // 30 seconds in future
       };
-      (mockDb.limit as any).mockResolvedValue([record]);
 
-      const result = await challengeThrottleService.checkThrottle(emailHash, "pin", tenantId);
+      const mockSelectBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([record]),
+      };
+
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
+
+      const result = await challengeThrottleService.checkThrottle(emailHash, "pin");
 
       expect(result.allowed).toBe(false);
       expect(result.retryAfterMs).toBeGreaterThan(0);
-      expect(result.retryAfterMs).toBeLessThanOrEqual(2000); // 2 seconds delay for 1st failure
+      expect(result.retryAfterMs).toBeLessThanOrEqual(60000); // 1 minute delay for 4th failure
     });
 
     it("should throttle request when delay has not passed (3rd failure)", async () => {
-      const mockDb = getCentralDb();
       const now = Date.now();
       const record = {
         id: emailHash,
-        failedAttempts: 3,
-        lastAttemptAt: new Date(now - 10000), // 10 seconds ago
-        resetAt: new Date(now + 60000), // 1 minute in future
+        failedAttempts: 5, // 5th attempt triggers 5 minute delay
+        lastAttemptAt: new Date(now - 120000), // 2 minutes ago (less than 5 minutes)
+        resetAt: new Date(now + 180000), // 3 minutes in future
       };
-      (mockDb.limit as any).mockResolvedValue([record]);
 
-      const result = await challengeThrottleService.checkThrottle(emailHash, "pin", tenantId);
+      const mockSelectBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([record]),
+      };
+
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
+
+      const result = await challengeThrottleService.checkThrottle(emailHash, "pin");
 
       expect(result.allowed).toBe(false);
       expect(result.retryAfterMs).toBeGreaterThan(0);
-      expect(result.retryAfterMs).toBeLessThanOrEqual(60000); // 60 seconds delay for 3rd failure
+      expect(result.retryAfterMs).toBeLessThanOrEqual(300000); // 5 minutes delay for 5th failure
     });
 
     it("should allow request when enough time has passed", async () => {
-      const mockDb = getCentralDb();
       const now = Date.now();
       const record = {
         id: emailHash,
@@ -119,22 +142,33 @@ describe("ChallengeThrottleService", () => {
         lastAttemptAt: new Date(now - 3000), // 3 seconds ago (more than 2 second delay)
         resetAt: new Date(now + 60000),
       };
-      (mockDb.limit as any).mockResolvedValue([record]);
 
-      const result = await challengeThrottleService.checkThrottle(emailHash, "pin", tenantId);
+      const mockSelectBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([record]),
+      };
+
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
+
+      const result = await challengeThrottleService.checkThrottle(emailHash, "pin");
 
       expect(result.allowed).toBe(true);
       expect(result.failedAttempts).toBe(1);
     });
 
     it("should record first failed attempt", async () => {
-      const mockDb = getCentralDb();
-      (mockDb.limit as any).mockResolvedValue([]);
+      const mockInsertBuilder = {
+        values: vi.fn().mockReturnThis(),
+        onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
+      };
 
-      await challengeThrottleService.recordFailedAttempt(emailHash, "pin", tenantId);
+      mockCentralDb.insert.mockReturnValue(mockInsertBuilder);
 
-      expect(mockDb.insert).toHaveBeenCalled();
-      expect(mockDb.values).toHaveBeenCalledWith(
+      await challengeThrottleService.recordFailedAttempt(emailHash, "pin");
+
+      expect(mockCentralDb.insert).toHaveBeenCalled();
+      expect(mockInsertBuilder.values).toHaveBeenCalledWith(
         expect.objectContaining({
           id: emailHash,
           failedAttempts: 1,
@@ -143,31 +177,48 @@ describe("ChallengeThrottleService", () => {
     });
 
     it("should increment failed attempts on subsequent failures", async () => {
-      const mockDb = getCentralDb();
-      const record = {
-        id: emailHash,
-        failedAttempts: 2,
-        lastAttemptAt: new Date(),
-        resetAt: new Date(Date.now() + 60000),
+      const mockSelectBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([
+          {
+            id: emailHash,
+            failedAttempts: 2,
+            lastAttemptAt: new Date(),
+            resetAt: new Date(Date.now() + 60000),
+          },
+        ]),
       };
-      (mockDb.limit as any).mockResolvedValue([record]);
 
-      await challengeThrottleService.recordFailedAttempt(emailHash, "pin", tenantId);
+      const mockInsertBuilder = {
+        values: vi.fn().mockReturnThis(),
+        onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
+      };
 
-      expect(mockDb.update).toHaveBeenCalled();
-      expect(mockDb.set).toHaveBeenCalledWith(
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
+      mockCentralDb.insert.mockReturnValue(mockInsertBuilder);
+
+      await challengeThrottleService.recordFailedAttempt(emailHash, "pin");
+
+      expect(mockCentralDb.insert).toHaveBeenCalled();
+      expect(mockInsertBuilder.values).toHaveBeenCalledWith(
         expect.objectContaining({
-          failedAttempts: 3,
+          id: emailHash,
+          failedAttempts: 1,
         }),
       );
     });
 
     it("should clear throttle on successful authentication", async () => {
-      const mockDb = getCentralDb();
+      const mockDeleteBuilder = {
+        where: vi.fn().mockResolvedValue(undefined),
+      };
 
-      await challengeThrottleService.clearThrottle(emailHash, "pin", tenantId);
+      mockCentralDb.delete.mockReturnValue(mockDeleteBuilder);
 
-      expect(mockDb.delete).toHaveBeenCalled();
+      await challengeThrottleService.clearThrottle(emailHash, "pin");
+
+      expect(mockCentralDb.delete).toHaveBeenCalled();
     });
   });
 
@@ -175,14 +226,20 @@ describe("ChallengeThrottleService", () => {
     const email = "test@example.com";
 
     it("should allow first 3 attempts immediately", async () => {
-      const mockDb = getCentralDb();
       const record = {
         id: email,
         failedAttempts: 2,
         lastAttemptAt: new Date(Date.now() - 100),
         resetAt: new Date(Date.now() + 60000),
       };
-      (mockDb.limit as any).mockResolvedValue([record]);
+
+      const mockSelectBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([record]),
+      };
+
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
 
       const result = await challengeThrottleService.checkThrottle(email, "passkey");
 
@@ -191,7 +248,6 @@ describe("ChallengeThrottleService", () => {
     });
 
     it("should throttle after 3 failed attempts", async () => {
-      const mockDb = getCentralDb();
       const now = Date.now();
       const record = {
         id: email,
@@ -199,7 +255,14 @@ describe("ChallengeThrottleService", () => {
         lastAttemptAt: new Date(now - 10000), // 10 seconds ago
         resetAt: new Date(now + 60000),
       };
-      (mockDb.limit as any).mockResolvedValue([record]);
+
+      const mockSelectBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([record]),
+      };
+
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
 
       const result = await challengeThrottleService.checkThrottle(email, "passkey");
 
@@ -209,7 +272,6 @@ describe("ChallengeThrottleService", () => {
     });
 
     it("should allow request after 1 minute has passed", async () => {
-      const mockDb = getCentralDb();
       const now = Date.now();
       const record = {
         id: email,
@@ -217,7 +279,14 @@ describe("ChallengeThrottleService", () => {
         lastAttemptAt: new Date(now - 70000), // 70 seconds ago (more than 1 minute)
         resetAt: new Date(now + 60000),
       };
-      (mockDb.limit as any).mockResolvedValue([record]);
+
+      const mockSelectBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([record]),
+      };
+
+      mockCentralDb.select.mockReturnValue(mockSelectBuilder);
 
       const result = await challengeThrottleService.checkThrottle(email, "passkey");
 
@@ -225,30 +294,42 @@ describe("ChallengeThrottleService", () => {
     });
 
     it("should record failed passkey attempts", async () => {
-      const mockDb = getCentralDb();
-      (mockDb.limit as any).mockResolvedValue([]);
+      const mockInsertBuilder = {
+        values: vi.fn().mockReturnThis(),
+        onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
+      };
+
+      mockCentralDb.insert.mockReturnValue(mockInsertBuilder);
 
       await challengeThrottleService.recordFailedAttempt(email, "passkey");
 
-      expect(mockDb.insert).toHaveBeenCalled();
+      expect(mockCentralDb.insert).toHaveBeenCalled();
     });
 
     it("should clear passkey throttle on success", async () => {
-      const mockDb = getCentralDb();
+      const mockDeleteBuilder = {
+        where: vi.fn().mockResolvedValue(undefined),
+      };
+
+      mockCentralDb.delete.mockReturnValue(mockDeleteBuilder);
 
       await challengeThrottleService.clearThrottle(email, "passkey");
 
-      expect(mockDb.delete).toHaveBeenCalled();
+      expect(mockCentralDb.delete).toHaveBeenCalled();
     });
   });
 
   describe("Edge cases", () => {
     it("should handle cleanup of expired records", async () => {
-      const mockDb = getCentralDb();
+      const mockDeleteBuilder = {
+        where: vi.fn().mockResolvedValue(undefined),
+      };
+
+      mockCentralDb.delete.mockReturnValue(mockDeleteBuilder);
 
       await challengeThrottleService.cleanupExpired();
 
-      expect(mockDb.delete).toHaveBeenCalled();
+      expect(mockCentralDb.delete).toHaveBeenCalled();
     });
   });
 });

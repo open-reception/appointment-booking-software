@@ -164,11 +164,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
       });
 
       // Record failed attempt for throttling
-      await challengeThrottleService.recordFailedAttempt(
-        storedChallenge.emailHash,
-        "pin",
-        tenantId,
-      );
+      await challengeThrottleService.recordFailedAttempt(storedChallenge.emailHash, "pin");
 
       throw new ValidationError("Invalid challenge response");
     }
@@ -203,7 +199,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
     });
 
     // Clear throttle on successful verification
-    await challengeThrottleService.clearThrottle(storedChallenge.emailHash, "pin", tenantId);
+    await challengeThrottleService.clearThrottle(storedChallenge.emailHash, "pin");
 
     const response: ChallengeVerificationResponse = {
       valid: true,

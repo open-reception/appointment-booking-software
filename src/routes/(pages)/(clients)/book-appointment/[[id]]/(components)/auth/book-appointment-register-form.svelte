@@ -1,6 +1,7 @@
 <script lang="ts">
   import { m } from "$i18n/messages.js";
   import { UnifiedAppointmentCrypto } from "$lib/client/appointment-crypto";
+  import * as Alert from "$lib/components/ui/alert";
   import * as Form from "$lib/components/ui/form";
   import InputOtpCustomized from "$lib/components/ui/input-top-customized/input-otp-customized.svelte";
   import { publicStore } from "$lib/stores/public";
@@ -95,16 +96,16 @@
 
 <Form.Root {enhance}>
   {#if isThrottled}
-    <div
-      class="bg-destructive/10 border-destructive dark:bg-destructive/20 dark:border-destructive/50 mb-4 rounded-lg border p-4"
+    <Alert.Root
+      class="border-destructive bg-destructive/10 dark:bg-destructive/20 dark:border-destructive/50 mb-4"
     >
-      <p class="text-destructive dark:text-destructive/90 font-semibold">
+      <Alert.Title class="text-destructive dark:text-destructive/90">
         {m["public.steps.auth.login.throttled"]()}
-      </p>
-      <p class="text-destructive/80 dark:text-destructive/70 mt-1 text-sm">
+      </Alert.Title>
+      <Alert.Description class="text-destructive/80 dark:text-destructive/70 mt-1">
         {m["public.steps.auth.login.retry"]({ seconds: remainingSeconds })}
-      </p>
-    </div>
+      </Alert.Description>
+    </Alert.Root>
   {/if}
 
   <Form.Field {form} name="pin">
