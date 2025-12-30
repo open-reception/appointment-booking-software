@@ -5,6 +5,7 @@ import { randomBytes } from "node:crypto";
 import { UniversalLogger } from "$lib/logger";
 import { verifyAuthenticationResponse, verifyRegistrationResponse } from "@simplewebauthn/server";
 import type { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/types";
+import { dev } from "$app/environment";
 
 const logger = new UniversalLogger().setContext("WebAuthnService");
 
@@ -174,7 +175,6 @@ export class WebAuthnService {
       return { verified: false };
     }
   }
-
 
   /**
    * Verify a WebAuthn registration response using @simplewebauthn/server
@@ -355,7 +355,7 @@ export class WebAuthnService {
   private static getAllowedOrigins(url: URL): string[] {
     const origins: string[] = [];
 
-    if (process.env.NODE_ENV === "production") {
+    if (!dev) {
       // Production: Use the request origin
       const origin = url.origin; // e.g., https://tenant.example.com or https://example.com
       origins.push(origin);
