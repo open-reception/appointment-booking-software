@@ -727,9 +727,7 @@ export class UnifiedAppointmentCrypto {
     }
 
     // Import the PRF output as a CryptoKey for HKDF expansion
-    const ikmKey = await crypto.subtle.importKey("raw", prfBytes, "HKDF", false, [
-      "deriveBits",
-    ]);
+    const ikmKey = await crypto.subtle.importKey("raw", prfBytes, "HKDF", false, ["deriveBits"]);
 
     // Salt for HKDF (versioned to allow future rotation)
     // v2: Uses email-based PRF salts for multi-passkey support
