@@ -6,6 +6,7 @@ export interface PasskeyAuthData {
   authenticatorData: string;
   passkeyId: string;
   email: string;
+  prfOutput?: string; // Base64-encoded PRF output for staff crypto key derivation
 }
 
 export interface AuthState {

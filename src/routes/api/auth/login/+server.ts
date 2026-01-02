@@ -245,6 +245,7 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
       const verificationResult = await WebAuthnService.verifyAuthentication(
         body.credential,
         challengeFromSession,
+        url,
       );
 
       if (!verificationResult.verified) {
@@ -256,14 +257,6 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
       // Verify that the credential belongs to the user
       if (verificationResult.userId !== user.id) {
         return json({ error: "WebAuthn credential does not belong to this user" }, { status: 401 });
-      }
-
-      // Update the counter to prevent replay attacks
-      if (verificationResult.newCounter && verificationResult.passkeyId) {
-        await WebAuthnService.updatePasskeyCounter(
-          verificationResult.passkeyId,
-          verificationResult.newCounter,
-        );
       }
 
       logger.debug("WebAuthn authentication successful", { userId: user.id });

@@ -85,7 +85,9 @@
 
 <Form.Root {enhance}>
   {#if isThrottled}
-    <Alert.Root class="mb-4 border-destructive bg-destructive/10 dark:bg-destructive/20 dark:border-destructive/50">
+    <Alert.Root
+      class="border-destructive bg-destructive/10 dark:bg-destructive/20 dark:border-destructive/50 mb-4"
+    >
       <Alert.Title class="text-destructive dark:text-destructive/90">
         {m["public.steps.auth.login.throttled"]()}
       </Alert.Title>
