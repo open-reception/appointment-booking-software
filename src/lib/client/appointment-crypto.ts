@@ -48,6 +48,7 @@
  */
 
 import { OptimizedArgon2 } from "$lib/crypto/hashing";
+import { pinThrottleStore } from "$lib/stores/pin-throttle";
 import { KyberCrypto, AESCrypto, ShamirSecretSharing, BufferUtils } from "$lib/crypto/utils";
 
 // Type definitions for unified cryptography
@@ -203,6 +204,22 @@ export class UnifiedAppointmentCrypto {
       });
 
       if (!challengeResponse.ok) {
+        if (challengeResponse.status === 429) {
+          const errorData = await challengeResponse.json();
+          const retryAfterMs = errorData.retryAfterMs || 60000;
+          const retryAfterSeconds = Math.ceil(retryAfterMs / 1000);
+
+          // Store throttle state for frontend to enforce
+          pinThrottleStore.setThrottle(this.emailHash, retryAfterMs, errorData.failedAttempts || 0);
+
+          if (retryAfterSeconds > 0) {
+            throw new Error(
+              `Too many failed attempts. Please try again in ${retryAfterSeconds} seconds.`,
+            );
+          } else {
+            throw new Error("Too many failed attempts. Please try again later.");
+          }
+        }
         throw new Error("Challenge could not be retrieved");
       }
 
@@ -233,6 +250,21 @@ export class UnifiedAppointmentCrypto {
       if (!verificationResponse.ok) {
         const errorData = await verificationResponse.json();
         console.error("❌ Challenge verification failed:", errorData);
+        if (verificationResponse.status === 429) {
+          const retryAfterMs = errorData.retryAfterMs || 60000;
+          const retryAfterSeconds = Math.ceil(retryAfterMs / 1000);
+
+          // Store throttle state for frontend to enforce
+          pinThrottleStore.setThrottle(this.emailHash, retryAfterMs, errorData.failedAttempts || 0);
+
+          if (retryAfterSeconds > 0) {
+            throw new Error(
+              `Too many failed attempts. Please try again in ${retryAfterSeconds} seconds.`,
+            );
+          } else {
+            throw new Error("Too many failed attempts. Please try again later.");
+          }
+        }
         throw new Error("Challenge verification failed");
       }
 
@@ -243,6 +275,9 @@ export class UnifiedAppointmentCrypto {
       this.tunnelId = verificationData.tunnelId;
 
       this.clientAuthenticated = true;
+
+      // Clear throttle on successful authentication
+      pinThrottleStore.clearThrottle();
     } catch (error) {
       console.error("❌ Error during client login:", error);
       throw error;
