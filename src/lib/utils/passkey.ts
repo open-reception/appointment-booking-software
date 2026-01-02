@@ -49,16 +49,39 @@ export const fetchChallenge = async (email: string) => {
     body: JSON.stringify({ email }),
   });
 
+  let data;
   try {
-    const data = await resp.json();
-    return {
-      id: data.rpId,
-      challenge: data.challenge,
-    };
-  } catch {
+    data = await resp.json();
+  } catch (error) {
+    logger.error("Failed to parse challenge response", { email, error });
+    return null;
+  }
+
+  // Handle throttling
+  if (resp.status === 429) {
+    const retryAfterSeconds = Math.ceil((data.retryAfterMs || 60000) / 1000);
+    logger.warn("Challenge request throttled", {
+      email,
+      retryAfterSeconds,
+    });
+    if (retryAfterSeconds > 0) {
+      throw new Error(
+        `Too many failed attempts. Please try again in ${retryAfterSeconds} seconds.`,
+      );
+    } else {
+      throw new Error("Too many failed attempts. Please try again later.");
+    }
+  }
+
+  if (!resp.ok) {
     logger.error("Failed to fetch challenge", { email, status: resp.status });
     return null;
   }
+
+  return {
+    id: data.rpId,
+    challenge: data.challenge,
+  };
 };
 
 export const getCredentialOptions = ({

@@ -9,6 +9,7 @@ import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { UniversalLogger } from "$lib/logger";
 import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
 import { env } from "$env/dynamic/private";
+import { challengeThrottleService } from "$lib/server/services/challenge-throttle";
 
 const logger = new UniversalLogger().setContext("AuthLoginAPI");
 
@@ -248,6 +249,8 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
       );
 
       if (!verificationResult.verified) {
+        // Record failed passkey attempt
+        await challengeThrottleService.recordFailedAttempt(body.email, "passkey");
         return json({ error: "Invalid WebAuthn credential" }, { status: 401 });
       }
 
@@ -257,6 +260,9 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
       }
 
       logger.debug("WebAuthn authentication successful", { userId: user.id });
+
+      // Clear throttle on successful authentication
+      await challengeThrottleService.clearThrottle(body.email, "passkey");
     }
 
     const sessionData = await SessionService.createSession(
