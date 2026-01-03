@@ -119,7 +119,7 @@ export async function POST({ request, params, locals }: RequestEvent) {
       throw new ValidationError("Passkey ID is required");
     }
 
-    const userId = locals.user.userId;
+    const userId = locals.user.id;
 
     // Parse request body
     const body = await request.json();
