@@ -2,12 +2,16 @@ import { centralDb } from "../db";
 import { tenant } from "../db/central-schema";
 import { TenantMigrationService } from "./tenant-migration-service";
 import { CentralDatabaseMigrationService } from "./central-database-migration-service";
+import { InviteService } from "./invite-service";
+import { SessionService } from "../auth/session-service";
+import { ClientPinResetService } from "./client-pin-reset-service";
 import { UniversalLogger } from "$lib/logger";
 
 const logger = new UniversalLogger().setContext("StartupService");
-
+const TWELVE_HOURS_IN_MS = 12 * 60 * 60 * 1000;
 export class StartupService {
   private static initialized = false;
+  private static housekeepingInterval: NodeJS.Timeout | null = null;
 
   /**
    * Initialize the application on startup
@@ -27,6 +31,9 @@ export class StartupService {
 
       // Then check and migrate all tenant databases
       await this.migrateTenantDatabases();
+
+      // Start automatic housekeeping
+      this.startAutomaticHousekeeping();
 
       this.initialized = true;
       logger.info("Application initialization completed successfully");
@@ -112,9 +119,88 @@ export class StartupService {
   }
 
   /**
+   * Start automatic housekeeping that runs twice daily
+   * Runs immediately on startup, then every 12 hours
+   */
+  private static startAutomaticHousekeeping(): void {
+    logger.info("Starting automatic housekeeping scheduler");
+
+    // Run housekeeping immediately on startup
+    this.performHousekeeping().catch((error) => {
+      logger.error("Initial housekeeping failed", { error: String(error) });
+    });
+
+    // Schedule housekeeping to run every 12 hours
+    this.housekeepingInterval = setInterval(() => {
+      logger.info("Scheduled housekeeping triggered");
+      this.performHousekeeping().catch((error) => {
+        logger.error("Scheduled housekeeping failed", { error: String(error) });
+      });
+    }, TWELVE_HOURS_IN_MS); // 12 hours in milliseconds
+
+    logger.info("Automatic housekeeping scheduler started (runs every 12 hours)");
+  }
+
+  /**
+   * Perform housekeeping tasks across all tenants
+   * Cleans up expired invitations, sessions, and PIN reset tokens
+   */
+  static async performHousekeeping(): Promise<void> {
+    logger.info("Starting housekeeping tasks");
+
+    try {
+      // Cleanup expired invitations (central database)
+      const deletedInvites = await InviteService.cleanupExpiredInvites();
+      logger.info(`Cleaned up ${deletedInvites} expired invitations`);
+
+      // Cleanup expired sessions (central database)
+      await SessionService.cleanupExpiredSessions();
+      logger.info("Cleaned up expired sessions");
+
+      // Get all tenants
+      const tenants = await centralDb
+        .select({
+          id: tenant.id,
+          shortName: tenant.shortName,
+        })
+        .from(tenant);
+
+      // Cleanup expired PIN reset tokens for each tenant
+      for (const tenantData of tenants) {
+        try {
+          const pinResetService = await ClientPinResetService.forTenant(tenantData.id);
+          const deletedTokens = await pinResetService.cleanupExpiredTokens();
+          logger.info(`Cleaned up ${deletedTokens} expired PIN reset tokens for tenant`, {
+            tenantId: tenantData.id,
+            shortName: tenantData.shortName,
+          });
+        } catch (error) {
+          logger.error("Failed to cleanup PIN reset tokens for tenant", {
+            tenantId: tenantData.id,
+            shortName: tenantData.shortName,
+            error: String(error),
+          });
+          // Continue with other tenants
+        }
+      }
+
+      logger.info("Housekeeping tasks completed successfully");
+    } catch (error) {
+      logger.error("Housekeeping tasks failed", { error: String(error) });
+      throw error;
+    }
+  }
+
+  /**
    * Force re-initialization (useful for testing)
    */
   static reset(): void {
+    // Clear the housekeeping interval if it exists
+    if (this.housekeepingInterval) {
+      clearInterval(this.housekeepingInterval);
+      this.housekeepingInterval = null;
+      logger.debug("Housekeeping interval cleared");
+    }
     this.initialized = false;
   }
 
