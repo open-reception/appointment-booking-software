@@ -142,7 +142,7 @@ const requestSchema = z.object({
  * Verify PRF output format and length
  * PRF extension produces 32 bytes of deterministic output
  */
-function verifyPRFOutput(prfOutputBase64: string, userEmail: string): boolean {
+function verifyPRFOutput(prfOutputBase64: string): boolean {
   try {
     // Decode from base64
     const prfBuffer = Buffer.from(prfOutputBase64, "base64");
@@ -228,7 +228,7 @@ export async function POST({ request, params, locals }: RequestEvent) {
     });
 
     // 5. Verify PRF output
-    if (!verifyPRFOutput(prfOutput, userEmail)) {
+    if (!verifyPRFOutput(prfOutput)) {
       throw new ValidationError(
         "Invalid PRF output: Must be 32 bytes of valid cryptographic data derived from the passkey",
       );
