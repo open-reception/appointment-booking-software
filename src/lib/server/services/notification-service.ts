@@ -10,16 +10,14 @@ const notificationCreationSchema = z.object({
   channelId: z.uuid({ message: "Invalid UUID format" }),
   title: z
     .partialRecord(z.enum(supportedLocales), z.string().min(1).max(200))
-    .refine(
-      (value) => value != null && Object.keys(value).length > 0,
-      { message: "At least one localized title is required" },
-    ),
+    .refine((value) => value != null && Object.keys(value).length > 0, {
+      message: "At least one localized title is required",
+    }),
   description: z
     .partialRecord(z.enum(supportedLocales), z.string().min(1))
-    .refine(
-      (value) => value != null && Object.keys(value).length > 0,
-      { message: "At least one localized description is required" },
-    ),
+    .refine((value) => value != null && Object.keys(value).length > 0, {
+      message: "At least one localized description is required",
+    }),
 });
 
 export type NotificationCreationRequest = z.infer<typeof notificationCreationSchema>;
@@ -214,19 +212,9 @@ export class NotificationService {
     }
 
     try {
-      // First check if notification exists and belongs to staff member
-      const existing = await this.#db
-        .select()
-        .from(notification)
-        .where(and(eq(notification.id, notificationId), eq(notification.staffId, staffId)))
-        .limit(1);
-
-      if (existing.length === 0) {
-        log.warn("Notification not found", { notificationId });
-        throw new NotFoundError("Notification not found");
-      }
-
-      await this.#db.delete(notification).where(eq(notification.id, notificationId));
+      await this.#db
+        .delete(notification)
+        .where(and(eq(notification.id, notificationId), eq(notification.staffId, staffId)));
 
       log.info("Deleted notification", { notificationId, staffId });
     } catch (error) {
