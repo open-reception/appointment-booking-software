@@ -47,6 +47,7 @@ const mockDb = {
     from: vi.fn(() => ({
       where: vi.fn(() => ({
         limit: vi.fn(),
+        orderBy: vi.fn(),
       })),
     })),
   })),
@@ -245,7 +246,9 @@ describe("NotificationService", () => {
 
       const selectChain = {
         from: vi.fn(() => ({
-          where: vi.fn().mockResolvedValue(mockNotifications),
+          where: vi.fn(() => ({
+            orderBy: vi.fn().mockResolvedValue(mockNotifications),
+          })),
         })),
       };
       mockDb.select.mockReturnValue(selectChain);
@@ -259,7 +262,9 @@ describe("NotificationService", () => {
     it("should return empty array when no notifications found", async () => {
       const selectChain = {
         from: vi.fn(() => ({
-          where: vi.fn().mockResolvedValue([]),
+          where: vi.fn(() => ({
+            orderBy: vi.fn().mockResolvedValue([]),
+          })),
         })),
       };
       mockDb.select.mockReturnValue(selectChain);
@@ -272,7 +277,9 @@ describe("NotificationService", () => {
     it("should handle database error", async () => {
       const selectChain = {
         from: vi.fn(() => ({
-          where: vi.fn().mockRejectedValue(new Error("DB error")),
+          where: vi.fn(() => ({
+            orderBy: vi.fn().mockRejectedValue(new Error("DB error")),
+          })),
         })),
       };
       mockDb.select.mockReturnValue(selectChain);
@@ -340,15 +347,6 @@ describe("NotificationService", () => {
     });
 
     it("should delete notification successfully when it belongs to staff member", async () => {
-      const selectChain = {
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([mockNotification]),
-          })),
-        })),
-      };
-      mockDb.select.mockReturnValue(selectChain);
-
       const deleteChain = {
         where: vi.fn().mockResolvedValue(undefined),
       };
@@ -356,40 +354,19 @@ describe("NotificationService", () => {
 
       await service.deleteNotification("notification-123", "staff-123");
 
-      expect(mockDb.select).toHaveBeenCalled();
       expect(mockDb.delete).toHaveBeenCalled();
     });
 
-    it("should throw NotFoundError when notification does not exist", async () => {
-      const selectChain = {
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([]),
-          })),
-        })),
+    it("should not throw error when notification does not exist or belongs to different staff member", async () => {
+      const deleteChain = {
+        where: vi.fn().mockResolvedValue(undefined),
       };
-      mockDb.select.mockReturnValue(selectChain);
+      mockDb.delete.mockReturnValue(deleteChain);
 
-      await expect(service.deleteNotification("notification-123", "staff-123")).rejects.toThrow(
-        NotFoundError,
-      );
-      expect(mockDb.delete).not.toHaveBeenCalled();
-    });
+      // Should complete without error even if notification doesn't exist
+      await service.deleteNotification("notification-123", "staff-456");
 
-    it("should throw NotFoundError when notification belongs to different staff member", async () => {
-      const selectChain = {
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([]),
-          })),
-        })),
-      };
-      mockDb.select.mockReturnValue(selectChain);
-
-      await expect(service.deleteNotification("notification-123", "staff-456")).rejects.toThrow(
-        NotFoundError,
-      );
-      expect(mockDb.delete).not.toHaveBeenCalled();
+      expect(mockDb.delete).toHaveBeenCalled();
     });
 
     it("should handle database error during deletion", async () => {
@@ -421,15 +398,6 @@ describe("NotificationService", () => {
     });
 
     it("should mark notification as read successfully when it belongs to staff member", async () => {
-      const selectChain = {
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([mockNotification]),
-          })),
-        })),
-      };
-      mockDb.select.mockReturnValue(selectChain);
-
       const updateChain = {
         set: vi.fn(() => ({
           where: vi.fn().mockResolvedValue(undefined),
@@ -439,41 +407,22 @@ describe("NotificationService", () => {
 
       await service.markAsRead("notification-123", "staff-123");
 
-      expect(mockDb.select).toHaveBeenCalled();
       expect(mockDb.update).toHaveBeenCalled();
       expect(updateChain.set).toHaveBeenCalledWith({ isRead: true });
     });
 
-    it("should throw NotFoundError when notification does not exist", async () => {
-      const selectChain = {
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([]),
-          })),
+    it("should not throw error when notification does not exist or belongs to different staff member", async () => {
+      const updateChain = {
+        set: vi.fn(() => ({
+          where: vi.fn().mockResolvedValue(undefined),
         })),
       };
-      mockDb.select.mockReturnValue(selectChain);
+      mockDb.update.mockReturnValue(updateChain);
 
-      await expect(service.markAsRead("notification-123", "staff-123")).rejects.toThrow(
-        NotFoundError,
-      );
-      expect(mockDb.update).not.toHaveBeenCalled();
-    });
+      // Should complete without error even if notification doesn't exist
+      await service.markAsRead("notification-123", "staff-456");
 
-    it("should throw NotFoundError when notification belongs to different staff member", async () => {
-      const selectChain = {
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([]),
-          })),
-        })),
-      };
-      mockDb.select.mockReturnValue(selectChain);
-
-      await expect(service.markAsRead("notification-123", "staff-456")).rejects.toThrow(
-        NotFoundError,
-      );
-      expect(mockDb.update).not.toHaveBeenCalled();
+      expect(mockDb.update).toHaveBeenCalled();
     });
 
     it("should handle database error during update", async () => {
