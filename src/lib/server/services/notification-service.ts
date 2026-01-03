@@ -1,6 +1,6 @@
 import { getTenantDb } from "../db";
 import { notification, channelStaff } from "../db/tenant-schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import logger from "$lib/logger";
 import { z } from "zod";
 import { ValidationError, NotFoundError } from "../utils/errors";
@@ -141,7 +141,8 @@ export class NotificationService {
       const notifications = await this.#db
         .select()
         .from(notification)
-        .where(eq(notification.staffId, staffId));
+        .where(eq(notification.staffId, staffId))
+        .orderBy(desc(notification.createdAt));
 
       log.debug("Retrieved notifications for staff", {
         staffId,
@@ -246,22 +247,10 @@ export class NotificationService {
     }
 
     try {
-      // First check if notification exists and belongs to staff member
-      const existing = await this.#db
-        .select()
-        .from(notification)
-        .where(and(eq(notification.id, notificationId), eq(notification.staffId, staffId)))
-        .limit(1);
-
-      if (existing.length === 0) {
-        log.warn("Notification not found", { notificationId });
-        throw new NotFoundError("Notification not found");
-      }
-
       await this.#db
         .update(notification)
         .set({ isRead: true })
-        .where(eq(notification.id, notificationId));
+        .where(and(eq(notification.id, notificationId), eq(notification.staffId, staffId)));
 
       log.info("Marked notification as read", { notificationId, staffId });
     } catch (error) {
