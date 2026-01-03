@@ -92,6 +92,18 @@ export const slotTemplate = pgTable("slotTemplate", {
 });
 
 /**
+ * Channel-Staff junction table - establishes many-to-many relationship.  Note that staff is not a reference since they are stored in another database
+ */
+export const channelStaff = pgTable("channel_staff", {
+  /** Foreign key to channel */
+  channelId: uuid("channel_id")
+    .notNull()
+    .references(() => channel.id),
+  /** Key to staff member */
+  staffId: uuid("staff_id").notNull(),
+});
+
+/**
  * Channel-Agent junction table - establishes many-to-many relationship
  * Links channels with the agents who can provide services for that channel
  * Stored in tenant-specific database
@@ -209,6 +221,25 @@ export const appointmentKeyShare = pgTable("appointment_key_share", {
   userId: uuid("user_id").notNull(),
   /** Symmetric key encrypted with this staff member's public key */
   encryptedKey: text("encrypted_key").notNull(),
+});
+
+/**
+ * Notification table - represents notifications related to appointments and other relevant system events
+ * Used to inform staff about new appointments, changes, or cancellations
+ * Stored in tenant-specific database
+ * @table notification
+ */
+export const notification = pgTable("notification", {
+  /** Primary key - unique identifier */
+  id: uuid("id").primaryKey().defaultRandom(),
+  /** Reference to staff  */
+  staffId: uuid("staff_id").notNull(),
+  /** Title of notification (e.g. "Appointment cancelled"), per language */
+  title: json("title").$type<{ [key: string]: string }>().notNull(),
+  /** Notification text, per language */
+  description: json("description").$type<{ [key: string]: string }>().notNull(),
+  /** Whether the notification was read */
+  isRead: boolean("is_read").default(false).notNull(),
 });
 
 /**
