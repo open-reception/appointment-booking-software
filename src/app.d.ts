@@ -4,6 +4,7 @@ import type { SelectUser } from "$lib/server/db/central-schema";
 import type { Locale } from "$i18n/runtime";
 
 interface SessionInfo {
+  passkeyId?: string;
   session: {
     sessionId: string;
     exp: number;
