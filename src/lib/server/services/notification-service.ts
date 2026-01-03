@@ -8,8 +8,18 @@ import { supportedLocales } from "$lib/const/locales";
 
 const notificationCreationSchema = z.object({
   channelId: z.uuid({ message: "Invalid UUID format" }),
-  title: z.partialRecord(z.enum(supportedLocales), z.string().min(1).max(200)),
-  description: z.partialRecord(z.enum(supportedLocales), z.string().min(1)),
+  title: z
+    .partialRecord(z.enum(supportedLocales), z.string().min(1).max(200))
+    .refine(
+      (value) => value != null && Object.keys(value).length > 0,
+      { message: "At least one localized title is required" },
+    ),
+  description: z
+    .partialRecord(z.enum(supportedLocales), z.string().min(1))
+    .refine(
+      (value) => value != null && Object.keys(value).length > 0,
+      { message: "At least one localized description is required" },
+    ),
 });
 
 export type NotificationCreationRequest = z.infer<typeof notificationCreationSchema>;
