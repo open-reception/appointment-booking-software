@@ -2,7 +2,14 @@ import { json, type RequestEvent } from "@sveltejs/kit";
 import { UserService } from "$lib/server/services/user-service";
 import { WebAuthnService } from "$lib/server/auth/webauthn-service";
 import { StaffCryptoService } from "$lib/server/services/staff-crypto.service";
-import { NotFoundError, ValidationError, AuthorizationError } from "$lib/server/utils/errors";
+import {
+  NotFoundError,
+  ValidationError,
+  AuthorizationError,
+  BackendError,
+  InternalError,
+  logError,
+} from "$lib/server/utils/errors";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 
@@ -90,7 +97,7 @@ registerOpenAPIRoute("/auth/passkeys/{passkeyId}", "DELETE", {
 });
 
 export async function DELETE({ params, locals }: RequestEvent) {
-  const log = logger.setContext("API");
+  const log = logger.setContext("API.DeletePasskey");
   const { passkeyId } = params;
 
   try {
@@ -145,7 +152,7 @@ export async function DELETE({ params, locals }: RequestEvent) {
       deviceName: deletedPasskey.deviceName,
     });
 
-    // If user has a tenant (STAFF or TENANT_ADMIN), also delete associated crypto data
+    // If user has a tenant (STAFF or TENANT_ADMIN), also delete associated crypto data (CASCADE)
     if (locals.user.tenantId) {
       const tenantId = locals.user.tenantId;
 
@@ -157,7 +164,7 @@ export async function DELETE({ params, locals }: RequestEvent) {
           passkeyId,
         );
 
-        log.debug("Staff crypto deletion completed", {
+        log.info("Staff crypto data cascaded deletion completed", {
           passkeyId,
           userId,
           tenantId,
@@ -165,7 +172,7 @@ export async function DELETE({ params, locals }: RequestEvent) {
         });
       } catch (error) {
         // Log but don't fail the request - the passkey is already deleted
-        log.warn("Failed to delete staff crypto data for passkey", {
+        log.warn("Failed to delete staff crypto data for passkey (cascade)", {
           passkeyId,
           userId,
           tenantId,
@@ -174,28 +181,17 @@ export async function DELETE({ params, locals }: RequestEvent) {
       }
     }
 
-    return json(
-      {
-        message: "Passkey deleted successfully",
-        deletedPasskeyId: passkeyId,
-      },
-      { status: 200 },
-    );
+    return json({
+      message: "Passkey deleted successfully",
+      deletedPasskeyId: passkeyId,
+    });
   } catch (error) {
-    log.error("Delete passkey error:", JSON.stringify(error || "?"));
+    logError(log)("Failed to delete passkey", error, locals.user?.id, params.passkeyId);
 
-    if (error instanceof NotFoundError) {
-      return json({ error: error.message }, { status: 404 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    if (error instanceof ValidationError) {
-      return json({ error: error.message }, { status: 400 });
-    }
-
-    if (error instanceof AuthorizationError) {
-      return json({ error: error.message }, { status: 403 });
-    }
-
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 }
