@@ -43,7 +43,7 @@ describe("POST /api/tenants/[id]/clients/pin-reset/init", () => {
     const result = await POST({
       params: { id: tenantId },
       request,
-      locals: { user: { userId: "staff-123", role: "STAFF" } } as any,
+      locals: { user: { id: "staff-123", role: "STAFF" } } as any,
     } as any);
 
     expect(result.status).toBe(200);
@@ -54,7 +54,7 @@ describe("POST /api/tenants/[id]/clients/pin-reset/init", () => {
     expect(data).toHaveProperty("expirationMinutes", 30);
 
     expect(checkPermission).toHaveBeenCalledWith(
-      { user: { userId: "staff-123", role: "STAFF" } },
+      { user: { id: "staff-123", role: "STAFF" } },
       tenantId,
     );
     expect(ClientPinResetService.forTenant).toHaveBeenCalledWith(tenantId);
@@ -71,7 +71,7 @@ describe("POST /api/tenants/[id]/clients/pin-reset/init", () => {
     const result = await POST({
       params: { id: tenantId },
       request,
-      locals: { user: { userId: "staff-123", role: "STAFF" } } as any,
+      locals: { user: { id: "staff-123", role: "STAFF" } } as any,
     } as any);
 
     expect(result.status).toBe(400);
@@ -91,7 +91,7 @@ describe("POST /api/tenants/[id]/clients/pin-reset/init", () => {
     const result = await POST({
       params: { id: tenantId },
       request,
-      locals: { user: { userId: "staff-123", role: "STAFF" } } as any,
+      locals: { user: { id: "staff-123", role: "STAFF" } } as any,
     } as any);
 
     expect(result.status).toBe(500);
@@ -109,13 +109,13 @@ describe("POST /api/tenants/[id]/clients/pin-reset/init", () => {
     const response = await POST({
       params: { id: tenantId },
       request,
-      locals: { user: { userId: "user-123", role: "STAFF" } } as any,
+      locals: { user: { id: "user-123", role: "STAFF" } } as any,
     } as any);
 
     expect(response.status).toBe(500);
 
     expect(checkPermission).toHaveBeenCalledWith(
-      { user: { userId: "user-123", role: "STAFF" } },
+      { user: { id: "user-123", role: "STAFF" } },
       tenantId,
     );
   });

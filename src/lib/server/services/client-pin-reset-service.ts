@@ -1,12 +1,13 @@
 import { getTenantDb } from "../db";
 import * as tenantSchema from "../db/tenant-schema";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { eq, and, gt } from "drizzle-orm";
+import { eq, lt } from "drizzle-orm";
 import { UniversalLogger } from "$lib/logger";
 import { NotFoundError, ValidationError } from "../utils/errors";
 import { addMinutes } from "date-fns";
 
 const logger = new UniversalLogger();
+const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * ClientPinResetService
@@ -20,7 +21,6 @@ const logger = new UniversalLogger();
  * - Generating a secure reset token
  * - Rotating the client's keypair
  * - Re-encrypting the tunnel key with the new keypair
- * - Re-encrypting tunnel keys for all staff members
  */
 export class ClientPinResetService {
   #db: PostgresJsDatabase<typeof tenantSchema> | null = null;
@@ -253,12 +253,7 @@ export class ClientPinResetService {
 
     try {
       const result = await db.delete(tenantSchema.clientPinResetToken).where(
-        and(
-          gt(
-            tenantSchema.clientPinResetToken.createdAt,
-            new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-          ), // older than 7 days
-        ),
+        lt(tenantSchema.clientPinResetToken.createdAt, new Date(Date.now() - SEVEN_DAYS_IN_MS)), // older than 7 days
       );
 
       log.info("Expired PIN reset tokens cleaned up", { count: result.count });

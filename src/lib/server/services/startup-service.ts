@@ -131,6 +131,9 @@ export class StartupService {
     });
 
     // Schedule housekeeping to run every 12 hours
+    if (this.housekeepingInterval) {
+      clearInterval(this.housekeepingInterval);
+    }
     this.housekeepingInterval = setInterval(() => {
       logger.info("Scheduled housekeeping triggered");
       this.performHousekeeping().catch((error) => {
