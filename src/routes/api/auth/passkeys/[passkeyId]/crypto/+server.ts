@@ -149,7 +149,7 @@ function verifyPRFOutput(prfOutputBase64: string, userEmail: string): boolean {
 
     // PRF output should be exactly 32 bytes
     if (prfBuffer.length !== 32) {
-      logger.setContext("API.StorePsakeyCrypto").warn("Invalid PRF output length", {
+      logger.setContext("API.StorePasskeyCrypto").warn("Invalid PRF output length", {
         expected: 32,
         actual: prfBuffer.length,
       });
