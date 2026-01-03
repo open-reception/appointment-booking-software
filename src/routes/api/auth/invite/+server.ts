@@ -140,7 +140,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
     if (!validation.success) {
       logger.warn("Invalid invite request", {
-        userId: locals.user.userId,
+        userId: locals.user.id,
         errors: validation.error.issues,
       });
       throw new ValidationError("Invalid request data");
@@ -157,7 +157,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       // Tenant admin can invite to their own tenant
     } else {
       logger.warn("Insufficient permissions for invitation", {
-        userId: locals.user.userId,
+        userId: locals.user.id,
         userRole: locals.user.role,
         userTenantId: locals.user.tenantId,
         targetTenantId: tenantId,
@@ -196,7 +196,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       name,
       role,
       tenantId,
-      locals.user.userId,
+      locals.user.id,
       language,
     );
 
@@ -207,7 +207,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     await sendUserInviteEmail(email, name, tenant, role, registrationUrl, language);
 
     logger.info("User invitation sent successfully", {
-      invitedBy: locals.user.userId,
+      invitedBy: locals.user.id,
       invitedEmail: email,
       tenantId,
       role,
@@ -223,7 +223,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   } catch (error) {
     logger.error("User invitation error:", {
       error: String(error),
-      userId: locals.user?.userId,
+      userId: locals.user?.id,
     });
 
     if (error instanceof ValidationError) {

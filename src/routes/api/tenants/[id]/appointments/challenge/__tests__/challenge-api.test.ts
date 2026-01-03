@@ -40,6 +40,14 @@ vi.mock("$lib/server/services/challenge-store", () => ({
   },
 }));
 
+vi.mock("$lib/server/services/challenge-throttle", () => ({
+  challengeThrottleService: {
+    checkThrottle: vi.fn(),
+    recordFailedAttempt: vi.fn(),
+    clearThrottle: vi.fn(),
+  },
+}));
+
 vi.mock("crypto", () => ({
   randomBytes: vi.fn(),
 }));
@@ -48,6 +56,7 @@ import { getTenantDb } from "$lib/server/db";
 import { randomBytes } from "crypto";
 import { KyberCrypto, BufferUtils } from "$lib/crypto/utils";
 import { challengeStore } from "$lib/server/services/challenge-store";
+import { challengeThrottleService } from "$lib/server/services/challenge-throttle";
 
 describe("Challenge API Route", () => {
   const mockTenantId = "123e4567-e89b-12d3-a456-426614174000";
@@ -65,6 +74,12 @@ describe("Challenge API Route", () => {
       if (size === 32) return Buffer.from("challenge-data-32-bytes-long-string");
       if (size === 16) return Buffer.from("challenge-id-16b");
       return Buffer.alloc(size);
+    });
+    // Mock throttle service to allow all requests by default
+    (challengeThrottleService.checkThrottle as any).mockResolvedValue({
+      allowed: true,
+      retryAfterMs: 0,
+      failedAttempts: 0,
     });
   });
 
@@ -253,6 +268,23 @@ describe("Challenge API Route", () => {
 
       expect(response.status).toBe(500);
       expect(data.error).toBe("Internal server error");
+    });
+
+    it("should throttle when too many failed attempts", async () => {
+      // Mock throttle service to reject the request
+      (challengeThrottleService.checkThrottle as any).mockResolvedValue({
+        allowed: false,
+        retryAfterMs: 60000,
+        failedAttempts: 3,
+      });
+
+      const event = createMockRequestEvent();
+      const response = await POST(event);
+      const data = await response.json();
+
+      expect(response.status).toBe(429);
+      expect(data.error).toContain("Too many failed attempts");
+      expect(data.retryAfterMs).toBe(60000);
     });
   });
 });

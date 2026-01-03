@@ -1,9 +1,48 @@
 {
-  "id": "cf0cf730-c6c2-433b-97b2-0c90333fd379",
+  "id": "6f7d3653-5075-4baf-ad67-77afa7ae10ff",
   "prevId": "c06d9c90-44ff-4e2e-a834-8533afcfe755",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
+    "public.challenge_throttle": {
+      "name": "challenge_throttle",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "failed_attempts": {
+          "name": "failed_attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "last_attempt_at": {
+          "name": "last_attempt_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "reset_at": {
+          "name": "reset_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.tenant": {
       "name": "tenant",
       "schema": "",
@@ -111,9 +150,7 @@
         "tenant_short_name_unique": {
           "name": "tenant_short_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "short_name"
-          ]
+          "columns": ["short_name"]
         }
       },
       "policies": {},
@@ -199,12 +236,8 @@
           "name": "tenant_config_tenant_id_tenant_id_fk",
           "tableFrom": "tenant_config",
           "tableTo": "tenant",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tenant_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -341,12 +374,8 @@
           "name": "user_tenant_id_tenant_id_fk",
           "tableFrom": "user",
           "tableTo": "tenant",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tenant_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -356,9 +385,7 @@
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -513,12 +540,8 @@
           "name": "user_invite_tenant_id_tenant_id_fk",
           "tableFrom": "user_invite",
           "tableTo": "tenant",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tenant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -526,12 +549,8 @@
           "name": "user_invite_invited_by_user_id_fk",
           "tableFrom": "user_invite",
           "tableTo": "user",
-          "columnsFrom": [
-            "invited_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["invited_by"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -539,12 +558,8 @@
           "name": "user_invite_created_user_id_user_id_fk",
           "tableFrom": "user_invite",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -554,9 +569,7 @@
         "user_invite_invite_code_unique": {
           "name": "user_invite_invite_code_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "invite_code"
-          ]
+          "columns": ["invite_code"]
         }
       },
       "policies": {},
@@ -641,12 +654,8 @@
           "name": "user_passkey_user_id_user_id_fk",
           "tableFrom": "user_passkey",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -691,12 +700,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "passkey_id": {
-          "name": "passkey_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         },
         "ip_address": {
           "name": "ip_address",
@@ -775,12 +778,8 @@
           "name": "user_session_user_id_user_id_fk",
           "tableFrom": "user_session",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -790,9 +789,7 @@
         "user_session_session_token_unique": {
           "name": "user_session_session_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "session_token"
-          ]
+          "columns": ["session_token"]
         }
       },
       "policies": {},
@@ -804,40 +801,22 @@
     "public.config_type": {
       "name": "config_type",
       "schema": "public",
-      "values": [
-        "BOOLEAN",
-        "NUMBER",
-        "STRING"
-      ]
+      "values": ["BOOLEAN", "NUMBER", "STRING"]
     },
     "public.confirmation_state": {
       "name": "confirmation_state",
       "schema": "public",
-      "values": [
-        "INVITED",
-        "CONFIRMED",
-        "ACCESS_GRANTED"
-      ]
+      "values": ["INVITED", "CONFIRMED", "ACCESS_GRANTED"]
     },
     "public.setup_state": {
       "name": "setup_state",
       "schema": "public",
-      "values": [
-        "SETTINGS",
-        "AGENTS",
-        "CHANNELS",
-        "STAFF",
-        "READY"
-      ]
+      "values": ["SETTINGS", "AGENTS", "CHANNELS", "STAFF", "READY"]
     },
     "public.user_role": {
       "name": "user_role",
       "schema": "public",
-      "values": [
-        "GLOBAL_ADMIN",
-        "TENANT_ADMIN",
-        "STAFF"
-      ]
+      "values": ["GLOBAL_ADMIN", "TENANT_ADMIN", "STAFF"]
     }
   },
   "schemas": {},

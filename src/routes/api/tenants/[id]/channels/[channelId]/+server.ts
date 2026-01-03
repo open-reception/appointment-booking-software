@@ -404,7 +404,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     log.debug("Getting channel details", {
       tenantId,
       channelId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     const channelService = await ChannelService.forTenant(tenantId);
@@ -417,14 +417,14 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     log.debug("Channel details retrieved successfully", {
       tenantId,
       channelId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     return json({
       channel,
     });
   } catch (error) {
-    logError(log)("Error getting channel details", error, locals.user?.userId, params.id);
+    logError(log)("Error getting channel details", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();
@@ -451,7 +451,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
     log.debug("Updating channel", {
       tenantId,
       channelId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
       updateFields: Object.keys(body),
     });
 
@@ -461,7 +461,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
     log.debug("Channel updated successfully", {
       tenantId,
       channelId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     return json({
@@ -469,7 +469,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
       channel: updatedChannel,
     });
   } catch (error) {
-    logError(log)("Error updating channel", error, locals.user?.userId, params.id);
+    logError(log)("Error updating channel", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();
@@ -504,7 +504,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
     log.debug("Deleting channel", {
       tenantId,
       channelId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     const channelService = await ChannelService.forTenant(tenantId);
@@ -517,14 +517,14 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
     log.debug("Channel deleted successfully", {
       tenantId,
       channelId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     return json({
       message: "Channel deleted successfully",
     });
   } catch (error) {
-    logError(log)("Error deleting channel", error, locals.user?.userId, params.id);
+    logError(log)("Error deleting channel", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();

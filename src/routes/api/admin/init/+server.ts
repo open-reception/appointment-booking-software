@@ -38,15 +38,18 @@ registerOpenAPIRoute("/admin/init", "POST", {
               description: "WebAuthn passkey data (alternative to passphrase)",
               properties: {
                 id: { type: "string", description: "Credential ID from WebAuthn" },
-                publicKey: { type: "string", description: "Base64 encoded public key" },
-                counter: { type: "integer", description: "Signature counter", default: 0 },
+                attestationObject: {
+                  type: "string",
+                  description: "Base64 encoded attestation object",
+                },
+                clientDataJSON: { type: "string", description: "Base64 encoded client data JSON" },
                 deviceName: {
                   type: "string",
                   description: "Device name for identification",
                   example: "MacBook Pro",
                 },
               },
-              required: ["id", "publicKey"],
+              required: ["id", "attestationObject", "clientDataJSON"],
             },
             passphrase: {
               type: "string",
@@ -159,27 +162,39 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
     if (hasPasskey) {
       // Validate that this registration was preceded by a challenge request
       const registrationEmail = cookies.get("webauthn-registration-email");
+      const challengeFromSession = cookies.get("webauthn-challenge");
 
       if (!registrationEmail || registrationEmail !== body.email) {
         throw new ValidationError(ERRORS.SECURITY.INVALID_PASSKEY_REGISTRATION);
       }
 
+      if (!challengeFromSession) {
+        throw new ValidationError("Invalid or missing WebAuthn challenge");
+      }
+
       // Note: Cookie is not deleted here to allow subsequent crypto key storage.
       // It will expire automatically after 5 minutes (set in /api/auth/challenge)
 
-      // Extract counter from WebAuthn credential
-      const counter = WebAuthnService.extractCounterFromCredential(body.passkey);
+      // Verify registration and extract COSE public key using @simplewebauthn/server
+      const verificationResult = await WebAuthnService.verifyRegistration(
+        body.passkey.id,
+        body.passkey.attestationObject,
+        body.passkey.clientDataJSON,
+        challengeFromSession,
+        url,
+      );
 
       await UserService.addPasskey(admin.id, {
-        id: body.passkey.id,
-        publicKey: body.passkey.publicKey,
-        counter,
+        id: verificationResult.credentialID,
+        publicKey: verificationResult.credentialPublicKey, // Now in COSE format
+        counter: verificationResult.counter,
         deviceName: body.passkey.deviceName || "Unknown Device",
       });
 
       log.debug("Passkey added to admin account", {
         adminId: admin.id,
-        passkeyId: body.passkey.id,
+        passkeyId: verificationResult.credentialID,
+        counter: verificationResult.counter,
       });
     }
 

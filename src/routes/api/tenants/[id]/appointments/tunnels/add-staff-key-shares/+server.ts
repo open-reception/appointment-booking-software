@@ -176,7 +176,7 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
       tenantId,
       staffUserId,
       keyShareCount: keyShares.length,
-      requesterId: locals.user?.userId,
+      requesterId: locals.user?.id,
     });
 
     const staffUser = await centralDb
@@ -272,7 +272,7 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
       staffUserId,
       addedCount: result.length,
       skippedCount: duplicateKeyShares.length,
-      requesterId: locals.user?.userId,
+      requesterId: locals.user?.id,
     });
 
     return json({
@@ -286,7 +286,7 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
       })),
     });
   } catch (error) {
-    logError(log)("Error adding staff key shares", error, locals.user?.userId, tenantId);
+    logError(log)("Error adding staff key shares", error, locals.user?.id, tenantId);
 
     if (error instanceof BackendError) {
       return error.toJson();

@@ -232,6 +232,23 @@ export const userInvite = pgTable(
 );
 
 /**
+ * Challenge Throttle table - tracks failed authentication attempts for all challenge types
+ * Used to implement rate limiting for both PIN and passkey authentication
+ * Stored centrally to prevent brute force attacks across all tenants
+ * @table challenge_throttle
+ */
+export const challengeThrottle = pgTable("challenge_throttle", {
+  /** Primary key - identifier (email hash for PIN challenges, email for passkey challenges) */
+  id: text("id").primaryKey(),
+  /** Number of failed attempts */
+  failedAttempts: integer("failed_attempts").default(0).notNull(),
+  /** When the throttle was last updated */
+  lastAttemptAt: timestamp("last_attempt_at").defaultNow().notNull(),
+  /** When the throttle should reset/expire */
+  resetAt: timestamp("reset_at").notNull(),
+});
+
+/**
  * TypeScript type exports for use in application code
  */
 

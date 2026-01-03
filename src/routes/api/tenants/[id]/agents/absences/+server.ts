@@ -117,7 +117,7 @@ export const GET: RequestHandler = async ({ params, locals, url }) => {
 
     log.debug("Getting all agents absences", {
       tenantId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
       startDate,
       endDate,
     });
@@ -129,14 +129,14 @@ export const GET: RequestHandler = async ({ params, locals, url }) => {
     log.debug("All Agents absences retrieved successfully", {
       tenantId,
       count: absences.length,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     return json({
       absences,
     });
   } catch (error) {
-    logError(log)("Getting all agents absences failed", error, locals.user?.userId, params.id);
+    logError(log)("Getting all agents absences failed", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();
