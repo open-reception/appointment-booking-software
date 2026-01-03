@@ -240,6 +240,8 @@ export const notification = pgTable("notification", {
   description: json("description").$type<{ [key: string]: string }>().notNull(),
   /** Whether the notification was read */
   isRead: boolean("is_read").default(false).notNull(),
+  /** Timestamp when the notification was created */
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 /**
