@@ -918,5 +918,11 @@
 				"reserved": "reserved"
 			}
 		}
+	},
+	"notifications": {
+		"appointmentCancelled": {
+			"title": "Appointment cancelled",
+			"description": "Appointment on {date} for {channel} has been cancelled"
+		}
 	}
 }
