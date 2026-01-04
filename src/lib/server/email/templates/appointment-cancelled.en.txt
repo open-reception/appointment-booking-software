@@ -1,0 +1,23 @@
+Appointment Cancelled - {{tenant.longName}}
+
+⚠️ YOUR APPOINTMENT HAS BEEN CANCELLED
+
+We would like to inform you that your appointment has been cancelled.
+
+APPOINTMENT DETAILS
+===================
+Date: {{appointmentDate}}
+{{#if title}}
+Appointment: {{title}}
+{{/if}}
+{{#if location}}
+Location: {{location}}
+{{/if}}
+
+If you have any questions, please don't hesitate to contact us.
+
+--
+{{tenant.longName}}
+{{#if tenant.links.website}}
+{{tenant.links.website}}
+{{/if}}
