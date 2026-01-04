@@ -583,4 +583,124 @@ describe("AppointmentService", () => {
       expect(mockGetChannelTitle).toHaveBeenCalledWith("tenant-123", "channel-123", "de");
     });
   });
+
+  describe("getFutureAppointmentsByTunnelId", () => {
+    it("should return future appointments for a client tunnel", async () => {
+      const { getTenantDb } = await import("../../db");
+
+      const futureDate1 = new Date("2025-02-15T10:00:00Z");
+      const futureDate2 = new Date("2025-03-20T14:30:00Z");
+
+      const mockFutureAppointments = [
+        {
+          id: "appointment-1",
+          appointmentDate: futureDate1,
+          status: "CONFIRMED",
+          channelId: "channel-1",
+          encryptedPayload: "encrypted-1",
+          iv: "iv-1",
+          authTag: "auth-tag-1",
+        },
+        {
+          id: "appointment-2",
+          appointmentDate: futureDate2,
+          status: "NEW",
+          channelId: "channel-2",
+          encryptedPayload: "encrypted-2",
+          iv: "iv-2",
+          authTag: "auth-tag-2",
+        },
+      ];
+
+      const mockDb = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockResolvedValue(mockFutureAppointments),
+            }),
+          }),
+        }),
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+      const result = await service.getFutureAppointmentsByTunnelId("tunnel-123");
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({
+        id: "appointment-1",
+        appointmentDate: futureDate1.toISOString(),
+        status: "CONFIRMED",
+        channelId: "channel-1",
+        encryptedPayload: "encrypted-1",
+        iv: "iv-1",
+        authTag: "auth-tag-1",
+      });
+      expect(result[1]).toEqual({
+        id: "appointment-2",
+        appointmentDate: futureDate2.toISOString(),
+        status: "NEW",
+        channelId: "channel-2",
+        encryptedPayload: "encrypted-2",
+        iv: "iv-2",
+        authTag: "auth-tag-2",
+      });
+    });
+
+    it("should return empty array when no future appointments exist", async () => {
+      const { getTenantDb } = await import("../../db");
+
+      const mockDb = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockResolvedValue([]),
+            }),
+          }),
+        }),
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+      const result = await service.getFutureAppointmentsByTunnelId("tunnel-123");
+
+      expect(result).toEqual([]);
+    });
+
+    it("should handle null encrypted fields gracefully", async () => {
+      const { getTenantDb } = await import("../../db");
+
+      const futureDate = new Date("2025-02-15T10:00:00Z");
+      const mockAppointmentsWithNulls = [
+        {
+          id: "appointment-1",
+          appointmentDate: futureDate,
+          status: "NEW",
+          channelId: "channel-1",
+          encryptedPayload: null,
+          iv: null,
+          authTag: null,
+        },
+      ];
+
+      const mockDb = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockResolvedValue(mockAppointmentsWithNulls),
+            }),
+          }),
+        }),
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+      const result = await service.getFutureAppointmentsByTunnelId("tunnel-123");
+
+      expect(result).toHaveLength(1);
+      expect(result[0].encryptedPayload).toBe("");
+      expect(result[0].iv).toBe("");
+      expect(result[0].authTag).toBe("");
+    });
+  });
 });

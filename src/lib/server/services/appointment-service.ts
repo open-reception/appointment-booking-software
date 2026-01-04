@@ -671,6 +671,66 @@ export class AppointmentService {
   }
 
   /**
+   * Get future appointments for a client by tunnel ID
+   */
+  public async getFutureAppointmentsByTunnelId(tunnelId: string): Promise<
+    Array<{
+      id: string;
+      appointmentDate: string;
+      status: string;
+      channelId: string;
+      encryptedPayload: string;
+      iv: string;
+      authTag: string;
+    }>
+  > {
+    const log = logger.setContext("AppointmentService");
+    log.debug("Fetching future appointments for client", {
+      tenantId: this.tenantId,
+      tunnelId,
+    });
+
+    const db = await this.getDb();
+
+    // Get all future appointments for this tunnel
+    const now = new Date();
+    const appointments = await db
+      .select({
+        id: tenantSchema.appointment.id,
+        appointmentDate: tenantSchema.appointment.appointmentDate,
+        status: tenantSchema.appointment.status,
+        channelId: tenantSchema.appointment.channelId,
+        encryptedPayload: tenantSchema.appointment.encryptedPayload,
+        iv: tenantSchema.appointment.iv,
+        authTag: tenantSchema.appointment.authTag,
+      })
+      .from(tenantSchema.appointment)
+      .where(
+        and(
+          eq(tenantSchema.appointment.tunnelId, tunnelId),
+          gte(tenantSchema.appointment.appointmentDate, now),
+        ),
+      )
+      .orderBy(asc(tenantSchema.appointment.appointmentDate));
+
+    log.debug("Future appointments retrieved", {
+      tenantId: this.tenantId,
+      tunnelId,
+      count: appointments.length,
+    });
+
+    return appointments.map((apt) => ({
+      id: apt.id,
+      appointmentDate: apt.appointmentDate.toISOString(),
+      status: apt.status,
+      channelId: apt.channelId,
+      encryptedPayload: apt.encryptedPayload || "",
+      iv: apt.iv || "",
+      authTag: apt.authTag || "",
+    }));
+  }
+
+  /**
    * Get the tenant's database connection (cached)
    */
   private async getDb() {
