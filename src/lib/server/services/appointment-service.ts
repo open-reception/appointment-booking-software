@@ -9,9 +9,12 @@ import type { AppointmentResponse } from "$lib/types/appointment";
 import {
   sendAppointmentCreatedEmail,
   sendAppointmentRequestEmail,
+  sendAppointmentCancelledEmail,
   getChannelTitle,
 } from "../email/email-service";
 import { TenantAdminService } from "./tenant-admin-service";
+import { NotificationService } from "./notification-service";
+import * as m from "$i18n/messages";
 
 export interface ClientTunnelData {
   tunnelId: string;
@@ -248,6 +251,126 @@ export class AppointmentService {
 
     log.debug("Appointment deleted successfully", { appointmentId: id, tenantId: this.tenantId });
     return true;
+  }
+
+  /**
+   * Delete appointment by staff member
+   * This will:
+   * 1. Remove the appointment from the database
+   * 2. Send cancellation email to the client
+   * 3. Create notifications for all staff members in the channel
+   * @param appointmentId - The appointment ID
+   * @param clientEmail - The client's email address
+   * @param clientLanguage - The client's preferred language (optional, defaults to "de")
+   * @returns Promise<void>
+   */
+  public async deleteAppointmentByStaff(
+    appointmentId: string,
+    clientEmail: string,
+    clientLanguage: string = "de",
+  ): Promise<void> {
+    const log = logger.setContext("AppointmentService");
+    log.debug("Deleting appointment by staff", {
+      appointmentId,
+      clientEmail,
+      tenantId: this.tenantId,
+    });
+
+    const db = await this.getDb();
+
+    // Get appointment details before deletion
+    const appointmentResult = await db
+      .select()
+      .from(tenantSchema.appointment)
+      .where(eq(tenantSchema.appointment.id, appointmentId))
+      .limit(1);
+
+    if (appointmentResult.length === 0) {
+      log.warn("Appointment not found for deletion", {
+        appointmentId,
+        tenantId: this.tenantId,
+      });
+      throw new NotFoundError("Appointment not found");
+    }
+
+    const appointment = appointmentResult[0];
+    const channelId = appointment.channelId;
+    const appointmentDate = appointment.appointmentDate;
+
+    // Delete the appointment
+    await db.delete(tenantSchema.appointment).where(eq(tenantSchema.appointment.id, appointmentId));
+
+    log.debug("Appointment deleted from database", { appointmentId, tenantId: this.tenantId });
+
+    // Get tenant and channel information for email and notifications
+    const tenantService = await TenantAdminService.getTenantById(this.tenantId);
+    const tenant = tenantService.tenantData;
+
+    if (!tenant) {
+      log.error("Tenant not found", { tenantId: this.tenantId });
+      throw new InternalError("Tenant not found");
+    }
+
+    // Get channel title
+    const channelTitle = await getChannelTitle(this.tenantId, channelId, clientLanguage);
+
+    // Send cancellation email to client (async, don't wait)
+    const clientData = {
+      email: clientEmail,
+      language: clientLanguage,
+    };
+
+    sendAppointmentCancelledEmail(clientData, tenant, appointment, channelTitle).catch((error) => {
+      log.error("Failed to send appointment cancellation email", {
+        appointmentId,
+        clientEmail,
+        error: String(error),
+      });
+    });
+
+    // Create notifications for all staff members in the channel
+    const notificationService = await NotificationService.forTenant(this.tenantId);
+
+    // Get all tenant languages for notification translations
+    const tenantLanguages = tenant.languages || ["de", "en"];
+    const notificationTitle: { [key: string]: string } = {};
+    const notificationDescription: { [key: string]: string } = {};
+
+    // Build translations for all tenant languages using i18n messages
+    for (const lang of tenantLanguages) {
+      notificationTitle[lang] = m["notifications.appointmentCancelled.title"](
+        {},
+        { locale: lang as "de" | "en" },
+      );
+      notificationDescription[lang] = m["notifications.appointmentCancelled.description"](
+        {
+          date: appointmentDate.toISOString(),
+          channel: channelTitle || channelId,
+        },
+        { locale: lang as "de" | "en" },
+      );
+    }
+
+    // Create notifications (async, don't wait)
+    notificationService
+      .createNotification({
+        channelId,
+        title: notificationTitle,
+        description: notificationDescription,
+      })
+      .catch((error) => {
+        log.error("Failed to create channel notifications", {
+          appointmentId,
+          channelId,
+          error: String(error),
+        });
+      });
+
+    log.info("Appointment deleted by staff successfully", {
+      appointmentId,
+      channelId,
+      tenantId: this.tenantId,
+    });
   }
 
   /**
