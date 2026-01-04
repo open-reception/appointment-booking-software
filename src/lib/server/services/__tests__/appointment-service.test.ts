@@ -11,6 +11,20 @@ vi.mock("../../db", () => ({
   },
 }));
 
+vi.mock("../challenge-store", () => ({
+  challengeStore: {
+    consume: vi.fn(),
+    store: vi.fn(),
+  },
+}));
+
+vi.mock("../challenge-throttle", () => ({
+  challengeThrottleService: {
+    recordFailedAttempt: vi.fn(),
+    clearThrottle: vi.fn(),
+  },
+}));
+
 const mockAppointment = {
   id: "appointment-123",
   tunnelId: "tunnel-123",
@@ -701,6 +715,197 @@ describe("AppointmentService", () => {
       expect(result[0].encryptedPayload).toBe("");
       expect(result[0].iv).toBe("");
       expect(result[0].authTag).toBe("");
+    });
+  });
+
+  describe("deleteAppointmentByClient", () => {
+    it("should delete appointment after verifying challenge and ownership", async () => {
+      const { getTenantDb } = await import("../../db");
+      const { challengeStore } = await import("../challenge-store");
+      const { challengeThrottleService } = await import("../challenge-throttle");
+
+      const mockAppointmentDate = new Date("2025-02-15T10:00:00Z");
+
+      // Mock challenge verification
+      vi.mocked(challengeStore.consume).mockResolvedValue({
+        challenge: Buffer.from("test-challenge").toString("base64"),
+        emailHash: "email-hash-123",
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      });
+
+      vi.mocked(challengeThrottleService.clearThrottle).mockResolvedValue();
+
+      // Mock database queries - use mockReturnValueOnce for sequential calls
+      const mockLimit = vi
+        .fn()
+        // First call: appointment query
+        .mockResolvedValueOnce([
+          {
+            id: "appointment-123",
+            tunnelId: "tunnel-123",
+            appointmentDate: mockAppointmentDate,
+            channelId: "channel-123",
+          },
+        ])
+        // Second call: tunnel query
+        .mockResolvedValueOnce([
+          {
+            id: "tunnel-123",
+            emailHash: "email-hash-123",
+          },
+        ]);
+
+      const mockDb = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnThis(),
+          where: vi.fn().mockReturnThis(),
+          limit: mockLimit,
+        }),
+        delete: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue(undefined),
+        }),
+      };
+
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+      await service.deleteAppointmentByClient(
+        "appointment-123",
+        "email-hash-123",
+        "challenge-123",
+        Buffer.from("test-challenge").toString("base64"),
+      );
+
+      expect(challengeStore.consume).toHaveBeenCalledWith("challenge-123", "tenant-123");
+      expect(challengeThrottleService.clearThrottle).toHaveBeenCalledWith("email-hash-123", "pin");
+    });
+
+    it("should throw NotFoundError when challenge is not found", async () => {
+      const { challengeStore } = await import("../challenge-store");
+
+      vi.mocked(challengeStore.consume).mockResolvedValue(null);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+
+      await expect(
+        service.deleteAppointmentByClient(
+          "appointment-123",
+          "email-hash-123",
+          "invalid-challenge",
+          "challenge-response",
+        ),
+      ).rejects.toThrow(NotFoundError);
+    });
+
+    it("should throw ValidationError when challenge doesn't belong to client", async () => {
+      const { challengeStore } = await import("../challenge-store");
+
+      vi.mocked(challengeStore.consume).mockResolvedValue({
+        challenge: Buffer.from("test-challenge").toString("base64"),
+        emailHash: "different-email-hash",
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      });
+
+      const service = await AppointmentService.forTenant("tenant-123");
+
+      await expect(
+        service.deleteAppointmentByClient(
+          "appointment-123",
+          "email-hash-123",
+          "challenge-123",
+          Buffer.from("test-challenge").toString("base64"),
+        ),
+      ).rejects.toThrow("Invalid authentication");
+    });
+
+    it("should throw ValidationError when challenge response is incorrect", async () => {
+      const { challengeStore } = await import("../challenge-store");
+      const { challengeThrottleService } = await import("../challenge-throttle");
+
+      vi.mocked(challengeStore.consume).mockResolvedValue({
+        challenge: Buffer.from("correct-challenge").toString("base64"),
+        emailHash: "email-hash-123",
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      });
+
+      vi.mocked(challengeThrottleService.recordFailedAttempt).mockResolvedValue();
+
+      const service = await AppointmentService.forTenant("tenant-123");
+
+      await expect(
+        service.deleteAppointmentByClient(
+          "appointment-123",
+          "email-hash-123",
+          "challenge-123",
+          Buffer.from("wrong-challenge").toString("base64"),
+        ),
+      ).rejects.toThrow("Invalid challenge response");
+
+      expect(challengeThrottleService.recordFailedAttempt).toHaveBeenCalledWith(
+        "email-hash-123",
+        "pin",
+      );
+    });
+
+    it("should throw ValidationError when appointment doesn't belong to client", async () => {
+      const { getTenantDb } = await import("../../db");
+      const { challengeStore } = await import("../challenge-store");
+      const { challengeThrottleService } = await import("../challenge-throttle");
+
+      const mockAppointmentDate = new Date("2025-02-15T10:00:00Z");
+
+      vi.mocked(challengeStore.consume).mockResolvedValue({
+        challenge: Buffer.from("test-challenge").toString("base64"),
+        emailHash: "email-hash-123",
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      });
+
+      vi.mocked(challengeThrottleService.clearThrottle).mockResolvedValue();
+
+      const mockDb = {
+        select: vi.fn().mockImplementation(() => ({
+          from: vi.fn().mockReturnThis(),
+          where: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockImplementation(() => {
+            const callStack = new Error().stack || "";
+            if (callStack.includes("appointment")) {
+              return Promise.resolve([
+                {
+                  id: "appointment-123",
+                  tunnelId: "tunnel-123",
+                  appointmentDate: mockAppointmentDate,
+                  channelId: "channel-123",
+                },
+              ]);
+            } else {
+              // Tunnel belongs to different email
+              return Promise.resolve([
+                {
+                  id: "tunnel-123",
+                  emailHash: "different-email-hash",
+                },
+              ]);
+            }
+          }),
+        })),
+      };
+
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+
+      await expect(
+        service.deleteAppointmentByClient(
+          "appointment-123",
+          "email-hash-123",
+          "challenge-123",
+          Buffer.from("test-challenge").toString("base64"),
+        ),
+      ).rejects.toThrow("Appointment does not belong to this client");
     });
   });
 });

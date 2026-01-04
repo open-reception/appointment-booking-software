@@ -15,6 +15,9 @@ import {
 import { TenantAdminService } from "./tenant-admin-service";
 import { NotificationService } from "./notification-service";
 import * as m from "$i18n/messages";
+import { challengeStore } from "./challenge-store";
+import { challengeThrottleService } from "./challenge-throttle";
+import { timingSafeEqual } from "node:crypto";
 
 export interface ClientTunnelData {
   tunnelId: string;
@@ -729,6 +732,154 @@ export class AppointmentService {
       authTag: apt.authTag || "",
     }));
   }
+
+  /**
+   * Delete appointment by client with challenge-response authentication
+   * This verifies that the client knows their PIN before allowing deletion
+   */
+  public async deleteAppointmentByClient(
+    appointmentId: string,
+    emailHash: string,
+    challengeId: string,
+    challengeResponse: string,
+  ): Promise<void> {
+    const log = logger.setContext("AppointmentService");
+    log.info("Client deleting appointment with authentication", {
+      tenantId: this.tenantId,
+      appointmentId,
+      emailHashPrefix: emailHash.slice(0, 8),
+    });
+
+    // 1. Verify challenge-response
+    const storedChallenge = await challengeStore.consume(challengeId, this.tenantId);
+    if (!storedChallenge) {
+      log.warn("Challenge not found or expired", {
+        tenantId: this.tenantId,
+        challengeId,
+      });
+      throw new NotFoundError("Challenge not found or expired");
+    }
+
+    // Verify that the challenge belongs to this email
+    if (storedChallenge.emailHash !== emailHash) {
+      log.warn("Challenge does not belong to this client", {
+        tenantId: this.tenantId,
+        challengeId,
+        emailHashPrefix: emailHash.slice(0, 8),
+      });
+      throw new ValidationError("Invalid authentication");
+    }
+
+    // Validate challenge response using constant-time comparison
+    const expectedChallenge = storedChallenge.challenge;
+    const challengeBuffer = Buffer.from(challengeResponse, "base64");
+    const expectedBuffer = Buffer.from(expectedChallenge, "base64");
+
+    if (
+      challengeBuffer.length !== expectedBuffer.length ||
+      !timingSafeEqual(challengeBuffer, expectedBuffer)
+    ) {
+      log.warn("Challenge response mismatch", {
+        tenantId: this.tenantId,
+        challengeId,
+        emailHashPrefix: emailHash.slice(0, 8),
+      });
+
+      // Record failed attempt for throttling
+      await challengeThrottleService.recordFailedAttempt(emailHash, "pin");
+
+      throw new ValidationError("Invalid challenge response");
+    }
+
+    // Clear throttle on successful verification
+    await challengeThrottleService.clearThrottle(emailHash, "pin");
+
+    const db = await this.getDb();
+
+    // 2. Get appointment and verify it belongs to this client's tunnel
+    const appointmentResult = await db
+      .select({
+        id: tenantSchema.appointment.id,
+        tunnelId: tenantSchema.appointment.tunnelId,
+        appointmentDate: tenantSchema.appointment.appointmentDate,
+        channelId: tenantSchema.appointment.channelId,
+      })
+      .from(tenantSchema.appointment)
+      .where(eq(tenantSchema.appointment.id, appointmentId))
+      .limit(1);
+
+    if (appointmentResult.length === 0) {
+      log.warn("Appointment not found", { appointmentId, tenantId: this.tenantId });
+      throw new NotFoundError("Appointment not found");
+    }
+
+    const appointment = appointmentResult[0];
+
+    // 3. Verify the appointment belongs to this client's tunnel
+    const tunnelResult = await db
+      .select({
+        id: tenantSchema.clientAppointmentTunnel.id,
+        emailHash: tenantSchema.clientAppointmentTunnel.emailHash,
+      })
+      .from(tenantSchema.clientAppointmentTunnel)
+      .where(eq(tenantSchema.clientAppointmentTunnel.id, appointment.tunnelId))
+      .limit(1);
+
+    if (tunnelResult.length === 0) {
+      log.warn("Client tunnel not found", {
+        tunnelId: appointment.tunnelId,
+        tenantId: this.tenantId,
+      });
+      throw new NotFoundError("Client not found");
+    }
+
+    const tunnel = tunnelResult[0];
+
+    if (tunnel.emailHash !== emailHash) {
+      log.warn("Appointment does not belong to this client", {
+        appointmentId,
+        tenantId: this.tenantId,
+        emailHashPrefix: emailHash.slice(0, 8),
+      });
+      throw new ValidationError("Appointment does not belong to this client");
+    }
+
+    // 4. Delete the appointment
+    await db.delete(tenantSchema.appointment).where(eq(tenantSchema.appointment.id, appointmentId));
+
+    log.info("Appointment deleted successfully by client", {
+      tenantId: this.tenantId,
+      appointmentId,
+      emailHashPrefix: emailHash.slice(0, 8),
+    });
+
+    // 5. Send notification to channel staff (no email to client, they initiated the deletion)
+    const channelTitle = await getChannelTitle(appointment.channelId, this.tenantId);
+    const title = m["notifications.appointmentCancelled.title"]({}, { locale: "de" });
+    const description = m["notifications.appointmentCancelled.description"](
+      {
+        date: appointment.appointmentDate.toLocaleString("de"),
+        channel: channelTitle || "Unknown",
+      },
+      { locale: "de" },
+    );
+
+    const notificationService = await NotificationService.forTenant(this.tenantId);
+    await notificationService.createNotification({
+      channelId: appointment.channelId,
+      title: { de: title, en: title },
+      description: { de: description, en: description },
+    });
+
+    log.info("Staff notification sent for client-initiated deletion", {
+      tenantId: this.tenantId,
+      appointmentId,
+      channelId: appointment.channelId,
+    });
+  }
+
+  /**
+   * 
 
   /**
    * Get the tenant's database connection (cached)
