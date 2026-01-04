@@ -34,7 +34,7 @@ vi.mock("$lib/logger", () => ({
 // Import after mocking
 import { NotificationService, type NotificationCreationRequest } from "../notification-service";
 import { getTenantDb } from "../../db";
-import { ValidationError, NotFoundError } from "../../utils/errors";
+import { ValidationError } from "../../utils/errors";
 
 // Mock database operations
 const mockDb = {

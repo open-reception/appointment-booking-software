@@ -854,21 +854,42 @@ export class AppointmentService {
     });
 
     // 5. Send notification to channel staff (no email to client, they initiated the deletion)
-    const channelTitle = await getChannelTitle(appointment.channelId, this.tenantId);
-    const title = m["notifications.appointmentCancelled.title"]({}, { locale: "de" });
-    const description = m["notifications.appointmentCancelled.description"](
-      {
-        date: appointment.appointmentDate.toLocaleString("de"),
-        channel: channelTitle || "Unknown",
-      },
-      { locale: "de" },
-    );
+    // Get tenant information for languages
+    const tenantService = await TenantAdminService.getTenantById(this.tenantId);
+    const tenant = tenantService.tenantData;
+
+    if (!tenant) {
+      log.error("Tenant not found", { tenantId: this.tenantId });
+      throw new InternalError("Tenant not found");
+    }
+
+    const channelTitle = await getChannelTitle(this.tenantId, appointment.channelId);
+
+    // Get all tenant languages for notification translations
+    const tenantLanguages = tenant.languages || ["de", "en"];
+    const notificationTitle: { [key: string]: string } = {};
+    const notificationDescription: { [key: string]: string } = {};
+
+    // Build translations for all tenant languages using i18n messages
+    for (const lang of tenantLanguages) {
+      notificationTitle[lang] = m["notifications.appointmentCancelled.title"](
+        {},
+        { locale: lang as "de" | "en" },
+      );
+      notificationDescription[lang] = m["notifications.appointmentCancelled.description"](
+        {
+          date: appointment.appointmentDate.toISOString(),
+          channel: channelTitle || appointment.channelId,
+        },
+        { locale: lang as "de" | "en" },
+      );
+    }
 
     const notificationService = await NotificationService.forTenant(this.tenantId);
     await notificationService.createNotification({
       channelId: appointment.channelId,
-      title: { de: title, en: title },
-      description: { de: description, en: description },
+      title: notificationTitle,
+      description: notificationDescription,
     });
 
     log.info("Staff notification sent for client-initiated deletion", {
@@ -877,9 +898,6 @@ export class AppointmentService {
       channelId: appointment.channelId,
     });
   }
-
-  /**
-   * 
 
   /**
    * Get the tenant's database connection (cached)
