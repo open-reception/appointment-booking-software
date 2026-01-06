@@ -21,6 +21,8 @@ export type SelectClient = {
   language: string;
 };
 
+export type SelectUserEmail = Pick<SelectUser, "email" | "name" | "language">;
+
 /**
  * Get channel title in the user's preferred language
  * @param {string} tenantId - Tenant ID

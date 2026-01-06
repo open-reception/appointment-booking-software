@@ -50,10 +50,13 @@
       margin-top: 0;
     }
     .page {
+      padding: 0 16px;
+      padding: 0 1rem;
       min-height: 100%;
       min-height: 100vh;
       box-sizing: border-box;
       width: 100%;
+      font-family: "Inter", Arial, sans-serif;
     }
     .container {
       max-width: 600px;

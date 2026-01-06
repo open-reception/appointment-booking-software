@@ -1,5 +1,7 @@
 # Email System Documentation
 
+> This doc is partially outdated. New templates can be viewed locally. See routes dir. Example: http://localhost:5173/local-only/e-mail-templates/user-invite Text versions are generated automatically and will be printed to console, when local page is opened.
+
 The Open Reception appointment booking platform includes a comprehensive email system for automated communications with clients and staff members. This document provides technical details and administration guidance for managing the email system.
 
 ## Overview
