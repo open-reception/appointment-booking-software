@@ -169,6 +169,8 @@ export const userSession = pgTable(
     sessionToken: text("session_token").notNull().unique(),
     accessToken: text("access_token").notNull(),
     refreshToken: text("refresh_token").notNull(),
+    /** Passkey ID used for authentication (if WebAuthn was used) */
+    passkeyId: text("passkey_id"),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
     createdAt: timestamp("created_at").defaultNow(),
