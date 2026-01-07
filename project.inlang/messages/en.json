@@ -562,7 +562,7 @@
 	"absences": {
 		"title": "Absences",
 		"add": {
-			"title": "Add Anbsence",
+			"title": "Add Absence",
 			"description": "Absences are a way to mark you agents as being unavailbale.",
 			"fields": {
 				"agent": {
@@ -850,7 +850,7 @@
 					"description": "We will use this to send you the appointment details."
 				},
 				"phone": {
-					"description": "Format: +1234567890. We may contact you, if there are questions or changes regarding your appointment.",
+					"description": "Format: +1234567890. {name} may contact you by phone, if there are questions or changes regarding your appointment.",
 					"optional": "(optional)"
 				},
 				"action": "Add personal data"
@@ -917,6 +917,48 @@
 				"booked": "booked",
 				"reserved": "reserved"
 			}
+		}
+	},
+	"emails": {
+		"poweredBy": "Powered by",
+		"greeting": "Hello {name},",
+		"oclock": "",
+		"appointmentBooked": {
+			"subject": "{channel} at {tenant} booked successfully",
+			"introduction": "your appointment for has been booked.",
+			"action": "Cancel appointment",
+			"reason": "You are receiving this email because someone booked an appointment with your e-mail address."
+		},
+		"appointmentReminder": {
+			"subject": "Reminder: Your appointment with {tenant}",
+			"introduction": "your appointment with {tenant} is soon.",
+			"action": "Cancel appointment",
+			"reason": "You are receiving this email because someone booked an appointment with your e-mail address."
+		},
+		"appointmentRequest": {
+			"subject": "{channel} with {tenant} requested",
+			"introduction": "your appointment was requested. You will be notified once it is confirmed.",
+			"reason": "You are receiving this email because someone requested an appointment with your e-mail address."
+		},
+		"confirmation": {
+			"subject": "Confirm your E-Mail Address",
+			"introduction": "welcome our appointment booking platform. Please confirm your e-mail address.",
+			"action": "Confirm E-Mail Address",
+			"hint": "This link is only valid for {expirationMinutes} minutes and can only be used once.",
+			"reason": "You are receiving this email because someone registered an account with your e-mail address."
+		},
+		"pinReset": {
+			"subject": "PIN successfully changed",
+			"introduction": "you've successfully changed your PIN on the {tenant} appointment booking platform. You can now log-in with your new PIN.",
+			"action": "Login",
+			"reason": "You are receiving this email because someone changed the PIN-Code for your account."
+		},
+		"userInvite": {
+			"subject": "Confirm your E-Mail Address",
+			"introduction": "welcome our appointment booking platform. Please confirm your e-mail address.",
+			"action": "Confirm E-Mail Address",
+			"hint": "This link is only valid for {expirationMinutes} minutes and can only be used once.",
+			"reason": "You are receiving this email because someone registered an account with your e-mail address."
 		}
 	}
 }

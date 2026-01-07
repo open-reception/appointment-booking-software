@@ -52,60 +52,60 @@
   const { form: formData, enhance, validateForm } = form;
 </script>
 
-<div class="flex flex-col gap-4 pb-1">
-  <Text style="sm" class="font-medium">
-    {m["public.steps.data.title"]()}
-  </Text>
-  <Alert.Root>
-    <Lock />
-    <Alert.Title>{m["public.steps.data.alert.title"]()}</Alert.Title>
-    {#if tenant}
+{#if tenant}
+  <div class="flex flex-col gap-4 pb-1">
+    <Text style="sm" class="font-medium">
+      {m["public.steps.data.title"]()}
+    </Text>
+    <Alert.Root>
+      <Lock />
+      <Alert.Title>{m["public.steps.data.alert.title"]()}</Alert.Title>
       <Alert.Description
         >{m["public.steps.data.alert.description"]({ name: tenant.longName })}</Alert.Description
       >
-    {/if}
-  </Alert.Root>
-  <Form.Root {enhance} class="flex flex-col gap-4">
-    <Form.Field {form} name="name">
-      <Form.Control>
-        {#snippet children({ props })}
-          <Form.Label>{m["form.name"]()}</Form.Label>
-          <Input {...props} bind:value={$formData.name} type="name" />
-        {/snippet}
-      </Form.Control>
-      <Form.FieldErrors />
-    </Form.Field>
-    <Form.Field {form} name="email">
-      <Form.Control>
-        {#snippet children({ props })}
-          <Form.Label>{m["form.email"]()}</Form.Label>
-          <Input {...props} bind:value={$formData.email} type="email" />
-        {/snippet}
-      </Form.Control>
-      <Form.FieldErrors />
-      <Form.Description class="mt-1">
-        {m["public.steps.data.email.description"]()}
-      </Form.Description>
-    </Form.Field>
-    <Form.Field {form} name="phone">
-      <Form.Control>
-        {#snippet children({ props })}
-          <Form.Label>{m["form.phone"]()}</Form.Label>
-          <Input {...props} bind:value={$formData.phone} type="phone" />
-        {/snippet}
-      </Form.Control>
-      <Form.FieldErrors />
-      <Form.Description class="mt-1">
-        {m["public.steps.data.phone.description"]()}
-        {#if tenant?.requirePhone === false}
-          {m["public.steps.data.phone.optional"]()}
-        {/if}
-      </Form.Description>
-    </Form.Field>
-    <div class="mt-6 flex flex-col gap-4">
-      <Form.Button size="lg" type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
-        {m["public.steps.data.action"]()}
-      </Form.Button>
-    </div>
-  </Form.Root>
-</div>
+    </Alert.Root>
+    <Form.Root {enhance} class="flex flex-col gap-4">
+      <Form.Field {form} name="name">
+        <Form.Control>
+          {#snippet children({ props })}
+            <Form.Label>{m["form.name"]()}</Form.Label>
+            <Input {...props} bind:value={$formData.name} type="name" />
+          {/snippet}
+        </Form.Control>
+        <Form.FieldErrors />
+      </Form.Field>
+      <Form.Field {form} name="email">
+        <Form.Control>
+          {#snippet children({ props })}
+            <Form.Label>{m["form.email"]()}</Form.Label>
+            <Input {...props} bind:value={$formData.email} type="email" />
+          {/snippet}
+        </Form.Control>
+        <Form.FieldErrors />
+        <Form.Description class="mt-1">
+          {m["public.steps.data.email.description"]()}
+        </Form.Description>
+      </Form.Field>
+      <Form.Field {form} name="phone">
+        <Form.Control>
+          {#snippet children({ props })}
+            <Form.Label>{m["form.phone"]()}</Form.Label>
+            <Input {...props} bind:value={$formData.phone} type="phone" />
+          {/snippet}
+        </Form.Control>
+        <Form.FieldErrors />
+        <Form.Description class="mt-1">
+          {m["public.steps.data.phone.description"]({ name: tenant.longName })}
+          {#if tenant?.requirePhone === false}
+            {m["public.steps.data.phone.optional"]()}
+          {/if}
+        </Form.Description>
+      </Form.Field>
+      <div class="mt-6 flex flex-col gap-4">
+        <Form.Button size="lg" type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
+          {m["public.steps.data.action"]()}
+        </Form.Button>
+      </div>
+    </Form.Root>
+  </div>
+{/if}
