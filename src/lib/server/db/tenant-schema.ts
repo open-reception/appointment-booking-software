@@ -323,6 +323,26 @@ export const authChallenge = pgTable("auth_challenge", {
   consumed: boolean("consumed").default(false).notNull(),
 });
 
+/**
+ * ClientPinResetToken table - stores temporary PIN reset tokens for clients
+ * Used for secure PIN reset via QR code or email link
+ * @table clientPinResetToken
+ */
+export const clientPinResetToken = pgTable("client_pin_reset_token", {
+  /** Primary key - unique identifier (UUID) */
+  id: uuid("id").primaryKey().defaultRandom(),
+  /** Secure reset token (UUID v4) */
+  token: uuid("token").notNull().unique().defaultRandom(),
+  /** SHA-256 hash of client email for privacy-preserving lookups */
+  emailHash: text("email_hash").notNull(),
+  /** When this token was created */
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  /** When this token expires */
+  expiresAt: timestamp("expires_at").notNull(),
+  /** Whether this token has been used (one-time use) */
+  used: boolean("used").default(false).notNull(),
+});
+
 /** StaffCrypto record type for database queries */
 export type SelectStaffCrypto = InferSelectModel<typeof staffCrypto>;
 
@@ -331,3 +351,6 @@ export type SelectClientAppointmentTunnel = InferSelectModel<typeof clientAppoin
 
 /** ClientTunnelStaffKeyShare record type for database queries */
 export type SelectClientTunnelStaffKeyShare = InferSelectModel<typeof clientTunnelStaffKeyShare>;
+
+/** ClientPinResetToken record type for database queries */
+export type SelectClientPinResetToken = InferSelectModel<typeof clientPinResetToken>;

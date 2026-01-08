@@ -1,0 +1,24 @@
+{{tenant.longName}} - Reset PIN
+
+Hello,
+
+You have received a request to reset your PIN for {{tenant.longName}}.
+
+To reset your PIN, please use the following link:
+
+{{resetUrl}}
+
+IMPORTANT NOTICE: This link is valid for {{expirationMinutes}} minutes only and can be used only once.
+
+After resetting your PIN, you can log in to your account with your new PIN.
+
+If you did not request this, you can safely ignore this email. Your PIN will remain unchanged.
+
+If you have any questions, please contact our team.
+
+Best regards
+The {{tenant.longName}} Team
+
+---
+This email was generated automatically. Please do not reply to this email.
+© {{tenant.longName}} - Secure, encrypted, trustworthy
