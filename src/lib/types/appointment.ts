@@ -107,4 +107,5 @@ export interface AppointmentResponse {
   id: string;
   appointmentDate: string;
   status: "NEW" | "CONFIRMED" | "HELD" | "REJECTED" | "NO_SHOW";
+  requiresConfirmation?: boolean;
 }
