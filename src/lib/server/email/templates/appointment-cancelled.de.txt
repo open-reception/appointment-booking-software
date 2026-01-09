@@ -1,0 +1,23 @@
+Termin storniert - {{tenant.longName}}
+
+⚠️ IHR TERMIN WURDE STORNIERT
+
+Wir möchten Sie darüber informieren, dass Ihr Termin storniert wurde.
+
+TERMINDETAILS
+=============
+Datum: {{appointmentDate}}
+{{#if title}}
+Termin: {{title}}
+{{/if}}
+{{#if location}}
+Ort: {{location}}
+{{/if}}
+
+Bei Fragen stehen wir Ihnen gerne zur Verfügung. Sie können uns jederzeit kontaktieren.
+
+--
+{{tenant.longName}}
+{{#if tenant.links.website}}
+{{tenant.links.website}}
+{{/if}}

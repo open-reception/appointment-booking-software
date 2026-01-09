@@ -909,5 +909,11 @@
 				"reserved": "reserviert"
 			}
 		}
+	},
+	"notifications": {
+		"appointmentCancelled": {
+			"title": "Termin storniert",
+			"description": "Termin am {date} für {channel} wurde storniert"
+		}
 	}
 }
