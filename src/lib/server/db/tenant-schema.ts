@@ -26,6 +26,11 @@ export const appointmentStatusEnum = pgEnum("appointment_status", [
   "NO_SHOW",
 ]);
 
+export const notificationTypeEnum = pgEnum("notification_type", [
+  "APPOINTMENT_CONFIRMED",
+  "APPOINTMENT_CANCELED",
+]);
+
 /**
  * Agent table - represents personnel or staff members who can be assigned to channels
  * Agents are the people who provide services and can be associated with multiple channels
@@ -234,10 +239,10 @@ export const notification = pgTable("notification", {
   id: uuid("id").primaryKey().defaultRandom(),
   /** Reference to staff  */
   staffId: uuid("staff_id").notNull(),
-  /** Title of notification (e.g. "Appointment cancelled"), per language */
-  title: json("title").$type<{ [key: string]: string }>().notNull(),
-  /** Notification text, per language */
-  description: json("description").$type<{ [key: string]: string }>().notNull(),
+  /** Notification type */
+  type: notificationTypeEnum("type").notNull().default("APPOINTMENT_CONFIRMED"),
+  /** Additional metadata (e.g. reference to appointment) */
+  metaData: json("meta_data").$type<{ [key: string]: string }>(),
   /** Whether the notification was read */
   isRead: boolean("is_read").default(false).notNull(),
   /** Timestamp when the notification was created */

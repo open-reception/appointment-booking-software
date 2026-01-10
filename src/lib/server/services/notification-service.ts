@@ -4,20 +4,11 @@ import { eq, and, desc } from "drizzle-orm";
 import logger from "$lib/logger";
 import { z } from "zod";
 import { ValidationError, NotFoundError } from "../utils/errors";
-import { supportedLocales } from "$lib/const/locales";
 
 const notificationCreationSchema = z.object({
   channelId: z.uuid({ message: "Invalid UUID format" }),
-  title: z
-    .partialRecord(z.enum(supportedLocales), z.string().min(1).max(200))
-    .refine((value) => value != null && Object.keys(value).length > 0, {
-      message: "At least one localized title is required",
-    }),
-  description: z
-    .partialRecord(z.enum(supportedLocales), z.string().min(1))
-    .refine((value) => value != null && Object.keys(value).length > 0, {
-      message: "At least one localized description is required",
-    }),
+  type: z.enum(["APPOINTMENT_CONFIRMED", "APPOINTMENT_CANCELED"]),
+  metaData: z.record(z.string(), z.any()).optional(),
 });
 
 export type NotificationCreationRequest = z.infer<typeof notificationCreationSchema>;
@@ -25,9 +16,10 @@ export type NotificationCreationRequest = z.infer<typeof notificationCreationSch
 export interface SelectNotification {
   id: string;
   staffId: string;
-  title: { [key: string]: string };
-  description: { [key: string]: string };
+  type: "APPOINTMENT_CONFIRMED" | "APPOINTMENT_CANCELED";
+  metaData: { [key: string]: string } | null;
   isRead: boolean;
+  createdAt: Date;
 }
 
 export class NotificationService {
@@ -98,8 +90,8 @@ export class NotificationService {
       // Create notifications for all staff members
       const notificationsToCreate = staffMembers.map((staff) => ({
         staffId: staff.staffId,
-        title: request.title,
-        description: request.description,
+        type: request.type,
+        metaData: request.metaData,
         isRead: false,
       }));
 
