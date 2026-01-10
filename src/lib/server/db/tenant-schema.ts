@@ -26,6 +26,11 @@ export const appointmentStatusEnum = pgEnum("appointment_status", [
   "NO_SHOW",
 ]);
 
+export const notificationTypes = ["APPOINTMENT_CONFIRMED", "APPOINTMENT_CANCELED"] as const;
+export type NotificationType = (typeof notificationTypes)[number];
+
+export const notificationTypeEnum = pgEnum("notification_type", notificationTypes);
+
 /**
  * Agent table - represents personnel or staff members who can be assigned to channels
  * Agents are the people who provide services and can be associated with multiple channels
@@ -89,6 +94,18 @@ export const slotTemplate = pgTable("slotTemplate", {
   to: time("to").notNull(),
   /** Duration of individual appointment slots in minutes */
   duration: integer("duration").notNull(),
+});
+
+/**
+ * Channel-Staff junction table - establishes many-to-many relationship.  Note that staff is not a reference since they are stored in another database
+ */
+export const channelStaff = pgTable("channel_staff", {
+  /** Foreign key to channel */
+  channelId: uuid("channel_id")
+    .notNull()
+    .references(() => channel.id),
+  /** Key to staff member */
+  staffId: uuid("staff_id").notNull(),
 });
 
 /**
@@ -209,6 +226,27 @@ export const appointmentKeyShare = pgTable("appointment_key_share", {
   userId: uuid("user_id").notNull(),
   /** Symmetric key encrypted with this staff member's public key */
   encryptedKey: text("encrypted_key").notNull(),
+});
+
+/**
+ * Notification table - represents notifications related to appointments and other relevant system events
+ * Used to inform staff about new appointments, changes, or cancellations
+ * Stored in tenant-specific database
+ * @table notification
+ */
+export const notification = pgTable("notification", {
+  /** Primary key - unique identifier */
+  id: uuid("id").primaryKey().defaultRandom(),
+  /** Reference to staff  */
+  staffId: uuid("staff_id").notNull(),
+  /** Notification type */
+  type: notificationTypeEnum("type").notNull().default("APPOINTMENT_CONFIRMED"),
+  /** Additional metadata (e.g. reference to appointment) */
+  metaData: json("meta_data").$type<{ [key: string]: string }>(),
+  /** Whether the notification was read */
+  isRead: boolean("is_read").default(false).notNull(),
+  /** Timestamp when the notification was created */
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 /**
