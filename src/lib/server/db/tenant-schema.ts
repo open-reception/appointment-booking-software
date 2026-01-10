@@ -26,10 +26,10 @@ export const appointmentStatusEnum = pgEnum("appointment_status", [
   "NO_SHOW",
 ]);
 
-export const notificationTypeEnum = pgEnum("notification_type", [
-  "APPOINTMENT_CONFIRMED",
-  "APPOINTMENT_CANCELED",
-]);
+export const notificationTypes = ["APPOINTMENT_CONFIRMED", "APPOINTMENT_CANCELED"] as const;
+export type NotificationType = (typeof notificationTypes)[number];
+
+export const notificationTypeEnum = pgEnum("notification_type", notificationTypes);
 
 /**
  * Agent table - represents personnel or staff members who can be assigned to channels

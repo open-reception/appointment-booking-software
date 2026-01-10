@@ -1,5 +1,10 @@
 import { getTenantDb } from "../db";
-import { notification, channelStaff } from "../db/tenant-schema";
+import {
+  notification,
+  channelStaff,
+  notificationTypes,
+  type NotificationType,
+} from "../db/tenant-schema";
 import { eq, and, desc } from "drizzle-orm";
 import logger from "$lib/logger";
 import { z } from "zod";
@@ -7,7 +12,7 @@ import { ValidationError, NotFoundError } from "../utils/errors";
 
 const notificationCreationSchema = z.object({
   channelId: z.uuid({ message: "Invalid UUID format" }),
-  type: z.enum(["APPOINTMENT_CONFIRMED", "APPOINTMENT_CANCELED"]),
+  type: z.enum(notificationTypes),
   metaData: z.record(z.string(), z.any()).optional(),
 });
 
@@ -16,7 +21,7 @@ export type NotificationCreationRequest = z.infer<typeof notificationCreationSch
 export interface SelectNotification {
   id: string;
   staffId: string;
-  type: "APPOINTMENT_CONFIRMED" | "APPOINTMENT_CANCELED";
+  type: NotificationType;
   metaData: { [key: string]: string } | null;
   isRead: boolean;
   createdAt: Date;
