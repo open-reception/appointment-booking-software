@@ -57,6 +57,20 @@
       "when": 1763455361426,
       "tag": "0007_mighty_tinkerer",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1767445537790,
+      "tag": "0008_neat_swarm",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1768049916820,
+      "tag": "0009_far_korg",
+      "breakpoints": true
     }
   ]
 }
