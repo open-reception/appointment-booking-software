@@ -15,12 +15,7 @@
   import { Passkey } from "$lib/components/ui/passkey";
   import { Text } from "$lib/components/ui/typography";
   import type { PasskeyState } from "$lib/components/ui/passkey/state.svelte";
-  import {
-    arrayBufferToBase64,
-    fetchChallenge,
-    getCredential,
-    getPRFOutputAfterRegistration,
-  } from "$lib/utils/passkey";
+  import { arrayBufferToBase64, fetchChallenge, getCredential } from "$lib/utils/passkey";
   import { Label } from "$lib/components/ui/label";
   import { auth } from "$lib/stores/auth";
   import logger from "$lib/logger";

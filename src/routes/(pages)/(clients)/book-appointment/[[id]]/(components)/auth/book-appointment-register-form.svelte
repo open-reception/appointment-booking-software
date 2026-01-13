@@ -22,6 +22,7 @@
 
   let isThrottled = $derived.by(() => {
     // Re-evaluate whenever timeCounter changes
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     timeCounter; // Read for reactivity
     if (!appointment.data?.email || !throttleState.throttleUntil) return false;
     return throttleState.throttleUntil > Date.now();
@@ -29,6 +30,7 @@
 
   let remainingSeconds = $derived.by(() => {
     // Re-evaluate whenever timeCounter changes
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     timeCounter; // Read for reactivity
     if (!throttleState.throttleUntil) return 0;
     const remaining = throttleState.throttleUntil - Date.now();
