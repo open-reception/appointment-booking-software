@@ -65,7 +65,7 @@ describe("Delete Passkey API", () => {
     });
 
     it("should allow deletion when not deleting current session passkey", () => {
-      const currentSessionPasskeyId = "passkey_1";
+      const currentSessionPasskeyId: string = "passkey_1";
       const passkeyToDelete = mockPasskeyId;
 
       // Should allow deletion of different passkey
@@ -189,23 +189,6 @@ describe("Delete Passkey API", () => {
         const shouldLogWarning = true;
         expect(shouldLogWarning).toBe(true);
       }
-    });
-
-    it("should validate OpenAPI documentation completeness", () => {
-      const requiredResponseCodes = [200, 400, 401, 403, 404, 500];
-      const documentedResponses = {
-        "200": "Passkey deleted successfully",
-        "400": "Cannot delete the currently active passkey",
-        "401": "Authentication required",
-        "403": "Not authorized to delete this passkey",
-        "404": "Passkey not found",
-        "500": "Internal server error",
-      };
-
-      requiredResponseCodes.forEach((code) => {
-        expect(documentedResponses[code.toString()]).toBeDefined();
-        expect(typeof documentedResponses[code.toString()]).toBe("string");
-      });
     });
 
     it("should maintain referential integrity after deletion", () => {

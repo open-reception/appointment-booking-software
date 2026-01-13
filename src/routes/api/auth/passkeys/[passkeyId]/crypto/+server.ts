@@ -196,7 +196,6 @@ export async function POST({ request, params, locals }: RequestEvent) {
     }
 
     const userId = locals.user.id;
-    const userEmail = locals.user.email;
 
     // 2. Verify passkey ownership BEFORE parsing body (security: prevent data injection)
     const userPasskeys = await WebAuthnService.getUserPasskeys(userId);
