@@ -5,7 +5,6 @@
   import type { SelectTenant } from "$lib/server/db/central-schema";
   import { type SelectAppointment } from "$lib/server/db/tenant-schema";
   import type { SelectClient } from "$lib/server/email/email-service";
-  import EmailButton from "./components/EmailButton.svelte";
   import EmailHeadline from "./components/EmailHeadline.svelte";
   import EmailLayout from "./components/EmailLayout.svelte";
   import EmailText from "./components/EmailText.svelte";
