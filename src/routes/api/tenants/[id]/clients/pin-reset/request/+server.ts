@@ -72,7 +72,8 @@ registerOpenAPIRoute("/tenants/{id}/clients/pin-reset/request", "POST", {
               },
               resetUrl: {
                 type: "string",
-                description: "The URL included in the email that the client can use to reset their PIN",
+                description:
+                  "The URL included in the email that the client can use to reset their PIN",
               },
             },
             required: ["message", "emailHash", "resetUrl"],
