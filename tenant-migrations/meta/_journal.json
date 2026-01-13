@@ -71,6 +71,13 @@
       "when": 1768049916820,
       "tag": "0009_far_korg",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1768324220281,
+      "tag": "0010_tiny_angel",
+      "breakpoints": true
     }
   ]
 }
