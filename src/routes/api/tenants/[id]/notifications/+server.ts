@@ -47,7 +47,11 @@ registerOpenAPIRoute("/tenants/{id}/notifications", "GET", {
                       description: "Additional metadata (e.g. appointmentId)",
                     },
                     isRead: { type: "boolean", description: "Whether notification has been read" },
-                    createdAt: { type: "string", format: "date-time", description: "Creation timestamp" },
+                    createdAt: {
+                      type: "string",
+                      format: "date-time",
+                      description: "Creation timestamp",
+                    },
                   },
                   required: ["id", "staffId", "type", "isRead", "createdAt"],
                 },
