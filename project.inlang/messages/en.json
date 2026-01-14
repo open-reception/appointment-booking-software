@@ -847,7 +847,7 @@
 					"description": "Only you and {name} will be able to access this information. It is end-to-end encrypted."
 				},
 				"email": {
-					"description": "We will use this to send you the appointment details."
+					"notifyMe": "Notify me of changes by email"
 				},
 				"phone": {
 					"description": "Format: +1234567890. {name} may contact you by phone, if there are questions or changes regarding your appointment.",

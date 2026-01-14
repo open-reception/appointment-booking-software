@@ -1,16 +1,17 @@
 <script lang="ts">
   import { m } from "$i18n/messages.js";
   import * as Alert from "$lib/components/ui/alert";
+  import { CheckboxWithLabel } from "$lib/components/ui/checkbox-with-label";
   import * as Form from "$lib/components/ui/form";
   import { Input } from "$lib/components/ui/input";
   import { Text } from "$lib/components/ui/typography";
+  import { publicStore } from "$lib/stores/public";
   import type { TPublicAppointment } from "$lib/types/public";
+  import { Lock } from "@lucide/svelte";
+  import { get } from "svelte/store";
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
-  import { Lock } from "@lucide/svelte";
-  import { publicStore } from "$lib/stores/public";
   import { createFormSchema } from "./schema";
-  import { get } from "svelte/store";
 
   const { proceed }: { proceed: (a: Partial<TPublicAppointment>) => void } = $props();
   const tenant = $derived($publicStore.tenant);
@@ -19,6 +20,7 @@
   const form = superForm(
     {
       name: "",
+      shareEmail: false,
       email: "",
       phone: get(publicStore).tenant?.requirePhone ? "" : undefined,
     },
@@ -36,6 +38,7 @@
             ...appointment,
             data: {
               name: validation.data.name,
+              shareEmail: validation.data.shareEmail,
               email: validation.data.email,
               phone: validation.data.phone,
             },
@@ -74,18 +77,32 @@
         </Form.Control>
         <Form.FieldErrors />
       </Form.Field>
-      <Form.Field {form} name="email">
-        <Form.Control>
-          {#snippet children({ props })}
-            <Form.Label>{m["form.email"]()}</Form.Label>
-            <Input {...props} bind:value={$formData.email} type="email" />
-          {/snippet}
-        </Form.Control>
-        <Form.FieldErrors />
-        <Form.Description class="mt-1">
-          {m["public.steps.data.email.description"]()}
-        </Form.Description>
-      </Form.Field>
+      <div>
+        <Form.Field {form} name="email">
+          <Form.Control>
+            {#snippet children({ props })}
+              <Form.Label>{m["form.email"]()}</Form.Label>
+              <Input {...props} bind:value={$formData.email} type="email" />
+            {/snippet}
+          </Form.Control>
+          <Form.FieldErrors />
+        </Form.Field>
+        <Form.Field {form} name="shareEmail">
+          <Form.Control>
+            {#snippet children({ props })}
+              <CheckboxWithLabel
+                {...props}
+                bind:value={$formData.shareEmail}
+                label={m["public.steps.data.email.notifyMe"]()}
+                onCheckedChange={(v) => {
+                  $formData.shareEmail = v;
+                }}
+              />
+            {/snippet}
+          </Form.Control>
+          <Form.FieldErrors />
+        </Form.Field>
+      </div>
       <Form.Field {form} name="phone">
         <Form.Control>
           {#snippet children({ props })}
