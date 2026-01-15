@@ -45,7 +45,7 @@
     "@lucide/svelte": "^0.544.0",
     "@playwright/test": "^1.56.1",
     "@sveltejs/adapter-auto": "^6.1.0",
-    "@sveltejs/kit": "^2.22.0",
+    "@sveltejs/kit": "^2.49.5",
     "@sveltejs/vite-plugin-svelte": "^5.1.0",
     "@tailwindcss/typography": "^0.5.16",
     "@tailwindcss/vite": "^4.1.10",
