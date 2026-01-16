@@ -694,7 +694,8 @@
 					"title": "Telefonnummer erforderlich",
 					"label": "Kunden müssen eine Telefonnummer angeben, wenn sie einen Termin buchen."
 				}
-			}
+			},
+			"action": "Speichern"
 		}
 	},
 	"account": {

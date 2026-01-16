@@ -333,7 +333,7 @@
       disabled={isSubmitting}
       class="sm:ml-auto"
     >
-      {m["tenants.edit.action"]()}
+      {m["settings.form.action"]()}
     </Form.Button>
   </div>
 </Form.Root>

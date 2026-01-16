@@ -703,7 +703,8 @@
 					"title": "Require Phone Number",
 					"label": "Require clients to provide a phone number when booking an appointment."
 				}
-			}
+			},
+			"action": "Save"
 		}
 	},
 	"account": {
