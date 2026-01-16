@@ -61,7 +61,7 @@ ALTER TABLE "appointment" ADD COLUMN "auth_tag" text;--> statement-breakpoint
 ALTER TABLE "appointment" ADD COLUMN "created_at" timestamp DEFAULT now();--> statement-breakpoint
 ALTER TABLE "appointment" ADD COLUMN "updated_at" timestamp DEFAULT now();--> statement-breakpoint
 ALTER TABLE "appointment_key_share" ADD CONSTRAINT "appointment_key_share_appointment_id_appointment_id_fk" FOREIGN KEY ("appointment_id") REFERENCES "public"."appointment"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "client_tunnel_staff_key_share" ADD CONSTRAINT "client_tunnel_staff_key_share_tunnel_id_client_appointment_tunnel_id_fk" FOREIGN KEY ("tunnel_id") REFERENCES "public"."client_appointment_tunnel"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "client_tunnel_staff_key_share" ADD CONSTRAINT "client_tun_staff_keyShare_tId_client_app_tId_fk" FOREIGN KEY ("tunnel_id") REFERENCES "public"."client_appointment_tunnel"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "appointment" ADD CONSTRAINT "appointment_tunnel_id_client_appointment_tunnel_id_fk" FOREIGN KEY ("tunnel_id") REFERENCES "public"."client_appointment_tunnel"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "agent" DROP COLUMN "description";--> statement-breakpoint
 ALTER TABLE "appointment" DROP COLUMN "client_id";--> statement-breakpoint
