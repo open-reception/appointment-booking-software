@@ -9,6 +9,7 @@ import { eq, and, not, count, or } from "drizzle-orm";
 import logger from "$lib/logger";
 import { z } from "zod";
 import { ValidationError, NotFoundError, ConflictError } from "../utils/errors";
+import { redactDbUrl } from "../utils/url";
 
 if (!env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
 
@@ -110,7 +111,7 @@ export class TenantAdminService {
       } catch (dbError) {
         log.error("Failed to initialize tenant database", {
           tenantId: tenant[0].id,
-          databaseUrl: newTenant.databaseUrl,
+          databaseUrl: redactDbUrl(newTenant.databaseUrl),
           error: String(dbError),
         });
 
