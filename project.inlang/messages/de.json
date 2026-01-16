@@ -901,6 +901,7 @@
 		"today": "Heute",
 		"loading": "Loading calendar",
 		"decrypting": "wird entschlüsselt...",
+		"decryptingError": "Entschlüsselung fehlgeschlagen. Bitte neu anmelden.",
 		"shownAppointments": {
 			"title": "Termine",
 			"options": {

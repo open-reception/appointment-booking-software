@@ -84,7 +84,9 @@
 
 {#if error}
   <div class="text-destructive flex h-full items-center gap-1 px-1">
-    <Text style="xs" class="leading-none" title={error}>⚠️</Text>
+    <Text style="xs" class="leading-none" title={error}>
+      ⚠️ {m["calendar.decryptingError"]()}
+    </Text>
   </div>
 {:else if decrypted === undefined}
   <div class="flex h-full items-center gap-1 px-1">

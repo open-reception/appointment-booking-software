@@ -910,6 +910,7 @@
 		"today": "Today",
 		"loading": "Loading calendar",
 		"decrypting": "decrypting...",
+		"decryptingError": "Unable to decrypt data. Please log-in again",
 		"shownAppointments": {
 			"title": "Appointments",
 			"options": {
