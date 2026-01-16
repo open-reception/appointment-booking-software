@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { invalidate } from "$app/navigation";
   import { m } from "$i18n/messages";
   import { MaxPageWidth } from "$lib/components/layouts/max-page-width";
   import { SidebarLayout } from "$lib/components/layouts/sidebar-layout";
@@ -61,10 +60,9 @@
           {/snippet}
           <AddAgentForm
             done={() => {
+              tenants.reload();
               agents.load();
               channels.load();
-              tenants.reload();
-              invalidate(ROUTES.DASHBOARD.AGENTS);
               closeDialog("add");
             }}
           />
@@ -119,7 +117,6 @@
                   curItem = null;
                   agents.load();
                   channels.load();
-                  invalidate(ROUTES.DASHBOARD.AGENTS);
                 }}
               />
             {/if}
@@ -134,7 +131,6 @@
                   agents.load();
                   channels.load();
                   tenants.reload();
-                  invalidate(ROUTES.DASHBOARD.AGENTS);
                 }}
               />
             {/if}

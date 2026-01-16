@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { invalidate } from "$app/navigation";
   import { m } from "$i18n/messages";
   import { MaxPageWidth } from "$lib/components/layouts/max-page-width";
   import { SidebarLayout } from "$lib/components/layouts/sidebar-layout";
@@ -23,6 +22,7 @@
   import DeleteChannelForm from "./(components)/delete-channel-form/delete-channel-form.svelte";
   import EditChannelForm from "./(components)/edit-channel-form/edit-channel-form.svelte";
   import { PauseChannelForm } from "./(components)/pause-channel-form";
+  import { channels } from "$lib/stores/channels";
 
   const { data } = $props();
   let curItem: TChannelWithFullAgents | null = $state(null);
@@ -63,7 +63,7 @@
           <AddChannelForm
             done={() => {
               tenants.reload();
-              invalidate(ROUTES.DASHBOARD.CHANNELS);
+              channels.load();
               closeDialog("add");
             }}
           />
@@ -127,7 +127,7 @@
                 done={() => {
                   closeDialog("edit");
                   curItem = null;
-                  invalidate(ROUTES.DASHBOARD.CHANNELS);
+                  channels.load();
                 }}
               />
             {/if}
@@ -143,7 +143,7 @@
                 done={() => {
                   closeDialog("pause");
                   curItem = null;
-                  invalidate(ROUTES.DASHBOARD.CHANNELS);
+                  channels.load();
                 }}
               />
             </ResponsiveDialog>
@@ -156,7 +156,7 @@
                   closeDialog("delete");
                   curItem = null;
                   tenants.reload();
-                  invalidate(ROUTES.DASHBOARD.CHANNELS);
+                  channels.load();
                 }}
               />
             {/if}
