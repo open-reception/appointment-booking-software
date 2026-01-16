@@ -1,6 +1,7 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
 	"welcome": "Willkommen bei OpenReception",
+	"home": "Startseite",
 	"poweredBy": "Betrieben mit",
 	"i18n": {
 		"label": "Sprache wählen",

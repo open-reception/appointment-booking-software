@@ -5,6 +5,8 @@
   import { PageWithClaim } from "$lib/components/ui/page";
   import LoginForm from "./login-form.svelte";
   import type { EventReporter } from "$lib/components/ui/form/form-root.svelte";
+  import { Button } from "$lib/components/ui/button";
+  import { ROUTES } from "$lib/const/routes";
 
   const { data } = $props();
 
@@ -26,6 +28,9 @@
 </svelte:head>
 
 <PageWithClaim isWithLanguageSwitch>
+  {#snippet left()}
+    <Button href={ROUTES.MAIN} size="sm" variant="link">{m["home"]()}</Button>
+  {/snippet}
   <CenteredCard.Root>
     <CenteredCard.Header>
       <CenteredCard.Title>
