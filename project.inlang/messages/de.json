@@ -838,7 +838,8 @@
 					"description": "Nur Sie und {name} können diese Informationen sehen. Die Daten sind Ende-zu-Ende verschlüsselt."
 				},
 				"email": {
-					"notifyMe": "Benachrichtigen Sie mich über Änderungen per E-Mail"
+					"notifyMe": "Benachrichtigen Sie mich über Änderungen per E-Mail",
+					"tooltip": "Wenn aktiviert, wird Ihre Mail vorübergehend im Logbuch des Mailservers auftauchen. Wenn deaktiviert müssen Sie sich auf dieser Seite Einloggen, um Änderungen einzusehen."
 				},
 				"phone": {
 					"description": "Format: +491234567890. {name} kontaktiert Sie ggf. telefonisch, falls es Fragen/Änderungen zu Ihrem Termin gibt.",

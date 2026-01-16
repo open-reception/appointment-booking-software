@@ -94,6 +94,7 @@
                 {...props}
                 bind:value={$formData.shareEmail}
                 label={m["public.steps.data.email.notifyMe"]()}
+                tooltip={m["public.steps.data.email.tooltip"]()}
                 onCheckedChange={(v) => {
                   $formData.shareEmail = v;
                 }}
