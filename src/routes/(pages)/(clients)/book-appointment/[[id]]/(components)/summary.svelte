@@ -35,7 +35,7 @@
           appointment.slot.duration,
           tenant.id,
           Boolean(appointment.isNewClient),
-          getLocale() || "de",
+          getLocale() || "en",
         )
         .then(() => {
           const isRequest = channel.requiresConfirmation;
