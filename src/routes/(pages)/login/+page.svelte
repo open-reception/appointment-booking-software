@@ -8,8 +8,6 @@
   import { Button } from "$lib/components/ui/button";
   import { ROUTES } from "$lib/const/routes";
 
-  const { data } = $props();
-
   const formId = "create-account-form";
   let isSubmitting = $state(false);
 
@@ -41,7 +39,7 @@
       </CenteredCard.Description>
     </CenteredCard.Header>
     <CenteredCard.Main>
-      <LoginForm {formId} {data} {onEvent} />
+      <LoginForm {formId} {onEvent} />
     </CenteredCard.Main>
     <CenteredCard.Action>
       <Form.Button
