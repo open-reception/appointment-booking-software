@@ -42,9 +42,13 @@
 		"action": "Set Passkey",
 		"success": "Passkey set. Login with it now.",
 		"successKeyPairSaved": "Key pair saved successfully.",
+		"confirmPrfRetrival": "Now use your newly created passkey to enable encryption with it.",
 		"error": "Passkey could not be set",
 		"errorKeyPairDataMissing": "Could not generate key pair. Missing data.",
-		"errorKeyPairNotSaved": "Key pair could not be saved."
+		"errorKeyPairNotSaved": "Key pair could not be saved.",
+		"errorPrfOutputNotTriggered": "You have to confirm using the passkey.",
+		"errorAuthenticatorNotSupported": "This authenticator does not support the required security extension (PRF). Please use a modern authenticator like YubiKey 5.2.3+, Apple Touch ID or Android.",
+		"errorGettingPrfOutput": "Failed to retrieve security data from passkey. Please use a modern authenticator that supports PRF extension."
 	},
 	"slogan": "End-to-End encrypted appointment booking platform.",
 	"logo": "OpenReception Logo: A 3D pixel art with calendar that's also a lock",

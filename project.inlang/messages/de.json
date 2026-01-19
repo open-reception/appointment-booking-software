@@ -109,9 +109,13 @@
 		"action": "Passkey setzen",
 		"success": "Passkey eingerichtet. Logge Dich damit jetzt ein.",
 		"successKeyPairSaved": "Schlüsselpaar erfolgreich gespeichert.",
+		"confirmPrfRetrival": "Jetzt verwende den neu erstellten Passkey, um damit die Verschlüsselung zu aktivieren.",
 		"error": "Passkey konnte nicht gesetzt werden",
 		"errorKeyPairDataMissing": "Konnte Schlüsselpaar nicht generieren. Fehlende Daten.",
-		"errorKeyPairNotSaved": "Schlüsselpaar konnte nicht gespeichert werden."
+		"errorKeyPairNotSaved": "Schlüsselpaar konnte nicht gespeichert werden.",
+		"errorPrfOutputNotTriggered": "Sie müssen der Verwendung des Passkeys zustimmen.",
+		"errorAuthenticatorNotSupported": "Dieser Authentifikator unterstützt nicht die erforderliche Sicherheitserweiterung (PRF). Bitte verwenden Sie einen modernen Authentifikator wie YubiKey 5.2.3+, Apple Touch ID oder Android.",
+		"errorGettingPrfOutput": "Fehler beim Abrufen der Sicherheitsdaten vom Passkey. Bitte verwenden Sie einen modernen Authentifikator, der die PRF-Erweiterung unterstützt."
 	},
 	"logout": {
 		"title": "Erfolgreich abgemeldet",

@@ -11,7 +11,7 @@ const log = logger.setContext(import.meta.filename);
 
 export const load: PageServerLoad = async () => {
   return {
-    form: await superValidate(zod(formSchema)),
+    form: await superValidate({ type: "passkey" }, zod(formSchema)),
   };
 };
 
