@@ -48,7 +48,7 @@
   };
 
   const initStaffCrypto = async () => {
-    if (data?.user?.id && data?.user?.tenantId) {
+    if (data?.user?.id && data?.user?.tenantId && data?.user.role !== "GLOBAL_ADMIN") {
       // Try to initialize from session storage (from login)
       const success = await staffCrypto.initFromSession(data.user.id, data.user.tenantId);
       if (success) {
