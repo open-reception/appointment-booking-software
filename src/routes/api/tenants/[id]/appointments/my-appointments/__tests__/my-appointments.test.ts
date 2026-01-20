@@ -66,7 +66,7 @@ describe("GET /api/tenants/[id]/appointments/my-appointments", () => {
         headers,
       } as Request,
       params: { id: mockTenantId },
-    } as RequestEvent;
+    } as any;
   };
 
   it("should return future appointments for authenticated client", async () => {
@@ -154,7 +154,7 @@ describe("GET /api/tenants/[id]/appointments/my-appointments", () => {
         headers: new Headers({ "X-Email-Hash": mockEmailHash }),
       } as Request,
       params: { id: undefined },
-    } as RequestEvent;
+    } as any;
 
     const response = await GET(event);
     const data = await response.json();

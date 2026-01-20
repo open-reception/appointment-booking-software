@@ -298,7 +298,6 @@ export class AppointmentService {
 
     const appointment = appointmentResult[0];
     const channelId = appointment.channelId;
-    const appointmentDate = appointment.appointmentDate;
 
     // Delete the appointment
     await db.delete(tenantSchema.appointment).where(eq(tenantSchema.appointment.id, appointmentId));
@@ -334,32 +333,14 @@ export class AppointmentService {
     // Create notifications for all staff members in the channel
     const notificationService = await NotificationService.forTenant(this.tenantId);
 
-    // Get all tenant languages for notification translations
-    const tenantLanguages = tenant.languages || ["de", "en"];
-    const notificationTitle: { [key: string]: string } = {};
-    const notificationDescription: { [key: string]: string } = {};
-
-    // Build translations for all tenant languages using i18n messages
-    for (const lang of tenantLanguages) {
-      notificationTitle[lang] = m["notifications.appointmentCancelled.title"](
-        {},
-        { locale: lang as "de" | "en" },
-      );
-      notificationDescription[lang] = m["notifications.appointmentCancelled.description"](
-        {
-          date: appointmentDate.toISOString(),
-          channel: channelTitle || channelId,
-        },
-        { locale: lang as "de" | "en" },
-      );
-    }
-
     // Create notifications (async, don't wait)
     notificationService
       .createNotification({
         channelId,
-        title: notificationTitle,
-        description: notificationDescription,
+        type: "APPOINTMENT_CANCELLED",
+        metaData: {
+          appointmentId,
+        },
       })
       .catch((error) => {
         log.error("Failed to create channel notifications", {
@@ -853,43 +834,13 @@ export class AppointmentService {
       emailHashPrefix: emailHash.slice(0, 8),
     });
 
-    // 5. Send notification to channel staff (no email to client, they initiated the deletion)
-    // Get tenant information for languages
-    const tenantService = await TenantAdminService.getTenantById(this.tenantId);
-    const tenant = tenantService.tenantData;
-
-    if (!tenant) {
-      log.error("Tenant not found", { tenantId: this.tenantId });
-      throw new InternalError("Tenant not found");
-    }
-
-    const channelTitle = await getChannelTitle(this.tenantId, appointment.channelId);
-
-    // Get all tenant languages for notification translations
-    const tenantLanguages = tenant.languages || ["de", "en"];
-    const notificationTitle: { [key: string]: string } = {};
-    const notificationDescription: { [key: string]: string } = {};
-
-    // Build translations for all tenant languages using i18n messages
-    for (const lang of tenantLanguages) {
-      notificationTitle[lang] = m["notifications.appointmentCancelled.title"](
-        {},
-        { locale: lang as "de" | "en" },
-      );
-      notificationDescription[lang] = m["notifications.appointmentCancelled.description"](
-        {
-          date: appointment.appointmentDate.toISOString(),
-          channel: channelTitle || appointment.channelId,
-        },
-        { locale: lang as "de" | "en" },
-      );
-    }
-
     const notificationService = await NotificationService.forTenant(this.tenantId);
     await notificationService.createNotification({
       channelId: appointment.channelId,
-      title: notificationTitle,
-      description: notificationDescription,
+      type: "APPOINTMENT_CANCELLED",
+      metaData: {
+        appointmentId,
+      },
     });
 
     log.info("Staff notification sent for client-initiated deletion", {

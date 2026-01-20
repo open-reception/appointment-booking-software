@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { DELETE } from "../+server";
 import * as appointmentService from "$lib/server/services/appointment-service";
-import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
+import { NotFoundError } from "$lib/server/utils/errors";
 
 // Mock the appointment service
 vi.mock("$lib/server/services/appointment-service", () => ({
@@ -99,8 +100,6 @@ describe("DELETE /api/tenants/[id]/appointments/[appointmentId]/delete", () => {
       request,
       locals: { user: { id: "user-123" } },
     } as any);
-
-    const result = await response.json();
 
     expect(response.status).toBe(200);
     expect(mockDeleteAppointmentByStaff).toHaveBeenCalledWith(

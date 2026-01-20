@@ -44,7 +44,7 @@ describe("DELETE /api/tenants/[id]/appointments/[appointmentId]/delete-by-client
         ),
       } as any,
       params: { id: mockTenantId, appointmentId: mockAppointmentId },
-    } as RequestEvent;
+    } as any;
   };
 
   it("should delete appointment successfully with valid authentication", async () => {
@@ -118,7 +118,7 @@ describe("DELETE /api/tenants/[id]/appointments/[appointmentId]/delete-by-client
         }),
       } as any,
       params: { id: undefined, appointmentId: mockAppointmentId },
-    } as RequestEvent;
+    } as any;
 
     const response = await DELETE(event);
     const data = await response.json();
@@ -137,7 +137,7 @@ describe("DELETE /api/tenants/[id]/appointments/[appointmentId]/delete-by-client
         }),
       } as any,
       params: { id: mockTenantId, appointmentId: undefined },
-    } as RequestEvent;
+    } as any;
 
     const response = await DELETE(event);
     const data = await response.json();
