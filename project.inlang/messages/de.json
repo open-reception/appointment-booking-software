@@ -938,6 +938,11 @@
 			"introduction": "Ihr Termin wurde angefragt. Sie werden benachrichtigt, sobald der Termin bestätigt wurde.",
 			"reason": "Sie erhalten diese E-Mail, weil jemand mit Ihrer E-Mail Adresse einen Termin bei angefragt hat."
 		},
+		"appointmentRejected": {
+			"subject": "Ihre Anfrage für {channel} bei {tenant} wurde abgelehnt",
+			"introduction": "Ihr Termin wurde abgelehnt.",
+			"reason": "Sie erhalten diese E-Mail, weil jemand mit Ihrer E-Mail Adresse einen Termin bei angefragt hat."
+		},
 		"confirmation": {
 			"subject": "E-Mail Adresse bestätigen",
 			"introduction": "willkommen bei unserem Terminbuchungsportal. Bitte bestätige Deine E-Mail Adresse.",
