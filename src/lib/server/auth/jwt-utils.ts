@@ -18,7 +18,11 @@ const JWT_SECRET = new TextEncoder().encode(env.JWT_SECRET);
 const ACCESS_TOKEN_EXPIRES = "15m"; // 15 minutes
 const REFRESH_TOKEN_EXPIRES = "7d"; // 7 days
 
-export async function generateAccessToken(user: SelectUser, sessionId: string): Promise<string> {
+export async function generateAccessToken(
+  user: SelectUser,
+  sessionId: string,
+  passkeyId?: string,
+): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
 
   const payload: Omit<JWTPayload, "iat" | "exp"> = {
@@ -28,6 +32,7 @@ export async function generateAccessToken(user: SelectUser, sessionId: string): 
     role: user.role,
     tenantId: user.tenantId || undefined,
     sessionId,
+    passkeyId: passkeyId || undefined,
   };
 
   const jwt = await new SignJWT(payload)
@@ -59,7 +64,7 @@ export async function generateRefreshToken(userId: string, sessionId: string): P
 
 export async function decodeAccessToken(
   token: string,
-): Promise<(JWTPayload & { userId: string; sessionId: string }) | null> {
+): Promise<(JWTPayload & { userId: string; sessionId: string; passkeyId?: string }) | null> {
   try {
     const payload = await decodeJwt(token);
 
@@ -70,6 +75,7 @@ export async function decodeAccessToken(
       role: payload.role as "GLOBAL_ADMIN" | "TENANT_ADMIN" | "STAFF",
       tenantId: payload.tenantId as string | undefined,
       sessionId: payload.sessionId as string,
+      passkeyId: payload.passkeyId as string | undefined,
       iat: payload.iat,
       exp: payload.exp,
     };
@@ -81,7 +87,7 @@ export async function decodeAccessToken(
 
 export async function verifyAccessToken(
   token: string,
-): Promise<(JWTPayload & { userId: string; sessionId: string }) | null> {
+): Promise<(JWTPayload & { userId: string; sessionId: string; passkeyId?: string }) | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
 
@@ -92,6 +98,7 @@ export async function verifyAccessToken(
       role: payload.role as "GLOBAL_ADMIN" | "TENANT_ADMIN" | "STAFF",
       tenantId: payload.tenantId as string | undefined,
       sessionId: payload.sessionId as string,
+      passkeyId: payload.passkeyId as string | undefined,
       iat: payload.iat,
       exp: payload.exp,
     };
@@ -126,9 +133,13 @@ export async function verifyRefreshToken(
   }
 }
 
-export async function generateTokens(user: SelectUser, sessionId: string): Promise<JWTTokens> {
+export async function generateTokens(
+  user: SelectUser,
+  sessionId: string,
+  passkeyId?: string,
+): Promise<JWTTokens> {
   const [accessToken, refreshToken] = await Promise.all([
-    generateAccessToken(user, sessionId),
+    generateAccessToken(user, sessionId, passkeyId),
     generateRefreshToken(user.id, sessionId),
   ]);
 

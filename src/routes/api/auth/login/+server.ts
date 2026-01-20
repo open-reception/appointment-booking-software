@@ -229,6 +229,7 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
     }
 
     // Handle WebAuthn authentication
+    let passkeyId: string | undefined;
     if (body.credential) {
       // Get the challenge from the session
       const challengeFromSession = cookies.get("webauthn-challenge");
@@ -269,6 +270,7 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
       user.id,
       ipAddress,
       userAgent || undefined,
+      passkeyId,
     );
 
     // Set HTTP-only cookie for access token
@@ -277,7 +279,7 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
       secure: true,
       sameSite: "strict",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      expires: sessionData.expiresAt,
     });
 
     logger.info("Login successful", {

@@ -172,10 +172,12 @@ export class StaffCryptoService {
 
   /**
    * Get all staff public keys for a tenant
+   * Returns ALL public keys for all passkeys of each staff member
+   * This allows clients to encrypt appointment data that can be decrypted by any staff member's passkey
    */
   async getStaffPublicKeys(
     tenantId: string,
-  ): Promise<Array<{ userId: string; publicKey: string }>> {
+  ): Promise<Array<{ userId: string; publicKey: string; passkeyId: string }>> {
     const log = logger.setContext("StaffCryptoService.getStaffPublicKeys");
 
     try {
@@ -184,6 +186,7 @@ export class StaffCryptoService {
         .select({
           userId: staffCrypto.userId,
           publicKey: staffCrypto.publicKey,
+          passkeyId: staffCrypto.passkeyId,
         })
         .from(staffCrypto)
         .where(eq(staffCrypto.isActive, true));
@@ -191,11 +194,13 @@ export class StaffCryptoService {
       const validStaffKeys = staffWithKeys.map((staff) => ({
         userId: staff.userId,
         publicKey: staff.publicKey,
+        passkeyId: staff.passkeyId,
       }));
 
       log.info("Retrieved staff public keys", {
         tenantId,
         validKeys: validStaffKeys.length,
+        uniqueStaff: new Set(validStaffKeys.map((k) => k.userId)).size,
       });
 
       return validStaffKeys;

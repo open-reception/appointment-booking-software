@@ -16,7 +16,7 @@ const inviteUserSchema = z.object({
   name: z.string().min(1),
   role: z.enum(["TENANT_ADMIN", "STAFF"]),
   tenantId: z.string().uuid(),
-  language: z.enum(["de", "en"]).optional().default("de"),
+  language: z.enum(["de", "en"]).optional().default("en"),
 });
 
 registerOpenAPIRoute("/auth/invite", "POST", {

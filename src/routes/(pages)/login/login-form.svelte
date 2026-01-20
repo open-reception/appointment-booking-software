@@ -15,41 +15,42 @@
   import { Passkey } from "$lib/components/ui/passkey";
   import { Text } from "$lib/components/ui/typography";
   import type { PasskeyState } from "$lib/components/ui/passkey/state.svelte";
-  import {
-    arrayBufferToBase64,
-    fetchChallenge,
-    getCredential,
-    getPRFOutputAfterRegistration,
-  } from "$lib/utils/passkey";
+  import { arrayBufferToBase64, fetchChallenge, getCredential } from "$lib/utils/passkey";
   import { Label } from "$lib/components/ui/label";
   import { auth } from "$lib/stores/auth";
   import logger from "$lib/logger";
 
-  let {
-    data,
-    formId,
-    onEvent,
-  }: { formId: string; onEvent: EventReporter; data: { form: SuperValidated<Infer<FormSchema>> } } =
-    $props();
+  let { formId, onEvent }: { formId: string; onEvent: EventReporter } = $props();
 
-  const form = superForm(data.form, {
-    validators: zodClient(formSchema),
-    onChange: (event) => {
-      if (event.paths.includes("email")) {
-        setProperPasskeyState();
-      }
+  const form = superForm(
+    {
+      email: "",
+      type: "passkey",
+      id: "",
+      passphrase: "passphrase",
+      clientDataBase64: "",
+      authenticatorDataBase64: "",
+      signatureBase64: "",
     },
-    onResult: async (event) => {
-      if (event.result.type === "success") {
-        auth.setUser(event.result.data?.user);
-        await goto(ROUTES.DASHBOARD.MAIN);
-      } else {
-        toast.error(m["login.error"]());
-      }
-      onEvent({ isSubmitting: false });
+    {
+      validators: zodClient(formSchema),
+      onChange: (event) => {
+        if (event.paths.includes("email")) {
+          setProperPasskeyState();
+        }
+      },
+      onResult: async (event) => {
+        if (event.result.type === "success") {
+          auth.setUser(event.result.data?.user);
+          await goto(ROUTES.DASHBOARD.MAIN);
+        } else {
+          toast.error(m["login.error"]());
+        }
+        onEvent({ isSubmitting: false });
+      },
+      onSubmit: () => onEvent({ isSubmitting: true }),
     },
-    onSubmit: () => onEvent({ isSubmitting: true }),
-  });
+  );
 
   onMount(() => {
     $formData.type = "passkey";
@@ -191,14 +192,13 @@
       <Form.Control>
         {#snippet children({ props })}
           <Form.Label>{m["form.passphrase"]()}</Form.Label>
-          <!-- prettier-ignore -->
           <Input
-						{...props}
-						bind:value={($formData as FormDataPassphrase).passphrase}
-						type="password"
-						minlength={30}
-						maxlength={100}
-					/>
+            {...props}
+            bind:value={$formData.passphrase}
+            type="password"
+            minlength={30}
+            maxlength={100}
+          />
         {/snippet}
       </Form.Control>
       <Form.FieldErrors />
@@ -215,48 +215,28 @@
       <Form.Field {form} name="id" class="hidden">
         <Form.Control>
           {#snippet children({ props })}
-            <!-- prettier-ignore -->
-            <Input
-							{...props}
-							bind:value={($formData as FormDataPasskey).id}
-							type="hidden"
-						/>
+            <Input {...props} bind:value={$formData.id} type="hidden" />
           {/snippet}
         </Form.Control>
       </Form.Field>
       <Form.Field {form} name="authenticatorDataBase64" class="hidden">
         <Form.Control>
           {#snippet children({ props })}
-            <!-- prettier-ignore -->
-            <Input
-							{...props}
-							bind:value={($formData as FormDataPasskey).authenticatorDataBase64}
-							type="hidden"
-						/>
+            <Input {...props} bind:value={$formData.authenticatorDataBase64} type="hidden" />
           {/snippet}
         </Form.Control>
       </Form.Field>
       <Form.Field {form} name="clientDataBase64" class="hidden">
         <Form.Control>
           {#snippet children({ props })}
-            <!-- prettier-ignore -->
-            <Input
-							{...props}
-							bind:value={($formData as FormDataPasskey).clientDataBase64}
-							type="hidden"
-						/>
+            <Input {...props} bind:value={$formData.clientDataBase64} type="hidden" />
           {/snippet}
         </Form.Control>
       </Form.Field>
       <Form.Field {form} name="signatureBase64" class="hidden">
         <Form.Control>
           {#snippet children({ props })}
-            <!-- prettier-ignore -->
-            <Input
-							{...props}
-							bind:value={($formData as FormDataPasskey).signatureBase64}
-							type="hidden"
-						/>
+            <Input {...props} bind:value={$formData.signatureBase64} type="hidden" />
           {/snippet}
         </Form.Control>
       </Form.Field>
