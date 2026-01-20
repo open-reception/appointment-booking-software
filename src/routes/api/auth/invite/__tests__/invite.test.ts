@@ -140,7 +140,7 @@ describe("POST /api/auth/invite", () => {
       "STAFF",
       "12345678-1234-4234-8234-123456789012",
       "admin-id",
-      "de",
+      "en",
     );
     expect(vi.mocked(sendUserInviteEmail)).toHaveBeenCalled();
   });
@@ -174,7 +174,7 @@ describe("POST /api/auth/invite", () => {
       "STAFF",
       "12345678-1234-4234-8234-123456789012",
       "admin-id",
-      "de",
+      "en",
     );
     expect(vi.mocked(sendUserInviteEmail)).toHaveBeenCalledWith(
       "user@example.com",
@@ -182,7 +182,7 @@ describe("POST /api/auth/invite", () => {
       mockTenant,
       "STAFF",
       expect.stringContaining("invite-code-123"),
-      "de",
+      "en",
     );
   });
 
