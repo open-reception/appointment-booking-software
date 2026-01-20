@@ -25,6 +25,16 @@ vi.mock("../challenge-throttle", () => ({
   },
 }));
 
+vi.mock("../notification-service", () => ({
+  NotificationService: {
+    forTenant: vi.fn().mockResolvedValue({
+      sendAppointmentConfirmationEmail: vi.fn().mockResolvedValue(undefined),
+      sendAppointmentCancellationEmail: vi.fn().mockResolvedValue(undefined),
+      createNotification: vi.fn().mockResolvedValue(undefined),
+    }),
+  },
+}));
+
 const mockAppointment = {
   id: "appointment-123",
   tunnelId: "tunnel-123",
