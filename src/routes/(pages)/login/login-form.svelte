@@ -8,9 +8,9 @@
   import { ROUTES } from "$lib/const/routes";
   import { toast } from "svelte-sonner";
   import { writable, type Writable } from "svelte/store";
-  import { type Infer, superForm, type SuperValidated } from "sveltekit-superforms";
+  import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
-  import { baseSchema, formSchema, type FormSchema } from "./schema";
+  import { baseSchema, formSchema } from "./schema";
   import { onMount } from "svelte";
   import { Passkey } from "$lib/components/ui/passkey";
   import { Text } from "$lib/components/ui/typography";
@@ -165,9 +165,6 @@
 
   const { form: formData, enhance } = form;
   const passkeyLoading: Writable<PasskeyState> = writable("initial");
-
-  type FormDataPassphrase = Extract<typeof $formData, { type: "passphrase" }>;
-  type FormDataPasskey = Extract<typeof $formData, { type: "passkey" }>;
 </script>
 
 <Form.Root {formId} {enhance}>
