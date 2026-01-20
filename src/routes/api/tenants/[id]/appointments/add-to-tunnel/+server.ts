@@ -19,6 +19,7 @@ import {
   getChannelTitle,
 } from "$lib/server/email/email-service";
 import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
+import { NotificationService } from "$lib/server/services/notification-service";
 
 const requestSchema = z.object({
   emailHash: z.string(),
@@ -324,6 +325,14 @@ export const POST: RequestHandler = async ({ request, params }) => {
             tunnelId: validatedData.tunnelId,
             appointmentId: result.id,
             tenantId,
+          });
+
+          // send notification to tenant staff about new appointment request
+          const notificationService = NotificationService.forTenant(tenantId);
+          (await notificationService).createNotification({
+            type: "APPOINTMENT_REQUESTED",
+            channelId: validatedData.channelId,
+            metaData: { appointmentId: result.id },
           });
         } else {
           await sendAppointmentCreatedEmail(clientData, tenant, result, channelTitle);
