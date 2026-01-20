@@ -37,17 +37,23 @@ registerOpenAPIRoute("/tenants/{id}/notifications", "GET", {
                   properties: {
                     id: { type: "string", format: "uuid", description: "Notification ID" },
                     staffId: { type: "string", format: "uuid", description: "Staff member ID" },
-                    title: {
-                      type: "object",
-                      description: "Notification titles",
+                    type: {
+                      type: "string",
+                      enum: ["APPOINTMENT_CONFIRMED", "APPOINTMENT_CANCELED"],
+                      description: "Notification type",
                     },
-                    description: {
+                    metaData: {
                       type: "object",
-                      description: "Notification descriptions",
+                      description: "Additional metadata (e.g. appointmentId)",
                     },
                     isRead: { type: "boolean", description: "Whether notification has been read" },
+                    createdAt: {
+                      type: "string",
+                      format: "date-time",
+                      description: "Creation timestamp",
+                    },
                   },
-                  required: ["id", "staffId", "title", "description", "isRead"],
+                  required: ["id", "staffId", "type", "isRead", "createdAt"],
                 },
               },
             },

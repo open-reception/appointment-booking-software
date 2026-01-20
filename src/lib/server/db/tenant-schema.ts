@@ -26,6 +26,11 @@ export const appointmentStatusEnum = pgEnum("appointment_status", [
   "NO_SHOW",
 ]);
 
+export const notificationTypes = ["APPOINTMENT_CONFIRMED", "APPOINTMENT_CANCELED"] as const;
+export type NotificationType = (typeof notificationTypes)[number];
+
+export const notificationTypeEnum = pgEnum("notification_type", notificationTypes);
+
 /**
  * Agent table - represents personnel or staff members who can be assigned to channels
  * Agents are the people who provide services and can be associated with multiple channels
@@ -234,10 +239,10 @@ export const notification = pgTable("notification", {
   id: uuid("id").primaryKey().defaultRandom(),
   /** Reference to staff  */
   staffId: uuid("staff_id").notNull(),
-  /** Title of notification (e.g. "Appointment cancelled"), per language */
-  title: json("title").$type<{ [key: string]: string }>().notNull(),
-  /** Notification text, per language */
-  description: json("description").$type<{ [key: string]: string }>().notNull(),
+  /** Notification type */
+  type: notificationTypeEnum("type").notNull().default("APPOINTMENT_CONFIRMED"),
+  /** Additional metadata (e.g. reference to appointment) */
+  metaData: json("meta_data").$type<{ [key: string]: string }>(),
   /** Whether the notification was read */
   isRead: boolean("is_read").default(false).notNull(),
   /** Timestamp when the notification was created */
@@ -356,6 +361,26 @@ export const authChallenge = pgTable("auth_challenge", {
   consumed: boolean("consumed").default(false).notNull(),
 });
 
+/**
+ * ClientPinResetToken table - stores temporary PIN reset tokens for clients
+ * Used for secure PIN reset via QR code or email link
+ * @table clientPinResetToken
+ */
+export const clientPinResetToken = pgTable("client_pin_reset_token", {
+  /** Primary key - unique identifier (UUID) */
+  id: uuid("id").primaryKey().defaultRandom(),
+  /** Secure reset token (UUID v4) */
+  token: uuid("token").notNull().unique().defaultRandom(),
+  /** SHA-256 hash of client email for privacy-preserving lookups */
+  emailHash: text("email_hash").notNull(),
+  /** When this token was created */
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  /** When this token expires */
+  expiresAt: timestamp("expires_at").notNull(),
+  /** Whether this token has been used (one-time use) */
+  used: boolean("used").default(false).notNull(),
+});
+
 /** StaffCrypto record type for database queries */
 export type SelectStaffCrypto = InferSelectModel<typeof staffCrypto>;
 
@@ -364,3 +389,6 @@ export type SelectClientAppointmentTunnel = InferSelectModel<typeof clientAppoin
 
 /** ClientTunnelStaffKeyShare record type for database queries */
 export type SelectClientTunnelStaffKeyShare = InferSelectModel<typeof clientTunnelStaffKeyShare>;
+
+/** ClientPinResetToken record type for database queries */
+export type SelectClientPinResetToken = InferSelectModel<typeof clientPinResetToken>;

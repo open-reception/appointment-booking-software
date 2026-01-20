@@ -10,11 +10,23 @@ import type { SelectTenant, SelectUser } from "$lib/server/db/central-schema";
 import { getTenantDb } from "$lib/server/db";
 import * as tenantSchema from "$lib/server/db/tenant-schema";
 import { eq } from "drizzle-orm";
+import { setLocale } from "$i18n/runtime";
+import { m } from "$i18n/messages";
+import { render } from "svelte/server";
+import AppointmentBooked from "$lib/emails/AppointmentBooked.svelte";
+import { htmlToText, renderOutputToHtml } from "$lib/emails/utils";
+import { AgentService } from "../services/agent-service";
+import { TenantService } from "../db/tenant-service";
+import Confirmation from "$lib/emails/Confirmation.svelte";
+import PinReset from "$lib/emails/PinReset.svelte";
+import UserInvite from "$lib/emails/UserInvite.svelte";
 
-type SelectClient = {
+export type SelectClient = {
   email: string;
   language: string;
 };
+
+export type SelectUserEmail = Pick<SelectUser, "email" | "name" | "language">;
 
 /**
  * Get channel title in the user's preferred language
@@ -118,12 +130,26 @@ export async function sendUserCreatedEmail(
 export async function sendPinResetEmail(
   user: SelectClient | SelectUser,
   tenant: SelectTenant,
+  requestUrl: URL,
 ): Promise<void> {
   const recipient = createEmailRecipient(user);
-  const language = (recipient.language as Language) || "en";
-  const subject = language === "en" ? "PIN Reset Information" : "PIN zurückgesetzt";
+  const locale = (recipient.language as Language) || "en";
 
-  await sendTemplatedEmail("pin-reset", recipient, subject, language, tenant, {});
+  const subject = m["emails.pinReset.subject"]({
+    tenant: tenant.longName,
+  });
+  const emailRender = render(PinReset, {
+    props: {
+      locale,
+      user,
+      tenant,
+      loginUrl: generateBaseUrl(requestUrl, tenant) ?? "http://localhost:5173",
+    },
+  });
+  const html = renderOutputToHtml(emailRender);
+  const text = htmlToText(html);
+
+  await sendEmail(recipient, subject, html, text);
 }
 
 /**
@@ -159,18 +185,52 @@ export async function sendAppointmentReminderEmail(
   appointment: SelectAppointment,
   cancelUrl?: string,
 ): Promise<void> {
-  const recipient = createEmailRecipient(user);
-  const language = (recipient.language as Language) || "en";
-  const subject = language === "en" ? "Appointment Reminder" : "Terminerinnerung";
-
-  await sendTemplatedEmail("appointment-reminder", recipient, subject, language, tenant, {
-    appointment,
-    appointmentDate: appointment.appointmentDate,
-    appointmentTime: appointment.appointmentDate, // You might want to add a separate time field
-    title: appointment.channelId,
-    cancelUrl,
+  const agentService = await AgentService.forTenant(tenant.id);
+  const agent = await agentService.getAgentById(appointment.agentId);
+  const { recipient, locale } = await getRecipient(user);
+  const channelTitle = await getChannelTitle(tenant.id, appointment.channelId, locale);
+  // Generate email
+  const subject = m["emails.appointmentReminder.subject"]({
+    tenant: tenant.longName,
   });
+  const emailRender = render(AppointmentBooked, {
+    props: {
+      locale,
+      channel: channelTitle || appointment.channelId,
+      user,
+      tenant,
+      appointment: { ...appointment, agentName: agent?.name ?? "---" },
+      address: await getAddressFromTenant(tenant.id),
+      cancelUrl: cancelUrl || "",
+    },
+  });
+  const html = renderOutputToHtml(emailRender);
+  const text = htmlToText(html);
+
+  await sendEmail(recipient, subject, html, text);
 }
+
+const getRecipient = async (user: SelectClient | SelectUser) => {
+  const recipient: EmailRecipient =
+    "email" in user && typeof user.email === "string" && "language" in user && !("name" in user)
+      ? { email: user.email, language: user.language }
+      : createEmailRecipient(user);
+  const locale = (recipient.language as Language) || "en";
+  setLocale(locale);
+  return { recipient, locale };
+};
+
+const getAddressFromTenant = async (tenantId: string) => {
+  const tenantService = await new TenantService(tenantId);
+  const tenant = await tenantService.getConfig();
+  return {
+    street: (tenant["address.street"] || "") as string,
+    number: (tenant["address.number"] || "") as string,
+    additionalAddressInfo: (tenant["address.additionalAddressInfo"] || "") as string,
+    zip: (tenant["address.zip"] || "") as string,
+    city: (tenant["address.city"] || "") as string,
+  };
+};
 
 /**
  * Send appointment confirmation email for newly created appointments
@@ -190,20 +250,32 @@ export async function sendAppointmentCreatedEmail(
   cancelUrl?: string,
 ): Promise<void> {
   // Create recipient directly for SelectClient type, use helper for SelectUser
-  const recipient: EmailRecipient =
-    "email" in user && typeof user.email === "string" && "language" in user && !("name" in user)
-      ? { email: user.email, language: user.language }
-      : createEmailRecipient(user);
 
-  const language = (recipient.language as Language) || "en";
-  const subject = language === "en" ? "Appointment Confirmed" : "Termin bestätigt";
+  // Set language
+  const agentService = await AgentService.forTenant(tenant.id);
+  const agent = await agentService.getAgentById(appointment.agentId);
+  const { recipient, locale } = await getRecipient(user);
 
-  await sendTemplatedEmail("appointment-created", recipient, subject, language, tenant, {
-    appointment,
-    appointmentDate: appointment.appointmentDate,
-    title: channelTitle || appointment.channelId,
-    cancelUrl,
+  // Generate email
+  const subject = m["emails.appointmentBooked.subject"]({
+    channel: channelTitle || appointment.channelId,
+    tenant: tenant.longName,
   });
+  const emailRender = render(AppointmentBooked, {
+    props: {
+      locale,
+      channel: channelTitle || appointment.channelId,
+      user,
+      tenant,
+      appointment: { ...appointment, agentName: agent?.name ?? "---" },
+      address: await getAddressFromTenant(tenant.id),
+      cancelUrl: cancelUrl || "",
+    },
+  });
+  const html = renderOutputToHtml(emailRender);
+  const text = htmlToText(html);
+
+  await sendEmail(recipient, subject, html, text);
 }
 
 /**
@@ -223,21 +295,29 @@ export async function sendAppointmentRequestEmail(
   channelTitle?: string,
   cancelUrl?: string,
 ): Promise<void> {
-  // Create recipient directly for SelectClient type, use helper for SelectUser
-  const recipient: EmailRecipient =
-    "email" in user && typeof user.email === "string" && "language" in user && !("name" in user)
-      ? { email: user.email, language: user.language }
-      : createEmailRecipient(user);
-
-  const language = (recipient.language as Language) || "en";
-  const subject = language === "en" ? "Appointment Request Received" : "Terminanfrage erhalten";
-
-  await sendTemplatedEmail("appointment-request", recipient, subject, language, tenant, {
-    appointment,
-    appointmentDate: appointment.appointmentDate,
-    title: channelTitle || appointment.channelId,
-    cancelUrl,
+  const agentService = await AgentService.forTenant(tenant.id);
+  const agent = await agentService.getAgentById(appointment.agentId);
+  const { recipient, locale } = await getRecipient(user);
+  // Generate email
+  const subject = m["emails.appointmentRequest.subject"]({
+    channel: channelTitle || appointment.channelId,
+    tenant: tenant.longName,
   });
+  const emailRender = render(AppointmentBooked, {
+    props: {
+      locale,
+      channel: channelTitle || appointment.channelId,
+      user,
+      tenant,
+      appointment: { ...appointment, agentName: agent?.name ?? "---" },
+      address: await getAddressFromTenant(tenant.id),
+      cancelUrl: cancelUrl || "",
+    },
+  });
+  const html = renderOutputToHtml(emailRender);
+  const text = htmlToText(html);
+
+  await sendEmail(recipient, subject, html, text);
 }
 
 /**
@@ -314,29 +394,33 @@ export function generateBaseUrl(requestUrl: URL, tenant: SelectTenant | null): s
  * @returns {Promise<void>}
  */
 export async function sendConfirmationEmail(
-  user: { id: string; email: string | null; name: string | null; language?: string | null },
+  user: { id: string; email: string; name: string; language?: string | null },
   tenant: SelectTenant,
   confirmationCode: string,
   expirationMinutes: number = 15,
   requestUrl?: URL,
 ): Promise<void> {
-  const recipient = createEmailRecipient(user);
-  const language = (recipient.language as Language) || "en";
-  const subject = language === "en" ? "Confirm Your Registration" : "Registrierung bestätigen";
-
   // Generate appropriate base URL if request URL is provided
   const baseUrl = requestUrl ? generateBaseUrl(requestUrl, tenant) : "http://localhost:5173";
-
-  // Create enhanced tenant object with baseUrl
-  const tenantWithBaseUrl = {
-    ...tenant,
-    baseUrl,
-  };
-
-  await sendTemplatedEmail("confirmation", recipient, subject, language, tenantWithBaseUrl, {
-    confirmationCode,
-    expirationMinutes,
+  const confirmUrl = `${baseUrl}/confirm/${confirmationCode}`;
+  const recipient = user;
+  // Generate email
+  const subject = m["emails.confirmation.subject"]({
+    tenant: tenant.longName,
   });
+  const emailRender = render(Confirmation, {
+    props: {
+      locale: (user.language as Language) ?? "en",
+      user: user as SelectUserEmail,
+      confirmUrl,
+      expirationMinutes,
+    },
+  });
+  const html = renderOutputToHtml(emailRender);
+  const text = htmlToText(html);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await sendEmail(recipient as any, subject, html, text);
 }
 
 /**
@@ -364,14 +448,24 @@ export async function sendUserInviteEmail(
     language,
   };
 
-  const subject =
-    language === "en"
-      ? `Invitation to ${tenant.longName || tenant.shortName}`
-      : `Einladung zu ${tenant.longName || tenant.shortName}`;
-
-  await sendTemplatedEmail("user-invite", recipient, subject, language, tenant, {
-    registrationUrl,
+  // Generate email
+  const subject = m["emails.userInvite.subject"]({
+    tenant: tenant.longName,
   });
+  const emailRender = render(UserInvite, {
+    props: {
+      locale: language ?? "en",
+      user: recipient as SelectUserEmail,
+      tenant,
+      confirmUrl: registrationUrl,
+      expirationMinutes: 30,
+    },
+  });
+  const html = renderOutputToHtml(emailRender);
+  const text = htmlToText(html);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await sendEmail(recipient as any, subject, html, text);
 }
 
 /**

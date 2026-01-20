@@ -1,6 +1,9 @@
 import { m } from "$i18n/messages";
 import { z } from "zod";
 
+const optionalUrl = (errorMessage: string) =>
+  z.union([z.literal(""), z.url({ message: errorMessage })]).optional();
+
 export const formSchema = z
   .object({
     id: z.string(),
@@ -18,9 +21,9 @@ export const formSchema = z
       city: z.string().min(1, { message: m["form.errors.city"]() }),
     }),
     links: z.object({
-      website: z.string().url({ message: m["form.errors.url"]() }).optional().default(""),
-      imprint: z.string().url({ message: m["form.errors.url"]() }).optional().default(""),
-      privacyStatement: z.string().url({ message: m["form.errors.url"]() }).optional().default(""),
+      website: optionalUrl(m["form.errors.url"]()),
+      imprint: optionalUrl(m["form.errors.url"]()),
+      privacyStatement: optionalUrl(m["form.errors.url"]()),
     }),
     settings: z.object({
       autoDeleteDays: z.number().min(30, { message: m["form.errors.deleteAfterDays"]() }),

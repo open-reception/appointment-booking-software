@@ -25,6 +25,7 @@ export const apiAuthHandle: Handle = async ({ event, resolve }) => {
     user: SelectUser;
     sessionId: string;
     exp: Date;
+    passkeyId?: string;
   } | null = null;
   if (accessToken) {
     // Verify access token with database session check
@@ -37,7 +38,7 @@ export const apiAuthHandle: Handle = async ({ event, resolve }) => {
       });
     }
 
-    // Add sessionId to the user object for easy access
+    // Add sessionId and passkeyId to the user object for easy access
     event.locals.user = {
       session: {
         exp: sessionData.exp.valueOf(),

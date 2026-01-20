@@ -27,7 +27,7 @@
         <li>
           <Button
             variant="outline"
-            class="flex h-auto w-full cursor-pointer flex-col items-start gap-1 px-3 py-2.5 text-left"
+            class="hover:border-primary/30 flex h-auto w-full cursor-pointer flex-col items-start gap-1 px-3 py-2.5 text-left"
             onclick={() =>
               proceed({
                 ...appointment,

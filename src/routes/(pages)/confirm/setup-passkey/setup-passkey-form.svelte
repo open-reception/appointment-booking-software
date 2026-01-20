@@ -35,7 +35,7 @@
   let passkeyId: string | undefined = $state();
   let prfOutput: ArrayBuffer | undefined = $state();
   let kyberKeyPair: { publicKey: Uint8Array; privateKey: Uint8Array } | undefined = $state();
-  let registrationChallenge: string | undefined = $state(); // Store first challenge for form submission
+  let registrationChallenge: string | undefined = $state();
 
   const form = superForm(data.form, {
     validators: zodClient(formSchema),
@@ -111,15 +111,22 @@
           email: $formData.email,
           extensions: extensionResults,
         });
-        toast.error(
-          "This authenticator does not support the required security extension (PRF). Please use a modern authenticator like YubiKey 5.2.3+, Titan Gen2, Windows Hello, Touch ID, or Android.",
-        );
+        toast.warning(m["setupPasskey.errorAuthenticatorNotSupported"]());
         return;
       }
 
       // Get attestationObject and clientDataJSON for @simplewebauthn/server verification
       const attestationObjectResp = passkeyResp.response.attestationObject;
       const clientDataJSONResp = passkeyResp.response.clientDataJSON;
+
+      // UX Primer for second passkey UI
+      const isConfirmed = confirm(m["setupPasskey.confirmPrfRetrival"]());
+      if (!isConfirmed) {
+        $passkeyLoading = "error";
+        toast.error(m["setupPasskey.errorPrfOutputNotTriggered"]());
+        logger.warn("PRF challenge primer not confirmed");
+        return;
+      }
 
       // CRITICAL: Get PRF output immediately after passkey creation
       // This is the only time we can retrieve the PRF output
@@ -149,9 +156,7 @@
           passkeyId: passkeyResp.id,
           error,
         });
-        toast.error(
-          "Failed to retrieve security data from passkey. Please use a modern authenticator that supports PRF extension.",
-        );
+        toast.error(m["setupPasskey.errorGettingPrfOutput"]());
         return;
       }
 

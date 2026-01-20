@@ -13,7 +13,7 @@ const requestSchema = z.object({
   duration: z.number().int().positive(),
   emailHash: z.string(),
   clientEmail: z.string().email(),
-  clientLanguage: z.string().optional().default("de"),
+  clientLanguage: z.string().optional().default("en"),
   clientPublicKey: z.string(),
   privateKeyShare: z.string(),
   encryptedAppointment: z.object({

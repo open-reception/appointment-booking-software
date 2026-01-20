@@ -66,9 +66,10 @@ const mockDb = {
 const mockNotification = {
   id: "notification-123",
   staffId: "staff-123",
-  title: { en: "New Appointment", de: "Neuer Termin" },
-  description: { en: "You have a new appointment", de: "Sie haben einen neuen Termin" },
+  type: "APPOINTMENT_CONFIRMED" as const,
+  metaData: { appointmentId: "appointment-123" },
   isRead: false,
+  createdAt: new Date(),
 };
 
 const mockChannelStaff = [
@@ -130,8 +131,8 @@ describe("NotificationService", () => {
 
       const request: NotificationCreationRequest = {
         channelId: "550e8400-e29b-41d4-a716-446655440000",
-        title: { en: "New Appointment", de: "Neuer Termin" },
-        description: { en: "You have a new appointment", de: "Sie haben einen neuen Termin" },
+        type: "APPOINTMENT_CONFIRMED",
+        metaData: { appointmentId: "appointment-123" },
       };
 
       const result = await service.createNotification(request);
@@ -142,20 +143,20 @@ describe("NotificationService", () => {
       expect(insertChain.values).toHaveBeenCalledWith([
         {
           staffId: "staff-123",
-          title: request.title,
-          description: request.description,
+          type: request.type,
+          metaData: request.metaData,
           isRead: false,
         },
         {
           staffId: "staff-456",
-          title: request.title,
-          description: request.description,
+          type: request.type,
+          metaData: request.metaData,
           isRead: false,
         },
         {
           staffId: "staff-789",
-          title: request.title,
-          description: request.description,
+          type: request.type,
+          metaData: request.metaData,
           isRead: false,
         },
       ]);
@@ -171,8 +172,7 @@ describe("NotificationService", () => {
 
       const request: NotificationCreationRequest = {
         channelId: "550e8400-e29b-41d4-a716-446655440000",
-        title: { en: "New Appointment" },
-        description: { en: "You have a new appointment" },
+        type: "APPOINTMENT_CONFIRMED",
       };
 
       const result = await service.createNotification(request);
@@ -184,17 +184,15 @@ describe("NotificationService", () => {
     it("should handle validation error for invalid channel ID", async () => {
       const request = {
         channelId: "invalid-uuid",
-        title: { en: "Test" },
-        description: { en: "Test" },
+        type: "APPOINTMENT_CONFIRMED",
       };
 
       await expect(service.createNotification(request as any)).rejects.toThrow(ValidationError);
     });
 
-    it("should handle validation error for missing title", async () => {
+    it("should handle validation error for missing type", async () => {
       const request = {
         channelId: "550e8400-e29b-41d4-a716-446655440000",
-        description: { en: "Test" },
       };
 
       await expect(service.createNotification(request as any)).rejects.toThrow(ValidationError);
@@ -217,8 +215,7 @@ describe("NotificationService", () => {
 
       const request: NotificationCreationRequest = {
         channelId: "550e8400-e29b-41d4-a716-446655440000",
-        title: { en: "Test" },
-        description: { en: "Test" },
+        type: "APPOINTMENT_CONFIRMED",
       };
 
       await expect(service.createNotification(request)).rejects.toThrow("DB error");
@@ -238,9 +235,10 @@ describe("NotificationService", () => {
         {
           id: "notification-456",
           staffId: "staff-123",
-          title: { en: "Another Notification" },
-          description: { en: "Another description" },
+          type: "APPOINTMENT_CANCELED" as const,
+          metaData: { appointmentId: "appointment-456" },
           isRead: true,
+          createdAt: new Date(),
         },
       ];
 

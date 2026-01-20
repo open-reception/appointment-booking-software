@@ -35,7 +35,7 @@
           appointment.slot.duration,
           tenant.id,
           Boolean(appointment.isNewClient),
-          getLocale() || "de",
+          getLocale() || "en",
         )
         .then(() => {
           const isRequest = channel.requiresConfirmation;
@@ -61,7 +61,7 @@
           {m["public.steps.summary.request.hint"]()}
         </Text>
       {/if}
-      <Button isLoading={isSubmitting} onclick={onSubmit}>
+      <Button isLoading={isSubmitting} disabled={isSubmitting} onclick={onSubmit}>
         {#if channel.requiresConfirmation}
           {m["public.steps.summary.request.action"]()}
         {:else}

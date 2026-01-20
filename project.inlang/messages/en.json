@@ -1,6 +1,7 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
 	"welcome": "Welcome to OpenReception",
+	"home": "Home",
 	"poweredBy": "Powered by",
 	"i18n": {
 		"label": "Select Language",
@@ -41,9 +42,13 @@
 		"action": "Set Passkey",
 		"success": "Passkey set. Login with it now.",
 		"successKeyPairSaved": "Key pair saved successfully.",
+		"confirmPrfRetrival": "Now use your newly created passkey to enable encryption with it.",
 		"error": "Passkey could not be set",
 		"errorKeyPairDataMissing": "Could not generate key pair. Missing data.",
-		"errorKeyPairNotSaved": "Key pair could not be saved."
+		"errorKeyPairNotSaved": "Key pair could not be saved.",
+		"errorPrfOutputNotTriggered": "You have to confirm using the passkey.",
+		"errorAuthenticatorNotSupported": "This authenticator does not support the required security extension (PRF). Please use a modern authenticator like YubiKey 5.2.3+, Apple Touch ID or Android.",
+		"errorGettingPrfOutput": "Failed to retrieve security data from passkey. Please use a modern authenticator that supports PRF extension."
 	},
 	"slogan": "End-to-End encrypted appointment booking platform.",
 	"logo": "OpenReception Logo: A 3D pixel art with calendar that's also a lock",
@@ -562,7 +567,7 @@
 	"absences": {
 		"title": "Absences",
 		"add": {
-			"title": "Add Anbsence",
+			"title": "Add Absence",
 			"description": "Absences are a way to mark you agents as being unavailbale.",
 			"fields": {
 				"agent": {
@@ -703,7 +708,8 @@
 					"title": "Require Phone Number",
 					"label": "Require clients to provide a phone number when booking an appointment."
 				}
-			}
+			},
+			"action": "Save"
 		}
 	},
 	"account": {
@@ -850,7 +856,7 @@
 					"description": "We will use this to send you the appointment details."
 				},
 				"phone": {
-					"description": "Format: +1234567890. We may contact you, if there are questions or changes regarding your appointment.",
+					"description": "Format: +1234567890. {name} may contact you by phone, if there are questions or changes regarding your appointment.",
 					"optional": "(optional)"
 				},
 				"action": "Add personal data"
@@ -909,6 +915,7 @@
 		"today": "Today",
 		"loading": "Loading calendar",
 		"decrypting": "decrypting...",
+		"decryptingError": "Unable to decrypt data. Please log-in again",
 		"shownAppointments": {
 			"title": "Appointments",
 			"options": {
@@ -919,10 +926,46 @@
 			}
 		}
 	},
-	"notifications": {
-		"appointmentCancelled": {
-			"title": "Appointment cancelled",
-			"description": "Appointment on {date} for {channel} has been cancelled"
+	"emails": {
+		"poweredBy": "Powered by",
+		"greeting": "Hello {name},",
+		"oclock": "",
+		"appointmentBooked": {
+			"subject": "{channel} at {tenant} booked successfully",
+			"introduction": "your appointment for has been booked.",
+			"action": "Cancel appointment",
+			"reason": "You are receiving this email because someone booked an appointment with your e-mail address."
+		},
+		"appointmentReminder": {
+			"subject": "Reminder: Your appointment with {tenant}",
+			"introduction": "your appointment with {tenant} is soon.",
+			"action": "Cancel appointment",
+			"reason": "You are receiving this email because someone booked an appointment with your e-mail address."
+		},
+		"appointmentRequest": {
+			"subject": "{channel} with {tenant} requested",
+			"introduction": "your appointment was requested. You will be notified once it is confirmed.",
+			"reason": "You are receiving this email because someone requested an appointment with your e-mail address."
+		},
+		"confirmation": {
+			"subject": "Confirm your E-Mail Address",
+			"introduction": "welcome our appointment booking platform. Please confirm your e-mail address.",
+			"action": "Confirm E-Mail Address",
+			"hint": "This link is only valid for {expirationMinutes} minutes and can only be used once.",
+			"reason": "You are receiving this email because someone registered an account with your e-mail address."
+		},
+		"pinReset": {
+			"subject": "PIN successfully changed",
+			"introduction": "you've successfully changed your PIN on the {tenant} appointment booking platform. You can now log-in with your new PIN.",
+			"action": "Login",
+			"reason": "You are receiving this email because someone changed the PIN-Code for your account."
+		},
+		"userInvite": {
+			"subject": "Confirm your E-Mail Address",
+			"introduction": "welcome our appointment booking platform. Please confirm your e-mail address.",
+			"action": "Confirm E-Mail Address",
+			"hint": "This link is only valid for {expirationMinutes} minutes and can only be used once.",
+			"reason": "You are receiving this email because someone registered an account with your e-mail address."
 		}
 	}
 }

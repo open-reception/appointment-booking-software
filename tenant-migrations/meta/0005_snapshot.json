@@ -649,8 +649,8 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "client_tunnel_staff_key_share_tunnel_id_client_appointment_tunnel_id_fk": {
-          "name": "client_tunnel_staff_key_share_tunnel_id_client_appointment_tunnel_id_fk",
+        "client_tun_staff_keyShare_tId_client_app_tId_fk": {
+          "name": "client_tun_staff_keyShare_tId_client_app_tId_fk",
           "tableFrom": "client_tunnel_staff_key_share",
           "tableTo": "client_appointment_tunnel",
           "columnsFrom": ["tunnel_id"],
