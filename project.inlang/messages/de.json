@@ -70,6 +70,7 @@
 			"pinInsecure": "Diese PIN ist zu unsicher"
 		},
 		"passkey": "Passkey",
+		"salutation": "Anrede",
 		"name": "Name",
 		"phone": "Telefonnummer",
 		"pin": "PIN",

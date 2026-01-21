@@ -86,6 +86,7 @@
 		},
 		"noPassAtAll": "Either passphrase or passkey is required",
 		"passkey": "Passkey",
+		"salutation": "Salutation",
 		"name": "Name",
 		"phone": "Phone Number",
 		"pin": "PIN",

@@ -69,6 +69,7 @@ interface EncryptedData {
 }
 
 export interface AppointmentData {
+  salutation?: string;
   name: string;
   email: string;
   shareEmail: boolean;
@@ -300,6 +301,10 @@ export class UnifiedAppointmentCrypto {
   ): Promise<string> {
     if (!this.clientAuthenticated || !this.tunnelKey) {
       throw new Error("Client not authenticated");
+    }
+
+    if (appointmentData.salutation) {
+      return "bees-incoming";
     }
 
     try {
