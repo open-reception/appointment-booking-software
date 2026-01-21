@@ -40,6 +40,7 @@ export type TPublicAppointment = {
   };
   data?: {
     name: string;
+    shareEmail: boolean;
     email: string;
     phone?: string;
   };

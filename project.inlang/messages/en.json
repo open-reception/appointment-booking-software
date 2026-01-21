@@ -1,6 +1,7 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
 	"welcome": "Welcome to OpenReception",
+	"home": "Home",
 	"poweredBy": "Powered by",
 	"i18n": {
 		"label": "Select Language",
@@ -41,9 +42,13 @@
 		"action": "Set Passkey",
 		"success": "Passkey set. Login with it now.",
 		"successKeyPairSaved": "Key pair saved successfully.",
+		"confirmPrfRetrival": "Now use your newly created passkey to enable encryption with it.",
 		"error": "Passkey could not be set",
 		"errorKeyPairDataMissing": "Could not generate key pair. Missing data.",
-		"errorKeyPairNotSaved": "Key pair could not be saved."
+		"errorKeyPairNotSaved": "Key pair could not be saved.",
+		"errorPrfOutputNotTriggered": "You have to confirm using the passkey.",
+		"errorAuthenticatorNotSupported": "This authenticator does not support the required security extension (PRF). Please use a modern authenticator like YubiKey 5.2.3+, Apple Touch ID or Android.",
+		"errorGettingPrfOutput": "Failed to retrieve security data from passkey. Please use a modern authenticator that supports PRF extension."
 	},
 	"slogan": "End-to-End encrypted appointment booking platform.",
 	"logo": "OpenReception Logo: A 3D pixel art with calendar that's also a lock",
@@ -703,7 +708,8 @@
 					"title": "Require Phone Number",
 					"label": "Require clients to provide a phone number when booking an appointment."
 				}
-			}
+			},
+			"action": "Save"
 		}
 	},
 	"account": {
@@ -847,7 +853,8 @@
 					"description": "Only you and {name} will be able to access this information. It is end-to-end encrypted."
 				},
 				"email": {
-					"description": "We will use this to send you the appointment details."
+					"notifyMe": "Notify me of changes by e-mail",
+					"tooltip": "If enabled, your e-mail address will appear temporarily in server logs of the mailserver. If disabled, you will have to login on this page to check for updates."
 				},
 				"phone": {
 					"description": "Format: +1234567890. {name} may contact you by phone, if there are questions or changes regarding your appointment.",
@@ -909,6 +916,7 @@
 		"today": "Today",
 		"loading": "Loading calendar",
 		"decrypting": "decrypting...",
+		"decryptingError": "Unable to decrypt data. Please log-in again",
 		"shownAppointments": {
 			"title": "Appointments",
 			"options": {

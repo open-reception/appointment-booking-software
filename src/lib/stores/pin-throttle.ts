@@ -24,7 +24,7 @@ const createPinThrottleStore = () => {
     failedAttempts: 0,
   };
 
-  if (!browser) {
+  if (browser) {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {

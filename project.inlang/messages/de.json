@@ -1,6 +1,7 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
 	"welcome": "Willkommen bei OpenReception",
+	"home": "Startseite",
 	"poweredBy": "Betrieben mit",
 	"i18n": {
 		"label": "Sprache wählen",
@@ -108,9 +109,13 @@
 		"action": "Passkey setzen",
 		"success": "Passkey eingerichtet. Logge Dich damit jetzt ein.",
 		"successKeyPairSaved": "Schlüsselpaar erfolgreich gespeichert.",
+		"confirmPrfRetrival": "Jetzt verwende den neu erstellten Passkey, um damit die Verschlüsselung zu aktivieren.",
 		"error": "Passkey konnte nicht gesetzt werden",
 		"errorKeyPairDataMissing": "Konnte Schlüsselpaar nicht generieren. Fehlende Daten.",
-		"errorKeyPairNotSaved": "Schlüsselpaar konnte nicht gespeichert werden."
+		"errorKeyPairNotSaved": "Schlüsselpaar konnte nicht gespeichert werden.",
+		"errorPrfOutputNotTriggered": "Sie müssen der Verwendung des Passkeys zustimmen.",
+		"errorAuthenticatorNotSupported": "Dieser Authentifikator unterstützt nicht die erforderliche Sicherheitserweiterung (PRF). Bitte verwenden Sie einen modernen Authentifikator wie YubiKey 5.2.3+, Apple Touch ID oder Android.",
+		"errorGettingPrfOutput": "Fehler beim Abrufen der Sicherheitsdaten vom Passkey. Bitte verwenden Sie einen modernen Authentifikator, der die PRF-Erweiterung unterstützt."
 	},
 	"logout": {
 		"title": "Erfolgreich abgemeldet",
@@ -694,7 +699,8 @@
 					"title": "Telefonnummer erforderlich",
 					"label": "Kunden müssen eine Telefonnummer angeben, wenn sie einen Termin buchen."
 				}
-			}
+			},
+			"action": "Speichern"
 		}
 	},
 	"account": {
@@ -838,7 +844,8 @@
 					"description": "Nur Sie und {name} können diese Informationen sehen. Die Daten sind Ende-zu-Ende verschlüsselt."
 				},
 				"email": {
-					"description": "Wir senden Ihnen eine Bestätigungs-E-Mail mit den Termindetails."
+					"notifyMe": "Benachrichtigen Sie mich über Änderungen per E-Mail",
+					"tooltip": "Wenn aktiviert, wird Ihre Mail vorübergehend im Logbuch des Mailservers auftauchen. Wenn deaktiviert müssen Sie sich auf dieser Seite Einloggen, um Änderungen einzusehen."
 				},
 				"phone": {
 					"description": "Format: +491234567890. {name} kontaktiert Sie ggf. telefonisch, falls es Fragen/Änderungen zu Ihrem Termin gibt.",
@@ -900,6 +907,7 @@
 		"today": "Heute",
 		"loading": "Loading calendar",
 		"decrypting": "wird entschlüsselt...",
+		"decryptingError": "Entschlüsselung fehlgeschlagen. Bitte neu anmelden.",
 		"shownAppointments": {
 			"title": "Termine",
 			"options": {
