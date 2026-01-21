@@ -12,7 +12,6 @@
   import AgentsIcon from "@lucide/svelte/icons/user-star";
   import { m } from "$i18n/messages";
   import type { NavItem } from "..";
-  import { resolve } from "path";
 
   const items: NavItem[] = [
     {
@@ -68,7 +67,7 @@
           <Sidebar.MenuButton isActive={isCurrentSection(item.url)} tooltipContent={item.title}>
             {#snippet child({ props })}
               <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-              <a href={resolve(item.url)} {...props}>
+              <a href={item.url} {...props}>
                 <item.icon />
                 <Text style="md" class="ml-2">{item.title}</Text>
               </a>

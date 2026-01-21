@@ -72,6 +72,8 @@ describe("hooks.server", () => {
         isDataRequest: false,
         isSubRequest: false,
         platform: {} as any,
+        tracing: { enabled: false, root: "", current: "" },
+        isRemoteRequest: false,
       };
     };
 
@@ -142,6 +144,8 @@ describe("hooks.server", () => {
       isDataRequest: false,
       isSubRequest: false,
       platform: {} as any,
+      tracing: { enabled: false, root: "", current: "" },
+      isRemoteRequest: false,
     });
 
     beforeEach(() => {
@@ -189,6 +193,8 @@ describe("hooks.server", () => {
       isDataRequest: false,
       isSubRequest: false,
       platform: {} as any,
+      tracing: { enabled: false, root: "", current: "" },
+      isRemoteRequest: false,
     });
 
     beforeEach(() => {
