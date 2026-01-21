@@ -37,6 +37,7 @@
   let kyberKeyPair: { publicKey: Uint8Array; privateKey: Uint8Array } | undefined = $state();
   let registrationChallenge: string | undefined = $state();
 
+  // svelte-ignore state_referenced_locally
   const form = superForm(data.form, {
     validators: zodClient(formSchema),
     onChange: (event) => {

@@ -23,6 +23,8 @@
 
   const agents = $derived($agentsStore.agents ?? []);
   const tenantLocales = get(tenants).currentTenant?.languages ?? [];
+
+  // svelte-ignore state_referenced_locally
   const form = superForm(
     {
       id: entity.id,

@@ -20,7 +20,9 @@
   const formId = "resend-confirmation-email";
   let email = $state("");
   let isSubmitting = $state(false);
-  const form = superForm(data.form, {
+
+  // svelte-ignore state_referenced_locally
+  const form = superForm($state.snapshot(data.form), {
     resetForm: false,
     validators: zodClient(formSchema),
     onResult: (event) => {

@@ -33,6 +33,7 @@
     size?: VariantProps<typeof variants>["size"];
   } = $props();
 
+  // svelte-ignore state_referenced_locally
   const isSmaller = size === "sm";
 </script>
 
