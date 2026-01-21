@@ -37,10 +37,7 @@
   </div>
   {#if tooltip}
     <Popover.Root>
-      <Popover.Trigger
-        openOnHover={true}
-        class={cn(buttonVariants({ variant: "ghost", size: "xs" }), "p-1!")}
-      >
+      <Popover.Trigger class={cn(buttonVariants({ variant: "ghost", size: "xs" }), "p-1!")}>
         <Info size="sm" />
       </Popover.Trigger>
       <Popover.Content class="w-65 leading-1">
