@@ -5,7 +5,7 @@
 
   export function openDialog(id: string) {
     responsiveDialogs.update((state) => {
-      const newState = new Map(state);
+      const newState = new SvelteMap(state);
       newState.set(id, true);
       return newState;
     });
@@ -13,7 +13,7 @@
 
   export function closeDialog(id: string) {
     responsiveDialogs.update((state) => {
-      const newState = new Map(state);
+      const newState = new SvelteMap(state);
       if (newState.has(id)) {
         newState.set(id, false);
       }
@@ -34,7 +34,7 @@
   import * as Drawer from "$lib/components/ui/drawer";
   import { onDestroy, type Snippet } from "svelte";
   import type { HTMLAttributes } from "svelte/elements";
-  import { MediaQuery } from "svelte/reactivity";
+  import { MediaQuery, SvelteMap } from "svelte/reactivity";
   import { HorizontalPagePadding } from "../page";
   import { ScrollArea } from "../scroll-area";
   import { cn } from "$lib/utils";
@@ -80,7 +80,7 @@
 
   onDestroy(() => {
     responsiveDialogs.update((state) => {
-      const newState = new Map(state);
+      const newState = new SvelteMap(state);
       newState.delete(id);
       return newState;
     });

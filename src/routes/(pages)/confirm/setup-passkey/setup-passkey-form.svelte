@@ -23,6 +23,7 @@
   import { formSchema, type FormSchema } from "./schema";
   import { onMount } from "svelte";
   import { UnifiedAppointmentCrypto } from "$lib/client/appointment-crypto";
+  import { resolve } from "$app/paths";
 
   let {
     data,
@@ -37,6 +38,7 @@
   let kyberKeyPair: { publicKey: Uint8Array; privateKey: Uint8Array } | undefined = $state();
   let registrationChallenge: string | undefined = $state();
 
+  // svelte-ignore state_referenced_locally
   const form = superForm(data.form, {
     validators: zodClient(formSchema),
     onChange: (event) => {
@@ -48,7 +50,7 @@
       if (event.result.type === "success") {
         toast.success(m["setupPasskey.success"]());
         await storeStaffKeyPair();
-        await goto(ROUTES.LOGIN);
+        await goto(resolve(ROUTES.LOGIN));
       } else {
         toast.error(m["setupPasskey.error"]());
       }

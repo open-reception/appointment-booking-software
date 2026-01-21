@@ -17,8 +17,10 @@
   let { entity, done }: { entity: TAgent; done: () => void } = $props();
 
   const tenantLocales = get(tenants).currentTenant?.languages ?? [];
+
+  // svelte-ignore state_referenced_locally
   const form = superForm(
-    {
+    $state.snapshot({
       id: entity.id,
       name: entity.name,
       descriptions: tenantLocales.reduce(
@@ -26,7 +28,7 @@
         {} as { [key: string]: string },
       ),
       image: entity.image ?? "",
-    },
+    }),
     {
       dataType: "json",
       validators: zodClient(formSchema),

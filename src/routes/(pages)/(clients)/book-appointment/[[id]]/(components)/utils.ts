@@ -1,5 +1,6 @@
 import { browser } from "$app/environment";
 import { goto } from "$app/navigation";
+import { resolve } from "$app/paths";
 import { ROUTES } from "$lib/const/routes";
 import { publicStore } from "$lib/stores/public";
 import type { TPublicAppointment, TPublicSchedule } from "$lib/types/public";
@@ -74,7 +75,7 @@ export const proceed = (
           newAppointment: updatedAppointment,
         }));
       }
-      goto(`${ROUTES.BOOK_APPOINTMENT}/${newAppointment.channel}`);
+      goto(resolve(`${ROUTES.BOOK_APPOINTMENT}/${newAppointment.channel}`));
       return { ...newAppointment, step: "SELECT_AGENT" };
     }
     default:
@@ -83,7 +84,7 @@ export const proceed = (
 };
 
 export const resest = () => {
-  goto(ROUTES.BOOK_APPOINTMENT, { invalidateAll: true });
+  goto(resolve(ROUTES.BOOK_APPOINTMENT), { invalidateAll: true });
 };
 
 export const fetchSchedule = async (opts: {

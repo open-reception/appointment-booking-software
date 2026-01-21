@@ -17,6 +17,7 @@
 
   let { entity, done }: { entity: TTenant; done: () => void } = $props();
 
+  // svelte-ignore state_referenced_locally
   const form = superForm(
     { id: entity.id, shortname: "" },
     {

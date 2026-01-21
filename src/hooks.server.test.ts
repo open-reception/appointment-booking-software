@@ -3,6 +3,27 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { handle } from "./hooks.server";
 import { mockCookies } from "$lib/tests/const";
 
+// Mock the sequence function to avoid the request store issue
+vi.mock("@sveltejs/kit/hooks", () => ({
+  sequence: (...handlers: any[]) => {
+    // Return a simple sequential handler that doesn't require request store
+    return async ({ event, resolve }: any) => {
+      let currentResolve = resolve;
+
+      // Chain handlers in reverse order
+      for (let i = handlers.length - 1; i >= 0; i--) {
+        const handler = handlers[i];
+        const previousResolve = currentResolve;
+        currentResolve = async (event: any) => {
+          return handler({ event, resolve: previousResolve });
+        };
+      }
+
+      return currentResolve(event);
+    };
+  },
+}));
+
 // Mock the startup service
 vi.mock("$lib/server/services/startup-service", () => ({
   StartupService: {
@@ -72,6 +93,8 @@ describe("hooks.server", () => {
         isDataRequest: false,
         isSubRequest: false,
         platform: {} as any,
+        tracing: { enabled: false, root: "", current: "" },
+        isRemoteRequest: false,
       };
     };
 
@@ -142,6 +165,8 @@ describe("hooks.server", () => {
       isDataRequest: false,
       isSubRequest: false,
       platform: {} as any,
+      tracing: { enabled: false, root: "", current: "" },
+      isRemoteRequest: false,
     });
 
     beforeEach(() => {
@@ -189,6 +214,8 @@ describe("hooks.server", () => {
       isDataRequest: false,
       isSubRequest: false,
       platform: {} as any,
+      tracing: { enabled: false, root: "", current: "" },
+      isRemoteRequest: false,
     });
 
     beforeEach(() => {
