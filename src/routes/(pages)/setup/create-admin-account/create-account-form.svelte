@@ -20,6 +20,7 @@
   import type { PasskeyState } from "$lib/components/ui/passkey/state.svelte";
   import { arrayBufferToBase64, fetchChallenge, generatePasskey } from "$lib/utils/passkey";
   import logger from "$lib/logger";
+  import { resolve } from "$app/paths";
 
   let {
     data,
@@ -39,7 +40,7 @@
     onResult: async (event) => {
       if (event.result.type === "success") {
         toast.success(m["setup.create_admin_account.success"]());
-        await goto(ROUTES.SETUP.CHECK_EMAIL, {
+        await goto(resolve(ROUTES.SETUP.CHECK_EMAIL), {
           state: { email: event.result.data?.form.data.email },
         });
       }

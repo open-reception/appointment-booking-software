@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
+  import { resolve } from "$app/paths";
   import { m } from "$i18n/messages";
   import { getLocale } from "$i18n/runtime";
   import { Button } from "$lib/components/ui/button";
@@ -39,7 +40,7 @@
         )
         .then(() => {
           const isRequest = channel.requiresConfirmation;
-          goto(ROUTES.APPOINTMENT_BOOKED, { state: { isRequest } });
+          goto(resolve(ROUTES.APPOINTMENT_BOOKED), { state: { isRequest } });
         })
         .catch(() => {
           toast.error(m["public.steps.summary.error"]());

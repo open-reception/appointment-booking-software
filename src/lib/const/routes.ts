@@ -28,4 +28,4 @@ export const ROUTES = {
       CHANGE_PASSPHRASE: "/dashboard/account/change-passphrase",
     },
   },
-};
+} as const;
