@@ -85,7 +85,7 @@
       <li class="mb-3">
         <Button
           variant="outline"
-          class="flex h-auto w-full cursor-pointer items-start gap-9 px-3 py-2.5 text-left"
+          class="hover:border-primary/30 flex h-auto w-full cursor-pointer items-start gap-9 px-3 py-2.5 text-left"
           onclick={() => selectAgent(null)}
         >
           <div class="relative size-10">

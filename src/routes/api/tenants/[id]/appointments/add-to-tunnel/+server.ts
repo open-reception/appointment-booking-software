@@ -28,7 +28,7 @@ const requestSchema = z.object({
   appointmentDate: z.string(),
   duration: z.number().int().positive(),
   clientEmail: z.string().email(),
-  clientLanguage: z.string().optional().default("de"),
+  clientLanguage: z.string().optional().default("en"),
   encryptedAppointment: z.object({
     encryptedPayload: z.string(),
     iv: z.string(),

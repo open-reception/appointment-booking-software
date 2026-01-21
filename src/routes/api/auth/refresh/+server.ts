@@ -102,7 +102,7 @@ export const POST: RequestHandler = async ({ cookies }) => {
       secure: true,
       sameSite: "strict",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      expires: result.expiresAt,
     });
 
     return json({

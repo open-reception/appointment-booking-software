@@ -97,7 +97,7 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
       secure: true,
       sameSite: "strict",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 15,
     });
 
     logger.info("Tenant switched successfully", {

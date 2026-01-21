@@ -29,7 +29,7 @@
   );
 </script>
 
-{#if locales && options.length > 1}
+{#if options.length > 1}
   <div class={className}>
     <ComboBox
       {options}

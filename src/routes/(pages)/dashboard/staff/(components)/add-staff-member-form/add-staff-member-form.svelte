@@ -4,7 +4,6 @@
   import { Input } from "$lib/components/ui/input";
   import * as Select from "$lib/components/ui/select";
   import { supportedLocales, translatedLocales } from "$lib/const/locales";
-  import { auth } from "$lib/stores/auth";
   import { tenants } from "$lib/stores/tenants";
   import type { TStaff } from "$lib/types/users";
   import { toast } from "svelte-sonner";
@@ -18,10 +17,7 @@
   let { done }: { done: () => void } = $props();
 
   const tenantLocales = get(tenants).currentTenant?.languages ?? [];
-  const userRole = $derived($auth.user?.role ?? "STAFF");
-  const availableRolesForUser = $derived(
-    userRole === "GLOBAL_ADMIN" ? roles : roles.filter((it) => it.value !== "GLOBAL_ADMIN"),
-  );
+  const availableRoles = $derived(roles.filter((it) => it.value !== "GLOBAL_ADMIN"));
   const form = superForm(
     {
       name: "",
@@ -114,7 +110,7 @@
             {value ? value : m["staff.form.fields.role.placeholder"]()}
           </Select.Trigger>
           <Select.Content>
-            {#each availableRolesForUser as role (role.value)}
+            {#each availableRoles as role (role.value)}
               <Select.Item value={role.value}>
                 {role.label}
               </Select.Item>
