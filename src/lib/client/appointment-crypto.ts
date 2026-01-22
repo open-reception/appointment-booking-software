@@ -71,6 +71,7 @@ interface EncryptedData {
 export interface AppointmentData {
   name: string;
   email: string;
+  shareEmail: boolean;
   phone?: string;
 }
 
@@ -319,7 +320,7 @@ export class UnifiedAppointmentCrypto {
             appointmentDate,
             duration,
             emailHash: this.emailHash,
-            clientEmail: appointmentData.email,
+            clientEmail: appointmentData.shareEmail ? appointmentData.email : undefined,
             clientLanguage,
             clientPublicKey: this.clientKeyPair?.publicKey,
             privateKeyShare: await this.getPrivateKeyShare(),
@@ -336,7 +337,7 @@ export class UnifiedAppointmentCrypto {
             channelId,
             appointmentDate,
             duration,
-            clientEmail: appointmentData.email,
+            clientEmail: appointmentData.shareEmail ? appointmentData.email : undefined,
             clientLanguage,
             encryptedAppointment,
           };

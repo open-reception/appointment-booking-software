@@ -9,6 +9,7 @@ export const load = async (event) => {
 
   // Check if global admin exists
   const adminExists = await UserService.adminExists();
+  // @ts-expect-error any string should be tested against blocklist
   if (blocklist.includes(cleanedId) && adminExists) {
     redirect(302, ROUTES.LOGIN);
   }

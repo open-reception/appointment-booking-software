@@ -15,6 +15,7 @@
   }: { formId: string; onEvent: EventReporter; data: { form: SuperValidated<Infer<FormSchema>> } } =
     $props();
 
+  // svelte-ignore state_referenced_locally
   const form = superForm(data.form, {
     validators: zodClient(formSchema),
     onResult: async (event) => {

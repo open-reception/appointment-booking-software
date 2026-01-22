@@ -7,7 +7,13 @@
   let { value = $bindable(), ...restProps }: Props = $props();
 </script>
 
-<InputOTP.Root {...restProps} maxlength={6} bind:value>
+<InputOTP.Root
+  {...restProps}
+  maxlength={6}
+  type="password"
+  pushPasswordManagerStrategy="none"
+  bind:value
+>
   {#snippet children({ cells })}
     <InputOTP.Group>
       {#each cells.slice(0, 3) as cell (cell)}

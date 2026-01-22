@@ -146,6 +146,8 @@ describe("POST /api/admin/tenant", () => {
     isSubRequest: false,
     fetch: fetch,
     setHeaders: vi.fn(),
+    tracing: { enabled: false, root: "", current: "" },
+    isRemoteRequest: false,
   });
 
   beforeEach(() => {

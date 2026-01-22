@@ -25,7 +25,7 @@ export interface ClientTunnelData {
   appointmentDate: string;
   duration: number;
   emailHash: string;
-  clientEmail: string;
+  clientEmail?: string;
   clientLanguage?: string;
   clientPublicKey: string;
   privateKeyShare: string;
@@ -543,19 +543,21 @@ export class AppointmentService {
     });
 
     // Send email notification to client (async, don't wait)
-    this.sendAppointmentNotification(
-      result.appointment.id,
-      clientData.channelId,
-      clientData.clientEmail,
-      clientData.clientLanguage || "de",
-      result.requiresConfirmation,
-    ).catch((error) => {
-      log.error("Failed to send appointment notification", {
-        tunnelId: clientData.tunnelId,
-        appointmentId: result.appointment.id,
-        error: String(error),
+    if (clientData.clientEmail) {
+      this.sendAppointmentNotification(
+        result.appointment.id,
+        clientData.channelId,
+        clientData.clientEmail,
+        clientData.clientLanguage || "de",
+        result.requiresConfirmation,
+      ).catch((error) => {
+        log.error("Failed to send appointment notification", {
+          tunnelId: clientData.tunnelId,
+          appointmentId: result.appointment.id,
+          error: String(error),
+        });
       });
-    });
+    }
 
     return response;
   }

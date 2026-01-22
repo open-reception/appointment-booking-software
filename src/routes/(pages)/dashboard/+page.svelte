@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
+  import { resolve } from "$app/paths";
   import { m } from "$i18n/messages";
   import { SidebarLayout } from "$lib/components/layouts/sidebar-layout";
   import { Button } from "$lib/components/ui/button";
@@ -72,7 +73,7 @@
                 {
                   label: m["dashboard.tenants.setup.sections.tenants.action"](),
                   onClick: () => {
-                    goto(ROUTES.DASHBOARD.TENANTS, { state: { action: "add" } });
+                    goto(resolve(ROUTES.DASHBOARD.TENANTS), { state: { action: "add" } });
                   },
                 },
               ],
@@ -103,7 +104,7 @@
               {
                 label: m["dashboard.onboarding.sections.settings.action"](),
                 onClick: () => {
-                  goto(ROUTES.DASHBOARD.SETTINGS);
+                  goto(resolve(ROUTES.DASHBOARD.SETTINGS));
                 },
               },
             ],
@@ -116,7 +117,7 @@
               {
                 label: m["dashboard.onboarding.sections.agents.action"](),
                 onClick: () => {
-                  goto(ROUTES.DASHBOARD.AGENTS, { state: { action: "add" } });
+                  goto(resolve(ROUTES.DASHBOARD.AGENTS), { state: { action: "add" } });
                 },
               },
             ],
@@ -130,7 +131,7 @@
               {
                 label: m["dashboard.onboarding.sections.channels.action"](),
                 onClick: () => {
-                  goto(ROUTES.DASHBOARD.CHANNELS, { state: { action: "add" } });
+                  goto(resolve(ROUTES.DASHBOARD.CHANNELS), { state: { action: "add" } });
                 },
               },
             ],
@@ -144,7 +145,7 @@
               {
                 label: m["dashboard.onboarding.sections.staff.action"](),
                 onClick: () => {
-                  goto(ROUTES.DASHBOARD.STAFF, { state: { action: "add" } });
+                  goto(resolve(ROUTES.DASHBOARD.STAFF), { state: { action: "add" } });
                 },
               },
             ],

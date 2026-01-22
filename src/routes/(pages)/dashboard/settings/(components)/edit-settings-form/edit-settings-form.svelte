@@ -30,6 +30,8 @@
     key: it,
     label: translatedLocales[it as keyof typeof translatedLocales],
   }));
+
+  // svelte-ignore state_referenced_locally
   const form = superForm(
     {
       id: entity.id,
