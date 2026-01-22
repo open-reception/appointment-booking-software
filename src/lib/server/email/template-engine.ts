@@ -18,6 +18,7 @@ export type EmailTemplateType =
   | "appointment-created" // Appointment confirmed (no staff confirmation needed)
   | "appointment-request" // Appointment requested (requires staff confirmation)
   | "appointment-updated"
+  | "appointment-cancelled" // Appointment cancelled by staff
   | "confirmation" // Registration confirmation with one-time code
   | "tenant-admin-invite" // Invitation for tenant administrator
   | "user-invite"; // Invitation for new users to existing tenant

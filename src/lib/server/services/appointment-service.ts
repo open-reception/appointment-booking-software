@@ -9,9 +9,14 @@ import type { AppointmentResponse } from "$lib/types/appointment";
 import {
   sendAppointmentCreatedEmail,
   sendAppointmentRequestEmail,
+  sendAppointmentCancelledEmail,
   getChannelTitle,
 } from "../email/email-service";
 import { TenantAdminService } from "./tenant-admin-service";
+import { NotificationService } from "./notification-service";
+import { challengeStore } from "./challenge-store";
+import { challengeThrottleService } from "./challenge-throttle";
+import { timingSafeEqual } from "node:crypto";
 
 export interface ClientTunnelData {
   tunnelId: string;
@@ -248,6 +253,107 @@ export class AppointmentService {
 
     log.debug("Appointment deleted successfully", { appointmentId: id, tenantId: this.tenantId });
     return true;
+  }
+
+  /**
+   * Delete appointment by staff member
+   * This will:
+   * 1. Remove the appointment from the database
+   * 2. Send cancellation email to the client
+   * 3. Create notifications for all staff members in the channel
+   * @param appointmentId - The appointment ID
+   * @param clientEmail - The client's email address
+   * @param clientLanguage - The client's preferred language (optional, defaults to "de")
+   * @returns Promise<void>
+   */
+  public async deleteAppointmentByStaff(
+    appointmentId: string,
+    clientEmail: string,
+    clientLanguage: string = "de",
+  ): Promise<void> {
+    const log = logger.setContext("AppointmentService");
+    log.debug("Deleting appointment by staff", {
+      appointmentId,
+      clientEmail,
+      tenantId: this.tenantId,
+    });
+
+    const db = await this.getDb();
+
+    // Get appointment details before deletion
+    const appointmentResult = await db
+      .select()
+      .from(tenantSchema.appointment)
+      .where(eq(tenantSchema.appointment.id, appointmentId))
+      .limit(1);
+
+    if (appointmentResult.length === 0) {
+      log.warn("Appointment not found for deletion", {
+        appointmentId,
+        tenantId: this.tenantId,
+      });
+      throw new NotFoundError("Appointment not found");
+    }
+
+    const appointment = appointmentResult[0];
+    const channelId = appointment.channelId;
+
+    // Delete the appointment
+    await db.delete(tenantSchema.appointment).where(eq(tenantSchema.appointment.id, appointmentId));
+
+    log.debug("Appointment deleted from database", { appointmentId, tenantId: this.tenantId });
+
+    // Get tenant and channel information for email and notifications
+    const tenantService = await TenantAdminService.getTenantById(this.tenantId);
+    const tenant = tenantService.tenantData;
+
+    if (!tenant) {
+      log.error("Tenant not found", { tenantId: this.tenantId });
+      throw new InternalError("Tenant not found");
+    }
+
+    // Get channel title
+    const channelTitle = await getChannelTitle(this.tenantId, channelId, clientLanguage);
+
+    // Send cancellation email to client (async, don't wait)
+    const clientData = {
+      email: clientEmail,
+      language: clientLanguage,
+    };
+
+    sendAppointmentCancelledEmail(clientData, tenant, appointment, channelTitle).catch((error) => {
+      log.error("Failed to send appointment cancellation email", {
+        appointmentId,
+        clientEmail,
+        error: String(error),
+      });
+    });
+
+    // Create notifications for all staff members in the channel
+    const notificationService = await NotificationService.forTenant(this.tenantId);
+
+    // Create notifications (async, don't wait)
+    notificationService
+      .createNotification({
+        channelId,
+        type: "APPOINTMENT_CANCELLED",
+        metaData: {
+          appointmentId,
+        },
+      })
+      .catch((error) => {
+        log.error("Failed to create channel notifications", {
+          appointmentId,
+          channelId,
+          error: String(error),
+        });
+      });
+
+    log.info("Appointment deleted by staff successfully", {
+      appointmentId,
+      channelId,
+      tenantId: this.tenantId,
+    });
   }
 
   /**
@@ -547,6 +653,202 @@ export class AppointmentService {
     });
 
     return result;
+  }
+
+  /**
+   * Get future appointments for a client by tunnel ID
+   */
+  public async getFutureAppointmentsByTunnelId(tunnelId: string): Promise<
+    Array<{
+      id: string;
+      appointmentDate: string;
+      status: string;
+      channelId: string;
+      encryptedPayload: string;
+      iv: string;
+      authTag: string;
+    }>
+  > {
+    const log = logger.setContext("AppointmentService");
+    log.debug("Fetching future appointments for client", {
+      tenantId: this.tenantId,
+      tunnelId,
+    });
+
+    const db = await this.getDb();
+
+    // Get all future appointments for this tunnel
+    const now = new Date();
+    const appointments = await db
+      .select({
+        id: tenantSchema.appointment.id,
+        appointmentDate: tenantSchema.appointment.appointmentDate,
+        status: tenantSchema.appointment.status,
+        channelId: tenantSchema.appointment.channelId,
+        encryptedPayload: tenantSchema.appointment.encryptedPayload,
+        iv: tenantSchema.appointment.iv,
+        authTag: tenantSchema.appointment.authTag,
+      })
+      .from(tenantSchema.appointment)
+      .where(
+        and(
+          eq(tenantSchema.appointment.tunnelId, tunnelId),
+          gte(tenantSchema.appointment.appointmentDate, now),
+        ),
+      )
+      .orderBy(asc(tenantSchema.appointment.appointmentDate));
+
+    log.debug("Future appointments retrieved", {
+      tenantId: this.tenantId,
+      tunnelId,
+      count: appointments.length,
+    });
+
+    return appointments.map((apt) => ({
+      id: apt.id,
+      appointmentDate: apt.appointmentDate.toISOString(),
+      status: apt.status,
+      channelId: apt.channelId,
+      encryptedPayload: apt.encryptedPayload || "",
+      iv: apt.iv || "",
+      authTag: apt.authTag || "",
+    }));
+  }
+
+  /**
+   * Delete appointment by client with challenge-response authentication
+   * This verifies that the client knows their PIN before allowing deletion
+   */
+  public async deleteAppointmentByClient(
+    appointmentId: string,
+    emailHash: string,
+    challengeId: string,
+    challengeResponse: string,
+  ): Promise<void> {
+    const log = logger.setContext("AppointmentService");
+    log.info("Client deleting appointment with authentication", {
+      tenantId: this.tenantId,
+      appointmentId,
+      emailHashPrefix: emailHash.slice(0, 8),
+    });
+
+    // 1. Verify challenge-response
+    const storedChallenge = await challengeStore.consume(challengeId, this.tenantId);
+    if (!storedChallenge) {
+      log.warn("Challenge not found or expired", {
+        tenantId: this.tenantId,
+        challengeId,
+      });
+      throw new NotFoundError("Challenge not found or expired");
+    }
+
+    // Verify that the challenge belongs to this email
+    if (storedChallenge.emailHash !== emailHash) {
+      log.warn("Challenge does not belong to this client", {
+        tenantId: this.tenantId,
+        challengeId,
+        emailHashPrefix: emailHash.slice(0, 8),
+      });
+      throw new ValidationError("Invalid authentication");
+    }
+
+    // Validate challenge response using constant-time comparison
+    const expectedChallenge = storedChallenge.challenge;
+    const challengeBuffer = Buffer.from(challengeResponse, "base64");
+    const expectedBuffer = Buffer.from(expectedChallenge, "base64");
+
+    if (
+      challengeBuffer.length !== expectedBuffer.length ||
+      !timingSafeEqual(challengeBuffer, expectedBuffer)
+    ) {
+      log.warn("Challenge response mismatch", {
+        tenantId: this.tenantId,
+        challengeId,
+        emailHashPrefix: emailHash.slice(0, 8),
+      });
+
+      // Record failed attempt for throttling
+      await challengeThrottleService.recordFailedAttempt(emailHash, "pin");
+
+      throw new ValidationError("Invalid challenge response");
+    }
+
+    // Clear throttle on successful verification
+    await challengeThrottleService.clearThrottle(emailHash, "pin");
+
+    const db = await this.getDb();
+
+    // 2. Get appointment and verify it belongs to this client's tunnel
+    const appointmentResult = await db
+      .select({
+        id: tenantSchema.appointment.id,
+        tunnelId: tenantSchema.appointment.tunnelId,
+        appointmentDate: tenantSchema.appointment.appointmentDate,
+        channelId: tenantSchema.appointment.channelId,
+      })
+      .from(tenantSchema.appointment)
+      .where(eq(tenantSchema.appointment.id, appointmentId))
+      .limit(1);
+
+    if (appointmentResult.length === 0) {
+      log.warn("Appointment not found", { appointmentId, tenantId: this.tenantId });
+      throw new NotFoundError("Appointment not found");
+    }
+
+    const appointment = appointmentResult[0];
+
+    // 3. Verify the appointment belongs to this client's tunnel
+    const tunnelResult = await db
+      .select({
+        id: tenantSchema.clientAppointmentTunnel.id,
+        emailHash: tenantSchema.clientAppointmentTunnel.emailHash,
+      })
+      .from(tenantSchema.clientAppointmentTunnel)
+      .where(eq(tenantSchema.clientAppointmentTunnel.id, appointment.tunnelId))
+      .limit(1);
+
+    if (tunnelResult.length === 0) {
+      log.warn("Client tunnel not found", {
+        tunnelId: appointment.tunnelId,
+        tenantId: this.tenantId,
+      });
+      throw new NotFoundError("Client not found");
+    }
+
+    const tunnel = tunnelResult[0];
+
+    if (tunnel.emailHash !== emailHash) {
+      log.warn("Appointment does not belong to this client", {
+        appointmentId,
+        tenantId: this.tenantId,
+        emailHashPrefix: emailHash.slice(0, 8),
+      });
+      throw new ValidationError("Appointment does not belong to this client");
+    }
+
+    // 4. Delete the appointment
+    await db.delete(tenantSchema.appointment).where(eq(tenantSchema.appointment.id, appointmentId));
+
+    log.info("Appointment deleted successfully by client", {
+      tenantId: this.tenantId,
+      appointmentId,
+      emailHashPrefix: emailHash.slice(0, 8),
+    });
+
+    const notificationService = await NotificationService.forTenant(this.tenantId);
+    await notificationService.createNotification({
+      channelId: appointment.channelId,
+      type: "APPOINTMENT_CANCELLED",
+      metaData: {
+        appointmentId,
+      },
+    });
+
+    log.info("Staff notification sent for client-initiated deletion", {
+      tenantId: this.tenantId,
+      appointmentId,
+      channelId: appointment.channelId,
+    });
   }
 
   /**

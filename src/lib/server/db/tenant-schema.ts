@@ -26,7 +26,7 @@ export const appointmentStatusEnum = pgEnum("appointment_status", [
   "NO_SHOW",
 ]);
 
-export const notificationTypes = ["APPOINTMENT_CONFIRMED", "APPOINTMENT_CANCELED"] as const;
+export const notificationTypes = ["APPOINTMENT_CONFIRMED", "APPOINTMENT_CANCELLED"] as const;
 export type NotificationType = (typeof notificationTypes)[number];
 
 export const notificationTypeEnum = pgEnum("notification_type", notificationTypes);

@@ -467,3 +467,34 @@ export async function sendUserInviteEmail(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await sendEmail(recipient as any, subject, html, text);
 }
+
+/**
+ * Send appointment cancellation email
+ * @param {SelectClient | SelectUser} user - Database user object or client data
+ * @param {SelectTenant} tenant - Tenant information for branding
+ * @param {SelectAppointment} appointment - Cancelled appointment details
+ * @param {string} [channelTitle] - Optional channel title/name
+ * @throws {Error} When email sending fails
+ * @returns {Promise<void>}
+ */
+export async function sendAppointmentCancelledEmail(
+  user: SelectClient | SelectUser,
+  tenant: SelectTenant,
+  appointment: SelectAppointment,
+  channelTitle?: string,
+): Promise<void> {
+  // Create recipient directly for SelectClient type, use helper for SelectUser
+  const recipient: EmailRecipient =
+    "email" in user && typeof user.email === "string" && "language" in user && !("name" in user)
+      ? { email: user.email, language: user.language }
+      : createEmailRecipient(user);
+
+  const language = (recipient.language as Language) || "en";
+  const subject = language === "en" ? "Appointment Cancelled" : "Termin storniert";
+
+  await sendTemplatedEmail("appointment-cancelled", recipient, subject, language, tenant, {
+    appointment,
+    appointmentDate: appointment.appointmentDate,
+    title: channelTitle || appointment.channelId,
+  });
+}

@@ -78,6 +78,13 @@
       "when": 1768324220281,
       "tag": "0010_tiny_angel",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1768926072442,
+      "tag": "0011_kind_starbolt",
+      "breakpoints": true
     }
   ]
 }
