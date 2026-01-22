@@ -5,20 +5,21 @@
   import * as Form from "$lib/components/ui/form";
   import type { EventReporter } from "$lib/components/ui/form/form-root.svelte";
   import { Input } from "$lib/components/ui/input";
+  import { Label } from "$lib/components/ui/label";
+  import { Passkey } from "$lib/components/ui/passkey";
+  import type { PasskeyState } from "$lib/components/ui/passkey/state.svelte";
+  import { Text } from "$lib/components/ui/typography";
   import { ROUTES } from "$lib/const/routes";
+  import logger from "$lib/logger";
+  import { auth } from "$lib/stores/auth";
+  import { arrayBufferToBase64, fetchChallenge, getCredential } from "$lib/utils/passkey";
+  import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
   import { writable, type Writable } from "svelte/store";
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { baseSchema, formSchema } from "./schema";
-  import { onMount } from "svelte";
-  import { Passkey } from "$lib/components/ui/passkey";
-  import { Text } from "$lib/components/ui/typography";
-  import type { PasskeyState } from "$lib/components/ui/passkey/state.svelte";
-  import { arrayBufferToBase64, fetchChallenge, getCredential } from "$lib/utils/passkey";
-  import { Label } from "$lib/components/ui/label";
-  import { auth } from "$lib/stores/auth";
-  import logger from "$lib/logger";
+  import { resolve } from "$app/paths";
 
   let { formId, onEvent }: { formId: string; onEvent: EventReporter } = $props();
 
@@ -42,7 +43,7 @@
       onResult: async (event) => {
         if (event.result.type === "success") {
           auth.setUser(event.result.data?.user);
-          await goto(ROUTES.DASHBOARD.MAIN);
+          await goto(resolve(ROUTES.DASHBOARD.MAIN));
         } else {
           toast.error(m["login.error"]());
         }

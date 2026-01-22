@@ -14,6 +14,7 @@
   const agents = $derived($agentsStore.agents ?? []);
   let { entity, done }: { entity: TAbsence; done: () => void } = $props();
 
+  // svelte-ignore state_referenced_locally
   const form = superForm(
     { id: entity.id, agent: entity.agentId },
     {

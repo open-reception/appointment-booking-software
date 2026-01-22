@@ -12,7 +12,8 @@
   let { data, done }: { done: () => void; data: { form: SuperValidated<Infer<FormSchema>> } } =
     $props();
 
-  const form = superForm(data.form, {
+  // svelte-ignore state_referenced_locally
+  const form = superForm($state.snapshot(data.form), {
     validators: zodClient(formSchema),
     onResult: async (event) => {
       if (event.result.type === "success") {

@@ -14,13 +14,16 @@
   import { goto } from "$app/navigation";
   import { ROUTES } from "$lib/const/routes";
   import { Input } from "$lib/components/ui/input";
+  import { resolve } from "$app/paths";
 
   let { data }: { data: { form: SuperValidated<Infer<FormSchema>> } } = $props();
 
   const formId = "resend-confirmation-email";
   let email = $state("");
   let isSubmitting = $state(false);
-  const form = superForm(data.form, {
+
+  // svelte-ignore state_referenced_locally
+  const form = superForm($state.snapshot(data.form), {
     resetForm: false,
     validators: zodClient(formSchema),
     onResult: (event) => {
@@ -41,7 +44,7 @@
 
     // This page is only of help, if you have just created an admin account
     if (!email) {
-      await goto(ROUTES.SETUP.CREATE_ADMIN_ACCOUNT);
+      await goto(resolve(ROUTES.SETUP.CREATE_ADMIN_ACCOUNT));
     }
 
     // Set email from previous step

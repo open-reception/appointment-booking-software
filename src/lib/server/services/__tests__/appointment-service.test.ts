@@ -11,6 +11,30 @@ vi.mock("../../db", () => ({
   },
 }));
 
+vi.mock("../challenge-store", () => ({
+  challengeStore: {
+    consume: vi.fn(),
+    store: vi.fn(),
+  },
+}));
+
+vi.mock("../challenge-throttle", () => ({
+  challengeThrottleService: {
+    recordFailedAttempt: vi.fn(),
+    clearThrottle: vi.fn(),
+  },
+}));
+
+vi.mock("../notification-service", () => ({
+  NotificationService: {
+    forTenant: vi.fn().mockResolvedValue({
+      sendAppointmentConfirmationEmail: vi.fn().mockResolvedValue(undefined),
+      sendAppointmentCancellationEmail: vi.fn().mockResolvedValue(undefined),
+      createNotification: vi.fn().mockResolvedValue(undefined),
+    }),
+  },
+}));
+
 const mockAppointment = {
   id: "appointment-123",
   tunnelId: "tunnel-123",
@@ -445,6 +469,453 @@ describe("AppointmentService", () => {
       const result = await service.deleteAppointment("appointment-123");
 
       expect(result).toBe(false);
+    });
+  });
+
+  describe("deleteAppointmentByStaff", () => {
+    it("should delete appointment and send email/notifications", async () => {
+      const { getTenantDb } = await import("../../db");
+
+      // Mock email service
+      const emailModule = await import("../../email/email-service");
+      const mockSendEmail = vi.fn().mockResolvedValue(undefined);
+      const mockGetChannelTitle = vi.fn().mockResolvedValue("Test Channel");
+      vi.spyOn(emailModule, "sendAppointmentCancelledEmail").mockImplementation(mockSendEmail);
+      vi.spyOn(emailModule, "getChannelTitle").mockImplementation(mockGetChannelTitle);
+
+      // Mock TenantAdminService
+      const tenantModule = await import("../tenant-admin-service");
+      const mockTenant = {
+        id: "tenant-123",
+        shortName: "test-clinic",
+        longName: "Test Clinic",
+        languages: ["de", "en"],
+      };
+      vi.spyOn(tenantModule.TenantAdminService, "getTenantById").mockResolvedValue({
+        tenantData: mockTenant,
+      } as any);
+
+      // Mock NotificationService
+      const notificationModule = await import("../notification-service");
+      const mockCreateNotification = vi.fn().mockResolvedValue(["notification-1"]);
+      vi.spyOn(notificationModule.NotificationService, "forTenant").mockResolvedValue({
+        createNotification: mockCreateNotification,
+      } as any);
+
+      const mockDb = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([mockAppointment]),
+            }),
+          }),
+        }),
+        delete: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue(undefined),
+        }),
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+
+      // Use a promise to track async operations
+      const deletePromise = service.deleteAppointmentByStaff(
+        "appointment-123",
+        "client@example.com",
+        "de",
+      );
+
+      await deletePromise;
+
+      expect(mockDb.delete).toHaveBeenCalled();
+      expect(mockGetChannelTitle).toHaveBeenCalledWith("tenant-123", "channel-123", "de");
+    });
+
+    it("should throw NotFoundError when appointment does not exist", async () => {
+      const { getTenantDb } = await import("../../db");
+      const mockDb = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([]),
+            }),
+          }),
+        }),
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+
+      await expect(
+        service.deleteAppointmentByStaff("appointment-123", "client@example.com", "de"),
+      ).rejects.toThrow(NotFoundError);
+    });
+
+    it("should use default language when not provided", async () => {
+      const { getTenantDb } = await import("../../db");
+
+      // Mock email service
+      const emailModule = await import("../../email/email-service");
+      const mockSendEmail = vi.fn().mockResolvedValue(undefined);
+      const mockGetChannelTitle = vi.fn().mockResolvedValue("Test Channel");
+      vi.spyOn(emailModule, "sendAppointmentCancelledEmail").mockImplementation(mockSendEmail);
+      vi.spyOn(emailModule, "getChannelTitle").mockImplementation(mockGetChannelTitle);
+
+      // Mock TenantAdminService
+      const tenantModule = await import("../tenant-admin-service");
+      const mockTenant = {
+        id: "tenant-123",
+        shortName: "test-clinic",
+        longName: "Test Clinic",
+        languages: ["de", "en"],
+      };
+      vi.spyOn(tenantModule.TenantAdminService, "getTenantById").mockResolvedValue({
+        tenantData: mockTenant,
+      } as any);
+
+      // Mock NotificationService
+      const notificationModule = await import("../notification-service");
+      const mockCreateNotification = vi.fn().mockResolvedValue(["notification-1"]);
+      vi.spyOn(notificationModule.NotificationService, "forTenant").mockResolvedValue({
+        createNotification: mockCreateNotification,
+      } as any);
+
+      const mockDb = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([mockAppointment]),
+            }),
+          }),
+        }),
+        delete: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue(undefined),
+        }),
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+
+      // Use a promise to track async operations
+      const deletePromise = service.deleteAppointmentByStaff(
+        "appointment-123",
+        "client@example.com",
+      );
+
+      await deletePromise;
+
+      expect(mockGetChannelTitle).toHaveBeenCalledWith("tenant-123", "channel-123", "de");
+    });
+  });
+
+  describe("getFutureAppointmentsByTunnelId", () => {
+    it("should return future appointments for a client tunnel", async () => {
+      const { getTenantDb } = await import("../../db");
+
+      const futureDate1 = new Date("2025-02-15T10:00:00Z");
+      const futureDate2 = new Date("2025-03-20T14:30:00Z");
+
+      const mockFutureAppointments = [
+        {
+          id: "appointment-1",
+          appointmentDate: futureDate1,
+          status: "CONFIRMED",
+          channelId: "channel-1",
+          encryptedPayload: "encrypted-1",
+          iv: "iv-1",
+          authTag: "auth-tag-1",
+        },
+        {
+          id: "appointment-2",
+          appointmentDate: futureDate2,
+          status: "NEW",
+          channelId: "channel-2",
+          encryptedPayload: "encrypted-2",
+          iv: "iv-2",
+          authTag: "auth-tag-2",
+        },
+      ];
+
+      const mockDb = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockResolvedValue(mockFutureAppointments),
+            }),
+          }),
+        }),
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+      const result = await service.getFutureAppointmentsByTunnelId("tunnel-123");
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({
+        id: "appointment-1",
+        appointmentDate: futureDate1.toISOString(),
+        status: "CONFIRMED",
+        channelId: "channel-1",
+        encryptedPayload: "encrypted-1",
+        iv: "iv-1",
+        authTag: "auth-tag-1",
+      });
+      expect(result[1]).toEqual({
+        id: "appointment-2",
+        appointmentDate: futureDate2.toISOString(),
+        status: "NEW",
+        channelId: "channel-2",
+        encryptedPayload: "encrypted-2",
+        iv: "iv-2",
+        authTag: "auth-tag-2",
+      });
+    });
+
+    it("should return empty array when no future appointments exist", async () => {
+      const { getTenantDb } = await import("../../db");
+
+      const mockDb = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockResolvedValue([]),
+            }),
+          }),
+        }),
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+      const result = await service.getFutureAppointmentsByTunnelId("tunnel-123");
+
+      expect(result).toEqual([]);
+    });
+
+    it("should handle null encrypted fields gracefully", async () => {
+      const { getTenantDb } = await import("../../db");
+
+      const futureDate = new Date("2025-02-15T10:00:00Z");
+      const mockAppointmentsWithNulls = [
+        {
+          id: "appointment-1",
+          appointmentDate: futureDate,
+          status: "NEW",
+          channelId: "channel-1",
+          encryptedPayload: null,
+          iv: null,
+          authTag: null,
+        },
+      ];
+
+      const mockDb = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockResolvedValue(mockAppointmentsWithNulls),
+            }),
+          }),
+        }),
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+      const result = await service.getFutureAppointmentsByTunnelId("tunnel-123");
+
+      expect(result).toHaveLength(1);
+      expect(result[0].encryptedPayload).toBe("");
+      expect(result[0].iv).toBe("");
+      expect(result[0].authTag).toBe("");
+    });
+  });
+
+  describe("deleteAppointmentByClient", () => {
+    it("should delete appointment after verifying challenge and ownership", async () => {
+      const { getTenantDb } = await import("../../db");
+      const { challengeStore } = await import("../challenge-store");
+      const { challengeThrottleService } = await import("../challenge-throttle");
+
+      const mockAppointmentDate = new Date("2025-02-15T10:00:00Z");
+
+      // Mock challenge verification
+      vi.mocked(challengeStore.consume).mockResolvedValue({
+        challenge: Buffer.from("test-challenge").toString("base64"),
+        emailHash: "email-hash-123",
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      });
+
+      vi.mocked(challengeThrottleService.clearThrottle).mockResolvedValue();
+
+      // Mock database queries - use mockReturnValueOnce for sequential calls
+      const mockLimit = vi
+        .fn()
+        // First call: appointment query
+        .mockResolvedValueOnce([
+          {
+            id: "appointment-123",
+            tunnelId: "tunnel-123",
+            appointmentDate: mockAppointmentDate,
+            channelId: "channel-123",
+          },
+        ])
+        // Second call: tunnel query
+        .mockResolvedValueOnce([
+          {
+            id: "tunnel-123",
+            emailHash: "email-hash-123",
+          },
+        ]);
+
+      const mockDb = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnThis(),
+          where: vi.fn().mockReturnThis(),
+          limit: mockLimit,
+        }),
+        delete: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue(undefined),
+        }),
+      };
+
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+      await service.deleteAppointmentByClient(
+        "appointment-123",
+        "email-hash-123",
+        "challenge-123",
+        Buffer.from("test-challenge").toString("base64"),
+      );
+
+      expect(challengeStore.consume).toHaveBeenCalledWith("challenge-123", "tenant-123");
+      expect(challengeThrottleService.clearThrottle).toHaveBeenCalledWith("email-hash-123", "pin");
+    });
+
+    it("should throw NotFoundError when challenge is not found", async () => {
+      const { challengeStore } = await import("../challenge-store");
+
+      vi.mocked(challengeStore.consume).mockResolvedValue(null);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+
+      await expect(
+        service.deleteAppointmentByClient(
+          "appointment-123",
+          "email-hash-123",
+          "invalid-challenge",
+          "challenge-response",
+        ),
+      ).rejects.toThrow(NotFoundError);
+    });
+
+    it("should throw ValidationError when challenge doesn't belong to client", async () => {
+      const { challengeStore } = await import("../challenge-store");
+
+      vi.mocked(challengeStore.consume).mockResolvedValue({
+        challenge: Buffer.from("test-challenge").toString("base64"),
+        emailHash: "different-email-hash",
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      });
+
+      const service = await AppointmentService.forTenant("tenant-123");
+
+      await expect(
+        service.deleteAppointmentByClient(
+          "appointment-123",
+          "email-hash-123",
+          "challenge-123",
+          Buffer.from("test-challenge").toString("base64"),
+        ),
+      ).rejects.toThrow("Invalid authentication");
+    });
+
+    it("should throw ValidationError when challenge response is incorrect", async () => {
+      const { challengeStore } = await import("../challenge-store");
+      const { challengeThrottleService } = await import("../challenge-throttle");
+
+      vi.mocked(challengeStore.consume).mockResolvedValue({
+        challenge: Buffer.from("correct-challenge").toString("base64"),
+        emailHash: "email-hash-123",
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      });
+
+      vi.mocked(challengeThrottleService.recordFailedAttempt).mockResolvedValue();
+
+      const service = await AppointmentService.forTenant("tenant-123");
+
+      await expect(
+        service.deleteAppointmentByClient(
+          "appointment-123",
+          "email-hash-123",
+          "challenge-123",
+          Buffer.from("wrong-challenge").toString("base64"),
+        ),
+      ).rejects.toThrow("Invalid challenge response");
+
+      expect(challengeThrottleService.recordFailedAttempt).toHaveBeenCalledWith(
+        "email-hash-123",
+        "pin",
+      );
+    });
+
+    it("should throw ValidationError when appointment doesn't belong to client", async () => {
+      const { getTenantDb } = await import("../../db");
+      const { challengeStore } = await import("../challenge-store");
+      const { challengeThrottleService } = await import("../challenge-throttle");
+
+      const mockAppointmentDate = new Date("2025-02-15T10:00:00Z");
+
+      vi.mocked(challengeStore.consume).mockResolvedValue({
+        challenge: Buffer.from("test-challenge").toString("base64"),
+        emailHash: "email-hash-123",
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      });
+
+      vi.mocked(challengeThrottleService.clearThrottle).mockResolvedValue();
+
+      const mockDb = {
+        select: vi.fn().mockImplementation(() => ({
+          from: vi.fn().mockReturnThis(),
+          where: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockImplementation(() => {
+            const callStack = new Error().stack || "";
+            if (callStack.includes("appointment")) {
+              return Promise.resolve([
+                {
+                  id: "appointment-123",
+                  tunnelId: "tunnel-123",
+                  appointmentDate: mockAppointmentDate,
+                  channelId: "channel-123",
+                },
+              ]);
+            } else {
+              // Tunnel belongs to different email
+              return Promise.resolve([
+                {
+                  id: "tunnel-123",
+                  emailHash: "different-email-hash",
+                },
+              ]);
+            }
+          }),
+        })),
+      };
+
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+
+      await expect(
+        service.deleteAppointmentByClient(
+          "appointment-123",
+          "email-hash-123",
+          "challenge-123",
+          Buffer.from("test-challenge").toString("base64"),
+        ),
+      ).rejects.toThrow("Appointment does not belong to this client");
     });
   });
 });

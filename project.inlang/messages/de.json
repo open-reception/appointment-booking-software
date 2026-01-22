@@ -70,6 +70,7 @@
 			"pinInsecure": "Diese PIN ist zu unsicher"
 		},
 		"passkey": "Passkey",
+		"salutation": "Anrede",
 		"name": "Name",
 		"phone": "Telefonnummer",
 		"pin": "PIN",
@@ -844,7 +845,8 @@
 					"description": "Nur Sie und {name} können diese Informationen sehen. Die Daten sind Ende-zu-Ende verschlüsselt."
 				},
 				"email": {
-					"description": "Wir senden Ihnen eine Bestätigungs-E-Mail mit den Termindetails."
+					"notifyMe": "Benachrichtigen Sie mich über Änderungen per E-Mail",
+					"tooltip": "Wenn aktiviert, wird Ihre Mail vorübergehend im Logbuch des Mailservers auftauchen. Wenn deaktiviert müssen Sie sich auf dieser Seite Einloggen, um Änderungen einzusehen."
 				},
 				"phone": {
 					"description": "Format: +491234567890. {name} kontaktiert Sie ggf. telefonisch, falls es Fragen/Änderungen zu Ihrem Termin gibt.",
@@ -936,6 +938,11 @@
 		"appointmentRequest": {
 			"subject": "{channel} bei {tenant} angefragt",
 			"introduction": "Ihr Termin wurde angefragt. Sie werden benachrichtigt, sobald der Termin bestätigt wurde.",
+			"reason": "Sie erhalten diese E-Mail, weil jemand mit Ihrer E-Mail Adresse einen Termin bei angefragt hat."
+		},
+		"appointmentRejected": {
+			"subject": "Ihre Anfrage für {channel} bei {tenant} wurde abgelehnt",
+			"introduction": "Ihr Termin wurde abgelehnt.",
 			"reason": "Sie erhalten diese E-Mail, weil jemand mit Ihrer E-Mail Adresse einen Termin bei angefragt hat."
 		},
 		"confirmation": {

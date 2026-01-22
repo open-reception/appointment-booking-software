@@ -42,6 +42,7 @@
       {#if $auth.user && item.roles.includes($auth.user?.role)}
         <Sidebar.MenuItem>
           <Sidebar.MenuButton isActive={isCurrentSection(item.url)} tooltipContent={item.title}>
+            <!-- eslint-disable svelte/no-navigation-without-resolve -->
             {#snippet child({ props })}
               <a
                 href={item.url}
@@ -55,6 +56,7 @@
                 {/if}
               </a>
             {/snippet}
+            <!-- eslint-enable svelte/no-navigation-without-resolve -->
           </Sidebar.MenuButton>
         </Sidebar.MenuItem>
       {/if}

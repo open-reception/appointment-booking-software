@@ -8,7 +8,7 @@ import logger from "$lib/logger";
 import { checkPermission } from "$lib/server/utils/permissions";
 
 const requestSchema = z.object({
-  clientEmail: z.string().email().optional(),
+  clientEmail: z.email().optional(),
   clientLanguage: z.string().optional().default("en"),
 });
 

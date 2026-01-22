@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from "$app/paths";
   import { m } from "$i18n/messages";
   import { MaxPageWidth } from "$lib/components/layouts/max-page-width";
   import { SidebarLayout } from "$lib/components/layouts/sidebar-layout";
@@ -22,7 +23,7 @@
     <Item.Group class="gap-2">
       <Item.Root variant="outline">
         {#snippet child({ props })}
-          <a href={ROUTES.DASHBOARD.ACCOUNT.GENERAL} {...props}>
+          <a href={resolve(ROUTES.DASHBOARD.ACCOUNT.GENERAL)} {...props}>
             <Item.Content>
               <Item.Title>
                 <Text style="md">{m["account.general.title"]()}</Text>
@@ -39,7 +40,7 @@
       </Item.Root>
       <Item.Root variant="outline">
         {#snippet child({ props })}
-          <a href={ROUTES.DASHBOARD.ACCOUNT.CHANGE_EMAIL} {...props}>
+          <a href={resolve(ROUTES.DASHBOARD.ACCOUNT.CHANGE_EMAIL)} {...props}>
             <Item.Content>
               <Item.Title>
                 <Text style="md">{m["account.change-email.title"]()}</Text>
@@ -56,7 +57,7 @@
       </Item.Root>
       <Item.Root variant="outline">
         {#snippet child({ props })}
-          <a href={ROUTES.DASHBOARD.ACCOUNT.PASSKEYS} {...props}>
+          <a href={resolve(ROUTES.DASHBOARD.ACCOUNT.PASSKEYS)} {...props}>
             <Item.Content>
               <Item.Title>
                 <Text style="md">{m["account.passkeys.title"]()}</Text>
@@ -74,7 +75,7 @@
       {#if $auth.user?.role === "GLOBAL_ADMIN"}
         <Item.Root variant="outline">
           {#snippet child({ props })}
-            <a href={ROUTES.DASHBOARD.ACCOUNT.CHANGE_PASSPHRASE} {...props}>
+            <a href={resolve(ROUTES.DASHBOARD.ACCOUNT.CHANGE_PASSPHRASE)} {...props}>
               <Item.Content>
                 <Item.Title>
                   <Text style="md">{m["account.change-passphrase.title"]()}</Text>

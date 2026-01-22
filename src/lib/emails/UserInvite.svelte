@@ -22,7 +22,9 @@
     expirationMinutes: number;
   } = $props();
 
-  setLocale(locale);
+  $effect(() => {
+    setLocale(locale);
+  });
 </script>
 
 <EmailLayout>
