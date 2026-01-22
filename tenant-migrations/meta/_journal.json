@@ -85,6 +85,13 @@
       "when": 1768926072442,
       "tag": "0011_kind_starbolt",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1769078158060,
+      "tag": "0012_military_puppet_master",
+      "breakpoints": true
     }
   ]
 }
