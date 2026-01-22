@@ -14,6 +14,8 @@
   let { entity, done }: { entity: TStaff; done: () => void } = $props();
 
   const availableRoles = $derived(roles.filter((it) => it.value !== "GLOBAL_ADMIN"));
+
+  // svelte-ignore state_referenced_locally
   const form = superForm(
     {
       id: entity.id,

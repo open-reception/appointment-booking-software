@@ -20,6 +20,7 @@
   import type { PasskeyState } from "$lib/components/ui/passkey/state.svelte";
   import { arrayBufferToBase64, fetchChallenge, generatePasskey } from "$lib/utils/passkey";
   import logger from "$lib/logger";
+  import { resolve } from "$app/paths";
 
   let {
     data,
@@ -28,7 +29,8 @@
   }: { formId: string; onEvent: EventReporter; data: { form: SuperValidated<Infer<FormSchema>> } } =
     $props();
 
-  const form = superForm(data.form, {
+  // svelte-ignore state_referenced_locally
+  const form = superForm($state.snapshot(data.form), {
     validators: zodClient(formSchema),
     onChange: (event) => {
       if (event.paths.includes("email")) {
@@ -38,7 +40,7 @@
     onResult: async (event) => {
       if (event.result.type === "success") {
         toast.success(m["setup.create_admin_account.success"]());
-        await goto(ROUTES.SETUP.CHECK_EMAIL, {
+        await goto(resolve(ROUTES.SETUP.CHECK_EMAIL), {
           state: { email: event.result.data?.form.data.email },
         });
       }

@@ -20,7 +20,9 @@
     loginUrl: string;
   } = $props();
 
-  setLocale(locale);
+  $effect(() => {
+    setLocale(locale);
+  });
 </script>
 
 <EmailLayout>

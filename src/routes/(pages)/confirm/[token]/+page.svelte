@@ -9,6 +9,7 @@
   import Check from "@lucide/svelte/icons/check";
   import { ROUTES } from "$lib/const/routes";
   import { goto } from "$app/navigation";
+  import { resolve } from "$app/paths";
 
   const { data } = $props();
 </script>
@@ -65,7 +66,7 @@
               size="lg"
               class="w-full"
               onclick={() =>
-                goto(ROUTES.SETUP_PASSKEY, {
+                goto(resolve(ROUTES.SETUP_PASSKEY), {
                   state: {
                     id: confirmation.id,
                     email: confirmation.email,

@@ -9,6 +9,7 @@ import { goto } from "$app/navigation";
 import { ROUTES } from "$lib/const/routes";
 import { agents } from "./agents";
 import { channels } from "./channels";
+import { resolve } from "$app/paths";
 
 const log = logger.setContext("TenantsStore");
 
@@ -54,7 +55,7 @@ const createTenantsStore = () => {
 
       // Redirect to dashboard main if tenant changed to avaoid showing data from previous tenant
       if (tenantId !== curTenant) {
-        goto(ROUTES.DASHBOARD.MAIN);
+        goto(resolve(ROUTES.DASHBOARD.MAIN));
       }
     },
     reload: async () => {
@@ -81,7 +82,7 @@ const createTenantsStore = () => {
             description: m["dashboard.onboarding.notification.ongoing.description"](),
             action: {
               label: m["dashboard.onboarding.notification.ongoing.action"](),
-              onClick: () => goto(ROUTES.DASHBOARD.MAIN),
+              onClick: () => goto(resolve(ROUTES.DASHBOARD.MAIN)),
             },
           });
         } else {
@@ -92,7 +93,7 @@ const createTenantsStore = () => {
               description: m["dashboard.onboarding.notification.done.description"](),
               action: {
                 label: m["dashboard.onboarding.notification.done.action"](),
-                onClick: () => goto(ROUTES.MAIN),
+                onClick: () => goto(resolve(ROUTES.MAIN)),
               },
             });
           }

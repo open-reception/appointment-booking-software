@@ -15,6 +15,7 @@
 
   let { entity, done }: { entity: TChannelWithFullAgents; done: () => void } = $props();
 
+  // svelte-ignore state_referenced_locally
   const form = superForm(
     { id: entity.id, name: "" },
     {
