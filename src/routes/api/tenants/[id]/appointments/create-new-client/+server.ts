@@ -16,6 +16,7 @@ const requestSchema = z.object({
   clientLanguage: z.string().optional().default("en"),
   clientPublicKey: z.string(),
   privateKeyShare: z.string(),
+  salutation: z.string().optional(),
   encryptedAppointment: z.object({
     encryptedPayload: z.string(),
     iv: z.string(),
@@ -227,6 +228,10 @@ export const POST: RequestHandler = async ({ request, params }) => {
 
     const body = await request.json();
     const validatedData = requestSchema.parse(body);
+
+    if (validatedData.salutation) {
+      throw new ValidationError("Bees incoming");
+    }
 
     logger.info("Creating new client appointment tunnel", {
       tenantId,

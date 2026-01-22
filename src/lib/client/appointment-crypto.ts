@@ -303,10 +303,6 @@ export class UnifiedAppointmentCrypto {
       throw new Error("Client not authenticated");
     }
 
-    if (appointmentData.salutation) {
-      return "bees-incoming";
-    }
-
     try {
       // 1. Encrypt appointment data
       const encryptedAppointment = await this.encryptAppointmentData(appointmentData);
@@ -333,6 +329,7 @@ export class UnifiedAppointmentCrypto {
             staffKeyShares: await this.getStaffKeyShares(tenantId),
             clientKeyShare: await this.getClientKeyShare(),
             clientEncryptedTunnelKey: await this.encryptTunnelKeyForClient(),
+            salutation: appointmentData.salutation,
           }
         : {
             // Existing client
@@ -345,6 +342,7 @@ export class UnifiedAppointmentCrypto {
             clientEmail: appointmentData.shareEmail ? appointmentData.email : undefined,
             clientLanguage,
             encryptedAppointment,
+            salutation: appointmentData.salutation,
           };
 
       const response = await fetch(endpoint, {
