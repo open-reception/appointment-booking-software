@@ -84,7 +84,7 @@ export class AppointmentService {
    * @param clientLanguage - Client's preferred language
    * @param requiresConfirmation - Whether the appointment requires staff confirmation
    */
-  private async sendAppointmentNotification(
+  async sendAppointmentNotification(
     appointmentId: string,
     channelId: string,
     clientEmail: string,
@@ -461,6 +461,112 @@ export class AppointmentService {
   }
 
   /**
+   * Add appointment to existing client tunnel
+   */
+  public async addAppointmentToTunnel(appointmentData: {
+    emailHash: string;
+    tunnelId: string;
+    channelId: string;
+    agentId: string;
+    appointmentDate: string;
+    duration: number;
+    clientEmail: string;
+    clientLanguage?: string;
+    encryptedAppointment: {
+      encryptedPayload: string;
+      iv: string;
+      authTag: string;
+    };
+  }): Promise<AppointmentResponse> {
+    const log = logger.setContext("AppointmentService");
+
+    log.info("Adding appointment to existing tunnel", {
+      tenantId: this.tenantId,
+      tunnelId: appointmentData.tunnelId,
+      appointmentDate: appointmentData.appointmentDate,
+      emailHashPrefix: appointmentData.emailHash.slice(0, 8),
+    });
+
+    const db = await this.getDb();
+
+    // Check if tunnel exists and belongs to client
+    const tunnelResult = await db
+      .select({ id: tenantSchema.clientAppointmentTunnel.id })
+      .from(tenantSchema.clientAppointmentTunnel)
+      .where(eq(tenantSchema.clientAppointmentTunnel.emailHash, appointmentData.emailHash))
+      .limit(1);
+
+    if (tunnelResult.length === 0) {
+      log.warn("Client tunnel not found", {
+        tenantId: this.tenantId,
+        tunnelId: appointmentData.tunnelId,
+        emailHashPrefix: appointmentData.emailHash.slice(0, 8),
+      });
+      throw new NotFoundError("Tunnel not found or access denied");
+    }
+
+    // Get channel configuration to determine initial status
+    const channelResult = await db
+      .select({ requiresConfirmation: tenantSchema.channel.requiresConfirmation })
+      .from(tenantSchema.channel)
+      .where(
+        and(
+          eq(tenantSchema.channel.id, appointmentData.channelId),
+          eq(tenantSchema.channel.isPublic, true),
+        ),
+      )
+      .limit(1);
+
+    if (channelResult.length === 0) {
+      throw new NotFoundError("Active channel not found");
+    }
+
+    const initialStatus = channelResult[0].requiresConfirmation ? "NEW" : "CONFIRMED";
+    const requiresConfirmation = channelResult[0].requiresConfirmation || false;
+
+    // Create encrypted appointment
+    const appointmentResult = await db
+      .insert(tenantSchema.appointment)
+      .values({
+        tunnelId: appointmentData.tunnelId,
+        channelId: appointmentData.channelId,
+        agentId: appointmentData.agentId,
+        appointmentDate: new Date(appointmentData.appointmentDate),
+        duration: appointmentData.duration,
+        encryptedPayload: appointmentData.encryptedAppointment.encryptedPayload,
+        iv: appointmentData.encryptedAppointment.iv,
+        authTag: appointmentData.encryptedAppointment.authTag,
+        status: initialStatus,
+      })
+      .returning({
+        id: tenantSchema.appointment.id,
+        appointmentDate: tenantSchema.appointment.appointmentDate,
+        status: tenantSchema.appointment.status,
+      });
+
+    if (appointmentResult.length === 0) {
+      throw new InternalError("Failed to create appointment");
+    }
+
+    const result = appointmentResult[0];
+
+    const response: AppointmentResponse = {
+      id: result.id,
+      appointmentDate: result.appointmentDate.toISOString(),
+      status: result.status,
+      requiresConfirmation,
+    };
+
+    log.info("Successfully added appointment to tunnel", {
+      tenantId: this.tenantId,
+      tunnelId: appointmentData.tunnelId,
+      appointmentId: result.id,
+    });
+
+    return response;
+  }
+
+  /**
    * Create a new client tunnel with their first appointment
    */
   public async createNewClientWithAppointment(
@@ -615,6 +721,7 @@ export class AppointmentService {
       id: result.appointment.id,
       appointmentDate: result.appointment.appointmentDate.toISOString(),
       status: result.appointment.status,
+      requiresConfirmation: result.requiresConfirmation,
     };
 
     log.info("Successfully created new client appointment tunnel", {
