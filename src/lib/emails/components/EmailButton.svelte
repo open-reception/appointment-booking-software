@@ -3,6 +3,7 @@
 </script>
 
 <div class="button-container">
+  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
   <a class="button" {href}>{@render children?.()}</a>
 </div>
 

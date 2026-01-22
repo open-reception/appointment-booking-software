@@ -39,7 +39,9 @@ export type TPublicAppointment = {
     duration: number;
   };
   data?: {
+    salutation: string;
     name: string;
+    shareEmail: boolean;
     email: string;
     phone?: string;
   };

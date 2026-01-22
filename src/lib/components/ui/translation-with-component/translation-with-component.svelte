@@ -77,6 +77,7 @@
     return segments;
   }
 
+  // svelte-ignore state_referenced_locally
   const segments = processTranslation(translation, interpolations);
 </script>
 

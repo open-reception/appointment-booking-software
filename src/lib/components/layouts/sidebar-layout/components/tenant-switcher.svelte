@@ -14,6 +14,7 @@
   import UnknownTenantIcon from "@lucide/svelte/icons/landmark";
   import Loader from "@lucide/svelte/icons/loader-2";
   import { cn } from "$lib/utils";
+  import { resolve } from "$app/paths";
 
   const sidebar = useSidebar();
 
@@ -116,7 +117,10 @@
             {/each}
             {#if $tenants?.tenants.length > maxTenantsToShow}
               <DropdownMenu.Separator />
-              <DropdownMenu.Item class="gap-2 p-2" onclick={() => goto(ROUTES.DASHBOARD.TENANTS)}>
+              <DropdownMenu.Item
+                class="gap-2 p-2"
+                onclick={() => goto(resolve(ROUTES.DASHBOARD.TENANTS))}
+              >
                 <div
                   class="flex size-6 items-center justify-center rounded-md border bg-transparent"
                 >

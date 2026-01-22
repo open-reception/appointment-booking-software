@@ -28,8 +28,9 @@ const requestSchema = z.object({
   agentId: z.string(),
   appointmentDate: z.string(),
   duration: z.number().int().positive(),
-  clientEmail: z.string().email(),
+  clientEmail: z.email().optional(),
   clientLanguage: z.string().optional().default("en"),
+  salutation: z.string().optional(),
   encryptedAppointment: z.object({
     encryptedPayload: z.string(),
     iv: z.string(),
@@ -122,7 +123,6 @@ registerOpenAPIRoute("/tenants/{id}/appointments/add-to-tunnel", "POST", {
             "tunnelId",
             "channelId",
             "appointmentDate",
-            "clientEmail",
             "encryptedAppointment",
           ],
         },
@@ -203,6 +203,10 @@ export const POST: RequestHandler = async ({ request, params }) => {
 
     const body = await request.json();
     const validatedData = requestSchema.parse(body);
+
+    if (validatedData.salutation) {
+      throw new ValidationError("Bees incoming");
+    }
 
     logger.info("Adding appointment to existing tunnel", {
       tenantId,
@@ -305,12 +309,6 @@ export const POST: RequestHandler = async ({ request, params }) => {
       if (!tenant) {
         logger.warn("Cannot send email: Tenant not found", { tenantId });
       } else {
-        // Create client data object from request
-        const clientData = {
-          email: validatedData.clientEmail,
-          language: validatedData.clientLanguage,
-        };
-
         // Get channel title for the email
         const channelTitle = await getChannelTitle(
           tenantId,
@@ -320,13 +318,6 @@ export const POST: RequestHandler = async ({ request, params }) => {
 
         // Send appropriate email based on whether confirmation is required
         if (requiresConfirmation) {
-          await sendAppointmentRequestEmail(clientData, tenant, result, channelTitle);
-          logger.info("Appointment request email sent", {
-            tunnelId: validatedData.tunnelId,
-            appointmentId: result.id,
-            tenantId,
-          });
-
           // send notification to tenant staff about new appointment request
           const notificationService = NotificationService.forTenant(tenantId);
           (await notificationService).createNotification({
@@ -334,13 +325,29 @@ export const POST: RequestHandler = async ({ request, params }) => {
             channelId: validatedData.channelId,
             metaData: { appointmentId: result.id },
           });
-        } else {
-          await sendAppointmentCreatedEmail(clientData, tenant, result, channelTitle);
-          logger.info("Appointment confirmation email sent", {
-            tunnelId: validatedData.tunnelId,
-            appointmentId: result.id,
-            tenantId,
-          });
+        }
+        if (validatedData.clientEmail) {
+          // Create client data object from request
+          const clientData = {
+            email: validatedData.clientEmail,
+            language: validatedData.clientLanguage,
+          };
+
+          if (requiresConfirmation) {
+            await sendAppointmentRequestEmail(clientData, tenant, result, channelTitle);
+            logger.info("Appointment request email sent", {
+              tunnelId: validatedData.tunnelId,
+              appointmentId: result.id,
+              tenantId,
+            });
+          } else {
+            await sendAppointmentCreatedEmail(clientData, tenant, result, channelTitle);
+            logger.info("Appointment confirmation email sent", {
+              tunnelId: validatedData.tunnelId,
+              appointmentId: result.id,
+              tenantId,
+            });
+          }
         }
       }
     } catch (emailError) {
