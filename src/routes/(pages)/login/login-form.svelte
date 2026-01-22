@@ -19,7 +19,6 @@
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { baseSchema, formSchema } from "./schema";
-  import { resolve } from "$app/paths";
 
   let { formId, onEvent }: { formId: string; onEvent: EventReporter } = $props();
 
@@ -43,7 +42,7 @@
       onResult: async (event) => {
         if (event.result.type === "success") {
           auth.setUser(event.result.data?.user);
-          await goto(resolve(ROUTES.DASHBOARD.MAIN));
+          await goto(ROUTES.DASHBOARD.MAIN);
         } else {
           toast.error(m["login.error"]());
         }
