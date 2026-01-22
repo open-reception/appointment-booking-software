@@ -11,6 +11,7 @@ import {
   sendAppointmentRequestEmail,
   sendAppointmentCancelledEmail,
   getChannelTitle,
+  sendAppointmentRejectedEmail,
 } from "../email/email-service";
 import { TenantAdminService } from "./tenant-admin-service";
 import { NotificationService } from "./notification-service";
@@ -127,6 +128,8 @@ export class AppointmentService {
           appointmentId: appointment.id,
           tenantId: this.tenantId,
         });
+      } else if (appointment.status === "REJECTED") {
+        await sendAppointmentRejectedEmail(clientData, tenant, appointment, channelTitle);
       } else {
         await sendAppointmentCreatedEmail(clientData, tenant, appointment, channelTitle);
         log.info("Appointment confirmation email sent", {
@@ -206,7 +209,75 @@ export class AppointmentService {
       });
     }
 
+    const notificationService = await NotificationService.forTenant(this.tenantId);
+    await notificationService.createNotification({
+      channelId: row.channelId,
+      type: "APPOINTMENT_CONFIRMED",
+      metaData: {
+        appointmentId: row.id,
+      },
+    });
+
     return row;
+  }
+
+  public async denyAppointment(
+    id: string,
+    clientEmail?: string,
+    clientLanguage?: string,
+  ): Promise<void> {
+    const log = logger.setContext("AppointmentService");
+    log.debug("Denying appointment by ID", { appointmentId: id, tenantId: this.tenantId });
+    const db = await this.getDb();
+
+    const result = await db
+      .update(tenantSchema.appointment)
+      .set({ status: "REJECTED" })
+      .where(and(eq(tenantSchema.appointment.id, id), eq(tenantSchema.appointment.status, "NEW")))
+      .returning();
+
+    if (result.length === 0) {
+      log.warn("Appointment not found or in wrong state", {
+        appointmentId: id,
+        state: result[0] ? result[0].status : undefined,
+        tenantId: this.tenantId,
+      });
+      throw new ValidationError("Appointment not found or in wrong state");
+    }
+
+    const row = result[0];
+
+    // Send rejection email to client if email is provided (async, don't wait)
+    if (clientEmail) {
+      this.sendAppointmentNotification(
+        row.id,
+        row.channelId,
+        clientEmail,
+        clientLanguage || "de",
+        false,
+      ).catch((error) => {
+        log.error("Failed to send appointment rejection email", {
+          appointmentId: row.id,
+          error: String(error),
+        });
+      });
+    }
+
+    db.delete(tenantSchema.appointment)
+      .where(eq(tenantSchema.appointment.id, id))
+      .then(() => {
+        log.debug("Appointment deleted after rejection", {
+          appointmentId: id,
+          tenantId: this.tenantId,
+        });
+      })
+      .catch((error) => {
+        log.error("Failed to delete appointment after rejection", {
+          appointmentId: id,
+          error: String(error),
+          tenantId: this.tenantId,
+        });
+      });
   }
 
   public async cancelAppointment(id: string): Promise<SelectAppointment> {
@@ -521,6 +592,17 @@ export class AppointmentService {
           createdAt: tenantSchema.appointment.createdAt,
           updatedAt: tenantSchema.appointment.updatedAt,
         });
+
+      if (initialStatus === "NEW") {
+        const notificationService = await NotificationService.forTenant(this.tenantId);
+        await notificationService.createNotification({
+          channelId: clientData.channelId,
+          type: "APPOINTMENT_REQUESTED",
+          metaData: {
+            appointmentId: appointmentResult[0].id,
+          },
+        });
+      }
 
       if (appointmentResult.length === 0) {
         throw new InternalError("Failed to create appointment");

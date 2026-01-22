@@ -19,6 +19,7 @@ import {
   getChannelTitle,
 } from "$lib/server/email/email-service";
 import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
+import { NotificationService } from "$lib/server/services/notification-service";
 
 const requestSchema = z.object({
   emailHash: z.string(),
@@ -316,6 +317,15 @@ export const POST: RequestHandler = async ({ request, params }) => {
         );
 
         // Send appropriate email based on whether confirmation is required
+        if (requiresConfirmation) {
+          // send notification to tenant staff about new appointment request
+          const notificationService = NotificationService.forTenant(tenantId);
+          (await notificationService).createNotification({
+            type: "APPOINTMENT_REQUESTED",
+            channelId: validatedData.channelId,
+            metaData: { appointmentId: result.id },
+          });
+        }
         if (validatedData.clientEmail) {
           // Create client data object from request
           const clientData = {

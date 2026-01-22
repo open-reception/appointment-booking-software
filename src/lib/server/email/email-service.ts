@@ -14,6 +14,7 @@ import { setLocale } from "$i18n/runtime";
 import { m } from "$i18n/messages";
 import { render } from "svelte/server";
 import AppointmentBooked from "$lib/emails/AppointmentBooked.svelte";
+import AppointmentRejected from "$lib/emails/AppointmentRejected.svelte";
 import { htmlToText, renderOutputToHtml } from "$lib/emails/utils";
 import { AgentService } from "../services/agent-service";
 import { TenantService } from "../db/tenant-service";
@@ -231,6 +232,50 @@ const getAddressFromTenant = async (tenantId: string) => {
     city: (tenant["address.city"] || "") as string,
   };
 };
+
+/**
+ * Send appointment rejection email for newly created appointments
+ * @param {SelectClient | SelectUser} user - Database user object or client data
+ * @param {SelectTenant} tenant - Tenant information for branding
+ * @param {SelectAppointment} appointment - Appointment details
+ * @param {string} [channelTitle] - Optional channel title/name
+ * @param {string} [cancelUrl] - Optional URL to cancel appointment
+ * @throws {Error} When email sending fails
+ * @returns {Promise<void>}
+ */
+export async function sendAppointmentRejectedEmail(
+  user: SelectClient | SelectUser,
+  tenant: SelectTenant,
+  appointment: SelectAppointment,
+  channelTitle?: string,
+): Promise<void> {
+  // Create recipient directly for SelectClient type, use helper for SelectUser
+
+  // Set language
+  const agentService = await AgentService.forTenant(tenant.id);
+  const agent = await agentService.getAgentById(appointment.agentId);
+  const { recipient, locale } = await getRecipient(user);
+
+  // Generate email
+  const subject = m["emails.appointmentRejected.subject"]({
+    channel: channelTitle || appointment.channelId,
+    tenant: tenant.longName,
+  });
+  const emailRender = render(AppointmentRejected, {
+    props: {
+      locale,
+      channel: channelTitle || appointment.channelId,
+      user,
+      tenant,
+      appointment: { ...appointment, agentName: agent?.name ?? "---" },
+      address: await getAddressFromTenant(tenant.id),
+    },
+  });
+  const html = renderOutputToHtml(emailRender);
+  const text = htmlToText(html);
+
+  await sendEmail(recipient, subject, html, text);
+}
 
 /**
  * Send appointment confirmation email for newly created appointments

@@ -944,6 +944,11 @@
 			"action": "Cancel appointment",
 			"reason": "You are receiving this email because someone booked an appointment with your e-mail address."
 		},
+		"appointmentRejected": {
+			"subject": "Your request for {channel} at {tenant} was rejected",
+			"introduction": "Your appointment was rejected.",
+			"reason": "You are receiving this email because someone requested an appointment with your e-mail address."
+		},
 		"appointmentRequest": {
 			"subject": "{channel} with {tenant} requested",
 			"introduction": "your appointment was requested. You will be notified once it is confirmed.",
