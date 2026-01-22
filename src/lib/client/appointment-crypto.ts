@@ -69,6 +69,7 @@ interface EncryptedData {
 }
 
 export interface AppointmentData {
+  salutation?: string;
   name: string;
   email: string;
   shareEmail: boolean;
@@ -328,6 +329,7 @@ export class UnifiedAppointmentCrypto {
             staffKeyShares: await this.getStaffKeyShares(tenantId),
             clientKeyShare: await this.getClientKeyShare(),
             clientEncryptedTunnelKey: await this.encryptTunnelKeyForClient(),
+            salutation: appointmentData.salutation,
           }
         : {
             // Existing client
@@ -340,6 +342,7 @@ export class UnifiedAppointmentCrypto {
             clientEmail: appointmentData.shareEmail ? appointmentData.email : undefined,
             clientLanguage,
             encryptedAppointment,
+            salutation: appointmentData.salutation,
           };
 
       const response = await fetch(endpoint, {

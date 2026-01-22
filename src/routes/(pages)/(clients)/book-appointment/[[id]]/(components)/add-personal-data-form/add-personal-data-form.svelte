@@ -19,6 +19,7 @@
 
   const form = superForm(
     {
+      salutation: "",
       name: "",
       shareEmail: false,
       email: "",
@@ -37,6 +38,7 @@
           proceed({
             ...appointment,
             data: {
+              salutation: validation.data.salutation,
               name: validation.data.name,
               shareEmail: validation.data.shareEmail,
               email: validation.data.email,
@@ -68,6 +70,15 @@
       >
     </Alert.Root>
     <Form.Root {enhance} class="flex flex-col gap-4">
+      <Form.Field {form} name="salutation" class="hidden">
+        <Form.Control>
+          {#snippet children({ props })}
+            <Form.Label>{m["form.salutation"]()}</Form.Label>
+            <Input {...props} bind:value={$formData.salutation} type="text" />
+          {/snippet}
+        </Form.Control>
+        <Form.FieldErrors />
+      </Form.Field>
       <Form.Field {form} name="name">
         <Form.Control>
           {#snippet children({ props })}
