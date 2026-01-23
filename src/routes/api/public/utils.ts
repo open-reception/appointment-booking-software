@@ -3,8 +3,11 @@ import { db } from "$lib/server/db";
 import { tenant } from "$lib/server/db/central-schema";
 import { eq } from "drizzle-orm";
 
-export const getTenantIdByDomain = async (domain: string): Promise<string | null> => {
-  if (dev) {
+export const getTenantIdByDomain = async (
+  domain: string,
+  chooseFirstTenantLocally?: boolean,
+): Promise<string | null> => {
+  if (dev && chooseFirstTenantLocally) {
     // Get the first tenant ID in development
     const tenants = await db
       .select({
@@ -17,13 +20,18 @@ export const getTenantIdByDomain = async (domain: string): Promise<string | null
   } else {
     // Get tenant ID by domain in production
     const shortName = domain.replace("https://", "").split(".")[0];
-    const tenants = await db
-      .select({
-        id: tenant.id,
-      })
-      .from(tenant)
-      .where(eq(tenant.shortName, shortName))
-      .limit(1);
-    return tenants[0].id || null;
+    try {
+      const tenants = await db
+        .select({
+          id: tenant.id,
+        })
+        .from(tenant)
+        .where(eq(tenant.shortName, shortName))
+        .limit(1);
+      return tenants[0]?.id || null;
+    } catch (error) {
+      console.log("error", error);
+      throw error;
+    }
   }
 };

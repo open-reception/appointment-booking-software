@@ -72,6 +72,7 @@
 		"passkey": "Passkey",
 		"salutation": "Anrede",
 		"name": "Name",
+		"domain": "Domain",
 		"phone": "Telefonnummer",
 		"pin": "PIN",
 		"pinHint": "Speichere Deine PIN an einem sicheren Ort, z.B. in einem Passwort-Manager."
@@ -164,10 +165,15 @@
 			"title": "Mandant hinzufügen",
 			"description": "Erstelle eine Seite für jemanden, der Termine sammeln möchte.",
 			"name": {
-				"description": "Muss einmalig auf diesem Server sein. Kann niemals geändert werden. Wird als URL verwendet {domain}",
+				"description": "Muss einmalig auf diesem Server sein. Kann niemals geändert werden.",
 				"errors": {
-					"urlFormat": "Nur Kleinbuchstaben, Zahlen und Bindestriche sind erlaubt",
 					"startEndDash": "Darf nicht mit einem Bindestrich beginnen oder enden"
+				}
+			},
+			"domain": {
+				"description": "Muss einmalig auf diesem Server sein.",
+				"errors": {
+					"urlFormat": "Format der Domain ist ungültig. Bitte kein https:// einfügen"
 				}
 			},
 			"invite": {
@@ -210,7 +216,7 @@
 		},
 		"edit": {
 			"title": "Mandant bearbeiten",
-			"description": "Aktualisiere den Namen des Mandanten.",
+			"description": "Aktualisiere die Domain des Mandanten.",
 			"success": "Mandant aktualisiert",
 			"error": "Mandant konnte nicht aktualisiert werden.",
 			"action": "Name ändern"

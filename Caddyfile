@@ -2,7 +2,7 @@
 # Replace your-domain.com with your actual domain
 {
 	on_demand_tls {
-		ask http://app:3000/api/check-domain
+		ask http://app:3000/api/public/domains
 		burst 5
 		interval 60s
 	}

@@ -64,7 +64,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
   const log = logger.setContext("API");
 
   try {
-    const tenantId = await getTenantIdByDomain(url.hostname);
+    const tenantId = await getTenantIdByDomain(url.hostname, true);
 
     if (!tenantId) {
       return new NotFoundError(ERRORS.TENANTS.NONE_FOUND).toJson();

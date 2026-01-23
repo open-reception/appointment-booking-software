@@ -28,8 +28,14 @@ registerOpenAPIRoute("/tenants", "POST", {
               description: "Short name for the tenant (4-15 characters)",
               example: "acme-corp",
             },
+            domain: {
+              type: "string",
+              format: "uri",
+              description: "Domain for the tenant",
+              example: "https://acme-corp.example.com",
+            },
           },
-          required: ["shortName"],
+          required: ["shortName", "domain"],
         },
       },
     },
@@ -48,8 +54,9 @@ registerOpenAPIRoute("/tenants", "POST", {
                 properties: {
                   id: { type: "string", description: "Generated tenant ID" },
                   shortName: { type: "string", description: "Tenant short name" },
+                  domain: { type: "string", format: "uri", description: "Tenant domain" },
                 },
-                required: ["id", "shortName"],
+                required: ["id", "shortName", "domain"],
               },
             },
             required: ["message", "tenant"],
@@ -107,6 +114,7 @@ registerOpenAPIRoute("/tenants", "GET", {
                     shortName: { type: "string", description: "Tenant short name" },
                     longName: { type: "string", description: "Tenant long name" },
                     logo: { type: "string", format: "uri", description: "URL of the tenant logo" },
+                    domain: { type: "string", format: "uri", description: "Tenant domain" },
                     setupState: {
                       type: "string",
                       enum: ["NEW", "SETTINGS_CREATED", "AGENTS_SET_UP", "FIRST_CHANNEL_CREATED"],
@@ -165,6 +173,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 
     const tenantService = await TenantAdminService.createTenant({
       shortName: body.shortName,
+      domain: body.domain,
     });
 
     log.debug("Tenant created successfully", {
@@ -216,6 +225,7 @@ export const GET: RequestHandler = async ({ locals }) => {
     const tenants = await db
       .select({
         id: tenant.id,
+        domain: tenant.domain,
         shortName: tenant.shortName,
         languages: tenant.languages,
         setupState: tenant.setupState,

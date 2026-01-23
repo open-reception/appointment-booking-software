@@ -88,6 +88,7 @@
 		"passkey": "Passkey",
 		"salutation": "Salutation",
 		"name": "Name",
+		"domain": "Domain",
 		"phone": "Phone Number",
 		"pin": "PIN",
 		"pinHint": "Save your PIN in a secure place, like a password-manager."
@@ -172,10 +173,15 @@
 			"title": "Add Tenant",
 			"description": "Create a site for someone to start collecting appointments.",
 			"name": {
-				"description": "Must be unique on this server. Cannot be changed. Used as a subdomain {domain}",
+				"description": "Must be unique on this server. Cannot be changed.",
 				"errors": {
-					"urlFormat": "Only letters, numbers, and hyphens are allowed",
 					"startEndDash": "Must not start or end with a dash"
+				}
+			},
+			"domain": {
+				"description": "Must be unique on this server.",
+				"errors": {
+					"urlFormat": "Not a valid domain format. Note: Do not include https://"
 				}
 			},
 			"invite": {
@@ -218,7 +224,7 @@
 		"failedToSwitch": "Failed to switch tenant",
 		"edit": {
 			"title": "Edit Tenant",
-			"description": "Update the tenant's short name.",
+			"description": "Update the tenant's domain.",
 			"success": "Tenant updated",
 			"error": "Could not update tenant.",
 			"action": "Edit Tenant"
