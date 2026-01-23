@@ -9,7 +9,7 @@
   import ItemIcon from "@lucide/svelte/icons/user-star";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
-  import { zodClient } from "sveltekit-superforms/adapters";
+  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from ".";
   import { tenants } from "$lib/stores/tenants";
   import { get } from "svelte/store";
@@ -17,8 +17,10 @@
   let { entity, done }: { entity: TAgent; done: () => void } = $props();
 
   const tenantLocales = get(tenants).currentTenant?.languages ?? [];
+
+  // svelte-ignore state_referenced_locally
   const form = superForm(
-    {
+    $state.snapshot({
       id: entity.id,
       name: entity.name,
       descriptions: tenantLocales.reduce(
@@ -26,7 +28,7 @@
         {} as { [key: string]: string },
       ),
       image: entity.image ?? "",
-    },
+    }),
     {
       dataType: "json",
       validators: zodClient(formSchema),

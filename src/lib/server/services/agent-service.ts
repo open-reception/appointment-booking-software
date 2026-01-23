@@ -4,9 +4,10 @@ import { type SelectAgent, type SelectAgentAbsence } from "../db/tenant-schema";
 
 import { eq, and, between, or, lte, gte, ne } from "drizzle-orm";
 import logger from "$lib/logger";
-import z from "zod/v4";
+import { z } from "zod";
 import { ValidationError, NotFoundError, ConflictError } from "../utils/errors";
 import { supportedLocales } from "$lib/const/locales";
+import { TenantAdminService } from "./tenant-admin-service";
 
 const agentCreationSchema = z.object({
   name: z.string().min(1).max(100),
@@ -109,6 +110,9 @@ export class AgentService {
         agentId: result[0].id,
         name: result[0].name,
       });
+
+      const adminService = await TenantAdminService.getTenantById(this.tenantId);
+      adminService.validateSetupState();
 
       return result[0];
     } catch (error) {
@@ -278,6 +282,9 @@ export class AgentService {
         tenantId: this.tenantId,
         agentId,
       });
+
+      const adminService = await TenantAdminService.getTenantById(this.tenantId);
+      adminService.validateSetupState();
 
       return true;
     } catch (error) {

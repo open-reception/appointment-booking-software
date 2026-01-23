@@ -1,6 +1,6 @@
 import { json } from "@sveltejs/kit";
 import { UserService } from "$lib/server/services/user-service";
-import { NotFoundError } from "$lib/server/utils/errors";
+import { BackendError, InternalError, logError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
@@ -36,11 +36,13 @@ registerOpenAPIRoute("/auth/confirm", "POST", {
           schema: {
             type: "object",
             properties: {
-              message: { type: "string", description: "Success message" },
+              recoveryPassphrase: { type: "string", description: "Optional recovery passphrase" },
               isSetup: {
                 type: "string",
                 description: "Whether this is the first account that was setup on the server",
               },
+              id: { type: "string", description: "user uuid" },
+              email: { type: "string", description: "user email" },
             },
             required: ["message"],
           },
@@ -72,14 +74,19 @@ registerOpenAPIRoute("/auth/confirm", "POST", {
 });
 
 export const POST: RequestHandler = async ({ request }) => {
+  const log = logger.setContext("API");
+
   try {
     const body = await request.json();
 
     const confirmationResult = await UserService.confirm(body.token);
 
-    const response: Record<string, string | boolean> = {
+    const response: Record<string, string | boolean | null> = {
       message: "User account confirmed successfully. You can now log in.",
       isSetup: confirmationResult.isSetup,
+      id: confirmationResult.id,
+      email: confirmationResult.email,
+      tenantId: confirmationResult.tenantId,
     };
 
     // Include recovery passphrase if it exists (for WebAuthn-only users)
@@ -91,13 +98,12 @@ export const POST: RequestHandler = async ({ request }) => {
 
     return json(response, { status: 200 });
   } catch (error) {
-    const log = logger.setContext("API");
-    log.error("User confirmation error:", JSON.stringify(error || "?"));
+    logError(log)("User confirmation error", error);
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "Invalid or expired confirmation token" }, { status: 404 });
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
-    return json({ error: "Internal server error" }, { status: 500 });
+    return new InternalError().toJson();
   }
 };

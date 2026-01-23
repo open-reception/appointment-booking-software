@@ -82,7 +82,7 @@ export const GET: RequestHandler = async ({ locals, url, params }) => {
       agents: filteredAgents,
     });
   } catch (error) {
-    logError(log)("Error getting public agents for channel", error, locals.user?.userId);
+    logError(log)("Error getting public agents for channel", error, locals.user?.id);
     return new InternalError().toJson();
   }
 };

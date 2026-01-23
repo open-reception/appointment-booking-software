@@ -3,12 +3,20 @@
 import type { SelectUser } from "$lib/server/db/central-schema";
 import type { Locale } from "$i18n/runtime";
 
+interface SessionInfo {
+  passkeyId?: string;
+  session: {
+    sessionId: string;
+    exp: number;
+  };
+}
+
 // for information about these interfaces
 declare global {
   namespace App {
     // interface Error {}
     interface Locals {
-      user?: SelectUser & { userId: string; sessionId: string; exp: number };
+      user?: SelectUser & SessionInfo;
       locale?: Locale;
     }
     // interface PageData {}

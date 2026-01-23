@@ -2,7 +2,7 @@ import { ROUTES } from "$lib/const/routes.js";
 import logger from "$lib/logger";
 import { fail, redirect, type Actions } from "@sveltejs/kit";
 import { superValidate } from "sveltekit-superforms";
-import { zod } from "sveltekit-superforms/adapters";
+import { zod4 as zod } from "sveltekit-superforms/adapters";
 import { formSchema as addFormSchema } from "./(components)/add-tenant-form";
 import { formSchema as editFormSchema } from "./(components)/edit-tenant-form";
 import { formSchema as deleteFormSchema } from "./(components)/delete-tenant-form";
@@ -53,7 +53,8 @@ export const actions: Actions = {
       });
     }
 
-    const resp = await event.fetch(`/api/tenants`, {
+    // Create tenant first
+    const tenantResponse = await event.fetch(`/api/tenants`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -61,16 +62,13 @@ export const actions: Actions = {
       credentials: "same-origin",
       body: JSON.stringify({
         shortName: form.data.shortName,
-        inviteAdmin: form.data.email,
       }),
     });
 
-    if (resp.status < 400) {
-      return { form };
-    } else {
+    if (tenantResponse.status >= 400) {
       let error = "Unknown error";
       try {
-        const body = await resp.json();
+        const body = await tenantResponse.json();
         error = body.error;
       } catch (e) {
         log.error("Failed to parse add tenant error response", { error: e });
@@ -80,6 +78,38 @@ export const actions: Actions = {
         error,
       });
     }
+
+    // If admin invitation requested, create user invitation
+    if (form.data.inviteAdmin && form.data.email) {
+      const tenantData = await tenantResponse.json();
+      const tenantId = tenantData.tenant?.id;
+
+      if (tenantId) {
+        const userInviteResponse = await event.fetch(`/api/auth/invite`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            email: form.data.email,
+            name: form.data.email.split("@")[0],
+            role: "TENANT_ADMIN",
+            tenantId: tenantId,
+          }),
+        });
+
+        if (userInviteResponse.status >= 400) {
+          log.warn("Tenant created but user invitation failed", {
+            tenantId,
+            email: form.data.email,
+          });
+          // Don't fail the entire operation, just log the warning
+        }
+      }
+    }
+
+    return { form };
   },
   edit: async (event) => {
     const form = await superValidate(event, zod(editFormSchema));

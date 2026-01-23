@@ -6,8 +6,8 @@
   import type { TTenant } from "$lib/types/tenant";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
-  import { zodClient } from "sveltekit-superforms/adapters";
-  import z from "zod";
+  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
+  import { z } from "zod";
   import { formSchema } from ".";
   import { auth } from "$lib/stores/auth";
   import { CenterState } from "$lib/components/templates/empty-state";
@@ -17,6 +17,7 @@
 
   let { entity, done }: { entity: TTenant; done: () => void } = $props();
 
+  // svelte-ignore state_referenced_locally
   const form = superForm(
     { id: entity.id, shortname: "" },
     {

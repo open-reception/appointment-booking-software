@@ -8,15 +8,17 @@ export type Language = "de" | "en";
 
 /**
  * Available email template types
- * @typedef {'user-created' | 'pin-reset' | 'key-reset' | 'appointment-reminder' | 'appointment-created' | 'appointment-updated' | 'confirmation'} EmailTemplateType
+ * @typedef {'user-created' | 'pin-reset' | 'key-reset' | 'appointment-reminder' | 'appointment-created' | 'appointment-request' | 'appointment-updated' | 'confirmation'} EmailTemplateType
  */
 export type EmailTemplateType =
   | "user-created"
   | "pin-reset" // Info that PIN was reset (no code)
   | "key-reset"
   | "appointment-reminder"
-  | "appointment-created"
+  | "appointment-created" // Appointment confirmed (no staff confirmation needed)
+  | "appointment-request" // Appointment requested (requires staff confirmation)
   | "appointment-updated"
+  | "appointment-cancelled" // Appointment cancelled by staff
   | "confirmation" // Registration confirmation with one-time code
   | "tenant-admin-invite" // Invitation for tenant administrator
   | "user-invite"; // Invitation for new users to existing tenant

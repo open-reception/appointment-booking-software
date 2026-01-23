@@ -304,7 +304,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     log.debug("Getting agent details", {
       tenantId,
       agentId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     const agentService = await AgentService.forTenant(tenantId);
@@ -317,14 +317,14 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     log.debug("Agent details retrieved successfully", {
       tenantId,
       agentId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     return json({
       agent,
     });
   } catch (error) {
-    logError(log)("Error getting agent details", error, locals.user?.userId, params.id);
+    logError(log)("Error getting agent details", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();
@@ -352,7 +352,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
     log.debug("Updating agent", {
       tenantId,
       agentId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
       updateFields: Object.keys(body),
     });
 
@@ -362,7 +362,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
     log.debug("Agent updated successfully", {
       tenantId,
       agentId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     return json({
@@ -370,7 +370,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
       agent: updatedAgent,
     });
   } catch (error) {
-    logError(log)("Error updating agent", error, locals.user?.userId, params.id);
+    logError(log)("Error updating agent", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();
@@ -402,7 +402,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
     log.debug("Deleting agent", {
       tenantId,
       agentId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     const agentService = await AgentService.forTenant(tenantId);
@@ -415,14 +415,14 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
     log.debug("Agent deleted successfully", {
       tenantId,
       agentId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     return json({
       message: "Agent deleted successfully",
     });
   } catch (error) {
-    logError(log)("Error deleting agent", error, locals.user?.userId, params.id);
+    logError(log)("Error deleting agent", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();

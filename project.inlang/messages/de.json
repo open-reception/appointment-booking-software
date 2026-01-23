@@ -1,6 +1,7 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
 	"welcome": "Willkommen bei OpenReception",
+	"home": "Startseite",
 	"poweredBy": "Betrieben mit",
 	"i18n": {
 		"label": "Sprache wählen",
@@ -61,10 +62,19 @@
 			"url": "Ungültige URL",
 			"languages": "Wähle mindestens eine Sprache",
 			"language": "Wähle eine Sprache",
-			"deleteAfterDays": "Wähle einen Zeitpunkt"
+			"deleteAfterDays": "Wähle einen Zeitpunkt",
+			"phoneNoRequired": "Telefonnummer ist erforderlich",
+			"phoneNoInvalid": "Format der Telefonnummer ist ungültig",
+			"pinLength": "PIN muss 6 Ziffern lang sein",
+			"pinDigitsOnly": "PIN darf nur Ziffern enthalten",
+			"pinInsecure": "Diese PIN ist zu unsicher"
 		},
 		"passkey": "Passkey",
-		"name": "Name"
+		"salutation": "Anrede",
+		"name": "Name",
+		"phone": "Telefonnummer",
+		"pin": "PIN",
+		"pinHint": "Speichere Deine PIN an einem sicheren Ort, z.B. in einem Passwort-Manager."
 	},
 	"login": {
 		"or": "Oder",
@@ -77,9 +87,9 @@
 	},
 	"confirm": {
 		"success": {
-			"title": "Du bist bereit!",
-			"description": "Du hast Dein Konto erfolgreich gesichert",
-			"action": "Weiter"
+			"title": "E-Mail Adresse bestätigt!",
+			"description": "Jetzt musst Du nur noch einen Passkey hinzufügen.",
+			"action": "Passkey hinzufügen"
 		},
 		"error": {
 			"title": "Bestätigung fehlgeschlagen",
@@ -93,6 +103,20 @@
 			"action": "E-Mail erneut senden",
 			"success": "E-Mail gesendet"
 		}
+	},
+	"setupPasskey": {
+		"title": "Passkey einrichten",
+		"description": "Erstelle Deinen Passkey, um Dein Konto zu sichern.",
+		"action": "Passkey setzen",
+		"success": "Passkey eingerichtet. Logge Dich damit jetzt ein.",
+		"successKeyPairSaved": "Schlüsselpaar erfolgreich gespeichert.",
+		"confirmPrfRetrival": "Jetzt verwende den neu erstellten Passkey, um damit die Verschlüsselung zu aktivieren.",
+		"error": "Passkey konnte nicht gesetzt werden",
+		"errorKeyPairDataMissing": "Konnte Schlüsselpaar nicht generieren. Fehlende Daten.",
+		"errorKeyPairNotSaved": "Schlüsselpaar konnte nicht gespeichert werden.",
+		"errorPrfOutputNotTriggered": "Sie müssen der Verwendung des Passkeys zustimmen.",
+		"errorAuthenticatorNotSupported": "Dieser Authentifikator unterstützt nicht die erforderliche Sicherheitserweiterung (PRF). Bitte verwenden Sie einen modernen Authentifikator wie YubiKey 5.2.3+, Apple Touch ID oder Android.",
+		"errorGettingPrfOutput": "Fehler beim Abrufen der Sicherheitsdaten vom Passkey. Bitte verwenden Sie einen modernen Authentifikator, der die PRF-Erweiterung unterstützt."
 	},
 	"logout": {
 		"title": "Erfolgreich abgemeldet",
@@ -140,7 +164,7 @@
 			"title": "Mandant hinzufügen",
 			"description": "Erstelle eine Seite für jemanden, der Termine sammeln möchte.",
 			"name": {
-				"description": "Muss einmalig auf diesem Server sein. Wird als URL verwendet {domain}",
+				"description": "Muss einmalig auf diesem Server sein. Kann niemals geändert werden. Wird als URL verwendet {domain}",
 				"errors": {
 					"urlFormat": "Nur Kleinbuchstaben, Zahlen und Bindestriche sind erlaubt",
 					"startEndDash": "Darf nicht mit einem Bindestrich beginnen oder enden"
@@ -320,6 +344,7 @@
 	"select": "Auswählen",
 	"close": "Schließen",
 	"dashboard": {
+		"title": "Übersicht",
 		"hello": "Hallo",
 		"tenants": {
 			"currentTenant": "Du verwaltest gerade den Mandanten {name}.",
@@ -337,6 +362,44 @@
 		"sidebar": {
 			"title": "Zum ersten Mal hier?",
 			"description": "Tippe {name} um die Seitenleiste umzustellen"
+		},
+		"onboarding": {
+			"title": "Mach' Dich bereit für Termine",
+			"description": "Für das beste Ergebnis folge dieser Anleitung Schritt für Schritt:",
+			"notification": {
+				"ongoing": {
+					"title": "Einrichtung noch nicht abgeschlossen",
+					"description": "Nächste Schritte anzeigen",
+					"action": "Weiter"
+				},
+				"done": {
+					"title": "Einrichtung abgeschlossen!",
+					"description": "Sie können jetzt Termine entgegennehmen",
+					"action": "Startseite öffnen"
+				}
+			},
+			"sections": {
+				"settings": {
+					"title": "Prüfe und speichere Einstellungen",
+					"description": "Stelle sicher, dass die Einstellungen Deiner Organisation korrekt sind, bevor Du Akteure oder Kanäle einrichtest.",
+					"action": "Gehe zu Einstellungen"
+				},
+				"agents": {
+					"title": "Akteur:in hinzufügen",
+					"description": "Akteure sind die Personen, Teams oder Gruppen mit denen Deine Kunden einen Termin vereinbaren können.",
+					"action": "Add Agent"
+				},
+				"channels": {
+					"title": "Ersten Kanal hinzufügen",
+					"description": "Kanäle sind Deine Möglichkeit, verschiedene Arten von Terminen anzubieten.",
+					"action": "Kanal hinzufügen"
+				},
+				"staff": {
+					"title": "Personal hinzufügen & aktivieren",
+					"description": "Stelle sicher, dass Dein Team Zugriff auf die verschlüsselten Termine hat. Erst wenn sich die erste Person angemeldet hat, können Termine entgegengenommen werden.",
+					"action": "Person hinzufügen"
+				}
+			}
 		}
 	},
 	"agents": {
@@ -637,7 +700,270 @@
 					"title": "Telefonnummer erforderlich",
 					"label": "Kunden müssen eine Telefonnummer angeben, wenn sie einen Termin buchen."
 				}
+			},
+			"action": "Speichern"
+		}
+	},
+	"account": {
+		"overview": {
+			"title": "Dein Konto"
+		},
+		"general": {
+			"navItem": "Einstellungen",
+			"title": "Kontoeinstellungen",
+			"description": "Ändere Deinen Namen."
+		},
+		"change-email": {
+			"navItem": "E-Mail Adresse",
+			"title": "E-Mail Adresse ändern",
+			"description": "Ändere Deine E-Mail Adresse."
+		},
+		"passkeys": {
+			"navItem": "Passkeys",
+			"title": "Passkeys verwalten",
+			"description": "Du kannst bis zu drei Passkeys für Dein Konto hinzufügen."
+		},
+		"change-passphrase": {
+			"navItem": "Passphrase",
+			"title": "Change Passphrase",
+			"description": "Globale Admins können einen Passphrase als Backup-Methode verwenden."
+		}
+	},
+	"staff": {
+		"title": "Personal",
+		"roles": {
+			"GLOBAL_ADMIN": "Globaler Admin",
+			"TENANT_ADMIN": "Mandanten-Admin",
+			"STAFF": "Mitarbeiter:in"
+		},
+		"permissions": {
+			"agents": "verwaltet Akteure",
+			"channels": "verwaltet Kanäle",
+			"absences": "verwaltet Abwesenheiten",
+			"settings": "verwaltet Einstellungen",
+			"staff": "verwaltet Personal",
+			"appointments": "verwaltet Termine"
+		},
+		"form": {
+			"fields": {
+				"language": {
+					"title": "Sprache",
+					"description": "Wird in der Einlaungs-E-Mail verwendet.",
+					"placeholder": "Sprache auswählen"
+				},
+				"role": {
+					"title": "Rolle",
+					"placeholder": "Rolle auswählen"
+				}
 			}
+		},
+		"add": {
+			"title": "Mitarbeiter:in hinzufügen",
+			"description": "Mitarbeiter:innen verwalten Termine und Einstellungen. Diese Konten sind nicht öffentlich.",
+			"action": "Mitarbeiter:in hinzufügen",
+			"success": "Mitarbeiter:in hinzugefügt",
+			"errors": {
+				"unknown": "Konnte Mitarbeiter:in nicht hinzufügen"
+			}
+		},
+		"list": {
+			"needsAccess": "Kann Termine nicht sehen",
+			"empty": {
+				"title": "Bisher kein Personal",
+				"description": "Personal verwaltet Termine und Einstellungen. Diese Konten sind nicht öffentlich."
+			}
+		},
+		"edit": {
+			"title": "Konto bearbeiten",
+			"description": "Aktualisiere das Konto dieser Mitarbeiter:in.",
+			"success": "Konto aktualisiert",
+			"error": "Konnte Konto nicht aktualisieren.",
+			"action": "Übernehmen"
+		},
+		"delete": {
+			"title": "Konto entfernen",
+			"description": "Tippe {email} um dieses Konto zu entfernen. Dieser Schritt kann nicht rückgängig gemacht werden.",
+			"action": "Konto entfernen",
+			"success": "Konto entfernt",
+			"error": "Konnte Konto nicht entfernen."
+		},
+		"access": {
+			"title": "Zugriff auf Klientendaten gewähren",
+			"description": "Willst Du {name} Zugriff auf alle Kundendaten geben?",
+			"action": "Zugriff gewähren",
+			"loading": "Zugriff wird gewährt ({success}/{total} Klienten)",
+			"success": "Zugriff gewährt",
+			"error": "Konnte Zugriff nicht für alle Klienten gewähren. Bitte erneut versuchen.",
+			"unavailable": {
+				"title": "Du kannst keinen Zugriff gewähren",
+				"description": "Nur Mitarbeiter:innen und Mandanten-Admins können Zugriff gewähren."
+			}
+		},
+		"loading": "Lade Personal"
+	},
+	"yes": "Ja",
+	"no": "Nein",
+	"public": {
+		"links": {
+			"website": "Webseite aufrufen",
+			"imprint": "Impressum",
+			"privacyStatement": "Datenschutz"
+		},
+		"bookAppointment": "Termin buchen",
+		"appointment": {
+			"requiresConfirmation": "Erfordert Bestätigung durch {name}"
+		},
+		"tenantNotReady": {
+			"title": "Diese Seite ist noch nicht bereit",
+			"description": "Falls dies Ihre Seite ist, loggen Sie sich ein und schließen Sie das Onboarding ab."
+		},
+		"steps": {
+			"channel": {
+				"title": "Bitte wählen Sie eine Terminart aus:",
+				"empty": "Aktuell keine Termine verfügbar. Bitte versuchen Sie es später erneut."
+			},
+			"agent": {
+				"title": "Mit wem möchten Sie Ihren Termin vereinbaren?",
+				"anyone": {
+					"title": "Keinen Wunsch äußern",
+					"description": "Wählen Sie diese Option, wenn Sie den frühsten Termin suchen."
+				}
+			},
+			"slot": {
+				"title": "Bitte wählen Sie einen verfügbaren Termin aus:",
+				"today": "Heute",
+				"selectDate": "Wähle Sie ein Datum aus",
+				"selectTime": "Wähle Sie eine Uhrzeit aus:",
+				"loading": "Lade verfügbare Termine...",
+				"empty": "Keine Termine verfügbar. Bitte wählen Sie ein anderes Datum.",
+				"action": "Termin auswählen"
+			},
+			"data": {
+				"title": "Bitte fügen Sie Ihre Informationen hinzu:",
+				"alert": {
+					"title": "Ihre Daten sind sicher",
+					"description": "Nur Sie und {name} können diese Informationen sehen. Die Daten sind Ende-zu-Ende verschlüsselt."
+				},
+				"email": {
+					"notifyMe": "Benachrichtigen Sie mich über Änderungen per E-Mail",
+					"tooltip": "Wenn aktiviert, wird Ihre Mail vorübergehend im Logbuch des Mailservers auftauchen. Wenn deaktiviert müssen Sie sich auf dieser Seite Einloggen, um Änderungen einzusehen."
+				},
+				"phone": {
+					"description": "Format: +491234567890. {name} kontaktiert Sie ggf. telefonisch, falls es Fragen/Änderungen zu Ihrem Termin gibt.",
+					"optional": "(optional)"
+				},
+				"action": "Daten hinzufügen"
+			},
+			"auth": {
+				"register": {
+					"title": "Ich bin das erste Mal hier",
+					"description": "Bitte legen Sie eine PIN fest:",
+					"hint": "Fortfahren erstellt ein Konto für Sie.",
+					"action": "Zussammenfassung anzeigen",
+					"success": "Konto erfolgreich erstellt!",
+					"error": "Konto konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+					"alreadyExists": "Diese E-Mail ist bereits registriert. Bitte nutzen Sie die Login-Option, um weitere Termine zu buchen."
+				},
+				"login": {
+					"title": "Anmelden",
+					"description": "Bitte geben Sie Ihre PIN ein:",
+					"action": "Zusammenfassung anzeigen",
+					"throttled": "Zu viele Anmeldeversuche. Bitte warten Sie einige Minuten, bevor Sie es erneut versuchen.",
+					"retry": "Versuchen Sie es erneut in {seconds} Sekunden"
+				}
+			},
+			"summary": {
+				"title": "Bitte prüfen Sie Ihren Termin, bevor Sie buchen",
+				"book": {
+					"action": "Termin buchen"
+				},
+				"request": {
+					"action": "Termin anfragen",
+					"hint": "Dieser Termin muss manuell bestätigt werden. Sie erhalten per E-Mail informiert."
+				},
+				"error": "Buchung fehlgeschlagen. Bitte erneut versuchen."
+			},
+			"complete": {
+				"book": {
+					"title": "Termin gebucht",
+					"description": "Wir haben Ihnen eine E-Mail mit den Details gesendet."
+				},
+				"request": {
+					"title": "Termin angefragt",
+					"description": "{name} wird Ihren Termin in Kürze bestätigen oder absagen. Sie werden per E-Mail informiert."
+				},
+				"action": "Weiter zur Startseite"
+			}
+		},
+		"anyAgent": "Jede verfügbare Person",
+		"register": {
+			"error": "Verschlüsselung konnte nicht vorbereitet werden. Bitte erneut versuchen"
+		},
+		"login": {
+			"success": "Anmeldung erfolgreich",
+			"error": "Anmeldung fehlgeschlagen. Bitte erneut versuchen"
+		}
+	},
+	"calendar": {
+		"today": "Heute",
+		"loading": "Loading calendar",
+		"decrypting": "wird entschlüsselt...",
+		"decryptingError": "Entschlüsselung fehlgeschlagen. Bitte neu anmelden.",
+		"shownAppointments": {
+			"title": "Termine",
+			"options": {
+				"all": "alle",
+				"available": "verfügbar",
+				"booked": "gebucht",
+				"reserved": "reserviert"
+			}
+		}
+	},
+	"emails": {
+		"poweredBy": "Betrieben mit",
+		"greeting": "Hallo {name},",
+		"oclock": "Uhr",
+		"appointmentBooked": {
+			"subject": "{channel} bei {tenant} gebucht",
+			"introduction": "Ihr Termin wurde gebucht.",
+			"action": "Termin absagen",
+			"reason": "Sie erhalten diese E-Mail, weil jemand mit Ihrer E-Mail Adresse einen Termin bei gebucht hat."
+		},
+		"appointmentReminder": {
+			"subject": "Erinnerung: Ihr Termin bei {tenant}",
+			"introduction": "Ihr Termin wurde bei {tenant} steht in Kürze bevor.",
+			"action": "Termin absagen",
+			"reason": "Sie erhalten diese E-Mail, weil jemand mit Ihrer E-Mail Adresse einen Termin bei gebucht hat."
+		},
+		"appointmentRequest": {
+			"subject": "{channel} bei {tenant} angefragt",
+			"introduction": "Ihr Termin wurde angefragt. Sie werden benachrichtigt, sobald der Termin bestätigt wurde.",
+			"reason": "Sie erhalten diese E-Mail, weil jemand mit Ihrer E-Mail Adresse einen Termin bei angefragt hat."
+		},
+		"appointmentRejected": {
+			"subject": "Ihre Anfrage für {channel} bei {tenant} wurde abgelehnt",
+			"introduction": "Ihr Termin wurde abgelehnt.",
+			"reason": "Sie erhalten diese E-Mail, weil jemand mit Ihrer E-Mail Adresse einen Termin bei angefragt hat."
+		},
+		"confirmation": {
+			"subject": "E-Mail Adresse bestätigen",
+			"introduction": "willkommen bei unserem Terminbuchungsportal. Bitte bestätige Deine E-Mail Adresse.",
+			"action": "E-Mail Adresse bestätigen",
+			"hint": "Dieser Link ist nur {expirationMinutes} Minuten gültig und kann nur einmal verwendet werden.",
+			"reason": "Du erhältst diese E-Mail, weil jemand für Deine E-Mail Adresse ein Konto registriert hat."
+		},
+		"pinReset": {
+			"subject": "PIN erfolgreich geändert",
+			"introduction": "Sie haben erfolgreich Ihre PIN beim Terminbuchungsportal von {tenant} geändert und können sich ab sofort mit Ihrer PIN anmelden.",
+			"action": "Anmelden",
+			"reason": "Sie erhalten diese E-Mail, weil jemand für die PIN für Ihr Konto geändert hat."
+		},
+		"userInvite": {
+			"subject": "E-Mail Adresse bestätigen für {tenant}",
+			"introduction": "willkommen beim Terminbuchungsportal von {tenant}. Bitte bestätige Deine E-Mail Adresse.",
+			"action": "E-Mail Adresse bestätigen",
+			"hint": "Dieser Link ist nur {expirationMinutes} Minuten gültig und kann nur einmal verwendet werden.",
+			"reason": "Du erhältst diese E-Mail, weil jemand für Deine E-Mail Adresse ein Konto registriert hat."
 		}
 	}
 }

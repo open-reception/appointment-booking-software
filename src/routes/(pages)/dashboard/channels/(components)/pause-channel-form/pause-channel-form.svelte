@@ -9,11 +9,12 @@
   import { getCurrentTranlslation } from "$lib/utils/localizations";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
-  import { zodClient } from "sveltekit-superforms/adapters";
+  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from ".";
 
   let { entity, done }: { entity: TChannelWithFullAgents; done: () => void } = $props();
 
+  // svelte-ignore state_referenced_locally
   const form = superForm(
     { id: entity.id, pause: !entity.pause },
     {

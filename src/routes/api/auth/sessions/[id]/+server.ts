@@ -84,12 +84,12 @@ export const DELETE: RequestHandler = async ({ params, locals, cookies }) => {
 
     logger.debug("Revoking session", {
       sessionId,
-      requestedBy: locals.user.userId,
+      requestedBy: locals.user.id,
       userRole: locals.user.role,
     });
 
     // Get current session ID from locals (set by auth middleware)
-    const currentSessionId = locals.user.sessionId;
+    const currentSessionId = locals.user.session.sessionId;
 
     // Check if user is trying to revoke their own session or if they're a global admin
     if (locals.user.role === "GLOBAL_ADMIN") {
@@ -98,7 +98,7 @@ export const DELETE: RequestHandler = async ({ params, locals, cookies }) => {
     } else {
       // Regular users can only revoke their own sessions
       // First, get all user's sessions to verify ownership
-      const userSessions = await SessionService.getActiveSessions(locals.user.userId);
+      const userSessions = await SessionService.getActiveSessions(locals.user.id);
       const sessionToRevoke = userSessions.find((session) => session.id === sessionId);
 
       if (!sessionToRevoke) {
@@ -118,13 +118,13 @@ export const DELETE: RequestHandler = async ({ params, locals, cookies }) => {
       });
       logger.info("Current session revoked, cookie cleared", {
         sessionId,
-        userId: locals.user.userId,
+        userId: locals.user.id,
       });
     }
 
     logger.info("Session revoked successfully", {
       sessionId,
-      revokedBy: locals.user.userId,
+      revokedBy: locals.user.id,
       wasCurrent: sessionId === currentSessionId,
     });
 
@@ -133,7 +133,7 @@ export const DELETE: RequestHandler = async ({ params, locals, cookies }) => {
     logger.error("Revoke session error:", {
       error: String(error),
       sessionId: params.id,
-      userId: locals.user?.userId,
+      userId: locals.user?.id,
     });
     return json({ error: "Internal server error" }, { status: 500 });
   }

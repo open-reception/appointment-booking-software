@@ -1,9 +1,10 @@
 <script lang="ts">
   import { browser } from "$app/environment";
+  import { setLocale } from "$i18n/runtime";
   import { Toaster } from "$lib/components/ui/sonner/index.js";
+  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
   import { ModeWatcher, setMode } from "mode-watcher";
   import "../app.css";
-  import { setLocale } from "$i18n/runtime";
 
   let { data, children } = $props();
 
@@ -27,4 +28,6 @@
 
 <ModeWatcher track={false} />
 <Toaster richColors />
-{@render children()}
+<Tooltip.Provider delayDuration={0}>
+  {@render children()}
+</Tooltip.Provider>

@@ -105,7 +105,7 @@ describe("Schedule API Route", () => {
                     from: "09:00",
                     to: "09:30",
                     duration: 30,
-                    availableAgentCount: 1,
+                    availableAgents: [{ id: "agent-1", name: "Agent 1" }],
                   },
                 ],
               },

@@ -29,7 +29,10 @@ describe("Create New Client API Route", () => {
     channelId: mockChannelId,
     agentId: "agent-123", // Missing field added
     appointmentDate: "2024-12-25T14:30:00.000Z",
+    duration: 10,
     emailHash: "test-email-hash",
+    clientEmail: "test@example.com",
+    clientLanguage: "de",
     clientPublicKey: "test-public-key",
     privateKeyShare: "test-private-key-share",
     encryptedAppointment: {
@@ -97,6 +100,7 @@ describe("Create New Client API Route", () => {
         tenantId: mockTenantId,
         tunnelId: mockTunnelId,
         appointmentDate: validRequestBody.appointmentDate,
+        duration: validRequestBody.duration,
         emailHashPrefix: "test-ema",
       });
     });
@@ -195,6 +199,7 @@ describe("Create New Client API Route", () => {
         tenantId: mockTenantId,
         tunnelId: mockTunnelId,
         appointmentDate: validRequestBody.appointmentDate,
+        duration: validRequestBody.duration,
         emailHashPrefix: "test-ema",
       });
     });
@@ -255,6 +260,7 @@ describe("Create New Client API Route", () => {
         tenantId: mockTenantId,
         tunnelId: mockTunnelId,
         appointmentDate: validRequestBody.appointmentDate,
+        duration: 10,
         emailHashPrefix: "test-ema", // First 8 chars of "test-email-hash"
       });
     });

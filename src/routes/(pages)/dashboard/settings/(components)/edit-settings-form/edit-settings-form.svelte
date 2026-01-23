@@ -13,7 +13,7 @@
   import DefaultOrgIcon from "@lucide/svelte/icons/landmark";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
-  import { zodClient } from "sveltekit-superforms/adapters";
+  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from "./schema";
   import { tenants } from "$lib/stores/tenants";
 
@@ -30,6 +30,8 @@
     key: it,
     label: translatedLocales[it as keyof typeof translatedLocales],
   }));
+
+  // svelte-ignore state_referenced_locally
   const form = superForm(
     {
       id: entity.id,
@@ -333,7 +335,7 @@
       disabled={isSubmitting}
       class="sm:ml-auto"
     >
-      {m["tenants.edit.action"]()}
+      {m["settings.form.action"]()}
     </Form.Button>
   </div>
 </Form.Root>

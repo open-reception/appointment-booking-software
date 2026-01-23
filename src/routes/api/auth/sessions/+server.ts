@@ -119,10 +119,10 @@ export const GET: RequestHandler = async ({ locals }) => {
     }
 
     // Get all active sessions for the user from database
-    const activeSessions = await SessionService.getActiveSessions(locals.user.userId);
+    const activeSessions = await SessionService.getActiveSessions(locals.user.id);
 
     // Get current session ID from access token
-    const currentSessionId = locals.user.sessionId;
+    const currentSessionId = locals.user.session.sessionId;
 
     const sessions = activeSessions.map((session) => ({
       id: session.id,
@@ -153,7 +153,7 @@ export const DELETE: RequestHandler = async ({ locals, cookies }) => {
     }
 
     // Logout all sessions for the user
-    await SessionService.logoutAllSessions(locals.user.userId);
+    await SessionService.logoutAllSessions(locals.user.id);
 
     // Clear the current access token cookie
     cookies.delete("access_token", {

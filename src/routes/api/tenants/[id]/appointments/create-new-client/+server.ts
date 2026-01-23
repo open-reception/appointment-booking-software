@@ -10,9 +10,13 @@ const requestSchema = z.object({
   channelId: z.string(),
   agentId: z.string(),
   appointmentDate: z.string(),
+  duration: z.number().int().positive(),
   emailHash: z.string(),
+  clientEmail: z.email().optional(),
+  clientLanguage: z.string().optional().default("en"),
   clientPublicKey: z.string(),
   privateKeyShare: z.string(),
+  salutation: z.string().optional(),
   encryptedAppointment: z.object({
     encryptedPayload: z.string(),
     iv: z.string(),
@@ -67,6 +71,18 @@ registerOpenAPIRoute("/tenants/{id}/appointments/create-new-client", "POST", {
             emailHash: {
               type: "string",
               description: "SHA-256 hash of client email",
+            },
+            clientEmail: {
+              type: "string",
+              format: "email",
+              description: "Client email address for sending confirmation. Optional.",
+              example: "client@example.com",
+            },
+            clientLanguage: {
+              type: "string",
+              description: "Client's preferred language (de or en)",
+              example: "de",
+              default: "de",
             },
             clientPublicKey: {
               type: "string",
@@ -213,10 +229,15 @@ export const POST: RequestHandler = async ({ request, params }) => {
     const body = await request.json();
     const validatedData = requestSchema.parse(body);
 
+    if (validatedData.salutation) {
+      throw new ValidationError("Bees incoming");
+    }
+
     logger.info("Creating new client appointment tunnel", {
       tenantId,
       tunnelId: validatedData.tunnelId,
       appointmentDate: validatedData.appointmentDate,
+      duration: validatedData.duration,
       emailHashPrefix: validatedData.emailHash.slice(0, 8),
     });
 

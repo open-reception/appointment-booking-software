@@ -48,7 +48,8 @@
  */
 
 import { OptimizedArgon2 } from "$lib/crypto/hashing";
-import { KyberCrypto, AESCrypto, ShamirSecretSharing } from "$lib/crypto/utils";
+import { pinThrottleStore } from "$lib/stores/pin-throttle";
+import { KyberCrypto, AESCrypto, ShamirSecretSharing, BufferUtils } from "$lib/crypto/utils";
 
 // Type definitions for unified cryptography
 interface ClientKeyPair {
@@ -67,9 +68,11 @@ interface EncryptedData {
   authTag: string;
 }
 
-interface AppointmentData {
+export interface AppointmentData {
+  salutation?: string;
   name: string;
   email: string;
+  shareEmail: boolean;
   phone?: string;
 }
 
@@ -103,6 +106,7 @@ export class UnifiedAppointmentCrypto {
   private emailHash: string | null = null;
   private tunnelId: string | null = null;
   private clientAuthenticated: boolean = false;
+  private serverPrivateKeyShare: string | null = null; // Server share of the private key
 
   // Staff-specific properties
   private staffKeyPair: StaffKeyPair | null = null;
@@ -117,6 +121,26 @@ export class UnifiedAppointmentCrypto {
   private shamirSharing: ShamirSecretSharing = new ShamirSecretSharing();
 
   // ===== CLIENT (PATIENT) METHODS =====
+
+  /**
+   * Run a precheck
+   */
+  async preCheck(email: string, tenantId: string): Promise<boolean> {
+    try {
+      const emailHash = await this.hashEmail(email);
+
+      const response = await fetch(`/api/tenants/${tenantId}/appointments/challenge`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emailHash }),
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error("❌ Error running pre-check:", error);
+      return false;
+    }
+  }
 
   /**
    * Initializes a new client with E2E encryption
@@ -135,9 +159,12 @@ export class UnifiedAppointmentCrypto {
       // 4. Generate tunnel key for AES encryption
       this.tunnelKey = await this.generateTunnelKey();
 
-      // 5. Split private key into Shamir shares (2-of-2)
-      // Note: privateKeyShare will be used during actual appointment creation
-      await this.createPrivateKeyShare(this.clientKeyPair.privateKey, pin);
+      // 5. Create server share of private key (PIN-based split)
+      // Server share will be sent to server during appointment creation
+      this.serverPrivateKeyShare = await this.createPrivateKeyShare(
+        this.clientKeyPair.privateKey,
+        pin,
+      );
 
       // 6. Fetch staff public keys from server
       const staffPublicKeys = await this.fetchStaffPublicKeys(tenantId);
@@ -179,6 +206,22 @@ export class UnifiedAppointmentCrypto {
       });
 
       if (!challengeResponse.ok) {
+        if (challengeResponse.status === 429) {
+          const errorData = await challengeResponse.json();
+          const retryAfterMs = errorData.retryAfterMs || 60000;
+          const retryAfterSeconds = Math.ceil(retryAfterMs / 1000);
+
+          // Store throttle state for frontend to enforce
+          pinThrottleStore.setThrottle(this.emailHash, retryAfterMs, errorData.failedAttempts || 0);
+
+          if (retryAfterSeconds > 0) {
+            throw new Error(
+              `Too many failed attempts. Please try again in ${retryAfterSeconds} seconds.`,
+            );
+          } else {
+            throw new Error("Too many failed attempts. Please try again later.");
+          }
+        }
         throw new Error("Challenge could not be retrieved");
       }
 
@@ -200,23 +243,43 @@ export class UnifiedAppointmentCrypto {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            emailHash: this.emailHash,
+            challengeId: challengeData.challengeId,
             challengeResponse: decryptedChallenge,
           }),
         },
       );
 
       if (!verificationResponse.ok) {
+        const errorData = await verificationResponse.json();
+        console.error("❌ Challenge verification failed:", errorData);
+        if (verificationResponse.status === 429) {
+          const retryAfterMs = errorData.retryAfterMs || 60000;
+          const retryAfterSeconds = Math.ceil(retryAfterMs / 1000);
+
+          // Store throttle state for frontend to enforce
+          pinThrottleStore.setThrottle(this.emailHash, retryAfterMs, errorData.failedAttempts || 0);
+
+          if (retryAfterSeconds > 0) {
+            throw new Error(
+              `Too many failed attempts. Please try again in ${retryAfterSeconds} seconds.`,
+            );
+          } else {
+            throw new Error("Too many failed attempts. Please try again later.");
+          }
+        }
         throw new Error("Challenge verification failed");
       }
 
       const verificationData = await verificationResponse.json();
 
-      // 6. Decrypt tunnel key
+      // 6. Decrypt tunnel key and store tunnel ID
       this.tunnelKey = await this.decryptTunnelKey(verificationData.encryptedTunnelKey, privateKey);
+      this.tunnelId = verificationData.tunnelId;
 
-      console.log("✅ Existing client authenticated");
       this.clientAuthenticated = true;
+
+      // Clear throttle on successful authentication
+      pinThrottleStore.clearThrottle();
     } catch (error) {
       console.error("❌ Error during client login:", error);
       throw error;
@@ -229,9 +292,12 @@ export class UnifiedAppointmentCrypto {
   async createAppointment(
     appointmentData: AppointmentData,
     appointmentDate: string,
+    agentId: string,
     channelId: string,
+    duration: number,
     tenantId: string,
     isFirstAppointment: boolean = false,
+    clientLanguage: string = "de",
   ): Promise<string> {
     if (!this.clientAuthenticated || !this.tunnelKey) {
       throw new Error("Client not authenticated");
@@ -250,22 +316,33 @@ export class UnifiedAppointmentCrypto {
         ? {
             // New client
             tunnelId: this.tunnelId,
+            agentId,
             channelId,
             appointmentDate,
+            duration,
             emailHash: this.emailHash,
+            clientEmail: appointmentData.shareEmail ? appointmentData.email : undefined,
+            clientLanguage,
             clientPublicKey: this.clientKeyPair?.publicKey,
             privateKeyShare: await this.getPrivateKeyShare(),
             encryptedAppointment,
             staffKeyShares: await this.getStaffKeyShares(tenantId),
             clientKeyShare: await this.getClientKeyShare(),
+            clientEncryptedTunnelKey: await this.encryptTunnelKeyForClient(),
+            salutation: appointmentData.salutation,
           }
         : {
             // Existing client
             emailHash: this.emailHash,
             tunnelId: this.tunnelId!,
+            agentId,
             channelId,
             appointmentDate,
+            duration,
+            clientEmail: appointmentData.shareEmail ? appointmentData.email : undefined,
+            clientLanguage,
             encryptedAppointment,
+            salutation: appointmentData.salutation,
           };
 
       const response = await fetch(endpoint, {
@@ -337,16 +414,14 @@ export class UnifiedAppointmentCrypto {
   // ===== STAFF METHODS =====
 
   /**
-   * Authenticate staff member using WebAuthn and reconstruct private key from shards
+   * Authenticate staff member using WebAuthn with PRF and reconstruct private key from shards
+   *
+   * SECURITY: Uses PRF Extension for zero-knowledge key derivation.
+   * Requires modern authenticator with PRF support (CTAP 2.1+).
    */
   async authenticateStaff(staffId: string, tenantId: string): Promise<void> {
     try {
-      console.log("🔐 Authenticasting staff member:", staffId, "for tenant:", tenantId);
-
-      // 1. Perform WebAuthn authentication
-      const webAuthnResponse = await this.performWebAuthnAuthentication(staffId);
-
-      // 2. Fetch database shard from server
+      // 1. Fetch database shard from server (to get passkeyId)
       const shardResponse = await fetch(`/api/tenants/${tenantId}/staff/${staffId}/key-shard`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
@@ -358,11 +433,11 @@ export class UnifiedAppointmentCrypto {
 
       const shardData = await shardResponse.json();
 
-      // 3. Derive passkey-based shard from WebAuthn response
-      const passkeyBasedShard = await this.derivePasskeyBasedShard(
-        shardData.passkeyId,
-        webAuthnResponse.authenticatorData,
-      );
+      // 2. Get PRF output from session (stored during login)
+      const prfOutput = await this.getPRFOutputFromSession(staffId, shardData.passkeyId);
+
+      // 3. Derive passkey-based shard from PRF output
+      const passkeyBasedShard = await this.derivePasskeyBasedShardWithPRF(prfOutput, staffId);
 
       // 4. Decode database shard
       const dbShard = this.base64ToUint8Array(shardData.privateKeyShare);
@@ -384,7 +459,7 @@ export class UnifiedAppointmentCrypto {
       this.staffAuthenticated = true;
       this.keyExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-      console.log("✅ Staff authentication successful");
+      console.log("✅ Staff authentication successful with PRF");
     } catch (error) {
       console.error("❌ Staff authentication failed:", error);
       throw new Error(
@@ -409,24 +484,59 @@ export class UnifiedAppointmentCrypto {
     }
 
     try {
-      // 1. Decrypt the symmetric key using staff's private key
-      const encapsulatedSecret = this.hexToUint8Array(encryptedData.staffKeyShare);
+      // Parse the staffKeyShare which now contains: encapsulatedSecret || iv || encryptedTunnelKey
+      const staffKeyShareBytes = this.hexToUint8Array(encryptedData.staffKeyShare);
+
+      // ML-KEM-768 encapsulated secret is 1088 bytes
+      const ENCAPSULATED_SECRET_LENGTH = 1088;
+      const IV_LENGTH = 12;
+
+      if (staffKeyShareBytes.length < ENCAPSULATED_SECRET_LENGTH + IV_LENGTH) {
+        throw new Error(
+          `staffKeyShare too short: ${staffKeyShareBytes.length} bytes, expected at least ${ENCAPSULATED_SECRET_LENGTH + IV_LENGTH}`,
+        );
+      }
+
+      const encapsulatedSecret = staffKeyShareBytes.slice(0, ENCAPSULATED_SECRET_LENGTH);
+      const iv = staffKeyShareBytes.slice(
+        ENCAPSULATED_SECRET_LENGTH,
+        ENCAPSULATED_SECRET_LENGTH + IV_LENGTH,
+      );
+      const encryptedTunnelKey = staffKeyShareBytes.slice(ENCAPSULATED_SECRET_LENGTH + IV_LENGTH);
+
+      // 1. Decapsulate to get shared secret
       const sharedSecret = KyberCrypto.decapsulate(
         this.staffKeyPair.privateKey,
         encapsulatedSecret,
       );
 
-      // 2. Import the symmetric key
-      const symmetricKey = await crypto.subtle.importKey(
+      // 2. Use first 32 bytes of shared secret as AES key
+      const aesKeyBytes = sharedSecret.slice(0, 32);
+
+      // Import as CryptoKey for Web Crypto API
+      const aesKey = await crypto.subtle.importKey("raw", aesKeyBytes, { name: "AES-GCM" }, false, [
+        "decrypt",
+      ]);
+
+      // 3. Decrypt the tunnel key with AES-GCM (encrypted already includes authTag)
+      const decryptedTunnelKey = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv },
+        aesKey,
+        encryptedTunnelKey,
+      );
+      const tunnelKeyBytes = new Uint8Array(decryptedTunnelKey);
+
+      // 4. Import tunnel key as CryptoKey
+      const tunnelKey = await crypto.subtle.importKey(
         "raw",
-        new Uint8Array(sharedSecret),
+        tunnelKeyBytes,
         { name: "AES-GCM" },
         false,
         ["decrypt"],
       );
 
-      // 3. Decrypt the appointment data
-      const iv = this.hexToUint8Array(encryptedData.encryptedAppointment.iv);
+      // 5. Now decrypt the actual appointment data
+      const appointmentIv = this.hexToUint8Array(encryptedData.encryptedAppointment.iv);
       const ciphertext = this.hexToUint8Array(encryptedData.encryptedAppointment.encryptedPayload);
       const authTag = this.hexToUint8Array(encryptedData.encryptedAppointment.authTag);
 
@@ -436,8 +546,8 @@ export class UnifiedAppointmentCrypto {
       encrypted.set(authTag, ciphertext.length);
 
       const decrypted = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: new Uint8Array(iv) },
-        symmetricKey,
+        { name: "AES-GCM", iv: appointmentIv },
+        tunnelKey,
         encrypted,
       );
 
@@ -510,7 +620,6 @@ export class UnifiedAppointmentCrypto {
     this.tenantId = null;
     this.staffAuthenticated = false;
     this.keyExpiry = null;
-    console.log("🔒 Staff logged out");
   }
 
   /**
@@ -521,92 +630,151 @@ export class UnifiedAppointmentCrypto {
     this.clientKeyPair = null;
     this.emailHash = null;
     this.tunnelId = null;
+    this.serverPrivateKeyShare = null;
     this.clientAuthenticated = false;
-    console.log("🔒 Client logged out");
   }
 
   // ===== SHARED PRIVATE METHODS =====
 
   /**
-   * Perform WebAuthn authentication for staff
+   * Get PRF output for staff authentication
+   *
+   * SECURITY: PRF Extension is REQUIRED for zero-knowledge key derivation.
+   * This method retrieves PRF output from the auth session (stored during login).
+   *
+   * @param staffId - Staff member ID
+   * @param passkeyId - Passkey credential ID
+   * @returns PRF output as ArrayBuffer
+   * @throws Error if PRF output is not available in session
    */
-  private async performWebAuthnAuthentication(staffId: string): Promise<{
-    authenticatorData: ArrayBuffer;
-    signature: ArrayBuffer;
-    userHandle: ArrayBuffer | null;
-  }> {
-    // 1. Get authentication options from server
-    const optionsResponse = await fetch("/api/auth/webauthn/authenticate/begin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: staffId }),
-    });
+  private async getPRFOutputFromSession(staffId: string, passkeyId: string): Promise<ArrayBuffer> {
+    // Import auth store dynamically to avoid circular dependencies
+    const { auth } = await import("$lib/stores/auth");
 
-    if (!optionsResponse.ok) {
-      throw new Error("Failed to get WebAuthn options");
+    // Get PRF output from session storage (set during login)
+    const passkeyAuthData = auth.getPasskeyAuthData();
+
+    if (!passkeyAuthData) {
+      throw new Error(
+        "No passkey authentication data found in session. " +
+          "Please log in again with your passkey to access encrypted data.",
+      );
     }
 
-    const options = await optionsResponse.json();
-
-    // 2. Perform WebAuthn authentication
-    const credential = (await navigator.credentials.get({
-      publicKey: {
-        challenge: new Uint8Array(this.base64ToUint8Array(options.challenge)),
-        allowCredentials: options.allowCredentials?.map((cred: { id: string; type: string }) => ({
-          id: new Uint8Array(this.base64ToUint8Array(cred.id)),
-          type: cred.type as PublicKeyCredentialType,
-        })),
-        timeout: options.timeout,
-        userVerification: options.userVerification,
-      },
-    })) as PublicKeyCredential;
-
-    if (!credential) {
-      throw new Error("WebAuthn authentication failed");
+    if (!passkeyAuthData.prfOutput) {
+      throw new Error(
+        "PRF output not available in session. " +
+          "This passkey may not support the PRF extension. " +
+          "Please use a modern authenticator (YubiKey 5.2.3+, Titan Gen2, Windows Hello, Touch ID, or Android).",
+      );
     }
 
-    const response = credential.response as AuthenticatorAssertionResponse;
+    // Verify that the passkeyId matches (security check)
+    if (passkeyAuthData.passkeyId !== passkeyId) {
+      throw new Error(
+        `Passkey ID mismatch: expected ${passkeyId}, got ${passkeyAuthData.passkeyId}. ` +
+          "Please log out and log in again.",
+      );
+    }
 
-    return {
-      authenticatorData: response.authenticatorData,
-      signature: response.signature,
-      userHandle: response.userHandle,
-    };
+    // Decode PRF output from base64
+    const prfBytes = this.base64ToUint8Array(passkeyAuthData.prfOutput);
+    return prfBytes.buffer as ArrayBuffer;
   }
 
   /**
-   * Derive a deterministic shard from passkey authentication data
+   * Store the staff key pair after the registration of a new staff member with PRF
    *
-   * This method creates a consistent private key shard from WebAuthn authenticatorData.
+   * SECURITY: Uses PRF Extension for zero-knowledge key derivation.
+   * The prfOutput parameter MUST come from a WebAuthn assertion with PRF extension.
+   *
+   * @param tenantId - Tenant ID
+   * @param staffId - Staff member ID
+   * @param passkeyId - Passkey credential ID
+   * @param prfOutput - 32-byte PRF output from WebAuthn assertion (secret!)
+   * @param keyPair - ML-KEM-768 keypair generated in browser
+   * @throws Error if PRF output is invalid or API call fails
+   */
+  public async storeStaffKeyPair(
+    tenantId: string,
+    staffId: string,
+    passkeyId: string,
+    prfOutput: ArrayBuffer,
+    keyPair: { publicKey: Uint8Array; privateKey: Uint8Array },
+  ): Promise<void> {
+    // Derive passkey-based shard from PRF output
+    const passkeyBasedShard = await this.derivePasskeyBasedShardWithPRF(prfOutput, staffId);
+
+    // Create database shard by XORing private key with passkey-based shard
+    const dbShard = new Uint8Array(keyPair.privateKey.length);
+    for (let i = 0; i < keyPair.privateKey.length; i++) {
+      dbShard[i] = keyPair.privateKey[i] ^ passkeyBasedShard[i];
+    }
+
+    // Store public key and database shard on server
+    await fetch(`/api/tenants/${tenantId}/staff/${staffId}/crypto`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        passkeyId,
+        publicKey: this.uint8ArrayToBase64(keyPair.publicKey),
+        privateKeyShare: this.uint8ArrayToBase64(dbShard),
+      }),
+    });
+
+    console.log("✅ Staff keypair stored with PRF-based security");
+  }
+
+  private uint8ArrayToBase64(array: Uint8Array): string {
+    return btoa(String.fromCharCode.apply(null, Array.from(array)));
+  }
+
+  /**
+   * Derive a deterministic shard from WebAuthn PRF Extension (CTAP 2.1+)
+   *
+   * This method uses the PRF (Pseudo-Random Function) extension to derive a secret shard.
    * The same passkey will always produce the same shard, enabling key reconstruction.
+   *
+   * SECURITY: PRF provides ZERO-KNOWLEDGE guarantee:
+   * - PRF output is SECRET - only the passkey owner can derive it
+   * - Server NEVER sees the PRF output (only the database shard)
+   * - Database compromise does NOT reveal private keys (both shards needed)
    *
    * Used in Staff Key Management:
    * - During registration: Create shard to XOR with private key for database storage
    * - During authentication: Recreate same shard to reconstruct private key
    *
-   * Uses HKDF (HMAC-based Key Derivation Function) with:
-   * - IKM: WebAuthn authenticatorData (contains randomness from authenticator)
-   * - Salt: "staff-crypto-shard-v1" (version-specific salt)
-   * - Info: "passkey:{passkeyId}" (domain separation per passkey)
-   * - Length: 2400 bytes (ML-KEM-768 private key size)
+   * Uses PRF Extension + HKDF expansion:
+   * - Input: 32-byte PRF output from authenticator (secret!)
+   * - HKDF Salt: "staff-prf-shard-v2" (version-specific)
+   * - HKDF Info: "staff:{staffId}" (domain separation)
+   * - Output: 2400 bytes (ML-KEM-768 private key size)
+   *
+   * @param prfOutput - 32-byte PRF output from assertion.getClientExtensionResults().prf.results.first
+   * @param staffId - Staff member ID for domain separation
+   * @returns 2400-byte shard for XOR-based key reconstruction
+   * @throws Error if PRF output is not exactly 32 bytes
    */
-  private async derivePasskeyBasedShard(
-    passkeyId: string,
-    authenticatorData: ArrayBuffer,
+  private async derivePasskeyBasedShardWithPRF(
+    prfOutput: ArrayBuffer,
+    staffId: string,
   ): Promise<Uint8Array> {
-    // Extract randomness from authenticator data
-    const inputKeyMaterial = new Uint8Array(authenticatorData);
+    // Validate PRF output length (should always be 32 bytes per CTAP 2.1 spec)
+    const prfBytes = new Uint8Array(prfOutput);
+    if (prfBytes.length !== 32) {
+      throw new Error(`Invalid PRF output length: ${prfBytes.length} bytes (expected 32)`);
+    }
 
-    // Import the IKM as a CryptoKey for HKDF
-    const ikmKey = await crypto.subtle.importKey("raw", inputKeyMaterial, "HKDF", false, [
-      "deriveBits",
-    ]);
+    // Import the PRF output as a CryptoKey for HKDF expansion
+    const ikmKey = await crypto.subtle.importKey("raw", prfBytes, "HKDF", false, ["deriveBits"]);
 
-    // Salt for HKDF
-    const salt = new TextEncoder().encode("staff-crypto-shard-v1");
+    // Salt for HKDF (versioned to allow future rotation)
+    // v2: Uses email-based PRF salts for multi-passkey support
+    // Each passkey still produces unique PRF output (passkey private key is part of PRF)
+    const salt = new TextEncoder().encode("staff-prf-shard-v2");
 
-    // Info for HKDF (domain separation with passkey ID)
-    const info = new TextEncoder().encode(`passkey:${passkeyId}`);
+    // Info for HKDF (domain separation per staff member)
+    const info = new TextEncoder().encode(`staff:${staffId}`);
 
     // Derive key material with the length needed for Kyber private key (2400 bytes for ML-KEM-768)
     const keyMaterial = await crypto.subtle.deriveBits(
@@ -723,20 +891,54 @@ export class UnifiedAppointmentCrypto {
   // ===== UTILITY METHODS =====
 
   private generateTunnelId(): string {
-    return "tunnel_" + crypto.randomUUID();
+    return crypto.randomUUID();
   }
 
+  /**
+   * Creates a server share of the private key using Shamir Secret Sharing (2-of-2)
+   *
+   * This implements a 2-party key splitting scheme where:
+   * - PIN-derived share (x=1): Deterministically derived from PIN + email hash (client can always recreate)
+   * - Server share (x=2): Stored in database
+   *
+   * Reconstruction requires both shares (2-of-2 threshold).
+   *
+   * Security properties:
+   * - Each share reveals NO information about the private key (information-theoretic security)
+   * - Both shares are required for reconstruction
+   * - Server share is useless without the PIN
+   *
+   * This allows the client to authenticate from any device:
+   * 1. Client provides email + PIN
+   * 2. Server returns the server share via challenge API
+   * 3. Client derives PIN share deterministically and reconstructs the private key
+   *
+   * @param privateKey - The ML-KEM-768 private key (hex string)
+   * @param pin - User's PIN for deterministic share derivation
+   * @returns Server share (hex string) to be stored in database
+   */
   private async createPrivateKeyShare(privateKey: string, pin: string): Promise<string> {
-    // Use Shamir Secret Sharing for private key
     const privateKeyBytes = this.hexToUint8Array(privateKey);
-    const shares = ShamirSecretSharing.splitSecret(privateKeyBytes, 2, 2);
 
-    // One share is PIN-encrypted and stored on client
-    const clientShare = shares[0].y;
-    const pinHash = await OptimizedArgon2.deriveKeyFromPIN(pin, this.emailHash || "");
-    const encryptedShare = await AESCrypto.encrypt(this.uint8ArrayToHex(clientShare), pinHash);
+    // Derive a deterministic y-value for the PIN-based share (x=1)
+    // ML-KEM-768 private key is 2400 bytes, so we need a hash of that length
+    const pinHash = await OptimizedArgon2.deriveKeyFromPIN(pin, this.emailHash || "", {
+      hashLength: privateKeyBytes.length,
+    });
 
-    return this.uint8ArrayToHex(encryptedShare.encrypted);
+    // Use ShamirSecretSharing to create the shares with deterministic first share
+    const shares = ShamirSecretSharing.splitSecretWithDeterministicShare(privateKeyBytes, pinHash);
+
+    // TEST: Immediately reconstruct to verify
+    const testReconstruct = ShamirSecretSharing.reconstructSecret(shares);
+    const match = privateKeyBytes.every((v, i) => v === testReconstruct[i]);
+
+    if (!match) {
+      console.error("❌ CRITICAL: Shamir reconstruction failed immediately after split!");
+    }
+
+    // Return the server share (x=2)
+    return this.uint8ArrayToHex(shares[1].y);
   }
 
   private async fetchStaffPublicKeys(tenantId: string): Promise<StaffPublicKey[]> {
@@ -760,15 +962,94 @@ export class UnifiedAppointmentCrypto {
   ): Promise<Array<{ userId: string; encryptedTunnelKey: string }>> {
     if (!this.tunnelKey) throw new Error("No tunnel key available");
 
+    // Export tunnel key as raw bytes
+    const tunnelKeyBytes = await crypto.subtle.exportKey("raw", this.tunnelKey);
+    const tunnelKeyArray = new Uint8Array(tunnelKeyBytes);
+
     const results = [];
 
     for (const staff of staffKeys) {
-      const staffPublicKeyBytes = this.hexToUint8Array(staff.publicKey);
-      const encryptedKey = KyberCrypto.encapsulate(staffPublicKeyBytes);
+      // Public key is stored as Base64, not Hex
+      const staffPublicKeyBytes = this.base64ToUint8Array(staff.publicKey);
+
+      console.log("🔐 Encrypting tunnel key for staff:", {
+        userId: staff.userId,
+        publicKeyLength: staffPublicKeyBytes.length,
+        publicKeyHex:
+          Array.from(staffPublicKeyBytes)
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("")
+            .substring(0, 64) + "...",
+        tunnelKeyLength: tunnelKeyArray.length,
+      });
+
+      // Kyber encapsulation creates a shared secret
+      const { sharedSecret, encapsulatedSecret } = KyberCrypto.encapsulate(staffPublicKeyBytes);
+
+      console.log("🔑 Kyber encapsulation done:", {
+        sharedSecretLength: sharedSecret.length,
+        encapsulatedSecretLength: encapsulatedSecret.length,
+      });
+
+      // Use the first 32 bytes of shared secret as AES key (same as decryption)
+      const aesKeyBytes = sharedSecret.slice(0, 32);
+
+      console.log(
+        "🔑 AES key for encryption (hex):",
+        Array.from(aesKeyBytes)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join(""),
+      );
+
+      // Import as CryptoKey for Web Crypto API
+      const aesKey = await crypto.subtle.importKey("raw", aesKeyBytes, { name: "AES-GCM" }, false, [
+        "encrypt",
+      ]);
+
+      // Generate IV for AES-GCM
+      const iv = BufferUtils.randomBytes(12);
+
+      console.log(
+        "📍 IV for encryption (hex):",
+        Array.from(iv)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join(""),
+      );
+      console.log(
+        "🔒 Tunnel key to encrypt (hex):",
+        Array.from(tunnelKeyArray)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join(""),
+      );
+
+      // Encrypt tunnel key with AES-GCM
+      const encrypted = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        aesKey,
+        tunnelKeyArray,
+      );
+
+      // encrypted contains ciphertext + 16-byte auth tag
+      const encryptedArray = new Uint8Array(encrypted);
+
+      console.log(
+        "🔒 Encrypted tunnel key (hex):",
+        Array.from(encryptedArray)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join(""),
+      );
+
+      // Store: encapsulatedSecret || iv || encrypted (ciphertext+authTag)
+      const combined = new Uint8Array(
+        encapsulatedSecret.length + iv.length + encryptedArray.length,
+      );
+      combined.set(encapsulatedSecret, 0);
+      combined.set(iv, encapsulatedSecret.length);
+      combined.set(encryptedArray, encapsulatedSecret.length + iv.length);
 
       results.push({
         userId: staff.userId,
-        encryptedTunnelKey: this.uint8ArrayToHex(encryptedKey.encapsulatedSecret),
+        encryptedTunnelKey: this.uint8ArrayToHex(combined),
       });
     }
 
@@ -779,37 +1060,87 @@ export class UnifiedAppointmentCrypto {
     if (!this.tunnelKey || !this.clientKeyPair)
       throw new Error("Tunnel key or client key not available");
 
-    const clientPublicKeyBytes = this.hexToUint8Array(this.clientKeyPair.publicKey);
-    const encryptedKey = KyberCrypto.encapsulate(clientPublicKeyBytes);
+    // Export tunnel key as raw bytes
+    const tunnelKeyBytes = await crypto.subtle.exportKey("raw", this.tunnelKey);
+    const tunnelKeyArray = new Uint8Array(tunnelKeyBytes);
 
-    return this.uint8ArrayToHex(encryptedKey.encapsulatedSecret);
+    const clientPublicKeyBytes = this.hexToUint8Array(this.clientKeyPair.publicKey);
+
+    // Kyber encapsulation creates a shared secret
+    const { sharedSecret, encapsulatedSecret } = KyberCrypto.encapsulate(clientPublicKeyBytes);
+
+    // Use the first 32 bytes of shared secret as AES key
+    const aesKeyBytes = sharedSecret.slice(0, 32);
+
+    // Import as CryptoKey for Web Crypto API
+    const aesKey = await crypto.subtle.importKey("raw", aesKeyBytes, { name: "AES-GCM" }, false, [
+      "encrypt",
+    ]);
+
+    // Generate IV for AES-GCM
+    const iv = BufferUtils.randomBytes(12);
+
+    // Encrypt tunnel key with AES-GCM
+    const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, aesKey, tunnelKeyArray);
+
+    // encrypted contains ciphertext + 16-byte auth tag
+    const encryptedArray = new Uint8Array(encrypted);
+
+    // Store: encapsulatedSecret || iv || encrypted (ciphertext+authTag)
+    const combined = new Uint8Array(encapsulatedSecret.length + iv.length + encryptedArray.length);
+    combined.set(encapsulatedSecret, 0);
+    combined.set(iv, encapsulatedSecret.length);
+    combined.set(encryptedArray, encapsulatedSecret.length + iv.length);
+
+    return this.uint8ArrayToHex(combined);
   }
 
   private async reconstructPrivateKey(pin: string, serverShare: string): Promise<string> {
-    // For now, simplified reconstruction - in real implementation this would be more complex
-    // TODO: Implement proper Shamir reconstruction with PIN-derived decryption
+    if (!this.emailHash) {
+      throw new Error("Email hash not available for key reconstruction");
+    }
+    // 1. Derive PIN-based share deterministically (x=1, y=pinShareY)
     const serverShareBytes = this.hexToUint8Array(serverShare);
-    const clientShareBytes = serverShareBytes; // Simplified for now
+    // ML-KEM-768 private key is 2400 bytes, derive hash of same length
+    const pinHash = await OptimizedArgon2.deriveKeyFromPIN(pin, this.emailHash, {
+      hashLength: serverShareBytes.length,
+    });
 
-    // In future: derive pinHash and use it to decrypt the client share
-    // const pinHash = await OptimizedArgon2.deriveKeyFromPIN(pin, this.emailHash || "");
-
-    // Reconstruct private key from both shares
+    // 2. Reconstruct using proper Shamir Secret Sharing
     const shares = [
-      { x: 1, y: clientShareBytes },
+      { x: 1, y: pinHash },
       { x: 2, y: serverShareBytes },
     ];
-    const reconstructedKey = ShamirSecretSharing.reconstructSecret(shares);
+    const privateKey = ShamirSecretSharing.reconstructSecret(shares);
 
-    return this.uint8ArrayToHex(reconstructedKey);
+    return this.uint8ArrayToHex(privateKey);
   }
 
   private async decryptChallenge(encryptedChallenge: string, privateKey: string): Promise<string> {
     const privateKeyBytes = this.hexToUint8Array(privateKey);
-    const challengeBytes = this.hexToUint8Array(encryptedChallenge);
+    const fullChallengeBytes = this.hexToUint8Array(encryptedChallenge);
 
-    const sharedSecret = KyberCrypto.decapsulate(privateKeyBytes, challengeBytes);
-    return this.uint8ArrayToHex(sharedSecret);
+    // Split the encryptedChallenge into:
+    // 1. Encapsulated secret (first 1088 bytes for ML-KEM-768)
+    // 2. Encrypted challenge (remaining bytes)
+    const encapsulatedSecret = fullChallengeBytes.slice(0, 1088);
+    const encryptedChallengeBuffer = fullChallengeBytes.slice(1088);
+
+    // Decapsulate to get the shared secret
+    const sharedSecret = KyberCrypto.decapsulate(privateKeyBytes, encapsulatedSecret);
+
+    // XOR the encrypted challenge with the shared secret to decrypt
+    const challenge = new Uint8Array(encryptedChallengeBuffer.length);
+    for (let i = 0; i < encryptedChallengeBuffer.length; i++) {
+      challenge[i] = encryptedChallengeBuffer[i] ^ sharedSecret[i];
+    }
+
+    // The decrypted challenge is raw bytes (32 bytes from randomBytes)
+    // Convert to base64 string for server verification
+    const challengeBase64 = this.uint8ArrayToBase64(challenge);
+
+    // Return the base64-encoded challenge (server expects it in base64 format)
+    return challengeBase64;
   }
 
   private async decryptTunnelKey(
@@ -819,11 +1150,45 @@ export class UnifiedAppointmentCrypto {
     const privateKeyBytes = this.hexToUint8Array(privateKey);
     const encryptedKeyBytes = this.hexToUint8Array(encryptedTunnelKey);
 
-    const tunnelKeyBytes = KyberCrypto.decapsulate(privateKeyBytes, encryptedKeyBytes);
+    // Parse the encrypted data: encapsulatedSecret || iv || encryptedTunnelKey
+    const ENCAPSULATED_SECRET_LENGTH = 1088;
+    const IV_LENGTH = 12;
 
+    if (encryptedKeyBytes.length < ENCAPSULATED_SECRET_LENGTH + IV_LENGTH) {
+      throw new Error(
+        `encryptedTunnelKey too short: ${encryptedKeyBytes.length} bytes, expected at least ${ENCAPSULATED_SECRET_LENGTH + IV_LENGTH}`,
+      );
+    }
+
+    const encapsulatedSecret = encryptedKeyBytes.slice(0, ENCAPSULATED_SECRET_LENGTH);
+    const iv = encryptedKeyBytes.slice(
+      ENCAPSULATED_SECRET_LENGTH,
+      ENCAPSULATED_SECRET_LENGTH + IV_LENGTH,
+    );
+    const encryptedTunnel = encryptedKeyBytes.slice(ENCAPSULATED_SECRET_LENGTH + IV_LENGTH);
+
+    // 1. Decapsulate to get shared secret
+    const sharedSecret = KyberCrypto.decapsulate(privateKeyBytes, encapsulatedSecret);
+
+    // 2. Use first 32 bytes as AES key
+    const aesKeyBytes = sharedSecret.slice(0, 32);
+
+    // 3. Import as CryptoKey
+    const aesKey = await crypto.subtle.importKey("raw", aesKeyBytes, { name: "AES-GCM" }, false, [
+      "decrypt",
+    ]);
+
+    // 4. Decrypt the tunnel key
+    const decryptedTunnelKey = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv },
+      aesKey,
+      encryptedTunnel,
+    );
+
+    // 5. Import tunnel key as CryptoKey
     return await crypto.subtle.importKey(
       "raw",
-      new Uint8Array(tunnelKeyBytes),
+      new Uint8Array(decryptedTunnelKey),
       { name: "AES-GCM" },
       true,
       ["encrypt", "decrypt"],
@@ -832,9 +1197,8 @@ export class UnifiedAppointmentCrypto {
 
   // Helper methods for completing the API
   private async getPrivateKeyShare(): Promise<string> {
-    if (!this.clientKeyPair) throw new Error("Client keypair not available");
-    // TODO: Return the actual server share from Shamir splitting
-    return this.clientKeyPair.privateKey; // Simplified for now
+    if (!this.serverPrivateKeyShare) throw new Error("Server private key share not available");
+    return this.serverPrivateKeyShare;
   }
 
   private async getStaffKeyShares(

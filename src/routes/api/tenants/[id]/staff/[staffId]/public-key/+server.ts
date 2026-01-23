@@ -107,20 +107,20 @@ export const GET: RequestHandler = async ({ params, locals }) => {
   checkPermission(locals, tenantId, false);
 
   try {
-    log.debug("Fetching staff public key", { tenantId, staffId, requesterId: locals.user?.userId });
+    log.debug("Fetching staff public key", { tenantId, staffId, requesterId: locals.user?.id });
 
     const result = await StaffService.getStaffPublicKey(tenantId, staffId);
 
     log.debug("Staff public key retrieved successfully", {
       tenantId,
       staffId,
-      requesterId: locals.user?.userId,
+      requesterId: locals.user?.id,
       hasPublicKey: !!result.publicKey,
     });
 
     return json(result);
   } catch (error) {
-    logError(log)("Error fetching staff public key", error, locals.user?.userId, tenantId);
+    logError(log)("Error fetching staff public key", error, locals.user?.id, tenantId);
 
     if (error instanceof BackendError) {
       return error.toJson();

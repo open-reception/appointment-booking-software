@@ -28,11 +28,13 @@ export const confirmationStateEnum = pgEnum("confirmation_state", [
   "ACCESS_GRANTED",
 ]);
 
+// Warning: Duplication in src/lib/const/tenants.ts
 export const tenantSetupState = pgEnum("setup_state", [
-  "NEW", // newly created
-  "SETTINGS_CREATED", // settings were reviewed
-  "AGENTS_SET_UP", // agents set up was triggered or skipped
-  "FIRST_CHANNEL_CREATED", // the first channel was set up
+  "SETTINGS", // Settings need to be saved initially
+  "AGENTS", // At least one agent needs to be created
+  "CHANNELS", // At least one channel needs to be created
+  "STAFF", // At least one staff member needs to be created
+  "READY", // Tenant is fully set up and ready to use
 ]);
 
 /**
@@ -60,8 +62,8 @@ export const tenant = pgTable(
     logo: varchar("logo", { length: 100_000 }),
     /** Database connection string for this tenant's isolated database */
     databaseUrl: text("database_url").notNull(),
-    /** STate of tenant setup */
-    setupState: tenantSetupState("setup_state").notNull().default("NEW"),
+    /** State of tenant setup */
+    setupState: tenantSetupState("setup_state").notNull().default("SETTINGS"),
     /** Links (object) */
     links: json("links")
       .$type<{ imprint?: string; privacyStatement?: string; website?: string }>()
@@ -167,6 +169,8 @@ export const userSession = pgTable(
     sessionToken: text("session_token").notNull().unique(),
     accessToken: text("access_token").notNull(),
     refreshToken: text("refresh_token").notNull(),
+    /** Passkey ID used for authentication (if WebAuthn was used) */
+    passkeyId: text("passkey_id"),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
     createdAt: timestamp("created_at").defaultNow(),
@@ -226,6 +230,23 @@ export const userInvite = pgTable(
     inviteTenantIdx: index("user_invite_tenant_idx").on(table.tenantId),
   }),
 );
+
+/**
+ * Challenge Throttle table - tracks failed authentication attempts for all challenge types
+ * Used to implement rate limiting for both PIN and passkey authentication
+ * Stored centrally to prevent brute force attacks across all tenants
+ * @table challenge_throttle
+ */
+export const challengeThrottle = pgTable("challenge_throttle", {
+  /** Primary key - identifier (email hash for PIN challenges, email for passkey challenges) */
+  id: text("id").primaryKey(),
+  /** Number of failed attempts */
+  failedAttempts: integer("failed_attempts").default(0).notNull(),
+  /** When the throttle was last updated */
+  lastAttemptAt: timestamp("last_attempt_at").defaultNow().notNull(),
+  /** When the throttle should reset/expire */
+  resetAt: timestamp("reset_at").notNull(),
+});
 
 /**
  * TypeScript type exports for use in application code

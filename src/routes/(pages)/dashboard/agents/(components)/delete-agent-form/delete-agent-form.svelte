@@ -8,12 +8,13 @@
   import type { TAgent } from "$lib/types/agent";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
-  import { zodClient } from "sveltekit-superforms/adapters";
-  import z from "zod";
+  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
+  import { z } from "zod";
   import { formSchema } from ".";
 
   let { entity, done }: { entity: TAgent; done: () => void } = $props();
 
+  // svelte-ignore state_referenced_locally
   const form = superForm(
     { id: entity.id, name: "" },
     {

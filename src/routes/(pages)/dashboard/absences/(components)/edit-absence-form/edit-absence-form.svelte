@@ -10,7 +10,7 @@
 
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
-  import { zodClient } from "sveltekit-superforms/adapters";
+  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from ".";
   import { reasons } from "../utils";
   import { toInputDateTime } from "$lib/utils/datetime";
@@ -18,6 +18,8 @@
   let { entity, done }: { entity: TAbsence; done: () => void } = $props();
 
   const agents = $derived($agentsStore.agents ?? []);
+
+  // svelte-ignore state_referenced_locally
   const form = superForm(
     {
       id: entity.id,
@@ -43,8 +45,10 @@
   );
 
   let isSubmitting = $state(false);
-  let startDate = toInputDateTime(entity.startDate);
-  let endDate = toInputDateTime(entity.endDate);
+  // svelte-ignore state_referenced_locally
+  let startDate = $state(toInputDateTime(entity.startDate));
+  // svelte-ignore state_referenced_locally
+  let endDate = $state(toInputDateTime(entity.endDate));
   let isAllDay = $state(
     startDate.hour === 0 && startDate.minute === 0 && endDate.hour === 0 && endDate.minute === 0,
   );

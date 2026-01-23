@@ -13,6 +13,13 @@ import {
   logError,
 } from "$lib/server/utils/errors";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
+import {
+  sendAppointmentCreatedEmail,
+  sendAppointmentRequestEmail,
+  getChannelTitle,
+} from "$lib/server/email/email-service";
+import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
+import { NotificationService } from "$lib/server/services/notification-service";
 
 const requestSchema = z.object({
   emailHash: z.string(),
@@ -20,6 +27,10 @@ const requestSchema = z.object({
   channelId: z.string(),
   agentId: z.string(),
   appointmentDate: z.string(),
+  duration: z.number().int().positive(),
+  clientEmail: z.email().optional(),
+  clientLanguage: z.string().optional().default("en"),
+  salutation: z.string().optional(),
   encryptedAppointment: z.object({
     encryptedPayload: z.string(),
     iv: z.string(),
@@ -71,6 +82,18 @@ registerOpenAPIRoute("/tenants/{id}/appointments/add-to-tunnel", "POST", {
               format: "date-time",
               description: "Appointment date and time (ISO 8601)",
               example: "2024-12-31T14:30:00.000Z",
+            },
+            clientEmail: {
+              type: "string",
+              format: "email",
+              description: "Client email address for sending confirmation",
+              example: "client@example.com",
+            },
+            clientLanguage: {
+              type: "string",
+              description: "Client's preferred language (de or en)",
+              example: "de",
+              default: "de",
             },
             encryptedAppointment: {
               type: "object",
@@ -181,6 +204,10 @@ export const POST: RequestHandler = async ({ request, params }) => {
     const body = await request.json();
     const validatedData = requestSchema.parse(body);
 
+    if (validatedData.salutation) {
+      throw new ValidationError("Bees incoming");
+    }
+
     logger.info("Adding appointment to existing tunnel", {
       tenantId,
       tunnelId: validatedData.tunnelId,
@@ -229,6 +256,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
         channelId: validatedData.channelId,
         agentId: validatedData.agentId,
         appointmentDate: new Date(validatedData.appointmentDate),
+        duration: validatedData.duration,
         encryptedPayload: validatedData.encryptedAppointment.encryptedPayload,
         iv: validatedData.encryptedAppointment.iv,
         authTag: validatedData.encryptedAppointment.authTag,
@@ -236,8 +264,20 @@ export const POST: RequestHandler = async ({ request, params }) => {
       })
       .returning({
         id: appointment.id,
+        tunnelId: appointment.tunnelId,
+        channelId: appointment.channelId,
+        agentId: appointment.agentId,
         appointmentDate: appointment.appointmentDate,
+        expiryDate: appointment.expiryDate,
         status: appointment.status,
+        encryptedPayload: appointment.encryptedPayload,
+        duration: appointment.duration,
+        iv: appointment.iv,
+        authTag: appointment.authTag,
+        encryptedData: appointment.encryptedData,
+        dataKey: appointment.dataKey,
+        createdAt: appointment.createdAt,
+        updatedAt: appointment.updatedAt,
       });
 
     if (appointmentResult.length === 0) {
@@ -258,12 +298,74 @@ export const POST: RequestHandler = async ({ request, params }) => {
       appointmentId: result.id,
     });
 
+    // Send email notification to client
+    try {
+      const requiresConfirmation = channelResult[0].requiresConfirmation || false;
+
+      // Get tenant information
+      const tenantService = await TenantAdminService.getTenantById(tenantId);
+      const tenant = tenantService.tenantData;
+
+      if (!tenant) {
+        logger.warn("Cannot send email: Tenant not found", { tenantId });
+      } else {
+        // Get channel title for the email
+        const channelTitle = await getChannelTitle(
+          tenantId,
+          validatedData.channelId,
+          validatedData.clientLanguage,
+        );
+
+        // Send appropriate email based on whether confirmation is required
+        if (requiresConfirmation) {
+          // send notification to tenant staff about new appointment request
+          const notificationService = NotificationService.forTenant(tenantId);
+          (await notificationService).createNotification({
+            type: "APPOINTMENT_REQUESTED",
+            channelId: validatedData.channelId,
+            metaData: { appointmentId: result.id },
+          });
+        }
+        if (validatedData.clientEmail) {
+          // Create client data object from request
+          const clientData = {
+            email: validatedData.clientEmail,
+            language: validatedData.clientLanguage,
+          };
+
+          if (requiresConfirmation) {
+            await sendAppointmentRequestEmail(clientData, tenant, result, channelTitle);
+            logger.info("Appointment request email sent", {
+              tunnelId: validatedData.tunnelId,
+              appointmentId: result.id,
+              tenantId,
+            });
+          } else {
+            await sendAppointmentCreatedEmail(clientData, tenant, result, channelTitle);
+            logger.info("Appointment confirmation email sent", {
+              tunnelId: validatedData.tunnelId,
+              appointmentId: result.id,
+              tenantId,
+            });
+          }
+        }
+      }
+    } catch (emailError) {
+      logger.error("Failed to send appointment notification email", {
+        tunnelId: validatedData.tunnelId,
+        appointmentId: result.id,
+        tenantId,
+        error: String(emailError),
+      });
+      // Don't throw - email failure shouldn't fail the appointment creation
+    }
+
     return json(response);
   } catch (error) {
     logError(logger)("Failed to add appointment to tunnel", error);
 
     if (error instanceof z.ZodError) {
-      return json({ error: "Invalid request data", details: error.errors }, { status: 400 });
+      return json({ error: "Invalid request data", details: error.issues }, { status: 400 });
     }
 
     if (error instanceof BackendError) {

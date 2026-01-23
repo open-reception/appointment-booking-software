@@ -1,4 +1,5 @@
 import { goto } from "$app/navigation";
+import { resolve } from "$app/paths";
 import { ROUTES } from "$lib/const/routes";
 import { auth } from "$lib/stores/auth";
 
@@ -19,7 +20,7 @@ export const refreshSession = async () => {
     if (!response.ok) {
       if (response.status === 401) {
         auth.setRefreshing(false);
-        goto(ROUTES.LOGOUT);
+        goto(resolve(ROUTES.LOGOUT));
         return;
       }
     }
@@ -42,7 +43,7 @@ export const refreshUserData = async () => {
 
     if (!response.ok) {
       if (response.status === 401) {
-        goto(ROUTES.LOGOUT);
+        goto(resolve(ROUTES.LOGOUT));
         return;
       }
     }

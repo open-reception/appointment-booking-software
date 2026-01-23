@@ -1,14 +1,26 @@
 import { supportedLocales } from "$lib/const/locales";
 import logger from "$lib/logger";
 import { asc, eq, inArray, sql, and } from "drizzle-orm";
-import z from "zod/v4";
+import { z } from "zod";
 import { getTenantDb } from "../db";
 import { TenantConfig } from "../db/tenant-config";
 import * as tenantSchema from "../db/tenant-schema";
 import { type SelectAgent, type SelectChannel, type SelectSlotTemplate } from "../db/tenant-schema";
 import { NotFoundError, ValidationError } from "../utils/errors";
+import { TenantAdminService } from "./tenant-admin-service";
 
-const CHANNEL_COLORS = ["#FF0000", "#00FF00", "#0000FF"] as const;
+const CHANNEL_COLORS = [
+  "#F3835C",
+  "#C8CA79",
+  "#F6DD74",
+  "#A0A3DC",
+  "#E9A56D",
+  "#D89CC8",
+  "#B0B49B",
+  "#F9A1B4",
+  "#88D7EF",
+  "#AB8A7A",
+] as const;
 const NEXT_COLOR_KEY = "nextChannelColor";
 
 const slotTemplateSchema = z.object({
@@ -200,6 +212,9 @@ export class ChannelService {
         agentCount: result.agents.length,
         slotTemplateCount: result.slotTemplates.length,
       });
+
+      const adminService = await TenantAdminService.getTenantById(this.tenantId);
+      adminService.validateSetupState();
 
       return result;
     } catch (error) {
@@ -677,6 +692,9 @@ export class ChannelService {
           channelId,
         });
       }
+
+      const adminService = await TenantAdminService.getTenantById(this.tenantId);
+      adminService.validateSetupState();
 
       return result;
     } catch (error) {

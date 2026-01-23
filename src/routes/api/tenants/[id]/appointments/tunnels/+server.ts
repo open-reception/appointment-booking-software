@@ -115,20 +115,20 @@ export const GET: RequestHandler = async ({ params, locals }) => {
   checkPermission(locals, tenantId, false);
 
   try {
-    log.debug("Fetching client tunnels", { tenantId, requesterId: locals.user?.userId });
+    log.debug("Fetching client tunnels", { tenantId, requesterId: locals.user?.id });
 
     const appointmentService = await AppointmentService.forTenant(tenantId);
     const tunnels = await appointmentService.getClientTunnels();
 
     log.debug("Client tunnels retrieved successfully", {
       tenantId,
-      requesterId: locals.user?.userId,
+      requesterId: locals.user?.id,
       tunnelCount: tunnels.length,
     });
 
     return json({ tunnels });
   } catch (error) {
-    logError(log)("Error fetching client tunnels", error, locals.user?.userId, tenantId);
+    logError(log)("Error fetching client tunnels", error, locals.user?.id, tenantId);
 
     if (error instanceof BackendError) {
       return error.toJson();

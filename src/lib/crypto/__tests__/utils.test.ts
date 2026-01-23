@@ -345,59 +345,96 @@ describe("AESCrypto", () => {
 });
 
 describe("ShamirSecretSharing", () => {
-  describe("splitSecret()", () => {
-    it("should split secret into shares", () => {
+  describe("splitSecretWithDeterministicShare()", () => {
+    it("should split secret into 2 shares with deterministic first share", () => {
       const secret = BufferUtils.from("test secret");
-      const shares = ShamirSecretSharing.splitSecret(secret, 2, 3);
+      const deterministicShare = BufferUtils.randomBytes(secret.length);
 
-      expect(shares).toHaveLength(3);
-      shares.forEach((share, index) => {
-        expect(share.x).toBe(index + 1);
-        expect(share.y).toBeInstanceOf(Uint8Array);
-        expect(share.y.length).toBe(4 + secret.length); // 4 bytes for length + secret
-      });
+      const shares = ShamirSecretSharing.splitSecretWithDeterministicShare(
+        secret,
+        deterministicShare,
+      );
+
+      expect(shares).toHaveLength(2);
+      expect(shares[0].x).toBe(1);
+      expect(shares[1].x).toBe(2);
+      expect(shares[0].y).toBeInstanceOf(Uint8Array);
+      expect(shares[1].y).toBeInstanceOf(Uint8Array);
+      expect(shares[0].y.length).toBe(secret.length);
+      expect(shares[1].y.length).toBe(secret.length);
+      // First share should be the deterministic one
+      expect(shares[0].y).toEqual(deterministicShare);
     });
 
     it("should throw error for empty secret", () => {
       const secret = new Uint8Array([]);
-      expect(() => ShamirSecretSharing.splitSecret(secret, 2, 3)).toThrow(
-        "Secret cannot be empty for Shamir secret sharing",
-      );
+      const deterministicShare = new Uint8Array([]);
+
+      expect(() =>
+        ShamirSecretSharing.splitSecretWithDeterministicShare(secret, deterministicShare),
+      ).toThrow("Secret cannot be empty");
     });
 
     it("should handle large secrets", () => {
       const secret = BufferUtils.randomBytes(1000);
-      const shares = ShamirSecretSharing.splitSecret(secret, 3, 5);
+      const deterministicShare = BufferUtils.randomBytes(secret.length);
 
-      expect(shares).toHaveLength(5);
-      shares.forEach((share) => {
-        expect(share.y.length).toBe(4 + secret.length);
-      });
+      const shares = ShamirSecretSharing.splitSecretWithDeterministicShare(
+        secret,
+        deterministicShare,
+      );
+
+      expect(shares).toHaveLength(2);
+      expect(shares[0].y.length).toBe(secret.length);
+      expect(shares[1].y.length).toBe(secret.length);
+    });
+
+    it("should throw error if deterministic share length differs", () => {
+      const secret = BufferUtils.from("test secret");
+      const deterministicShare = BufferUtils.randomBytes(5); // Different length
+
+      expect(() =>
+        ShamirSecretSharing.splitSecretWithDeterministicShare(secret, deterministicShare),
+      ).toThrow("Deterministic share must have same length as secret");
     });
   });
 
   describe("reconstructSecret()", () => {
     it("should reconstruct secret from shares", () => {
       const originalSecret = BufferUtils.from("test secret for reconstruction");
-      const shares = ShamirSecretSharing.splitSecret(originalSecret, 2, 5);
+      const deterministicShare = BufferUtils.randomBytes(originalSecret.length);
 
-      // Use first 2 shares (minimum threshold)
-      const reconstructed = ShamirSecretSharing.reconstructSecret(shares.slice(0, 2));
+      const shares = ShamirSecretSharing.splitSecretWithDeterministicShare(
+        originalSecret,
+        deterministicShare,
+      );
+
+      // Use both shares
+      const reconstructed = ShamirSecretSharing.reconstructSecret(shares);
       expect(reconstructed).toEqual(originalSecret);
     });
 
-    it("should reconstruct secret from any subset of shares", () => {
+    it("should reconstruct secret consistently with same deterministic share", () => {
       const originalSecret = BufferUtils.from("another test secret");
-      const shares = ShamirSecretSharing.splitSecret(originalSecret, 3, 5);
+      const deterministicShare = BufferUtils.randomBytes(originalSecret.length);
 
-      // Test different combinations
-      const reconstructed1 = ShamirSecretSharing.reconstructSecret(shares.slice(0, 3));
-      const reconstructed2 = ShamirSecretSharing.reconstructSecret(shares.slice(1, 4));
-      const reconstructed3 = ShamirSecretSharing.reconstructSecret(shares.slice(2, 5));
+      // Split and reconstruct multiple times with same deterministic share
+      const shares1 = ShamirSecretSharing.splitSecretWithDeterministicShare(
+        originalSecret,
+        deterministicShare,
+      );
+      const reconstructed1 = ShamirSecretSharing.reconstructSecret(shares1);
+
+      const shares2 = ShamirSecretSharing.splitSecretWithDeterministicShare(
+        originalSecret,
+        deterministicShare,
+      );
+      const reconstructed2 = ShamirSecretSharing.reconstructSecret(shares2);
 
       expect(reconstructed1).toEqual(originalSecret);
       expect(reconstructed2).toEqual(originalSecret);
-      expect(reconstructed3).toEqual(originalSecret);
+      // Deterministic shares should be identical
+      expect(shares1[0].y).toEqual(shares2[0].y);
     });
 
     it("should throw error with insufficient shares", () => {
@@ -415,8 +452,12 @@ describe("ShamirSecretSharing", () => {
       ];
 
       secrets.forEach((secret) => {
-        const shares = ShamirSecretSharing.splitSecret(secret, 2, 3);
-        const reconstructed = ShamirSecretSharing.reconstructSecret(shares.slice(0, 2));
+        const deterministicShare = BufferUtils.randomBytes(secret.length);
+        const shares = ShamirSecretSharing.splitSecretWithDeterministicShare(
+          secret,
+          deterministicShare,
+        );
+        const reconstructed = ShamirSecretSharing.reconstructSecret(shares);
         expect(reconstructed).toEqual(secret);
       });
     });

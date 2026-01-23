@@ -12,7 +12,7 @@
   import { toast } from "svelte-sonner";
   import { writable, type Writable } from "svelte/store";
   import { type Infer, type SuperValidated } from "sveltekit-superforms";
-  import { zodClient } from "sveltekit-superforms/adapters";
+  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { superForm } from "sveltekit-superforms/client";
   import { baseSchema, formSchema, type FormSchema } from "./schema";
   import { Text } from "$lib/components/ui/typography";
@@ -20,6 +20,7 @@
   import type { PasskeyState } from "$lib/components/ui/passkey/state.svelte";
   import { arrayBufferToBase64, fetchChallenge, generatePasskey } from "$lib/utils/passkey";
   import logger from "$lib/logger";
+  import { resolve } from "$app/paths";
 
   let {
     data,
@@ -28,7 +29,8 @@
   }: { formId: string; onEvent: EventReporter; data: { form: SuperValidated<Infer<FormSchema>> } } =
     $props();
 
-  const form = superForm(data.form, {
+  // svelte-ignore state_referenced_locally
+  const form = superForm($state.snapshot(data.form), {
     validators: zodClient(formSchema),
     onChange: (event) => {
       if (event.paths.includes("email")) {
@@ -38,7 +40,7 @@
     onResult: async (event) => {
       if (event.result.type === "success") {
         toast.success(m["setup.create_admin_account.success"]());
-        await goto(ROUTES.SETUP.CHECK_EMAIL, {
+        await goto(resolve(ROUTES.SETUP.CHECK_EMAIL), {
           state: { email: event.result.data?.form.data.email },
         });
       }
@@ -79,8 +81,8 @@
         ...$formData,
         type: "passkey",
         id: "",
-        publicKeyBase64: "",
-        authenticatorDataBase64: "",
+        attestationObjectBase64: "",
+        clientDataJSONBase64: "",
       };
       setProperPasskeyState();
     }
@@ -108,26 +110,19 @@
         return;
       }
 
-      // Returns ArrayBuffer that has to be converted to base64 string
-      const publicKey = passkeyResp.response.getPublicKey();
-      if (!publicKey) {
-        $passkeyLoading = "error";
-        logger.error("Failed to get public key", { email: $formData.email });
-        return;
-      }
+      // Get attestationObject and clientDataJSON for @simplewebauthn/server verification
+      const attestationObjectResp = passkeyResp.response.attestationObject;
+      const clientDataJSONResp = passkeyResp.response.clientDataJSON;
 
-      // May include device name and counter
-      const authenticatorData = passkeyResp.response.getAuthenticatorData();
-
-      // Update form data with passkey info
-      const publicKeyBase64 = arrayBufferToBase64(publicKey);
-      const authenticatorDataBase64 = arrayBufferToBase64(authenticatorData);
+      // Update form data with passkey info - send full attestation for proper COSE key extraction
+      const attestationObjectBase64 = arrayBufferToBase64(attestationObjectResp);
+      const clientDataJSONBase64 = arrayBufferToBase64(clientDataJSONResp);
       $formData = {
         ...$formData,
         type: "passkey",
         id: passkeyResp.id,
-        publicKeyBase64,
-        authenticatorDataBase64,
+        attestationObjectBase64,
+        clientDataJSONBase64,
       };
 
       // Update UI to show passkey is ready
@@ -198,19 +193,19 @@
           {/snippet}
         </Form.Control>
       </Form.Field>
-      <Form.Field {form} name="publicKeyBase64" class="hidden">
+      <Form.Field {form} name="attestationObjectBase64" class="hidden">
         <Form.Control>
           {#snippet children({ props })}
             <!-- prettier-ignore -->
-            <Input {...props} bind:value={($formData as FormDataPasskey).publicKeyBase64} type="hidden" />
+            <Input {...props} bind:value={($formData as FormDataPasskey).attestationObjectBase64} type="hidden" />
           {/snippet}
         </Form.Control>
       </Form.Field>
-      <Form.Field {form} name="authenticatorDataBase64" class="hidden">
+      <Form.Field {form} name="clientDataJSONBase64" class="hidden">
         <Form.Control>
           {#snippet children({ props })}
             <!-- prettier-ignore -->
-            <Input {...props} bind:value={($formData as FormDataPasskey).authenticatorDataBase64} type="hidden" />
+            <Input {...props} bind:value={($formData as FormDataPasskey).clientDataJSONBase64} type="hidden" />
           {/snippet}
         </Form.Control>
       </Form.Field>

@@ -1,10 +1,13 @@
 export const ROUTES = {
   MAIN: "/",
+  BOOK_APPOINTMENT: "/book-appointment",
+  APPOINTMENT_BOOKED: "/book-appointment/complete",
   SETUP: {
     MAIN: "/setup",
     CREATE_ADMIN_ACCOUNT: "/setup/create-admin-account",
     CHECK_EMAIL: "/setup/check-email",
   },
+  SETUP_PASSKEY: "/confirm/setup-passkey",
   RESEND_CONFIRMATION: "/confirm/resend",
   LOGIN: "/login",
   LOGOUT: "/logout",
@@ -17,6 +20,12 @@ export const ROUTES = {
     CHANNELS: "/dashboard/channels",
     ABSENCES: "/dashboard/absences",
     SETTINGS: "/dashboard/settings",
-    ACCOUNT: "/dashboard/account",
+    ACCOUNT: {
+      MAIN: "/dashboard/account",
+      GENERAL: "/dashboard/account/general",
+      PASSKEYS: "/dashboard/account/passkeys",
+      CHANGE_EMAIL: "/dashboard/account/change-email",
+      CHANGE_PASSPHRASE: "/dashboard/account/change-passphrase",
+    },
   },
-};
+} as const;

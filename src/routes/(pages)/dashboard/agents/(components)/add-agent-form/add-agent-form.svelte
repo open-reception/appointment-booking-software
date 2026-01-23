@@ -8,7 +8,7 @@
   import ItemIcon from "@lucide/svelte/icons/user-star";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
-  import { zodClient } from "sveltekit-superforms/adapters";
+  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from ".";
   import { tenants } from "$lib/stores/tenants";
   import { get } from "svelte/store";

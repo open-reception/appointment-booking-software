@@ -424,7 +424,7 @@ export const PUT: RequestHandler = async ({ locals, params, request }) => {
       tenant: updatedTenant,
     });
   } catch (error) {
-    logError(log)("Error updating tenant metadata", error, locals.user?.userId, params.id);
+    logError(log)("Error updating tenant metadata", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();
@@ -451,7 +451,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
     log.debug("Getting tenant details", {
       tenantId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     checkPermission(locals, tenantId, true);
@@ -467,14 +467,14 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
     log.debug("Tenant details retrieved successfully", {
       tenantId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     return json({
       tenant: tenantData,
     });
   } catch (error) {
-    logError(log)("Error getting tenant details", error, locals.user?.userId, params.id);
+    logError(log)("Error getting tenant details", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();
@@ -499,7 +499,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 
     log.info("Attempting tenant deletion", {
       tenantId,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
       userRole: locals.user?.role,
     });
 
@@ -513,7 +513,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
       deletedUsersCount: result.deletedUsersCount,
       updatedGlobalAdminsCount: result.updatedGlobalAdminsCount,
       deletedConfigsCount: result.deletedConfigsCount,
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     return json({
@@ -521,7 +521,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
       result,
     });
   } catch (error) {
-    logError(log)("Error deleting tenant", error, locals.user?.userId, params.id);
+    logError(log)("Error deleting tenant", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();

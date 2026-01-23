@@ -1,6 +1,7 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
 	"welcome": "Welcome to OpenReception",
+	"home": "Home",
 	"poweredBy": "Powered by",
 	"i18n": {
 		"label": "Select Language",
@@ -35,6 +36,20 @@
 			}
 		}
 	},
+	"setupPasskey": {
+		"title": "Setup Passkey",
+		"description": "Create your passkey to secure your account.",
+		"action": "Set Passkey",
+		"success": "Passkey set. Login with it now.",
+		"successKeyPairSaved": "Key pair saved successfully.",
+		"confirmPrfRetrival": "Now use your newly created passkey to enable encryption with it.",
+		"error": "Passkey could not be set",
+		"errorKeyPairDataMissing": "Could not generate key pair. Missing data.",
+		"errorKeyPairNotSaved": "Key pair could not be saved.",
+		"errorPrfOutputNotTriggered": "You have to confirm using the passkey.",
+		"errorAuthenticatorNotSupported": "This authenticator does not support the required security extension (PRF). Please use a modern authenticator like YubiKey 5.2.3+, Apple Touch ID or Android.",
+		"errorGettingPrfOutput": "Failed to retrieve security data from passkey. Please use a modern authenticator that supports PRF extension."
+	},
 	"slogan": "End-to-End encrypted appointment booking platform.",
 	"logo": "OpenReception Logo: A 3D pixel art with calendar that's also a lock",
 	"form": {
@@ -62,11 +77,20 @@
 			"url": "Invalid URL Format",
 			"languages": "Select at least one language",
 			"language": "Select a default language",
-			"deleteAfterDays": "Choose a point in time"
+			"deleteAfterDays": "Choose a point in time",
+			"phoneNoRequired": "Phone number is required",
+			"phoneNoInvalid": "Phone number format is invalid",
+			"pinLength": "PIN must be 6 digits",
+			"pinDigitsOnly": "PIN must contain only digits",
+			"pinInsecure": "This PIN is too insecure"
 		},
 		"noPassAtAll": "Either passphrase or passkey is required",
 		"passkey": "Passkey",
-		"name": "Name"
+		"salutation": "Salutation",
+		"name": "Name",
+		"phone": "Phone Number",
+		"pin": "PIN",
+		"pinHint": "Save your PIN in a secure place, like a password-manager."
 	},
 	"login": {
 		"or": "Or",
@@ -85,9 +109,9 @@
 	},
 	"confirm": {
 		"success": {
-			"title": "You’re all set!",
-			"description": "You’ve successfully secured your account",
-			"action": "Proceed"
+			"title": "E-Mail address confirmed!",
+			"description": "Now you just need to setup a passkey.",
+			"action": "Setup Passkey"
 		},
 		"error": {
 			"title": "Verification failed",
@@ -148,7 +172,7 @@
 			"title": "Add Tenant",
 			"description": "Create a site for someone to start collecting appointments.",
 			"name": {
-				"description": "Must be unique on this server. Used as a subdomain {domain}",
+				"description": "Must be unique on this server. Cannot be changed. Used as a subdomain {domain}",
 				"errors": {
 					"urlFormat": "Only letters, numbers, and hyphens are allowed",
 					"startEndDash": "Must not start or end with a dash"
@@ -328,6 +352,7 @@
 	"delete": "Delete",
 	"select": "Select",
 	"dashboard": {
+		"title": "Dashboard",
 		"hello": "Hello",
 		"tenants": {
 			"currentTenant": "You are currently managing tenant {name}.",
@@ -345,6 +370,44 @@
 		"sidebar": {
 			"title": "Zum ersten Mal hier?",
 			"description": "Tippe {name} um die Seitenleiste umzustellen"
+		},
+		"onboarding": {
+			"title": "Get ready to collect appointments",
+			"description": "Follow this step-by-step to get the best results:",
+			"notification": {
+				"ongoing": {
+					"title": "Onboarding not complete",
+					"description": "Review next steps",
+					"action": "Proceed"
+				},
+				"done": {
+					"title": "Onboarding complete!",
+					"description": "You can now collect appointments",
+					"action": "Open Homepage"
+				}
+			},
+			"sections": {
+				"settings": {
+					"title": "Review and save settings",
+					"description": "Make sure your organization's details are correct, before you add agents or channels.",
+					"action": "Go to Settings"
+				},
+				"agents": {
+					"title": "Set up your agents",
+					"description": "Agents let your clients choose which person, team or group they want to make an appointment with.",
+					"action": "Add Agent"
+				},
+				"channels": {
+					"title": "Set up your first channel",
+					"description": "Channels are your way to collect different types of appointments",
+					"action": "Add channel"
+				},
+				"staff": {
+					"title": "Add & Activate Staff Members",
+					"description": "Make sure your team can decrypt appointment data by adding staff members. Only when the first person added has logged in, appointments can be received.",
+					"action": "Add Staff Member"
+				}
+			}
 		}
 	},
 	"close": "Schließen",
@@ -505,7 +568,7 @@
 	"absences": {
 		"title": "Absences",
 		"add": {
-			"title": "Add Anbsence",
+			"title": "Add Absence",
 			"description": "Absences are a way to mark you agents as being unavailbale.",
 			"fields": {
 				"agent": {
@@ -646,7 +709,270 @@
 					"title": "Require Phone Number",
 					"label": "Require clients to provide a phone number when booking an appointment."
 				}
+			},
+			"action": "Save"
+		}
+	},
+	"account": {
+		"overview": {
+			"title": "Your Account"
+		},
+		"general": {
+			"navItem": "Settings",
+			"title": "Account Settings",
+			"description": "Change your name."
+		},
+		"change-email": {
+			"navItem": "E-Mail Address",
+			"title": "Change E-Mail Address",
+			"description": "Change your e-mail address."
+		},
+		"passkeys": {
+			"navItem": "Passkeys",
+			"title": "Manage Passkeys",
+			"description": "You can add up to three passkeys."
+		},
+		"change-passphrase": {
+			"navItem": "Passphrase",
+			"title": "Change Passphrase",
+			"description": "Global Admins can set strong passphrases as a backup login method."
+		}
+	},
+	"staff": {
+		"title": "Staff",
+		"roles": {
+			"GLOBAL_ADMIN": "Global Admin",
+			"TENANT_ADMIN": "Tenant Admin",
+			"STAFF": "Appointment Manager"
+		},
+		"permissions": {
+			"agents": "Manages agents",
+			"channels": "Manages channels",
+			"absences": "Manages absences",
+			"settings": "Manages settings",
+			"staff": "Manages staff",
+			"appointments": "Manages appointments"
+		},
+		"form": {
+			"fields": {
+				"language": {
+					"title": "Language",
+					"description": "Will be used in the invitation e-mail.",
+					"placeholder": "Select langauge"
+				},
+				"role": {
+					"title": "Role",
+					"placeholder": "Select role"
+				}
 			}
+		},
+		"add": {
+			"title": "Add Member",
+			"description": "Staff members manage your appointments and settings. They are not public.",
+			"action": "Add Member",
+			"success": "Member added",
+			"errors": {
+				"unknown": "Could not add member"
+			}
+		},
+		"list": {
+			"needsAccess": "Can't see appointments",
+			"empty": {
+				"title": "No staff members yet",
+				"description": "Staff members manage your appointments and settings"
+			}
+		},
+		"edit": {
+			"title": "Edit Member",
+			"description": "Update the members details.",
+			"success": "Member updated",
+			"error": "Could not update member.",
+			"action": "Edit Member"
+		},
+		"delete": {
+			"title": "Remove Member",
+			"description": "Type {email} to remove this member. This step cannot be undone.",
+			"action": "Remove Member",
+			"success": "Member removed",
+			"error": "Could not remove member."
+		},
+		"access": {
+			"title": "Grant access to appointments",
+			"description": "Do you want to grant {name} access to all client data?",
+			"action": "Grant access",
+			"loading": "Granting access ({success}/{total} clients)",
+			"success": "Access granted",
+			"error": "Granting access to all clients failed. You can retry anytime.",
+			"unavailable": {
+				"title": "You can't grant access",
+				"description": "Only Appointment Managers and Tenant Admins can be granted access to client data."
+			}
+		},
+		"loading": "Loading staff members"
+	},
+	"yes": "Yes",
+	"no": "No",
+	"public": {
+		"links": {
+			"website": "Go to Website",
+			"imprint": "Imprint",
+			"privacyStatement": "Privacy Statement"
+		},
+		"bookAppointment": "Book Appointment",
+		"appointment": {
+			"requiresConfirmation": "Requires cofirmation by {name}"
+		},
+		"tenantNotReady": {
+			"title": "Not ready to accept appointments.",
+			"description": "If this is yours, please login and complete onboarding."
+		},
+		"steps": {
+			"channel": {
+				"title": "Please select an appointment type:",
+				"empty": "Currently we don't have available appointments. Please check again later."
+			},
+			"agent": {
+				"title": "Please select who you want your appointment with:",
+				"anyone": {
+					"title": "No preference",
+					"description": "Choose this option to get the fastest appointment."
+				}
+			},
+			"slot": {
+				"title": "Please select an available appointment:",
+				"today": "Today",
+				"selectDate": "Select a date",
+				"selectTime": "Select a time:",
+				"loading": "Loading available appointments...",
+				"empty": "No appointments available. Please select another date.",
+				"action": "Select appointment"
+			},
+			"data": {
+				"title": "Please add your information:",
+				"alert": {
+					"title": "Your data is safe",
+					"description": "Only you and {name} will be able to access this information. It is end-to-end encrypted."
+				},
+				"email": {
+					"notifyMe": "Notify me of changes by e-mail",
+					"tooltip": "If enabled, your e-mail address will appear temporarily in server logs of the mailserver. If disabled, you will have to login on this page to check for updates."
+				},
+				"phone": {
+					"description": "Format: +1234567890. {name} may contact you by phone, if there are questions or changes regarding your appointment.",
+					"optional": "(optional)"
+				},
+				"action": "Add personal data"
+			},
+			"auth": {
+				"register": {
+					"title": "It's my first time here",
+					"description": "Please add an PIN number so you can change your appointment later.",
+					"hint": "Proceeding will create an account",
+					"action": "Show summary",
+					"success": "Account created successfully!",
+					"error": "Failed to create account. Please try again.",
+					"alreadyExists": "This email is already registered. Please use the login option to book additional appointments."
+				},
+				"login": {
+					"title": "Login",
+					"description": "Please enter the PIN number, you've set:",
+					"action": "Show summary",
+					"throttled": "Too many failed attempts. Please wait a few minutes before trying again.",
+					"retry": "Please try again in {seconds} seconds"
+				}
+			},
+			"summary": {
+				"title": "Please review your appointment, before confirming.",
+				"book": {
+					"action": "Book appointment"
+				},
+				"request": {
+					"action": "Request appointment",
+					"hint": "This appointment will have to be manually confirmed. You will receive an E-Mail once it's confirmed."
+				},
+				"error": "Operation failed. Please retry."
+			},
+			"complete": {
+				"book": {
+					"title": "Appointment booked",
+					"description": "We’ve sent you an e-mail with the details."
+				},
+				"request": {
+					"title": "Appointment requested",
+					"description": "{name} will confirm or deny your request soon. You will be informed via e-mail."
+				},
+				"action": "Proceed to Homepage"
+			}
+		},
+		"anyAgent": "Anyone available",
+		"register": {
+			"error": "Encryption could not be set up. Please retry"
+		},
+		"login": {
+			"success": "Login successful",
+			"error": "Login failed. Please retry"
+		}
+	},
+	"calendar": {
+		"today": "Today",
+		"loading": "Loading calendar",
+		"decrypting": "decrypting...",
+		"decryptingError": "Unable to decrypt data. Please log-in again",
+		"shownAppointments": {
+			"title": "Appointments",
+			"options": {
+				"all": "all",
+				"available": "available",
+				"booked": "booked",
+				"reserved": "reserved"
+			}
+		}
+	},
+	"emails": {
+		"poweredBy": "Powered by",
+		"greeting": "Hello {name},",
+		"oclock": "",
+		"appointmentBooked": {
+			"subject": "{channel} at {tenant} booked successfully",
+			"introduction": "your appointment for has been booked.",
+			"action": "Cancel appointment",
+			"reason": "You are receiving this email because someone booked an appointment with your e-mail address."
+		},
+		"appointmentReminder": {
+			"subject": "Reminder: Your appointment with {tenant}",
+			"introduction": "your appointment with {tenant} is soon.",
+			"action": "Cancel appointment",
+			"reason": "You are receiving this email because someone booked an appointment with your e-mail address."
+		},
+		"appointmentRejected": {
+			"subject": "Your request for {channel} at {tenant} was rejected",
+			"introduction": "Your appointment was rejected.",
+			"reason": "You are receiving this email because someone requested an appointment with your e-mail address."
+		},
+		"appointmentRequest": {
+			"subject": "{channel} with {tenant} requested",
+			"introduction": "your appointment was requested. You will be notified once it is confirmed.",
+			"reason": "You are receiving this email because someone requested an appointment with your e-mail address."
+		},
+		"confirmation": {
+			"subject": "Confirm your E-Mail Address",
+			"introduction": "welcome our appointment booking platform. Please confirm your e-mail address.",
+			"action": "Confirm E-Mail Address",
+			"hint": "This link is only valid for {expirationMinutes} minutes and can only be used once.",
+			"reason": "You are receiving this email because someone registered an account with your e-mail address."
+		},
+		"pinReset": {
+			"subject": "PIN successfully changed",
+			"introduction": "you've successfully changed your PIN on the {tenant} appointment booking platform. You can now log-in with your new PIN.",
+			"action": "Login",
+			"reason": "You are receiving this email because someone changed the PIN-Code for your account."
+		},
+		"userInvite": {
+			"subject": "Confirm your E-Mail Address",
+			"introduction": "welcome our appointment booking platform. Please confirm your e-mail address.",
+			"action": "Confirm E-Mail Address",
+			"hint": "This link is only valid for {expirationMinutes} minutes and can only be used once.",
+			"reason": "You are receiving this email because someone registered an account with your e-mail address."
 		}
 	}
 }

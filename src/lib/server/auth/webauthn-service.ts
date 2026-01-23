@@ -1,8 +1,11 @@
 import { centralDb as db } from "$lib/server/db";
 import { userPasskey } from "$lib/server/db/central-schema";
 import { eq, desc } from "drizzle-orm";
-import { randomBytes, createHash } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { UniversalLogger } from "$lib/logger";
+import { verifyAuthenticationResponse, verifyRegistrationResponse } from "@simplewebauthn/server";
+import type { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/types";
+import { dev } from "$app/environment";
 
 const logger = new UniversalLogger().setContext("WebAuthnService");
 
@@ -25,222 +28,242 @@ export interface WebAuthnVerificationResult {
 
 export class WebAuthnService {
   /**
-   * Verify a WebAuthn authentication assertion
+   * Normalize credential ID to base64url format (defensive measure)
+   * Ensures credential IDs are consistently stored and queried
+   * @param id - Credential ID (should already be base64url from browser)
+   * @returns Normalized credential ID in base64url format
+   */
+  private static normalizeCredentialId(id: string): string {
+    // Convert base64 to base64url if needed
+    // Base64url: no +, /, or = characters
+    return id.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+  }
+
+  /**
+   * Verify a WebAuthn authentication assertion using @simplewebauthn/server
    * @param credential - The WebAuthn credential from the client
    * @param challengeFromSession - The challenge that was sent to the client (should be stored in session)
+   * @param url - The request URL for dynamic RP ID and origin resolution
    * @returns Verification result with user ID if successful
    */
   static async verifyAuthentication(
     credential: WebAuthnCredential,
     challengeFromSession: string,
+    url: URL,
   ): Promise<WebAuthnVerificationResult> {
     try {
+      // Normalize credential ID to base64url format
+      const normalizedCredentialId = WebAuthnService.normalizeCredentialId(credential.id);
+
       logger.debug("Verifying WebAuthn authentication", {
-        credentialId: credential.id,
+        credentialId: normalizedCredentialId.substring(0, 20) + "...",
+        credentialIdLength: normalizedCredentialId.length,
         hasChallenge: !!challengeFromSession,
       });
 
-      // Get the passkey from database
+      // Get the passkey from database using normalized ID
       const passkeyResults = await db
         .select()
         .from(userPasskey)
-        .where(eq(userPasskey.id, credential.id))
+        .where(eq(userPasskey.id, normalizedCredentialId))
         .limit(1);
 
       if (passkeyResults.length === 0) {
-        logger.warn("Passkey not found", { credentialId: credential.id });
+        logger.warn("Passkey not found in database", {
+          credentialId: normalizedCredentialId.substring(0, 20) + "...",
+        });
         return { verified: false };
       }
 
       const passkey = passkeyResults[0];
 
-      // Parse client data JSON
-      const clientDataJSON = JSON.parse(
-        Buffer.from(credential.response.clientDataJSON, "base64").toString(),
-      );
+      // Get RP ID and allowed origins from request URL
+      const rpID = WebAuthnService.getRPID(url);
+      const allowedOrigins = WebAuthnService.getAllowedOrigins(url);
 
-      // Verify the challenge (convert base64url to base64 for comparison)
-      const expectedChallenge = challengeFromSession.replace(/-/g, "+").replace(/_/g, "/");
-      const receivedChallenge = clientDataJSON.challenge.replace(/-/g, "+").replace(/_/g, "/");
+      // Convert base64 to base64url (WebAuthn sends base64, @simplewebauthn expects base64url)
+      const base64ToBase64url = (base64: string): string => {
+        return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+      };
 
-      if (expectedChallenge !== receivedChallenge) {
-        logger.warn("Challenge mismatch", {
-          credentialId: credential.id,
-          expectedChallenge,
-          receivedChallenge,
-        });
-        return { verified: false };
-      }
+      // Convert our credential format to @simplewebauthn format
+      const authResponse: AuthenticationResponseJSON = {
+        id: normalizedCredentialId,
+        rawId: normalizedCredentialId,
+        response: {
+          authenticatorData: base64ToBase64url(credential.response.authenticatorData),
+          clientDataJSON: base64ToBase64url(credential.response.clientDataJSON),
+          signature: base64ToBase64url(credential.response.signature),
+          userHandle: credential.response.userHandle
+            ? base64ToBase64url(credential.response.userHandle)
+            : undefined,
+        },
+        type: "public-key",
+        clientExtensionResults: {},
+      };
 
-      // Verify the origin matches expected origin (critical for security)
-      const allowedOrigins = WebAuthnService.getAllowedOrigins();
-      if (!allowedOrigins.includes(clientDataJSON.origin)) {
-        logger.warn("Origin verification failed", {
-          credentialId: credential.id,
-          receivedOrigin: clientDataJSON.origin,
-          allowedOrigins,
-        });
-        return { verified: false };
-      }
-
-      logger.debug("Origin verification successful", {
-        origin: clientDataJSON.origin,
-      });
-
-      // Parse authenticator data
-      const authenticatorDataBuffer = Buffer.from(credential.response.authenticatorData, "base64");
-
-      // Parse authenticator data for detailed debugging
-      const parsedAuthData = WebAuthnService.parseAuthenticatorData(authenticatorDataBuffer);
-
-      logger.debug("Authenticator data analysis", {
-        credentialId: credential.id,
-        bufferLength: authenticatorDataBuffer.length,
-        bufferHex: authenticatorDataBuffer.toString("hex"),
-        parsed: parsedAuthData,
-      });
-
-      // Extract counter from authenticator data
-      // Format: rpIdHash(32) + flags(1) + counter(4) + attestedCredentialData(variable)
-      // Counter is at bytes 33-36 (0-indexed)
-      if (authenticatorDataBuffer.length < 37) {
-        logger.warn("Authenticator data too short for counter extraction", {
-          credentialId: credential.id,
-          bufferLength: authenticatorDataBuffer.length,
-        });
-        return { verified: false };
-      }
-
-      const newCounter = authenticatorDataBuffer.readUInt32BE(33);
-
-      logger.debug("Counter extraction", {
-        credentialId: credential.id,
-        storedCounter: passkey.counter,
-        newCounter,
-        counterBytes: authenticatorDataBuffer.subarray(33, 37).toString("hex"),
-      });
-
-      // Some authenticators (especially software-based ones) always return 0
-      // In that case, we skip counter verification but log it
-      if (newCounter === 0 && passkey.counter === 0) {
-        logger.info("Authenticator uses zero counter - skipping counter verification", {
-          credentialId: credential.id,
-        });
-      } else if (newCounter <= passkey.counter) {
-        logger.warn("Counter verification failed - possible replay attack", {
-          credentialId: credential.id,
-          storedCounter: passkey.counter,
-          newCounter,
-        });
-        return { verified: false };
-      }
-
-      // Create the data to be signed
-      const clientDataHash = createHash("sha256")
-        .update(Buffer.from(credential.response.clientDataJSON, "base64"))
-        .digest();
-
-      const signedData = Buffer.concat([authenticatorDataBuffer, clientDataHash]);
-
-      // Verify the signature
+      // Create WebAuthnCredential object for @simplewebauthn/server
+      // Note: WebAuthnCredential has specific field names: id, publicKey, counter
+      // IMPORTANT: publicKey must be raw COSE-encoded Uint8Array (NOT decoded)
+      // @simplewebauthn/server will decode it internally during verification
       const publicKeyBuffer = Buffer.from(passkey.publicKey, "base64");
-      const signatureBuffer = Buffer.from(credential.response.signature, "base64");
+      const publicKeyUint8Array = new Uint8Array(publicKeyBuffer);
 
-      const isSignatureValid = await this.verifySignature(
-        publicKeyBuffer,
-        signedData,
-        signatureBuffer,
-      );
+      const storedCredential = {
+        id: credential.id, // Base64URL-encoded credential ID
+        publicKey: publicKeyUint8Array, // COSE-encoded public key as Uint8Array
+        counter: passkey.counter, // Stored counter value
+      };
 
-      if (!isSignatureValid) {
-        logger.warn("Signature verification failed", { credentialId: credential.id });
+      logger.debug("WebAuthnCredential object created", {
+        id: storedCredential.id.substring(0, 20) + "...",
+        publicKeyLength: publicKeyUint8Array.length,
+        publicKeyBase64Sample: passkey.publicKey.substring(0, 60) + "...",
+        publicKeyBytesFirst10: Array.from(publicKeyUint8Array.slice(0, 10)),
+        counter: storedCredential.counter,
+        publicKeyType: typeof storedCredential.publicKey,
+        publicKeyConstructor: storedCredential.publicKey.constructor.name,
+      });
+
+      // Verify the authentication response using @simplewebauthn/server
+      const verification = await verifyAuthenticationResponse({
+        response: authResponse,
+        expectedChallenge: challengeFromSession,
+        expectedOrigin: allowedOrigins,
+        expectedRPID: rpID,
+        credential: storedCredential, // WebAuthnCredential with id, publicKey, counter
+        requireUserVerification: false, // Set to true for higher security requirements
+      });
+
+      if (!verification.verified) {
+        logger.warn("@simplewebauthn verification failed", {
+          credentialId: credential.id,
+        });
         return { verified: false };
       }
+
+      const { authenticationInfo } = verification;
+      const newCounter = authenticationInfo.newCounter;
 
       // Update the counter in the database to prevent replay attacks
-      // Only update if the authenticator provides a non-zero counter
-      if (newCounter > 0) {
-        await db
-          .update(userPasskey)
-          .set({ counter: newCounter })
-          .where(eq(userPasskey.id, passkey.id));
+      await db
+        .update(userPasskey)
+        .set({
+          counter: newCounter,
+          lastUsedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(userPasskey.id, normalizedCredentialId));
 
-        logger.debug("Counter updated in database", {
-          credentialId: credential.id,
-          newCounter,
-        });
-      } else {
-        logger.debug("Counter update skipped (zero counter authenticator)", {
-          credentialId: credential.id,
-        });
-      }
-
-      logger.debug("WebAuthn authentication successful", {
-        credentialId: credential.id,
+      logger.info("WebAuthn authentication successful", {
+        credentialId: normalizedCredentialId.substring(0, 20) + "...",
         userId: passkey.userId,
-        newCounter,
-        counterUpdated: true,
+        counterUpdated: `${passkey.counter} → ${newCounter}`,
       });
 
       return {
         verified: true,
         userId: passkey.userId,
         newCounter,
-        passkeyId: passkey.id,
+        passkeyId: normalizedCredentialId,
       };
     } catch (error) {
-      logger.error("WebAuthn verification error", {
+      logger.error("WebAuthn authentication failed", {
         error: String(error),
-        credentialId: credential.id,
+        stack: error instanceof Error ? error.stack : undefined,
       });
       return { verified: false };
     }
   }
 
   /**
-   * Verify a signature using the stored public key
-   * This is a simplified implementation - in production, you should use a proper WebAuthn library
-   * like @simplewebauthn/server for complete verification
+   * Verify a WebAuthn registration response using @simplewebauthn/server
+   * Extracts the COSE public key from the attestation object
+   * @param url - The request URL for dynamic RP ID and origin resolution
+   * @returns Object with credentialID (base64url), credentialPublicKey (base64), and counter
    */
-  private static async verifySignature(
-    publicKey: Buffer,
-    signedData: Buffer,
-    signature: Buffer,
-  ): Promise<boolean> {
+  static async verifyRegistration(
+    credentialId: string,
+    attestationObjectBase64: string,
+    clientDataJSONBase64: string,
+    challengeFromSession: string,
+    url: URL,
+  ): Promise<{ credentialID: string; credentialPublicKey: string; counter: number }> {
     try {
-      const crypto = await import("node:crypto");
+      const rpID = WebAuthnService.getRPID(url);
+      const allowedOrigins = WebAuthnService.getAllowedOrigins(url);
 
-      // This is a simplified implementation
-      // In production, you should use a proper WebAuthn library that handles:
-      // - Different key formats (COSE, etc.)
-      // - Different signature algorithms
-      // - Proper ASN.1 parsing
-      // - Certificate chain validation
+      // Normalize credential ID immediately
+      const normalizedCredentialId = WebAuthnService.normalizeCredentialId(credentialId);
 
-      // For now, we'll assume ES256 (ECDSA P-256 with SHA-256)
-      // and that the public key is in the correct format
+      // Convert base64 to base64url
+      const base64ToBase64url = (base64: string): string => {
+        return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+      };
 
-      const verify = crypto.createVerify("SHA256");
-      verify.update(signedData);
-      verify.end();
+      // Create RegistrationResponseJSON for @simplewebauthn/server
+      const registrationResponse: RegistrationResponseJSON = {
+        id: normalizedCredentialId,
+        rawId: normalizedCredentialId,
+        response: {
+          attestationObject: base64ToBase64url(attestationObjectBase64),
+          clientDataJSON: base64ToBase64url(clientDataJSONBase64),
+        },
+        type: "public-key",
+        clientExtensionResults: {},
+      };
 
-      // This is a placeholder - proper implementation would:
-      // 1. Parse the COSE key format
-      // 2. Convert to the correct format for Node.js crypto
-      // 3. Handle different algorithms properly
-
-      logger.debug("Signature verification (simplified implementation)", {
-        publicKeyLength: publicKey.length,
-        signatureLength: signature.length,
-        signedDataLength: signedData.length,
+      logger.debug("Verifying registration", {
+        credentialId: normalizedCredentialId.substring(0, 20) + "...",
+        rpID,
+        allowedOrigins,
       });
 
-      // For development, we'll return true if all data is present
-      // TODO: Replace with proper signature verification
-      return publicKey.length > 0 && signature.length > 0 && signedData.length > 0;
+      // Verify the registration response
+      const verification = await verifyRegistrationResponse({
+        response: registrationResponse,
+        expectedChallenge: challengeFromSession,
+        expectedOrigin: allowedOrigins,
+        expectedRPID: rpID,
+        requireUserVerification: false,
+      });
+
+      if (!verification.verified) {
+        throw new Error("Registration verification failed");
+      }
+
+      const { registrationInfo } = verification;
+      if (!registrationInfo) {
+        throw new Error("No registration info returned");
+      }
+
+      // The credentialPublicKey is already in COSE format (Uint8Array)
+      // Convert to base64 for storage
+      // Note: credential is nested inside registrationInfo
+      const credentialPublicKeyBase64 = Buffer.from(registrationInfo.credential.publicKey).toString(
+        "base64",
+      );
+
+      logger.info("Registration verified successfully", {
+        credentialId: normalizedCredentialId.substring(0, 20) + "...",
+        credentialIdLength: normalizedCredentialId.length,
+        counter: registrationInfo.credential.counter,
+        publicKeyLength: registrationInfo.credential.publicKey.length,
+        publicKeyBytesFirst10: Array.from(registrationInfo.credential.publicKey.slice(0, 10)),
+      });
+
+      return {
+        credentialID: normalizedCredentialId, // Normalized to base64url for consistency
+        credentialPublicKey: credentialPublicKeyBase64,
+        counter: registrationInfo.credential.counter,
+      };
     } catch (error) {
-      logger.error("Signature verification error", { error: String(error) });
-      return false;
+      logger.error("Registration verification error", {
+        error: String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        credentialId,
+      });
+      throw error;
     }
   }
 
@@ -302,19 +325,49 @@ export class WebAuthnService {
   }
 
   /**
-   * Get allowed origins for WebAuthn verification
-   * Uses SERVER_DOMAIN in production, localhost variants in development
+   * Get Relying Party ID for WebAuthn verification
+   * Dynamically resolves from request URL to support multi-tenant subdomains
+   * @param url - The request URL
    */
-  private static getAllowedOrigins(): string[] {
+  private static getRPID(url: URL): string {
+    if (process.env.NODE_ENV === "production") {
+      // In production, use the hostname (without subdomain for main domain)
+      const hostname = url.hostname;
+      const parts = hostname.split(".");
+
+      // If it's a subdomain (e.g., tenant.example.com), use the main domain (example.com)
+      // This allows passkeys to work across all subdomains
+      if (parts.length > 2) {
+        return parts.slice(-2).join(".");
+      }
+      return hostname;
+    }
+
+    // Development: use localhost
+    return "localhost";
+  }
+
+  /**
+   * Get allowed origins for WebAuthn verification
+   * Dynamically resolves from request URL to support multi-tenant subdomains
+   * @param url - The request URL
+   */
+  private static getAllowedOrigins(url: URL): string[] {
     const origins: string[] = [];
 
-    // Check if we're in development (NODE_ENV or presence of dev indicators)
-    const isDevelopment =
-      process.env.NODE_ENV === "development" ||
-      process.env.NODE_ENV === "dev" ||
-      !process.env.SERVER_DOMAIN;
+    if (!dev) {
+      // Production: Use the request origin
+      const origin = url.origin; // e.g., https://tenant.example.com or https://example.com
+      origins.push(origin);
 
-    if (isDevelopment) {
+      // Also allow the main domain (without subdomain) to support cross-subdomain passkey usage
+      const hostname = url.hostname;
+      const parts = hostname.split(".");
+      if (parts.length > 2) {
+        const mainDomain = parts.slice(-2).join(".");
+        origins.push(`https://${mainDomain}`);
+      }
+    } else {
       // Development origins
       origins.push(
         "http://localhost:5173",
@@ -322,20 +375,6 @@ export class WebAuthnService {
         "http://localhost:4173",
         "http://127.0.0.1:4173",
       );
-    } else {
-      // Production: Use SERVER_DOMAIN
-      const serverDomain = process.env.SERVER_DOMAIN;
-      if (serverDomain) {
-        // Add main domain with HTTPS
-        origins.push(`https://${serverDomain}`);
-
-        // Add www variant if it doesn't already start with www
-        if (!serverDomain.startsWith("www.")) {
-          origins.push(`https://www.${serverDomain}`);
-        }
-
-        // TODO: Webauthn does not support wildcard domains. We'll need another solution for that.
-      }
     }
 
     // Allow manual override via WEBAUTHN_ALLOWED_ORIGINS
@@ -344,23 +383,10 @@ export class WebAuthnService {
       origins.push(...envOrigins.split(",").map((o) => o.trim()));
     }
 
-    // Ensure we have at least one allowed origin
-    if (origins.length === 0) {
-      logger.error("No WebAuthn allowed origins configured - this is a security risk!", {
-        NODE_ENV: process.env.NODE_ENV,
-        SERVER_DOMAIN: process.env.SERVER_DOMAIN,
-        WEBAUTHN_ALLOWED_ORIGINS: process.env.WEBAUTHN_ALLOWED_ORIGINS,
-      });
-      // Fallback to localhost in development only
-      if (isDevelopment) {
-        origins.push("http://localhost:5173");
-      }
-    }
-
     logger.debug("WebAuthn allowed origins configured", {
       origins,
-      isDevelopment,
-      serverDomain: process.env.SERVER_DOMAIN,
+      requestOrigin: url.origin,
+      hostname: url.hostname,
     });
 
     return origins;

@@ -199,7 +199,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
       tenantId,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     const appointmentService = await AppointmentService.forTenant(tenantId);
@@ -210,7 +210,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
       count: appointments.length,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
-      requestedBy: locals.user?.userId,
+      requestedBy: locals.user?.id,
     });
 
     return json({
@@ -222,12 +222,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
       },
     });
   } catch (error) {
-    logError(log)(
-      "Error getting appointments by time range",
-      error,
-      locals.user?.userId,
-      params.id,
-    );
+    logError(log)("Error getting appointments by time range", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();

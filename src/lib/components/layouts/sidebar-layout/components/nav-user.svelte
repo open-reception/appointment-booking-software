@@ -12,6 +12,7 @@
   import { nameToAvatarFallback } from "$lib/utils/name";
   import { LanguageSwitch } from "$lib/components/templates/language-switch";
   import { m } from "$i18n/messages";
+  import { resolve } from "$app/paths";
 
   const sidebar = useSidebar();
 </script>
@@ -61,13 +62,13 @@
         <DropdownMenu.Separator />
         <DropdownMenu.Group>
           <LanguageSwitch class="w-full" triggerClass="w-[100%] [&>svg]:ml-auto" />
-          <DropdownMenu.Item onclick={() => goto(ROUTES.DASHBOARD.ACCOUNT)}>
+          <DropdownMenu.Item onclick={() => goto(resolve(ROUTES.DASHBOARD.ACCOUNT.MAIN))}>
             <AccountIcon />
             {m["nav.account"]()}
           </DropdownMenu.Item>
         </DropdownMenu.Group>
         <DropdownMenu.Separator />
-        <DropdownMenu.Item onclick={() => goto(ROUTES.LOGOUT)}>
+        <DropdownMenu.Item onclick={() => goto(resolve(ROUTES.LOGOUT))}>
           <LogOutIcon />
           {m["nav.logout"]()}
         </DropdownMenu.Item>

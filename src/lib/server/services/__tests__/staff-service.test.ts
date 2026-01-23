@@ -20,6 +20,18 @@ vi.mock("../staff-crypto.service", () => ({
   })),
 }));
 
+vi.mock("../tenant-admin-service", () => ({
+  TenantAdminService: {
+    getTenantById: vi.fn(),
+  },
+}));
+
+vi.mock("../user-service", () => ({
+  UserService: {
+    deleteUser: vi.fn(),
+  },
+}));
+
 const mockStaffMember = {
   id: "staff-123",
   email: "staff@example.com",
@@ -35,24 +47,37 @@ const mockStaffMember = {
 describe("StaffService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   describe("getStaffMembers", () => {
     it("should return staff members for a tenant", async () => {
       const { centralDb } = await import("../../db");
 
-      const mockSelectBuilder = {
+      // Mock the first select query (for users)
+      const mockSelectBuilder1 = {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockResolvedValue([mockStaffMember]),
       };
 
-      vi.mocked(centralDb.select).mockReturnValue(mockSelectBuilder as any);
+      // Mock the second select query (for invites)
+      const mockSelectBuilder2 = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue([]),
+      };
+
+      // Mock centralDb.select to return different builders for each call
+      vi.mocked(centralDb.select)
+        .mockReturnValueOnce(mockSelectBuilder1 as any)
+        .mockReturnValueOnce(mockSelectBuilder2 as any);
 
       const result = await StaffService.getStaffMembers("tenant-123");
 
-      expect(centralDb.select).toHaveBeenCalled();
-      expect(mockSelectBuilder.from).toHaveBeenCalled();
-      expect(mockSelectBuilder.where).toHaveBeenCalled();
+      expect(centralDb.select).toHaveBeenCalledTimes(2);
+      expect(mockSelectBuilder1.from).toHaveBeenCalled();
+      expect(mockSelectBuilder1.where).toHaveBeenCalled();
+      expect(mockSelectBuilder2.from).toHaveBeenCalled();
+      expect(mockSelectBuilder2.where).toHaveBeenCalled();
       expect(result).toEqual([mockStaffMember]);
     });
 
@@ -123,9 +148,68 @@ describe("StaffService", () => {
   });
 
   describe("deleteStaffMember", () => {
-    it("should delete a staff member successfully", async () => {
-      const { centralDb, getTenantDb } = await import("../../db");
+    it("should prevent deletion of last staff member", async () => {
+      const { centralDb } = await import("../../db");
 
+      // Mock the non-global admin staff check - only one staff member exists
+      const mockSelectBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue([
+          {
+            id: "staff-123", // Only one staff member
+          },
+        ]),
+      };
+
+      vi.mocked(centralDb.select).mockReturnValue(mockSelectBuilder as any);
+
+      await expect(StaffService.deleteStaffMember("tenant-123", "staff-123")).rejects.toThrow(
+        ValidationError,
+      );
+    });
+
+    it("should delete a staff member successfully when multiple exist", async () => {
+      const { centralDb, getTenantDb } = await import("../../db");
+      const { UserService } = await import("../user-service");
+
+      // Mock the non-global admin staff check - multiple staff members exist
+      const mockSelectBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue([
+          {
+            id: "staff-123",
+          },
+          {
+            id: "staff-456", // Multiple staff members
+          },
+        ]),
+      };
+
+      vi.mocked(centralDb.select).mockReturnValue(mockSelectBuilder as any);
+
+      // Mock UserService.deleteUser - wichtig: das muss vor der transaction() mock sein
+      const mockUserDeletionResult = {
+        success: true,
+        deletedUser: {
+          id: "staff-123",
+          email: "staff@example.com",
+          name: "Staff Member",
+          role: "STAFF" as const,
+        },
+        deletedPasskeysCount: 2,
+        tenantId: "tenant-123",
+      };
+      vi.mocked(UserService.deleteUser).mockResolvedValue(mockUserDeletionResult);
+
+      // Mock tenant database for key shares
+      const mockTenantDb = {
+        delete: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue({ count: 1 }),
+        }),
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockTenantDb as any);
+
+      // Mock transaction
       const mockTransaction = vi.fn().mockImplementation(async (callback) => {
         const tx = {
           select: vi.fn().mockReturnValue({
@@ -143,35 +227,14 @@ describe("StaffService", () => {
               }),
             }),
           }),
-          delete: vi
-            .fn()
-            .mockReturnValueOnce({
-              where: vi.fn().mockResolvedValue({ count: 2 }),
-            })
-            .mockReturnValueOnce({
-              where: vi.fn().mockReturnValue({
-                returning: vi.fn().mockResolvedValue([
-                  {
-                    id: "staff-123",
-                    email: "staff@example.com",
-                    name: "Staff Member",
-                    role: "STAFF",
-                  },
-                ]),
-              }),
-            }),
+          delete: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue({ count: 1 }),
+          }),
         };
         return await callback(tx);
       });
 
-      const mockTenantDb = {
-        delete: vi.fn().mockReturnValue({
-          where: vi.fn().mockResolvedValue({ count: 1 }),
-        }),
-      };
-
       vi.mocked(centralDb.transaction).mockImplementation(mockTransaction);
-      vi.mocked(getTenantDb).mockResolvedValue(mockTenantDb as any);
 
       const result = await StaffService.deleteStaffMember("tenant-123", "staff-123");
 
@@ -190,12 +253,24 @@ describe("StaffService", () => {
     it("should throw NotFoundError when staff member not found", async () => {
       const { centralDb } = await import("../../db");
 
+      // Mock the pre-transaction select queries
+      const mockSelectBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockResolvedValue([
+          {
+            id: "staff-456", // Different ID to simulate multiple staff members
+          },
+        ]),
+      };
+
+      vi.mocked(centralDb.select).mockReturnValue(mockSelectBuilder as any);
+
       const mockTransaction = vi.fn().mockImplementation(async (callback) => {
         const tx = {
           select: vi.fn().mockReturnValue({
             from: vi.fn().mockReturnValue({
               where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([]),
+                limit: vi.fn().mockResolvedValue([]), // No user found
               }),
             }),
           }),

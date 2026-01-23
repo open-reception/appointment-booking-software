@@ -1,0 +1,24 @@
+{{tenant.longName}} - PIN zurücksetzen
+
+Hallo,
+
+Sie haben eine Anfrage zum Zurücksetzen Ihrer PIN für {{tenant.longName}} erhalten.
+
+Um Ihre PIN zurückzusetzen, verwenden Sie bitte den folgenden Link:
+
+{{resetUrl}}
+
+WICHTIGER HINWEIS: Dieser Link ist nur für {{expirationMinutes}} Minuten gültig und kann nur einmal verwendet werden.
+
+Nach dem Zurücksetzen Ihrer PIN können Sie sich mit Ihrer neuen PIN bei Ihrem Konto anmelden.
+
+Falls Sie diese Anfrage nicht gestellt haben, können Sie diese E-Mail ignorieren. Ihre PIN bleibt in diesem Fall unverändert.
+
+Bei Fragen wenden Sie sich gerne an unser Team.
+
+Mit freundlichen Grüßen
+Das {{tenant.longName}} Team
+
+---
+Diese E-Mail wurde automatisch generiert. Bitte antworten Sie nicht auf diese E-Mail.
+© {{tenant.longName}} - Sicher, verschlüsselt, vertrauenswürdig

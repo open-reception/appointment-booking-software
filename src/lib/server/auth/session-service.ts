@@ -41,6 +41,7 @@ export class SessionService {
     userId: string,
     ipAddress?: string,
     userAgent?: string,
+    passkeyId?: string,
   ): Promise<SessionData> {
     logger.info(`Creating session for user: ${userId}`);
 
@@ -56,16 +57,13 @@ export class SessionService {
       throw new ValidationError("User account is inactive");
     }
 
-    if (userData.confirmationState !== "ACCESS_GRANTED") {
-      throw new ValidationError("User account is not fully confirmed");
-    }
-
     // Create session entry first to get the ID
     const sessionData: InsertUserSession = {
       userId: userData.id,
       sessionToken: "", // Will be updated with actual token
       accessToken: "", // Will be updated with actual token
       refreshToken: "", // Will be updated with actual token
+      passkeyId, // Store the passkey ID if WebAuthn was used
       ipAddress,
       userAgent,
       expiresAt: new Date(Date.now() + this.SESSION_DURATION),
@@ -74,8 +72,8 @@ export class SessionService {
 
     const [createdSession] = await db.insert(userSession).values(sessionData).returning();
 
-    // Generate tokens with the actual session ID
-    const tokens = await generateTokens(userData, createdSession.id);
+    // Generate tokens with the actual session ID and passkeyId
+    const tokens = await generateTokens(userData, createdSession.id, passkeyId);
 
     // Update session with actual tokens
     const [updatedSession] = await db
@@ -90,7 +88,7 @@ export class SessionService {
 
     await db.update(user).set({ lastLoginAt: new Date() }).where(eq(user.id, userId));
 
-    logger.info(`Session created successfully for user: ${userId}`);
+    logger.info(`Session created successfully for user: ${userId}`, { passkeyId });
 
     return {
       sessionToken: updatedSession.sessionToken,
@@ -106,7 +104,7 @@ export class SessionService {
    */
   static async validateTokenWithDB(
     accessToken: string,
-  ): Promise<{ user: SelectUser; sessionId: string; exp: Date } | null> {
+  ): Promise<{ user: SelectUser; sessionId: string; exp: Date; passkeyId?: string } | null> {
     logger.debug("Validating access token with database");
 
     try {
@@ -143,11 +141,6 @@ export class SessionService {
         return null;
       }
 
-      if (session.user.confirmationState !== "ACCESS_GRANTED") {
-        logger.debug("User account is not fully confirmed");
-        return null;
-      }
-
       // Update last used time
       await db
         .update(userSession)
@@ -160,6 +153,7 @@ export class SessionService {
         user: session.user,
         exp: session.user_session.expiresAt,
         sessionId: session.user_session.id,
+        passkeyId: session.user_session.passkeyId || tokenData.passkeyId,
       };
     } catch (error) {
       logger.error("Error validating token with database:", { error: String(error) });

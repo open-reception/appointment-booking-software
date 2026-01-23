@@ -31,7 +31,7 @@
   variant="outline"
   onclick={onClick}
   class={cn(
-    "flex w-full justify-start",
+    "flex h-[40px] w-full justify-start",
     state === "error" ? "dark:border-destructive border-destructive text-destructive" : "",
     className,
   )}

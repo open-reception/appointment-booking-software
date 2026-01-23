@@ -2,6 +2,7 @@ import type { RequestEvent } from "@sveltejs/kit";
 
 const ACCESS_TOKEN_COOKIE_NAME = "access_token";
 export const getAccessToken = (
+  // @ts-expect-error exact route names are not relevant here
   event: RequestEvent<Partial<Record<string, string>>, string | null>,
 ): string | null => {
   let accessToken: string | null = null;

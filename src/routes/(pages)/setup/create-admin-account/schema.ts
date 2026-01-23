@@ -9,8 +9,8 @@ export const baseSchema = z.object({
 const passkeySchema = baseSchema.extend({
   type: z.literal("passkey"),
   id: z.string().min(3),
-  publicKeyBase64: z.string().base64(),
-  authenticatorDataBase64: z.string().base64(),
+  attestationObjectBase64: z.string().base64(),
+  clientDataJSONBase64: z.string().base64(),
 });
 const passphraseSchema = baseSchema.extend({
   type: z.literal("passphrase"),

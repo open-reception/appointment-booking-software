@@ -4,12 +4,12 @@ import { BackendError, InternalError, logError, ValidationError } from "$lib/ser
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
-import z from "zod/v4";
+import { z } from "zod";
 import { checkPermission } from "$lib/server/utils/permissions";
 import { ERRORS } from "$lib/errors";
 
 const setupStateSchema = z.object({
-  setupState: z.enum(["NEW", "SETTINGS_CREATED", "AGENTS_SET_UP", "FIRST_CHANNEL_CREATED"]),
+  setupState: z.enum(["SETTINGS", "AGENTS", "CHANNELS", "STAFF", "READY"]),
 });
 
 // Register OpenAPI documentation for PUT
@@ -138,7 +138,7 @@ export const PUT: RequestHandler = async ({ locals, params, request }) => {
       tenant: updatedTenant,
     });
   } catch (error) {
-    logError(log)("Error updating tenant setup state", error, locals.user?.userId, params.id);
+    logError(log)("Error updating tenant setup state", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();

@@ -5,14 +5,15 @@
   import { Input } from "$lib/components/ui/input";
   import { toast } from "svelte-sonner";
   import { type Infer, superForm, type SuperValidated } from "sveltekit-superforms";
-  import { zodClient } from "sveltekit-superforms/adapters";
+  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema, type FormSchema } from ".";
   import { ERRORS } from "$lib/errors";
 
   let { data, done }: { done: () => void; data: { form: SuperValidated<Infer<FormSchema>> } } =
     $props();
 
-  const form = superForm(data.form, {
+  // svelte-ignore state_referenced_locally
+  const form = superForm($state.snapshot(data.form), {
     validators: zodClient(formSchema),
     onResult: async (event) => {
       if (event.result.type === "success") {

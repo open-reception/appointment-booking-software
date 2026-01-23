@@ -15,7 +15,7 @@
   import { toast } from "svelte-sonner";
   import { get } from "svelte/store";
   import { superForm } from "sveltekit-superforms";
-  import { zodClient } from "sveltekit-superforms/adapters";
+  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from ".";
   import { DEFAULT_SLOT_TEMPLATE } from "../utils";
 
@@ -23,6 +23,8 @@
 
   const agents = $derived($agentsStore.agents ?? []);
   const tenantLocales = get(tenants).currentTenant?.languages ?? [];
+
+  // svelte-ignore state_referenced_locally
   const form = superForm(
     {
       id: entity.id,

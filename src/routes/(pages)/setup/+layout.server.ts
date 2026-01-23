@@ -5,10 +5,11 @@ import { redirect } from "@sveltejs/kit";
 export const load = async (event) => {
   // Some routes should not be accessed, once an admin is created
   const cleanedId = event.route.id.replace("/(pages)", "");
-  const blocklist = [ROUTES.SETUP.MAIN, ROUTES.SETUP.CREATE_ADMIN_ACCOUNT];
+  const blocklist = [ROUTES.SETUP.MAIN, ROUTES.SETUP.CREATE_ADMIN_ACCOUNT, ROUTES.LOGIN];
 
   // Check if global admin exists
   const adminExists = await UserService.adminExists();
+  // @ts-expect-error any string should be tested against blocklist
   if (blocklist.includes(cleanedId) && adminExists) {
     redirect(302, ROUTES.LOGIN);
   }

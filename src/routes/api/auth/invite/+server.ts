@@ -16,7 +16,7 @@ const inviteUserSchema = z.object({
   name: z.string().min(1),
   role: z.enum(["TENANT_ADMIN", "STAFF"]),
   tenantId: z.string().uuid(),
-  language: z.enum(["de", "en"]).optional().default("de"),
+  language: z.enum(["de", "en"]).optional().default("en"),
 });
 
 registerOpenAPIRoute("/auth/invite", "POST", {
@@ -140,8 +140,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
     if (!validation.success) {
       logger.warn("Invalid invite request", {
-        userId: locals.user.userId,
-        errors: validation.error.errors,
+        userId: locals.user.id,
+        errors: validation.error.issues,
       });
       throw new ValidationError("Invalid request data");
     }
@@ -157,7 +157,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       // Tenant admin can invite to their own tenant
     } else {
       logger.warn("Insufficient permissions for invitation", {
-        userId: locals.user.userId,
+        userId: locals.user.id,
         userRole: locals.user.role,
         userTenantId: locals.user.tenantId,
         targetTenantId: tenantId,
@@ -196,18 +196,18 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       name,
       role,
       tenantId,
-      locals.user.userId,
+      locals.user.id,
       language,
     );
 
     // Generate registration URL with secure invite code
-    const registrationUrl = `${env.PUBLIC_APP_URL || "http://localhost:5173"}/register?invite=${invitation.inviteCode}`;
+    const registrationUrl = `${env.PUBLIC_APP_URL || "http://localhost:5173"}/confirm/${invitation.inviteCode}`;
 
     // Send invitation email
     await sendUserInviteEmail(email, name, tenant, role, registrationUrl, language);
 
     logger.info("User invitation sent successfully", {
-      invitedBy: locals.user.userId,
+      invitedBy: locals.user.id,
       invitedEmail: email,
       tenantId,
       role,
@@ -223,7 +223,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   } catch (error) {
     logger.error("User invitation error:", {
       error: String(error),
-      userId: locals.user?.userId,
+      userId: locals.user?.id,
     });
 
     if (error instanceof ValidationError) {

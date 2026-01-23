@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Termin storniert</title>
+    <style>
+      body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          line-height: 1.6;
+          color: #333;
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 20px;
+          background-color: {{tenant.backgroundColor}};
+      }
+      .email-container {
+          background-color: white;
+          padding: 30px;
+          border-radius: 8px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .header {
+          text-align: center;
+          border-bottom: 1px solid #eee;
+          padding-bottom: 20px;
+          margin-bottom: 30px;
+      }
+      .logo {
+          font-size: 24px;
+          font-weight: bold;
+          color: {{tenant.primaryColor}};
+      }
+      h1 {
+          color: #1f2937;
+          font-size: 24px;
+          margin-bottom: 20px;
+      }
+      h2 {
+          color: #374151;
+          font-size: 20px;
+          margin-bottom: 15px;
+      }
+      .appointment-details {
+          background-color: #f8fafc;
+          padding: 20px;
+          border-radius: 6px;
+          border-left: 4px solid #dc2626;
+          margin: 20px 0;
+      }
+      .warning-box {
+          background-color: #fef2f2;
+          border-left: 4px solid #dc2626;
+          padding: 15px;
+          margin: 20px 0;
+          border-radius: 4px;
+      }
+      .footer {
+          margin-top: 30px;
+          padding-top: 20px;
+          border-top: 1px solid #eee;
+          font-size: 14px;
+          color: #6b7280;
+          text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <div class="header">
+        {{#if tenant.logo}}
+        <img
+          src="data:image/png;base64,{{tenant.logo}}"
+          alt="{{tenant.longName}}"
+          style="max-height: 60px; margin-bottom: 10px"
+        />
+        {{/if}}
+        <div class="logo">{{tenant.longName}}</div>
+      </div>
+
+      <h1>Termin storniert</h1>
+
+      <div class="warning-box">
+        <strong>⚠️ Ihr Termin wurde storniert</strong>
+        <p style="margin-top: 10px; margin-bottom: 0">
+          Wir möchten Sie darüber informieren, dass Ihr Termin storniert wurde.
+        </p>
+      </div>
+
+      <h2>Termindetails</h2>
+      <div class="appointment-details">
+        <p style="margin: 0 0 10px 0"><strong>Datum:</strong> {{appointmentDate}}</p>
+        {{#if title}}
+        <p style="margin: 0 0 10px 0"><strong>Termin:</strong> {{title}}</p>
+        {{/if}} {{#if location}}
+        <p style="margin: 0 0 10px 0"><strong>Ort:</strong> {{location}}</p>
+        {{/if}}
+      </div>
+
+      <p>Bei Fragen stehen wir Ihnen gerne zur Verfügung. Sie können uns jederzeit kontaktieren.</p>
+
+      <div class="footer">
+        <p style="margin: 0">{{tenant.longName}}</p>
+        {{#if tenant.links.website}}
+        <p style="margin: 5px 0 0 0">
+          <a
+            href="{{tenant.links.website}}"
+            style="color: {{tenant.primaryColor}}; text-decoration: none"
+            >{{tenant.links.website}}</a
+          >
+        </p>
+        {{/if}}
+      </div>
+    </div>
+  </body>
+</html>

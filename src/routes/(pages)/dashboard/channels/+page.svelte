@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { invalidate } from "$app/navigation";
   import { m } from "$i18n/messages";
   import { MaxPageWidth } from "$lib/components/layouts/max-page-width";
   import { SidebarLayout } from "$lib/components/layouts/sidebar-layout";
@@ -9,12 +8,13 @@
   import { Button } from "$lib/components/ui/button";
   import { ResponsiveDialog, closeDialog, openDialog } from "$lib/components/ui/responsive-dialog";
   import { ROUTES } from "$lib/const/routes";
+  import { tenants } from "$lib/stores/tenants";
   import { type TChannelWithFullAgents } from "$lib/types/channel";
   import { getCurrentTranlslation } from "$lib/utils/localizations";
-  import EditIcon from "@lucide/svelte/icons/pencil";
-  import PlusIcon from "@lucide/svelte/icons/plus";
   import PauseIcon from "@lucide/svelte/icons/pause";
+  import EditIcon from "@lucide/svelte/icons/pencil";
   import PlayIcon from "@lucide/svelte/icons/play";
+  import PlusIcon from "@lucide/svelte/icons/plus";
   import UnknownItemIcon from "@lucide/svelte/icons/split";
   import DeleteIcon from "@lucide/svelte/icons/trash-2";
   import { onMount } from "svelte";
@@ -22,6 +22,7 @@
   import DeleteChannelForm from "./(components)/delete-channel-form/delete-channel-form.svelte";
   import EditChannelForm from "./(components)/edit-channel-form/edit-channel-form.svelte";
   import { PauseChannelForm } from "./(components)/pause-channel-form";
+  import { channels } from "$lib/stores/channels";
 
   const { data } = $props();
   let curItem: TChannelWithFullAgents | null = $state(null);
@@ -61,7 +62,8 @@
           {/snippet}
           <AddChannelForm
             done={() => {
-              invalidate(ROUTES.DASHBOARD.CHANNELS);
+              tenants.reload();
+              channels.load();
               closeDialog("add");
             }}
           />
@@ -125,7 +127,7 @@
                 done={() => {
                   closeDialog("edit");
                   curItem = null;
-                  invalidate(ROUTES.DASHBOARD.CHANNELS);
+                  channels.load();
                 }}
               />
             {/if}
@@ -141,7 +143,7 @@
                 done={() => {
                   closeDialog("pause");
                   curItem = null;
-                  invalidate(ROUTES.DASHBOARD.CHANNELS);
+                  channels.load();
                 }}
               />
             </ResponsiveDialog>
@@ -153,7 +155,8 @@
                 done={() => {
                   closeDialog("delete");
                   curItem = null;
-                  invalidate(ROUTES.DASHBOARD.CHANNELS);
+                  tenants.reload();
+                  channels.load();
                 }}
               />
             {/if}

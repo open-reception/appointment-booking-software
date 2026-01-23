@@ -9,6 +9,7 @@ import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { UniversalLogger } from "$lib/logger";
 import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
 import { env } from "$env/dynamic/private";
+import { challengeThrottleService } from "$lib/server/services/challenge-throttle";
 
 const logger = new UniversalLogger().setContext("AuthLoginAPI");
 
@@ -228,6 +229,7 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
     }
 
     // Handle WebAuthn authentication
+    let passkeyId: string | undefined;
     if (body.credential) {
       // Get the challenge from the session
       const challengeFromSession = cookies.get("webauthn-challenge");
@@ -244,9 +246,12 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
       const verificationResult = await WebAuthnService.verifyAuthentication(
         body.credential,
         challengeFromSession,
+        url,
       );
 
       if (!verificationResult.verified) {
+        // Record failed passkey attempt
+        await challengeThrottleService.recordFailedAttempt(body.email, "passkey");
         return json({ error: "Invalid WebAuthn credential" }, { status: 401 });
       }
 
@@ -255,21 +260,17 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
         return json({ error: "WebAuthn credential does not belong to this user" }, { status: 401 });
       }
 
-      // Update the counter to prevent replay attacks
-      if (verificationResult.newCounter && verificationResult.passkeyId) {
-        await WebAuthnService.updatePasskeyCounter(
-          verificationResult.passkeyId,
-          verificationResult.newCounter,
-        );
-      }
-
       logger.debug("WebAuthn authentication successful", { userId: user.id });
+
+      // Clear throttle on successful authentication
+      await challengeThrottleService.clearThrottle(body.email, "passkey");
     }
 
     const sessionData = await SessionService.createSession(
       user.id,
       ipAddress,
       userAgent || undefined,
+      passkeyId,
     );
 
     // Set HTTP-only cookie for access token
@@ -278,7 +279,7 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
       secure: true,
       sameSite: "strict",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      expires: sessionData.expiresAt,
     });
 
     logger.info("Login successful", {
