@@ -1,13 +1,23 @@
 import { fail } from "@sveltejs/kit";
 import { superValidate } from "sveltekit-superforms";
 import { zod4 as zod } from "sveltekit-superforms/adapters";
-import type { Actions } from "./$types";
+import type { Actions, PageServerLoad } from "./$types";
 import { formSchema } from "./schema";
 import type { WebAuthnCredential } from "$lib/server/auth/webauthn-service";
 import type { TUser } from "$lib/types/user";
 import logger from "$lib/logger";
 
 const log = logger.setContext(import.meta.filename);
+
+export const load: PageServerLoad = async (event) => {
+  // Remove any existing access token cookie
+  event.cookies.delete("access_token", {
+    path: "/",
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+  });
+};
 
 export const actions: Actions = {
   default: async (event) => {
