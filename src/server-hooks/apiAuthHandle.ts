@@ -12,6 +12,15 @@ const GLOBAL_ADMIN_PATHS = ["/api/admin"];
 export const apiAuthHandle: Handle = async ({ event, resolve }) => {
   const { url } = event;
   const path = url.pathname;
+
+  // Public api paths should be available without authentication
+  const whitelist = ["/api/public"];
+  const skip = whitelist.some((wlPath) => path.startsWith(wlPath));
+  if (skip) {
+    return resolve(event);
+  }
+
+  // Front-End routes are not handled here
   if (!path.startsWith("/api")) {
     return resolve(event);
   }

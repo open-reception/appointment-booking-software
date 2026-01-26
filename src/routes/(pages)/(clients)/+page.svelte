@@ -38,7 +38,7 @@
         </div>
       </div>
     {:then tenant}
-      {#if tenant && tenant.longName}
+      {#if tenant && tenant.setupState === "READY"}
         <div class="flex max-w-(--max-w-sm) flex-col justify-between gap-3">
           {#if typeof tenant.logo === "string" && tenant.logo}
             <img
@@ -49,13 +49,13 @@
             />
           {/if}
           <div class="flex flex-col items-start gap-1">
-            <Headline level="h1" style="h4">{tenant?.longName}</Headline>
+            <Headline level="h1" style="h4">{tenant.longName}</Headline>
             <Text style="md" color="medium" class="whitespace-pre-line">
               <LocalizedText translations={tenant.descriptions} />
             </Text>
-            {#if tenant?.links.website}
+            {#if tenant.links.website}
               <Button
-                href={tenant?.links.website}
+                href={tenant.links.website}
                 variant="link"
                 class="mt-1 h-auto w-auto self-start"
                 target="_blank"
@@ -80,7 +80,7 @@
     {#await data.streaming.tenant}
       <Skeleton class="h-10 w-full" />
     {:then tenant}
-      {#if tenant?.setupState === "READY" && tenant.longName}
+      {#if tenant?.setupState === "READY"}
         <Button size="lg" class="w-full" href={ROUTES.BOOK_APPOINTMENT}>
           {m["public.bookAppointment"]()}
         </Button>
