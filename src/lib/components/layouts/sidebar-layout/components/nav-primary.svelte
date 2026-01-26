@@ -40,14 +40,14 @@
       url: ROUTES.DASHBOARD.AGENTS,
       isTenantOnly: true,
       icon: AgentsIcon,
-      roles: ["GLOBAL_ADMIN", "TENANT_ADMIN", "STAFF"],
+      roles: ["GLOBAL_ADMIN", "TENANT_ADMIN"],
     },
     {
       title: m["nav.channels"](),
       url: ROUTES.DASHBOARD.CHANNELS,
       isTenantOnly: true,
       icon: ChannelsIcon,
-      roles: ["GLOBAL_ADMIN", "TENANT_ADMIN", "STAFF"],
+      roles: ["GLOBAL_ADMIN", "TENANT_ADMIN"],
     },
     {
       title: m["nav.absences"](),
