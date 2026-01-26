@@ -61,7 +61,7 @@
     class="relative flex w-full items-start justify-between transition-all duration-200"
     style:height={`${focusAdjustment}px`}
   >
-    <Separator class="bg-secondary absolute top-0 right-0 left-16 h-0.25 !w-auto" />
+    <Separator class="bg-secondary absolute top-0 right-0 left-16 h-px w-auto!" />
   </div>
   {#each shownHours as hour (`hour-${hour}`)}
     <div
@@ -75,8 +75,8 @@
           timeZone: getLocalTimeZone().toString(),
         }).format(toCalendarDateTime(day).set({ hour }).toDate(getLocalTimeZone()))}
       </Text>
-      <Separator class="bg-muted-foreground h-0.25 w-auto! grow" />
-      <Separator class="bg-secondary absolute top-1/2 right-0 left-16 h-0.25 !w-auto" />
+      <Separator class="bg-muted-foreground h-px w-auto! grow" />
+      <Separator class="bg-secondary absolute top-1/2 right-0 left-16 h-px w-auto!" />
     </div>
   {/each}
 
@@ -97,7 +97,7 @@
       {@const width = 100 / item.totalColumns}
       {@const left = item.column * width}
       <div
-        class="absolute flex items-center rounded p-0.25 transition-all duration-200 focus-within:z-10 focus-within:min-h-5 focus-within:scale-[1.02] focus-within:shadow-md focus-within:outline-3 hover:z-10 hover:min-h-5 hover:scale-[1.02] hover:shadow-md"
+        class="absolute flex items-center rounded p-px transition-all duration-200 focus-within:z-10 focus-within:min-h-5 focus-within:scale-[1.02] focus-within:shadow-md focus-within:outline-3 hover:z-10 hover:min-h-5 hover:scale-[1.02] hover:shadow-md"
         style:top={`${top}px`}
         style:height={`${height}px`}
         style:left={`${left}%`}
@@ -119,7 +119,7 @@
     {/each}
   </div>
 
-  {#if curTimeIndicator && toCalendarDate($clock).toString() === today(getLocalTimeZone()).toString() && latestEndHour + hourSize / 2 > curTimeIndicator.hour}
+  {#if curTimeIndicator && toCalendarDate($clock).toString() === today(getLocalTimeZone()).toString() && latestEndHour * hourSize + hourSize / 2 > curTimeIndicator.hour * hourSize}
     {@const top =
       focusAdjustment +
       curTimeIndicator.hour * hourSize +
@@ -136,7 +136,7 @@
           timeZone: getLocalTimeZone().toString(),
         }).format(toCalendarDateTime($clock).toDate(getLocalTimeZone()))}
       </Text>
-      <div class="absolute right-0 left-0 h-0.25 bg-red-500"></div>
+      <div class="absolute right-0 left-0 h-px bg-red-500"></div>
     </div>
   {/if}
 </div>

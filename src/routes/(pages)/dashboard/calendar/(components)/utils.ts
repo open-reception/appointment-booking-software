@@ -115,3 +115,22 @@ export function positionItems(items: TCalendarItem[] | undefined) {
 
   return processedItems;
 }
+
+export const cancelAppointment = async (opts: { tenant: string; appointment: string }) => {
+  if (!browser) return;
+
+  const res = await fetch(`/api/tenants/${opts.tenant}/appointments/${opts.appointment}`, {
+    method: "DELETE",
+  });
+
+  if (res.status < 400) {
+    return true;
+  } else {
+    if (res.status === 401) {
+      goto(resolve(ROUTES.LOGIN));
+    } else {
+      console.error("Unable to delete appointment", opts, res.status, res.statusText);
+    }
+    return false;
+  }
+};

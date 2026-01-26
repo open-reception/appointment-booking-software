@@ -917,6 +917,13 @@
 				"booked": "gebucht",
 				"reserved": "reserviert"
 			}
+		},
+		"cancelAppointment": {
+			"hint": "Kunden werden per E-Mail benachrichtigt, wenn diese Benachrichtigungen aktiviert haben.",
+			"confirm": "Sind Sie sicher, dass Sie diesen Termin absagen möchten?",
+			"action": "Termin absagen",
+			"success": "Termin erfolgreich abgesagt",
+			"error": "Fehler beim Absagen des Termins"
 		}
 	},
 	"emails": {

@@ -926,6 +926,13 @@
 				"booked": "booked",
 				"reserved": "reserved"
 			}
+		},
+		"cancelAppointment": {
+			"hint": "Clients will be notified via e-mail, if they have enabled e-mail notifications.",
+			"confirm": "Are you sure you want to cancel this appointment?",
+			"action": "Cancel Appointment",
+			"success": "Appointment cancelled successfully",
+			"error": "Failed to cancel appointment"
 		}
 	},
 	"emails": {

@@ -62,6 +62,10 @@
     }
   };
 
+  const closeAppointmentDetail = () => {
+    $calendarStore.curItem = null;
+  };
+
   let items: TCalendarItem[] | undefined = $derived.by(() => {
     if (!calender) return undefined;
     const dayEntry = calender.calendar.find((d) => d.date === startDate.toString());
@@ -166,7 +170,7 @@
   {/snippet}
 </SidebarLayout>
 
-{#if curItem}
+{#if curItem && tenantId}
   {@const channel = channels.find((c) => c.id === curItem.appointment.channelId)}
   <ResponsiveDialog
     id="current-calendar-item"
@@ -174,6 +178,6 @@
     description={channel ? getCurrentTranlslation(channel.names) : undefined}
     triggerHidden={true}
   >
-    <AppointmentDetail item={curItem} />
+    <AppointmentDetail {tenantId} item={curItem} {updateCalendar} close={closeAppointmentDetail} />
   </ResponsiveDialog>
 {/if}

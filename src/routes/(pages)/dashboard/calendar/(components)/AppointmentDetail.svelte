@@ -5,12 +5,39 @@
   import { type CurAppointmentItem } from "$lib/stores/calendar";
   import { getLocalTimeZone } from "@internationalized/date";
   import { Calendar, Mail, Phone } from "@lucide/svelte";
+  import { cancelAppointment } from "./utils";
+  import { toast } from "svelte-sonner";
+  import { m } from "$i18n/messages";
 
   let {
-    item,
+    tenantId,
+    item = $bindable(),
+    updateCalendar,
+    close,
   }: {
+    tenantId: string;
     item: CurAppointmentItem;
+    updateCalendar: () => void;
+    close: () => void;
   } = $props();
+
+  let isDeleting = $state(false);
+
+  const cancel = async () => {
+    const proceed = confirm(m["calendar.cancelAppointment.confirm"]());
+    if (!proceed) return;
+
+    isDeleting = true;
+    const success = await cancelAppointment({ tenant: tenantId, appointment: item.appointment.id });
+    if (success) {
+      toast.success(m["calendar.cancelAppointment.success"]());
+      updateCalendar();
+      close();
+    } else {
+      toast.error(m["calendar.cancelAppointment.error"]());
+    }
+    isDeleting = false;
+  };
 </script>
 
 {#if item.appointment.appointment}
@@ -48,6 +75,20 @@
           timeZone: getLocalTimeZone().toString(),
         }).format(item.appointment.appointment.dateTime)}
       </Text>
+    </div>
+    <div class="mt-5 flex w-full flex-col gap-4">
+      <Text style="xs" class="text-muted-foreground text-center">
+        {m["calendar.cancelAppointment.hint"]()}
+      </Text>
+      <Button
+        class="w-full"
+        disabled={isDeleting}
+        isLoading={isDeleting}
+        variant="destructive"
+        onclick={cancel}
+      >
+        {m["calendar.cancelAppointment.action"]()}
+      </Button>
     </div>
   </div>
 {/if}
