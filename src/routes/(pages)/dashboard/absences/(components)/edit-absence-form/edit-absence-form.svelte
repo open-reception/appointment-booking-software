@@ -73,6 +73,7 @@
           bind:value={$formData.agent}
           name={props.name}
           onValueChange={(v) => ($formData.agent = v)}
+          disabled={true}
         >
           <Select.Trigger {...props} class="w-full">
             {$formData.agent
