@@ -1,4 +1,6 @@
 <script lang="js">
+  import { m } from "$i18n/messages";
+
   let { children, href } = $props();
 </script>
 
@@ -6,6 +8,9 @@
   <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
   <a class="button" {href}>{@render children?.()}</a>
 </div>
+<span class="html-only md">
+  {m["emails.buttonAlternativeLink"]()}: <a {href}>{href}</a>
+</span>
 
 <svelte:head>
   <style>

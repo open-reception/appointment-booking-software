@@ -930,6 +930,7 @@
 		"poweredBy": "Betrieben mit",
 		"greeting": "Hallo {name},",
 		"oclock": "Uhr",
+		"buttonAlternativeLink": "Button funktioniert nicht? Öffnen Sie diesen Link in Ihrem Browser",
 		"appointmentBooked": {
 			"subject": "{channel} bei {tenant} gebucht",
 			"introduction": "Ihr Termin wurde gebucht.",

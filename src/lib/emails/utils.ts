@@ -51,6 +51,9 @@ export const htmlToText = (html: string) => {
       .replace(regexClose, newLinePlaceholder + newLinePlaceholder);
   });
 
+  // Remove html-only spans
+  text = text.replace(/<span class="(.*)html-only(.*)">[\s\S]*?<\/span>/gi, "");
+
   // Remove all remaining HTML tags
   text = text.replace(/<[^>]*>/g, "");
 

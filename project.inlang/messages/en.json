@@ -939,6 +939,7 @@
 		"poweredBy": "Powered by",
 		"greeting": "Hello {name},",
 		"oclock": "",
+		"buttonAlternativeLink": "Button not working? Open this URL into your browser",
 		"appointmentBooked": {
 			"subject": "{channel} at {tenant} booked successfully",
 			"introduction": "your appointment for has been booked.",
