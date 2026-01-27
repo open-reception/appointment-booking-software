@@ -4,9 +4,9 @@ import { type Handle } from "@sveltejs/kit";
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
 /** Rate limiting window duration in milliseconds */
-const RATE_LIMIT_WINDOW = 1000; // ms
+const RATE_LIMIT_WINDOW = 2000; // ms
 /** Maximum requests allowed per rate limiting window */
-const RATE_LIMIT_MAX_REQUESTS = 10;
+const RATE_LIMIT_MAX_REQUESTS = 20;
 
 /**
  * Extracts the client IP address from request headers

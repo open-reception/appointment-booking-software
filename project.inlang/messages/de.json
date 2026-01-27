@@ -489,6 +489,11 @@
 					"description": "Wähle die Akteure aus, die Termine in diesem Kanal entgegennehmen können.",
 					"placeholder": "Akteure auswählen"
 				},
+				"staff": {
+					"title": "Personal",
+					"description": "Diese Mitarbeiter:innen erhalten Benachrichtigungen über Terminänderungen in diesem Kanal.",
+					"placeholder": "Mitarbeiter:innen auswählen"
+				},
 				"isPublic": {
 					"title": "Öffentlich",
 					"label": "Dieser Kanal kann von Kunden direkt gebucht werden"
@@ -972,6 +977,22 @@
 			"action": "E-Mail Adresse bestätigen",
 			"hint": "Dieser Link ist nur {expirationMinutes} Minuten gültig und kann nur einmal verwendet werden.",
 			"reason": "Du erhältst diese E-Mail, weil jemand für Deine E-Mail Adresse ein Konto registriert hat."
+		}
+	},
+	"notifications": {
+		"title": "Benachrichtigungen",
+		"markAllAsRead": {
+			"action": "Alle als gelesen markieren",
+			"success": "Alle Benachrichtigungen erledigt",
+			"error": "Benachrichtigungen konnten nicht als gelesen markiert werden."
+		},
+		"markAsRead": "Als gelesen markieren",
+		"empty": "Keine Benachrichtigungen vorhanden",
+		"types": {
+			"APPOINTMENT_REQUESTED": {
+				"title": "Neue Terminanfrage",
+				"description": "Ein neuer Termin wurde in {channel} angefragt."
+			}
 		}
 	}
 }

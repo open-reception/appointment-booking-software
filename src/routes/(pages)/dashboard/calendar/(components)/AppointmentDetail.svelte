@@ -77,18 +77,44 @@
       </Text>
     </div>
     <div class="mt-5 flex w-full flex-col gap-4">
-      <Text style="xs" class="text-muted-foreground text-center">
-        {m["calendar.cancelAppointment.hint"]()}
-      </Text>
-      <Button
-        class="w-full"
-        disabled={isDeleting}
-        isLoading={isDeleting}
-        variant="destructive"
-        onclick={cancel}
-      >
-        {m["calendar.cancelAppointment.action"]()}
-      </Button>
+      {#if item.appointment.status === "reserved"}
+        <Text style="xs" class="text-muted-foreground text-center">
+          {m["calendar.cancelAppointment.hint"]()}
+        </Text>
+        <div class="flex flex-col gap-2">
+          <Button
+            class="w-full"
+            disabled={isDeleting}
+            isLoading={isDeleting}
+            variant="destructive"
+            onclick={cancel}
+          >
+            {m["calendar.cancelAppointment.action"]()}
+          </Button>
+          <Button
+            class="w-full"
+            disabled={isDeleting}
+            isLoading={isDeleting}
+            variant="destructive"
+            onclick={cancel}
+          >
+            {m["calendar.cancelAppointment.action"]()}
+          </Button>
+        </div>
+      {:else if item.appointment.status === "booked"}
+        <Text style="xs" class="text-muted-foreground text-center">
+          {m["calendar.cancelAppointment.hint"]()}
+        </Text>
+        <Button
+          class="w-full"
+          disabled={isDeleting}
+          isLoading={isDeleting}
+          variant="destructive"
+          onclick={cancel}
+        >
+          {m["calendar.cancelAppointment.action"]()}
+        </Button>
+      {/if}
     </div>
   </div>
 {/if}

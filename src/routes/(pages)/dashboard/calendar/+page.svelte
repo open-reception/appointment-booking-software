@@ -14,15 +14,20 @@
   import {
     DateFormatter,
     getLocalTimeZone,
+    parseAbsoluteToLocal,
+    toCalendarDate,
     today,
     type CalendarDate,
   } from "@internationalized/date";
   import { Funnel } from "@lucide/svelte";
+  import { onMount } from "svelte";
   import AppointmentDetail from "./(components)/AppointmentDetail.svelte";
   import CalendarDay from "./(components)/CalendarDay.svelte";
   import CalendarFilters from "./(components)/CalendarFilters.svelte";
   import CalendarHeader from "./(components)/CalendarHeader.svelte";
-  import { fetchCalendar } from "./(components)/utils";
+  import { fetchCalendar, openAppointmentById } from "./(components)/utils";
+  import { staffCrypto } from "$lib/stores/staff-crypto";
+  import { replaceState } from "$app/navigation";
 
   const tenantId = $derived($auth.user?.tenantId);
   const curItem = $derived($calendarStore.curItem);
@@ -50,9 +55,34 @@
     return { from: Math.min(...from), to: Math.max(...to) };
   });
   let scale = $state(1);
+  let openAppointmentAfterUpdate: string | undefined = $state();
 
   $effect(() => {
     updateCalendar();
+  });
+
+  $effect(() => {
+    // Wait 100ms to ensure that the calendar items are rendered
+    setTimeout(() => {
+      if (items && openAppointmentAfterUpdate) {
+        openAppointmentById(items, openAppointmentAfterUpdate, () => {
+          openAppointmentAfterUpdate = undefined;
+        });
+      }
+    }, 100);
+  });
+
+  onMount(() => {
+    if (history.state["sveltekit:states"]?.date) {
+      const isoDateString = history.state["sveltekit:states"].date;
+      const zonedDateTime = parseAbsoluteToLocal(isoDateString);
+      startDate = toCalendarDate(zonedDateTime);
+
+      if (history.state["sveltekit:states"]?.appointmentId) {
+        openAppointmentAfterUpdate = history.state["sveltekit:states"].appointmentId;
+      }
+      replaceState("", "");
+    }
   });
 
   const updateCalendar = async () => {

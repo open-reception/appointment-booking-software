@@ -2,8 +2,11 @@ import { browser } from "$app/environment";
 import { goto } from "$app/navigation";
 import { resolve } from "$app/paths";
 import { ROUTES } from "$lib/const/routes";
+import { calendarStore } from "$lib/stores/calendar";
+import { staffCrypto } from "$lib/stores/staff-crypto";
 import type { TCalendar, TCalendarItem } from "$lib/types/calendar";
 import { toCalendarDateTime, toZoned, type CalendarDate } from "@internationalized/date";
+import { get } from "svelte/store";
 
 export const fetchCalendar = async (opts: { tenant: string; startDate: CalendarDate }) => {
   if (!browser) return;
@@ -133,4 +136,33 @@ export const cancelAppointment = async (opts: { tenant: string; appointment: str
     }
     return false;
   }
+};
+
+export const openAppointmentById = async (
+  appointments: TCalendarItem[],
+  appointmentId: string,
+  callback: () => void,
+) => {
+  const appointment = appointments?.find((i) => i.id === appointmentId);
+  const staffCryptoStore = get(staffCrypto);
+  if (
+    staffCryptoStore.crypto &&
+    appointment &&
+    appointment.appointment?.encryptedPayload &&
+    appointment.appointment.iv &&
+    appointment.appointment.authTag &&
+    appointment.appointment.staffKeyShare
+  ) {
+    const decrypted = await staffCryptoStore.crypto.decryptStaffAppointment({
+      encryptedAppointment: {
+        encryptedPayload: appointment.appointment.encryptedPayload,
+        iv: appointment.appointment.iv,
+        authTag: appointment.appointment.authTag,
+      },
+      staffKeyShare: appointment.appointment.staffKeyShare,
+    });
+    calendarStore.setCurItem({ appointment, decrypted });
+  }
+
+  callback();
 };

@@ -1,6 +1,12 @@
 import { json } from "@sveltejs/kit";
 import { AppointmentService } from "$lib/server/services/appointment-service";
-import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
+import {
+  BackendError,
+  InternalError,
+  logError,
+  NotFoundError,
+  ValidationError,
+} from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
@@ -211,7 +217,6 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "DELETE", {
   },
 });
 
-/* No longer used?
 export const GET: RequestHandler = async ({ params, locals }) => {
   const log = logger.setContext("API");
 
@@ -257,7 +262,6 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     return new InternalError().toJson();
   }
 };
-*/
 
 export const DELETE: RequestHandler = async ({ params, locals }) => {
   const log = logger.setContext("API");

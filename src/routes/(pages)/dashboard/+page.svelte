@@ -50,7 +50,7 @@
         <Button
           variant="ghost"
           size="xs"
-          class="cursor-pointer !px-0 pt-0.25"
+          class="cursor-pointer px-0! pt-px"
           onclick={() => sidebar.setEducated(true, true)}
         >
           <CloseIcon />

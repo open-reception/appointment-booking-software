@@ -15,4 +15,9 @@ export type TChannelWithFullAgents = Omit<TChannel, "agentIds"> & {
     name: string;
     // and more that we don't use in FE yet
   }[];
+  staff: {
+    id: string;
+    name: string;
+    // and more that we don't use in FE yet
+  }[];
 };

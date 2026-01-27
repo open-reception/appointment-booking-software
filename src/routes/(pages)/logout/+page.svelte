@@ -24,6 +24,9 @@
 </svelte:head>
 
 <PageWithClaim isWithLanguageSwitch>
+  {#snippet left()}
+    <Button href={ROUTES.MAIN} size="sm" variant="link">{m["home"]()}</Button>
+  {/snippet}
   <CenteredCard.Root>
     <CenteredCard.Main>
       {#await data.streaming.success}

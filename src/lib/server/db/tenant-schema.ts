@@ -279,6 +279,9 @@ export type SelectChannelSlotTemplate = InferSelectModel<typeof channelSlotTempl
 /** Agent absence record type for database queries */
 export type SelectAgentAbsence = InferSelectModel<typeof agentAbsence>;
 
+/** Agent absence record type for database queries */
+export type SelectNotification = InferSelectModel<typeof notification>;
+
 /**
  * StaffCrypto table - stores encryption keys for staff members within tenant scope
  * Enables end-to-end encryption for appointments in tenant database

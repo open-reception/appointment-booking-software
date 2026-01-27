@@ -5,10 +5,13 @@
   import { auth } from "$lib/stores/auth";
   import { tenants } from "$lib/stores/tenants";
   import { staffCrypto } from "$lib/stores/staff-crypto";
+  import { notifications } from "$lib/stores/notifications";
+  import { staff } from "$lib/stores/staff";
 
   let { data, children }: LayoutProps = $props();
 
-  let intervalId: ReturnType<typeof setInterval> | null = null;
+  let intervalSession: ReturnType<typeof setInterval> | null = null;
+  let intervalData: ReturnType<typeof setInterval> | null = null;
 
   onMount(() => {
     if (data?.user) {
@@ -17,16 +20,25 @@
 
     initTenants();
     initStaffCrypto();
+    updateStores();
+
+    if (!intervalData) {
+      refreshSession();
+      intervalData = setInterval(updateStores, 2 * 60 * 1000); // 2 minutes
+    }
+    if (!intervalSession) {
+      refreshSession();
+      intervalSession = setInterval(refreshSession, 10 * 60 * 1000); // 10 minutes
+    }
 
     const unsubscribe = () => {
-      if (!intervalId) {
-        refreshSession();
-        intervalId = setInterval(refreshSession, 10 * 60 * 1000); // 10 minutes
-      }
+      if (intervalData) clearInterval(intervalData);
+      if (intervalSession) clearInterval(intervalSession);
     };
 
     const handleFocus = () => {
       if (document.visibilityState === "visible") {
+        updateStores();
         refreshSession();
       }
     };
@@ -37,6 +49,11 @@
       document.removeEventListener("visibilitychange", handleFocus);
     };
   });
+
+  const updateStores = async () => {
+    staff.load();
+    notifications.load();
+  };
 
   const initTenants = async () => {
     if (data?.tenants) {

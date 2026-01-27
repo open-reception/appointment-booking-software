@@ -17,6 +17,7 @@
   import { tv } from "tailwind-variants";
   import { positionItems } from "./utils";
   import AppointmentPreview from "./AppointmentPreview.svelte";
+  import { getContrastColor } from "$lib/utils/color";
 
   let {
     day = $bindable(),
@@ -50,7 +51,7 @@
         available: "border-1 border-[var(--channel-color)] bg-background",
         booked: "border-none bg-[var(--channel-color)]",
         reserved:
-          "bg-[var(--channel-color)]/20 border-1 border-[var(--channel-color)] border-dashed",
+          "bg-[var(--channel-color)]/60 hover:bg-[var(--channel-color)]/90 border-1 border-[var(--channel-color)] border-dashed",
       },
     },
   });
@@ -103,6 +104,9 @@
         style:left={`${left}%`}
         style:width={`${width}%`}
         data-id={item.id}
+        style={item.color
+          ? `--channel-color-contrast: ${getContrastColor(item.color)};`
+          : undefined}
       >
         <div
           style="--channel-color: {item.color}"
@@ -126,7 +130,7 @@
       (curTimeIndicator.minute / 60) * hourSize -
       earliestStartHour * hourSize}
     <div
-      class="absolute right-0 left-0 z-10 flex h-1 items-center transition-all duration-200 select-none"
+      class="pointer-events-none absolute right-0 left-0 z-10 flex h-1 items-center transition-all duration-200 select-none"
       style:top={`${top}px`}
     >
       <Text style="xs" class="z-10 -ml-1 rounded-full bg-red-500 px-1 text-white">

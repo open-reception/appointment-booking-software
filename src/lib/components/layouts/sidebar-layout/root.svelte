@@ -7,6 +7,7 @@
   import type { HTMLAttributes } from "svelte/elements";
   import { sidebar } from "$lib/stores/sidebar";
   import type { Snippet } from "svelte";
+  import Notifications from "./components/notifications.svelte";
 
   let {
     children,
@@ -35,6 +36,7 @@
                 sidebar.setEducated(true, true);
               }}
             />
+            <Notifications />
             {#if breakcrumbs && breakcrumbs.length > 0}
               <Separator orientation="vertical" class="mr-2 data-[orientation=vertical]:h-4" />
               <Breadcrumb.Root>

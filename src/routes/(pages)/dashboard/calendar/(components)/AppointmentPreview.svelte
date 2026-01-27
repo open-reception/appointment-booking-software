@@ -84,18 +84,20 @@
 
 {#if error}
   <div class="text-destructive flex h-full items-center gap-1 px-1">
-    <Text style="xs" class="leading-none" title={error}>
+    <Text style="xs" class="leading-none text-(--channel-color-contrast)" title={error}>
       ⚠️ {m["calendar.decryptingError"]()}
     </Text>
   </div>
 {:else if decrypted === undefined}
   <div class="flex h-full items-center gap-1 px-1">
     <Loader2Icon class="h-3/4 max-h-4 w-auto animate-spin" />
-    <Text style="xs" class="leading-none">{m["calendar.decrypting"]()}</Text>
+    <Text style="xs" class="leading-none text-(--channel-color-contrast)"
+      >{m["calendar.decrypting"]()}</Text
+    >
   </div>
 {:else if decrypted}
   <Button
-    class="m-0 h-full w-full cursor-pointer justify-start rounded-none px-1 leading-none text-black hover:!bg-transparent hover:text-black focus:ring-1"
+    class="m-0 h-full w-full cursor-pointer justify-start rounded-none px-1 leading-none text-(--channel-color-contrast) hover:bg-transparent! hover:text-(--channel-color-contrast) focus:ring-1"
     variant="ghost"
     onclick={setCalendarItem}
   >
