@@ -12,7 +12,7 @@
   import NotificationItem from "./notification-item.svelte";
 
   const notifications = $derived($notificationsStore.notifications);
-  let open = $state(true);
+  let open = $state(false);
 
   const onOpenChange = (value: boolean) => {
     open = value;
