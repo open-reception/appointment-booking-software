@@ -1,3 +1,7 @@
+<script module lang="ts">
+  declare const __APP_VERSION__: string;
+</script>
+
 <script lang="ts">
   import { dev } from "$app/environment";
   import { m } from "$i18n/messages";
@@ -57,9 +61,9 @@
       {#if footer}
         {@render footer()}
       {/if}
-      <Text style="xs">
+      <Text style="xs" title={`v${__APP_VERSION__}`}>
         {m.poweredBy()}
-        <a href="https://open-reception.org" target="_blank" class="underline">OpenReception</a>
+        <a href="https://open-reception.org" target="_blank" class="underline"> OpenReception </a>
       </Text>
     </div>
     {#if dev}
