@@ -175,6 +175,7 @@ describe("ChannelService", () => {
             duration: 30,
           },
         ],
+        staffIds: [],
       };
 
       const result = await service.createChannel(request);
@@ -188,6 +189,7 @@ describe("ChannelService", () => {
         names: { en: "" },
         agentIds: [],
         slotTemplates: [],
+        staffIds: [],
       };
 
       await expect(service.createChannel(request)).rejects.toThrow(ValidationError);
@@ -205,6 +207,7 @@ describe("ChannelService", () => {
             duration: 30,
           },
         ],
+        staffIds: [],
       };
 
       await expect(service.createChannel(request)).rejects.toThrow(ValidationError);
@@ -217,6 +220,7 @@ describe("ChannelService", () => {
         names: { en: "Test Channel" },
         agentIds: [],
         slotTemplates: [],
+        staffIds: [],
       };
 
       await expect(service.createChannel(request)).rejects.toThrow("Transaction failed");
