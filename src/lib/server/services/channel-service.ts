@@ -36,7 +36,8 @@ const channelCreationSchema = z.object({
   descriptions: z.partialRecord(z.enum(supportedLocales), z.string().min(1)).optional(),
   isPublic: z.boolean().optional(),
   requiresConfirmation: z.boolean().optional(),
-  agentIds: z.array(z.string().uuid()).optional().default([]),
+  agentIds: z.array(z.uuid()).optional().default([]),
+  staffIds: z.array(z.uuid()).optional().default([]),
   slotTemplates: z.array(slotTemplateSchema).optional().default([]),
 });
 
@@ -47,7 +48,8 @@ const channelUpdateSchema = z.object({
   isPublic: z.boolean().optional(),
   pause: z.boolean().optional(),
   requiresConfirmation: z.boolean().optional(),
-  agentIds: z.array(z.string().uuid()).optional(),
+  agentIds: z.array(z.uuid()).optional(),
+  staffIds: z.array(z.uuid()).optional(),
   slotTemplates: z
     .array(
       slotTemplateSchema.extend({
@@ -196,6 +198,16 @@ export class ChannelService {
           }
 
           agents.push(...existingAgents);
+        }
+
+        // 4. Link staff to the channel
+        if (request.staffIds && request.staffIds.length > 0) {
+          for (const staffId of request.staffIds) {
+            await tx.insert(tenantSchema.channelStaff).values({
+              channelId: channel.id,
+              staffId: staffId,
+            });
+          }
         }
 
         return {
@@ -355,7 +367,25 @@ export class ChannelService {
             );
         }
 
-        // 3. Handle slot template relationships
+        // 3. Handle staff relationships
+        if (updateData.staffIds !== undefined) {
+          // Remove all existing staff assignments
+          await tx
+            .delete(tenantSchema.channelStaff)
+            .where(eq(tenantSchema.channelStaff.channelId, channelId));
+
+          // Add new staff assignments
+          if (updateData.staffIds.length > 0) {
+            for (const staffId of updateData.staffIds) {
+              await tx.insert(tenantSchema.channelStaff).values({
+                channelId: channelId,
+                staffId: staffId,
+              });
+            }
+          }
+        }
+
+        // 4. Handle slot template relationships
         let slotTemplates: SelectSlotTemplate[] = [];
         if (updateData.slotTemplates !== undefined) {
           // Get existing slot template IDs for this channel
