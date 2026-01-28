@@ -122,7 +122,7 @@ export function positionItems(items: TCalendarItem[] | undefined) {
 export const cancelAppointment = async (opts: { tenant: string; appointment: string }) => {
   if (!browser) return;
 
-  const res = await fetch(`/api/tenants/${opts.tenant}/appointments/${opts.appointment}`, {
+  const res = await fetch(`/api/tenants/${opts.tenant}/appointments/${opts.appointment}/delete`, {
     method: "DELETE",
   });
 

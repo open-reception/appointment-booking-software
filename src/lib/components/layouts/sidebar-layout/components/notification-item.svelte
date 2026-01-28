@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
+  import { page } from "$app/state";
   import { m } from "$i18n/messages";
   import { getLocale } from "$i18n/runtime";
   import { Button } from "$lib/components/ui/button";
@@ -16,8 +17,10 @@
 
   let {
     item,
+    closePopover,
   }: {
     item: TNotification;
+    closePopover: () => void;
   } = $props();
 
   const channels = $derived($channelsStore.channels);
@@ -53,12 +56,23 @@
   class=" flex h-auto w-full shrink flex-col items-start gap-1 rounded-none px-3 last:rounded-b-md focus:ring-inset"
   onclick={() => {
     if (appointment) {
-      goto(resolve(ROUTES.DASHBOARD.CALENDAR), {
-        state: {
-          date: appointment.appointmentDate,
-          appointmentId: appointment.id,
-        },
-      });
+      closePopover();
+      if (page.url.pathname === ROUTES.DASHBOARD.CALENDAR) {
+        goto(resolve(ROUTES.DASHBOARD.CALENDAR), {
+          state: {
+            isNavigatingOnCalendarPage: true,
+            date: appointment.appointmentDate,
+            appointmentId: appointment.id,
+          },
+        });
+      } else {
+        goto(resolve(ROUTES.DASHBOARD.CALENDAR), {
+          state: {
+            date: appointment.appointmentDate,
+            appointmentId: appointment.id,
+          },
+        });
+      }
     }
   }}
 >

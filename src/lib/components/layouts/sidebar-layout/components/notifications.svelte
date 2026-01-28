@@ -79,7 +79,7 @@
         {/if}
         {#each notifications as notification (notification.id)}
           <div class="[&+&]:border-t-muted relative [&+&]:border-t">
-            <NotificationItem item={notification} />
+            <NotificationItem item={notification} closePopover={() => (open = false)} />
             <Button
               variant="ghost"
               class="absolute top-1.5 right-1.5 rounded-md p-1!"

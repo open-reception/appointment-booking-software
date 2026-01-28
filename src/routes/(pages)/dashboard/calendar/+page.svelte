@@ -1,10 +1,12 @@
 <script lang="ts">
+  import { replaceState } from "$app/navigation";
   import { m } from "$i18n/messages";
   import { MaxPageWidth } from "$lib/components/layouts/max-page-width";
   import { SidebarLayout } from "$lib/components/layouts/sidebar-layout";
   import { Button } from "$lib/components/ui/button";
   import { ResponsiveDialog } from "$lib/components/ui/responsive-dialog";
   import { ROUTES } from "$lib/const/routes";
+  import { agents as agentsStore } from "$lib/stores/agents";
   import { auth } from "$lib/stores/auth";
   import { calendarStore } from "$lib/stores/calendar";
   import { channels as channelsStore } from "$lib/stores/channels";
@@ -26,13 +28,22 @@
   import CalendarFilters from "./(components)/CalendarFilters.svelte";
   import CalendarHeader from "./(components)/CalendarHeader.svelte";
   import { fetchCalendar, openAppointmentById } from "./(components)/utils";
-  import { staffCrypto } from "$lib/stores/staff-crypto";
-  import { replaceState } from "$app/navigation";
+  import { page } from "$app/state";
+
+  const convertDate = (dateStr: string) => {
+    const zonedDateTime = parseAbsoluteToLocal(dateStr);
+    return toCalendarDate(zonedDateTime);
+  };
 
   const tenantId = $derived($auth.user?.tenantId);
   const curItem = $derived($calendarStore.curItem);
   const channels = $derived($channelsStore.channels);
-  let startDate: CalendarDate = $state(today(getLocalTimeZone()));
+  const agents = $derived($agentsStore.agents);
+  let startDate: CalendarDate = $state(
+    history.state["sveltekit:states"]?.date
+      ? convertDate(history.state["sveltekit:states"].date)
+      : today(getLocalTimeZone()),
+  );
   let calender: TCalendar | undefined = $state();
   let shownAppointments: TAppointmentFilter = $state("all");
   let shownChannels: string[] = $state([]);
@@ -55,33 +66,47 @@
     return { from: Math.min(...from), to: Math.max(...to) };
   });
   let scale = $state(1);
-  let openAppointmentAfterUpdate: string | undefined = $state();
 
   $effect(() => {
     updateCalendar();
   });
 
   $effect(() => {
-    // Wait 100ms to ensure that the calendar items are rendered
-    setTimeout(() => {
-      if (items && openAppointmentAfterUpdate) {
-        openAppointmentById(items, openAppointmentAfterUpdate, () => {
-          openAppointmentAfterUpdate = undefined;
+    if (items && history.state["sveltekit:states"]?.appointmentId) {
+      // Wait 100ms to ensure that the calendar items are rendered
+      setTimeout(() => {
+        openAppointmentById(items, history.state["sveltekit:states"].appointmentId, () => {
+          replaceState("", {});
         });
-      }
-    }, 100);
+      }, 100);
+    }
   });
 
   onMount(() => {
     if (history.state["sveltekit:states"]?.date) {
-      const isoDateString = history.state["sveltekit:states"].date;
-      const zonedDateTime = parseAbsoluteToLocal(isoDateString);
-      startDate = toCalendarDate(zonedDateTime);
+      const { date, ...rest } = history.state["sveltekit:states"];
+      replaceState("", rest);
+    }
+  });
 
-      if (history.state["sveltekit:states"]?.appointmentId) {
-        openAppointmentAfterUpdate = history.state["sveltekit:states"].appointmentId;
+  // Navigating to appointment, if calendar is already mounted
+  $effect(() => {
+    if (
+      "isNavigatingOnCalendarPage" in page.state &&
+      "date" in page.state &&
+      "appointmentId" in page.state
+    ) {
+      const date = convertDate(page.state.date as string);
+      if (date.toString() !== startDate.toString()) {
+        startDate = date;
+        replaceState("", { appointmentId: page.state.appointmentId });
+      } else {
+        if (items) {
+          openAppointmentById(items, history.state["sveltekit:states"].appointmentId, () => {
+            replaceState("", {});
+          });
+        }
       }
-      replaceState("", "");
     }
   });
 
@@ -202,9 +227,10 @@
 
 {#if curItem && tenantId}
   {@const channel = channels.find((c) => c.id === curItem.appointment.channelId)}
+  {@const agent = agents.find((a) => a.id === curItem.appointment.appointment?.agentId)}
   <ResponsiveDialog
     id="current-calendar-item"
-    title={curItem.decrypted.name}
+    title={agent?.name || "unkown agent"}
     description={channel ? getCurrentTranlslation(channel.names) : undefined}
     triggerHidden={true}
   >

@@ -100,7 +100,7 @@
         {/if}
       </Dialog.Trigger>
     {/if}
-    <Dialog.Content class="max-h-[95vh] sm:max-w-[425px]">
+    <Dialog.Content class="max-h-[95vh] sm:max-w-106.25">
       <Dialog.Header>
         <Dialog.Title class={cn(description ? "" : "-mb-1")}>{title}</Dialog.Title>
         {#if description}

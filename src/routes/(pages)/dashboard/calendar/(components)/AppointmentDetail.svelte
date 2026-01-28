@@ -4,7 +4,7 @@
   import { Text } from "$lib/components/ui/typography";
   import { type CurAppointmentItem } from "$lib/stores/calendar";
   import { getLocalTimeZone } from "@internationalized/date";
-  import { Calendar, Mail, Phone } from "@lucide/svelte";
+  import { Calendar, Mail, Phone, User } from "@lucide/svelte";
   import { cancelAppointment } from "./utils";
   import { toast } from "svelte-sonner";
   import { m } from "$i18n/messages";
@@ -42,6 +42,12 @@
 
 {#if item.appointment.appointment}
   <div class="flex flex-col items-start gap-3">
+    <div class="flex gap-2 p-1">
+      <User class="size-4 " />
+      <Text style="sm">
+        {item.decrypted.name}
+      </Text>
+    </div>
     <div class="flex flex-col items-start gap-2">
       <Button
         class="h-auto w-auto justify-start gap-2 rounded-sm p-1"
