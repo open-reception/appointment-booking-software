@@ -92,6 +92,7 @@ describe("TenantAdminService", () => {
         defaultLanguage: "en",
         description: "A test clinic",
         links: { website: "", imprint: "", privacyStatement: "" },
+        domain: "tenant.example.com",
       };
 
       const mockCreatedTenant = {
@@ -142,6 +143,7 @@ describe("TenantAdminService", () => {
     it("should rollback tenant creation if database initialization fails", async () => {
       const newTenant = {
         shortName: "test-clinic",
+        domain: "tenant.example.com",
         descriptions: "A test clinic",
       };
 

@@ -69,6 +69,7 @@ function createSystemTenant(): SelectTenant {
     defaultLanguage: "en",
     logo: null,
     links: { website: "", imprint: "", privacyStatement: "" },
+    domain: "tenant.example.com",
     databaseUrl: "",
     setupState: "SETTINGS",
     createdAt: new Date(),

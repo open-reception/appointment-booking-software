@@ -69,6 +69,8 @@ export const tenant = pgTable(
       .$type<{ imprint?: string; privacyStatement?: string; website?: string }>()
       .notNull()
       .default({}),
+    /** Domain for the tenant */
+    domain: text("domain").notNull().unique(),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },

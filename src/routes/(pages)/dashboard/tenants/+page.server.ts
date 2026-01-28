@@ -62,6 +62,7 @@ export const actions: Actions = {
       credentials: "same-origin",
       body: JSON.stringify({
         shortName: form.data.shortName,
+        domain: form.data.domain,
       }),
     });
 
@@ -128,7 +129,7 @@ export const actions: Actions = {
         "Content-Type": "application/json",
       },
       credentials: "same-origin",
-      body: JSON.stringify({ shortName: form.data.shortName }),
+      body: JSON.stringify({ domain: form.data.domain }),
     });
 
     if (resp.status < 400) {
