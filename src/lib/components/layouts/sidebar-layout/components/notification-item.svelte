@@ -100,15 +100,25 @@
   <Text style="md" class="flex pr-8 text-start whitespace-break-spaces">
     {#if item.type === "APPOINTMENT_REQUESTED"}
       {m["notifications.types.APPOINTMENT_REQUESTED.title"]()}
+    {:else if item.type === "APPOINTMENT_CONFIRMED"}
+      {m["notifications.types.APPOINTMENT_CONFIRMED.title"]()}
+    {:else if item.type === "APPOINTMENT_CANCELLED"}
+      {m["notifications.types.APPOINTMENT_CANCELLED.title"]()}
     {/if}
   </Text>
   {#if appointment}
     <Text style="sm" class="text-muted-foreground flex w-full text-start whitespace-break-spaces">
-      {#if item.type === "APPOINTMENT_REQUESTED" && appointment?.channelId}
+      {#if appointment?.channelId}
         {@const channel = channels.find((c) => c.id === appointment?.channelId)}
         {@const channelName = getCurrentTranlslation(channel?.names)}
         {#if channelName}
-          {m["notifications.types.APPOINTMENT_REQUESTED.description"]({
+          {#if item.type === "APPOINTMENT_REQUESTED"}
+            {m["notifications.types.APPOINTMENT_REQUESTED.description"]({
+              channel: channelName,
+            })}
+          {/if}
+        {:else if item.type === "APPOINTMENT_CONFIRMED"}
+          {m["notifications.types.APPOINTMENT_CONFIRMED.description"]({
             channel: channelName,
           })}
         {/if}

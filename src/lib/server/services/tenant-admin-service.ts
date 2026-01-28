@@ -174,7 +174,11 @@ export class TenantAdminService {
       log.debug("Tenant service loaded successfully", {
         tenantId: id,
         // Do not log logo to not spam logs
-        data: { ...tenant.#tenant, logo: tenant.#tenant.logo ? "removed-from-log-but-set" : null },
+        data: {
+          ...tenant.#tenant,
+          databaseUrl: redactDbUrl(tenant.#tenant.databaseUrl),
+          logo: tenant.#tenant.logo ? "removed-from-log-but-set" : null,
+        },
       });
       return tenant;
     } catch (error) {

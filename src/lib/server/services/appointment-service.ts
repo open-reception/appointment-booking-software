@@ -282,7 +282,7 @@ export class AppointmentService {
 
   public async cancelAppointment(id: string): Promise<SelectAppointment> {
     const log = logger.setContext("AppointmentService");
-    log.debug("Confirming appointment by ID", { appointmentId: id, tenantId: this.tenantId });
+    log.debug("Cancelling appointment by ID", { appointmentId: id, tenantId: this.tenantId });
     const db = await this.getDb();
 
     const result = await db

@@ -914,6 +914,7 @@
 		"loading": "Loading calendar",
 		"decrypting": "wird entschlüsselt...",
 		"decryptingError": "Entschlüsselung fehlgeschlagen. Bitte neu anmelden.",
+		"notificationHint": "Kunden werden per E-Mail benachrichtigt, wenn diese Benachrichtigungen aktiviert haben.",
 		"shownAppointments": {
 			"title": "Termine",
 			"options": {
@@ -924,11 +925,21 @@
 			}
 		},
 		"cancelAppointment": {
-			"hint": "Kunden werden per E-Mail benachrichtigt, wenn diese Benachrichtigungen aktiviert haben.",
 			"confirm": "Sind Sie sicher, dass Sie diesen Termin absagen möchten?",
 			"action": "Termin absagen",
 			"success": "Termin erfolgreich abgesagt",
 			"error": "Fehler beim Absagen des Termins"
+		},
+		"denyAppointment": {
+			"confirm": "Sind Sie sicher, dass Sie diesen Termin ablehnen möchten?",
+			"action": "Termin ablehnen",
+			"success": "Termin erfolgreich abgelehnt",
+			"error": "Fehler beim Ablehnen des Termins"
+		},
+		"confirmAppointment": {
+			"action": "Termin bestätigen",
+			"success": "Termin erfolgreich bestätigt",
+			"error": "Fehler beim Bestätigen des Termins"
 		}
 	},
 	"emails": {
@@ -992,6 +1003,14 @@
 			"APPOINTMENT_REQUESTED": {
 				"title": "Neue Terminanfrage",
 				"description": "Ein neuer Termin wurde in {channel} angefragt."
+			},
+			"APPOINTMENT_CONFIRMED": {
+				"title": "Termin bestätigt",
+				"description": "Terminanfrage in {channel} wurde bestätigt."
+			},
+			"APPOINTMENT_CANCELLED": {
+				"title": "Termin abgesagt",
+				"description": "Der Klient hat den Termin in {channel} abgesagt."
 			}
 		}
 	}

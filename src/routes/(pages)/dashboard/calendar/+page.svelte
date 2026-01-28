@@ -40,8 +40,8 @@
   const channels = $derived($channelsStore.channels);
   const agents = $derived($agentsStore.agents);
   let startDate: CalendarDate = $state(
-    history.state["sveltekit:states"]?.date
-      ? convertDate(history.state["sveltekit:states"].date)
+    "date" in page.state
+      ? convertDate(history?.state["sveltekit:states"].date)
       : today(getLocalTimeZone()),
   );
   let calender: TCalendar | undefined = $state();

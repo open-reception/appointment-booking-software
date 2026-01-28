@@ -119,11 +119,24 @@ export function positionItems(items: TCalendarItem[] | undefined) {
   return processedItems;
 }
 
-export const cancelAppointment = async (opts: { tenant: string; appointment: string }) => {
+export const cancelAppointment = async (opts: {
+  tenant: string;
+  appointment: string;
+  email?: string;
+  locale: string;
+}) => {
   if (!browser) return;
 
+  let body = {};
+  if (opts.email) {
+    body = {
+      clientEmail: opts.email,
+      clientLanguage: opts.locale,
+    };
+  }
   const res = await fetch(`/api/tenants/${opts.tenant}/appointments/${opts.appointment}/delete`, {
     method: "DELETE",
+    body: JSON.stringify(body),
   });
 
   if (res.status < 400) {
@@ -133,6 +146,70 @@ export const cancelAppointment = async (opts: { tenant: string; appointment: str
       goto(resolve(ROUTES.LOGIN));
     } else {
       console.error("Unable to delete appointment", opts, res.status, res.statusText);
+    }
+    return false;
+  }
+};
+
+export const denyAppointment = async (opts: {
+  tenant: string;
+  appointment: string;
+  email?: string;
+  locale: string;
+}) => {
+  if (!browser) return;
+
+  let body = {};
+  if (opts.email) {
+    body = {
+      clientEmail: opts.email,
+      clientLanguage: opts.locale,
+    };
+  }
+  const res = await fetch(`/api/tenants/${opts.tenant}/appointments/${opts.appointment}/deny`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+
+  if (res.status < 400) {
+    return true;
+  } else {
+    if (res.status === 401) {
+      goto(resolve(ROUTES.LOGIN));
+    } else {
+      console.error("Unable to deny appointment", opts, res.status, res.statusText);
+    }
+    return false;
+  }
+};
+
+export const confirmAppointment = async (opts: {
+  tenant: string;
+  appointment: string;
+  email?: string;
+  locale: string;
+}) => {
+  if (!browser) return;
+
+  let body = {};
+  if (opts.email) {
+    body = {
+      clientEmail: opts.email,
+      clientLanguage: opts.locale,
+    };
+  }
+  const res = await fetch(`/api/tenants/${opts.tenant}/appointments/${opts.appointment}/confirm`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+
+  if (res.status < 400) {
+    return true;
+  } else {
+    if (res.status === 401) {
+      goto(resolve(ROUTES.LOGIN));
+    } else {
+      console.error("Unable to confirm appointment", opts, res.status, res.statusText);
     }
     return false;
   }

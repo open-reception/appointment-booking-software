@@ -179,7 +179,7 @@ export const PUT: RequestHandler = async ({ request, params, locals }) => {
 
     // Parse optional request body for email notification
     let clientEmail: string | undefined;
-    let clientLanguage = "de";
+    let clientLanguage = "en";
 
     try {
       const body = await request.json();

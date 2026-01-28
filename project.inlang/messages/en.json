@@ -923,6 +923,7 @@
 		"loading": "Loading calendar",
 		"decrypting": "decrypting...",
 		"decryptingError": "Unable to decrypt data. Please log-in again",
+		"notificationHint": "Clients will be notified via e-mail, if they have enabled e-mail notifications.",
 		"shownAppointments": {
 			"title": "Appointments",
 			"options": {
@@ -933,11 +934,21 @@
 			}
 		},
 		"cancelAppointment": {
-			"hint": "Clients will be notified via e-mail, if they have enabled e-mail notifications.",
 			"confirm": "Are you sure you want to cancel this appointment?",
 			"action": "Cancel Appointment",
 			"success": "Appointment cancelled successfully",
 			"error": "Failed to cancel appointment"
+		},
+		"denyAppointment": {
+			"confirm": "Are you sure you want to deny this appointment?",
+			"action": "Deny Appointment",
+			"success": "Appointment denied successfully",
+			"error": "Failed to deny appointment"
+		},
+		"confirmAppointment": {
+			"action": "Confirm Appointment",
+			"success": "Appointment confirmed successfully",
+			"error": "Failed to confirm appointment"
 		}
 	},
 	"emails": {
@@ -1001,6 +1012,14 @@
 			"APPOINTMENT_REQUESTED": {
 				"title": "New appointment request",
 				"description": "A new appointment has been requested in {channel}."
+			},
+			"APPOINTMENT_CONFIRMED": {
+				"title": "Appointment confirmed",
+				"description": "Appointment in {channel} was confirmed."
+			},
+			"APPOINTMENT_CANCELLED": {
+				"title": "Appointment cancelled",
+				"description": "Client cancelled appointment in {channel}."
 			}
 		}
 	}
