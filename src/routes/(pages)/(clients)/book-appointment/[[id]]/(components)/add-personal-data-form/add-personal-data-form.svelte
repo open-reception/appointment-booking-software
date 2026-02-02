@@ -43,6 +43,7 @@
               shareEmail: validation.data.shareEmail,
               email: validation.data.email,
               phone: validation.data.phone,
+              locale: navigator.language || "en",
             },
           });
           cancel();
