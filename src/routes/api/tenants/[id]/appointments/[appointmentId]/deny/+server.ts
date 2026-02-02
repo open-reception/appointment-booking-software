@@ -4,6 +4,7 @@ import { BackendError, InternalError, logError, ValidationError } from "$lib/ser
 import { z } from "zod";
 import logger from "$lib/logger";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
+import { checkPermission } from "$lib/server/utils/permissions";
 
 const requestSchema = z.object({
   clientEmail: z.string().email().optional(),
@@ -103,7 +104,7 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}/deny", "POST", 
  * Denies a pending appointment request. The appointment must be in NEW status.
  * Sends a rejection email to the client and creates staff notifications.
  */
-export const POST: RequestHandler = async ({ params, request }) => {
+export const POST: RequestHandler = async ({ params, request, locals }) => {
   const log = logger.setContext("API.DenyAppointment");
   const tenantId = params.id;
   const { appointmentId } = params;
@@ -115,6 +116,8 @@ export const POST: RequestHandler = async ({ params, request }) => {
     if (!appointmentId) {
       throw new ValidationError("appointmentId is required");
     }
+
+    checkPermission(locals, tenantId);
 
     const appointmentService = await AppointmentService.forTenant(tenantId);
     const body = await request.json();
