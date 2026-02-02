@@ -951,6 +951,11 @@
 			"introduction": "Ihr Termin wurde abgelehnt.",
 			"reason": "Sie erhalten diese E-Mail, weil jemand mit Ihrer E-Mail Adresse einen Termin bei angefragt hat."
 		},
+		"appointmentCancelled": {
+			"subject": "Ihr Termin für {channel} bei {tenant} wurde abgesagt",
+			"introduction": "Ihr Termin wurde abgesagt.",
+			"reason": "Sie erhalten diese E-Mail, weil jemand mit Ihrer E-Mail Adresse einen Termin bei angefragt hat."
+		},
 		"confirmation": {
 			"subject": "E-Mail Adresse bestätigen",
 			"introduction": "willkommen bei unserem Terminbuchungsportal. Bitte bestätige Deine E-Mail Adresse.",
