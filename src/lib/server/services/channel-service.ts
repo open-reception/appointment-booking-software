@@ -66,6 +66,7 @@ export type SlotTemplateRequest = z.infer<typeof slotTemplateSchema>;
 export interface ChannelWithRelations extends SelectChannel {
   agents: SelectAgent[];
   slotTemplates: SelectSlotTemplate[];
+  staffIds: string[];
 }
 
 export class ChannelService {
@@ -214,6 +215,7 @@ export class ChannelService {
           ...channel,
           agents,
           slotTemplates,
+          staffIds: request.staffIds || [],
         };
       });
 
@@ -494,10 +496,19 @@ export class ChannelService {
             .where(eq(tenantSchema.channelSlotTemplate.channelId, channelId));
         }
 
+        // 5. Get staff IDs
+        const staffLinks = await tx
+          .select({ staffId: tenantSchema.channelStaff.staffId })
+          .from(tenantSchema.channelStaff)
+          .where(eq(tenantSchema.channelStaff.channelId, channelId));
+        
+        const staffIds = staffLinks.map(link => link.staffId);
+
         return {
           ...channel,
           agents,
           slotTemplates,
+          staffIds,
         };
       });
 
@@ -585,10 +596,19 @@ export class ChannelService {
         )
         .where(eq(tenantSchema.channelSlotTemplate.channelId, channelId));
 
+      // Get staff IDs
+      const staffLinks = await db
+        .select({ staffId: tenantSchema.channelStaff.staffId })
+        .from(tenantSchema.channelStaff)
+        .where(eq(tenantSchema.channelStaff.channelId, channelId));
+      
+      const staffIds = staffLinks.map(link => link.staffId);
+
       const result = {
         ...channel,
         agents,
         slotTemplates,
+        staffIds,
       };
 
       log.debug("Channel found", {
