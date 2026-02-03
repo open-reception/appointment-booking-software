@@ -74,6 +74,7 @@ export interface AppointmentData {
   email: string;
   shareEmail: boolean;
   phone?: string;
+  locale?: string;
 }
 
 interface StaffPublicKey {

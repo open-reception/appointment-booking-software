@@ -44,6 +44,7 @@ export type TPublicAppointment = {
     shareEmail: boolean;
     email: string;
     phone?: string;
+    locale: string;
   };
   isNewClient?: boolean;
 };
