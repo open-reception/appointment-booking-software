@@ -501,8 +501,8 @@ export class ChannelService {
           .select({ staffId: tenantSchema.channelStaff.staffId })
           .from(tenantSchema.channelStaff)
           .where(eq(tenantSchema.channelStaff.channelId, channelId));
-        
-        const staffIds = staffLinks.map(link => link.staffId);
+
+        const staffIds = staffLinks.map((link) => link.staffId);
 
         return {
           ...channel,
@@ -601,8 +601,8 @@ export class ChannelService {
         .select({ staffId: tenantSchema.channelStaff.staffId })
         .from(tenantSchema.channelStaff)
         .where(eq(tenantSchema.channelStaff.channelId, channelId));
-      
-      const staffIds = staffLinks.map(link => link.staffId);
+
+      const staffIds = staffLinks.map((link) => link.staffId);
 
       const result = {
         ...channel,

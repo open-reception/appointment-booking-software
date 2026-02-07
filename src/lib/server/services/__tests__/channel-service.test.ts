@@ -289,6 +289,7 @@ describe("ChannelService", () => {
         agents: [mockAgent],
         slotTemplates: [mockSlotTemplate],
         archived: false,
+        staffIds: [],
       });
 
       const result = await service.getChannelById("550e8400-e29b-41d4-a716-446655440000");
@@ -332,6 +333,7 @@ describe("ChannelService", () => {
           agents: [mockAgent],
           slotTemplates: [mockSlotTemplate],
           archived: false,
+          staffIds: [],
         },
       ];
 
