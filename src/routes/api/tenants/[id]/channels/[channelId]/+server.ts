@@ -188,6 +188,12 @@ registerOpenAPIRoute("/tenants/{id}/channels/{channelId}", "PUT", {
               description: "IDs of agents to assign to this channel",
               example: ["01234567-89ab-cdef-0123-456789abcdef"],
             },
+            staffIds: {
+              type: "array",
+              items: { type: "string", format: "uuid" },
+              description: "IDs of staff members to assign to this channel",
+              example: ["12345678-90ab-cdef-0123-456789abcdef"],
+            },
             slotTemplates: {
               type: "array",
               items: {

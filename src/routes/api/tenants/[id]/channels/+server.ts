@@ -62,6 +62,12 @@ registerOpenAPIRoute("/tenants/{id}/channels", "POST", {
               description: "IDs of agents to assign to this channel",
               example: ["01234567-89ab-cdef-0123-456789abcdef"],
             },
+            staffIds: {
+              type: "array",
+              items: { type: "string", format: "uuid" },
+              description: "IDs of staff members to assign to this channel",
+              example: ["12345678-90ab-cdef-0123-456789abcdef"],
+            },
             slotTemplates: {
               type: "array",
               items: {
@@ -312,6 +318,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
       requestedBy: locals.user?.id,
       channelNames: body.names,
       languages: body.languages,
+      staffIds: body.staffIds,
     });
 
     const channelService = await ChannelService.forTenant(tenantId);
