@@ -40,7 +40,7 @@
 <EmailLayout>
   <EmailText variant="md">{m["emails.greeting"]({ name: user.email })}</EmailText>
   <EmailText variant="md">
-    {m["emails.appointmentRejected.introduction"]()}
+    {m["emails.appointmentCancelled.introduction"]()}
   </EmailText>
   <EmailHeadline>{channel}</EmailHeadline>
   <EmailText variant="md">
@@ -58,6 +58,6 @@
     {address.city}
   </EmailText>
   <EmailText variant="md" color="text-light">
-    {m["emails.appointmentRejected.reason"]()}
+    {m["emails.appointmentCancelled.reason"]()}
   </EmailText>
 </EmailLayout>

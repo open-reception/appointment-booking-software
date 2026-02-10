@@ -59,6 +59,18 @@
     </Form.Description>
     <Form.FieldErrors />
   </Form.Field>
+  <Form.Field {form} name="domain">
+    <Form.Control>
+      {#snippet children({ props })}
+        <Form.Label>{m["form.domain"]()}</Form.Label>
+        <Input {...props} bind:value={$formData.domain} type="text" autocomplete="off" />
+      {/snippet}
+    </Form.Control>
+    <Form.Description>
+      {m["tenants.add.domain.description"]()}
+    </Form.Description>
+    <Form.FieldErrors />
+  </Form.Field>
   <Form.Field {form} name="inviteAdmin">
     <Form.Control>
       {#snippet children({ props })}

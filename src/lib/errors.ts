@@ -26,6 +26,10 @@ export const ERRORS = {
     MISSING_TENANT_OR_AGENT_ID: "Missing tenant or agent ID",
     NONE_FOUND: "No Tenant found on this instance",
   },
+  DOMAINS: {
+    QUERY_MISSING: "Domain query missing",
+    NOT_FOUND: "Domain not found",
+  },
   CHANNELS: {
     NOT_FOUND: "Channel not found",
     OPEN_APPOINTMENTS_CONFLICT:

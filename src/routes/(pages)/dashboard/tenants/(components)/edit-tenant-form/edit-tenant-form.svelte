@@ -12,7 +12,7 @@
 
   // svelte-ignore state_referenced_locally
   const form = superForm(
-    { id: entity.id, shortName: entity.shortName },
+    { id: entity.id, domain: entity.domain },
     {
       validators: zodClient(formSchema),
       onResult: async (event) => {
@@ -34,19 +34,17 @@
 </script>
 
 <Form.Root {enhance} action="?/edit">
-  <Form.Field {form} name="shortName">
+  <Form.Field {form} name="domain">
     <Form.Control>
       {#snippet children({ props })}
-        <Form.Label>{m["form.name"]()}</Form.Label>
-        <Input {...props} bind:value={$formData.shortName} type="text" autocomplete="off" />
+        <Form.Label>{m["form.domain"]()}</Form.Label>
+        <Input {...props} bind:value={$formData.domain} type="text" autocomplete="off" />
       {/snippet}
     </Form.Control>
     <Form.Description>
-      {m["tenants.add.name.description"]({
+      {m["tenants.add.domain.description"]({
         domain:
-          $formData.shortName.length < 2
-            ? ""
-            : `${$formData.shortName}.${window.location.hostname}`,
+          $formData.domain.length < 2 ? "" : `${$formData.domain}.${window.location.hostname}`,
       })}
     </Form.Description>
     <Form.FieldErrors />

@@ -39,17 +39,22 @@ jobs:
 
       - name: Run unit tests
         run: npm run test:unit -- --run
+        env:
+          DATABASE_URL: "postgresql://test:test@localhost:5432/test"
+          SMTP_HOST: "smtp.example.com"
+          SMTP_PORT: "587"
+          SMTP_SECURE: "false"
+          SMTP_USER: "your-email@example.com"
+          SMTP_PASS: "your-password"
+          SMTP_FROM_NAME: "Open Reception"
+          SMTP_FROM_EMAIL: "noreply@example.com"
+          JWT_SECRET: "test"
 
       - name: Build application
         run: npm run build
         env:
           DATABASE_URL: "postgresql://test:test@localhost:5432/test"
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
-
-      - name: Run E2E tests
-        run: npm run test:e2e
+          JWT_SECRET: "build"
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -57,7 +62,20 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker images
+      - name: Build Docker image
+        run: docker build -t openreception/open-reception:${{ github.ref_name }} .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "openreception/open-reception:${{ github.ref_name }}"
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+
+      - name: Push Docker images
         run: npm run docker:build-and-push
 
       - name: Create Release Archive

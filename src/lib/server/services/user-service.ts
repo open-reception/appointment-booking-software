@@ -69,6 +69,7 @@ function createSystemTenant(): SelectTenant {
     defaultLanguage: "en",
     logo: null,
     links: { website: "", imprint: "", privacyStatement: "" },
+    domain: "tenant.example.com",
     databaseUrl: "",
     setupState: "SETTINGS",
     createdAt: new Date(),
@@ -358,12 +359,7 @@ export class UserService {
       const numberOfUsers = await centralDb
         .select({ count: count() })
         .from(centralSchema.user)
-        .where(
-          and(
-            eq(centralSchema.user.tenantId, resultData.tenantId!),
-            eq(centralSchema.user.role, "TENANT_ADMIN"),
-          ),
-        );
+        .where(and(eq(centralSchema.user.tenantId, resultData.tenantId!)));
 
       const shouldGrantAccess = resultData.role === "GLOBAL_ADMIN" || numberOfUsers[0].count === 1;
       const confirmationState = shouldGrantAccess ? "ACCESS_GRANTED" : "CONFIRMED";

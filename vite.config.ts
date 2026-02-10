@@ -3,6 +3,9 @@ import tailwindcss from "@tailwindcss/vite";
 import { svelteTesting } from "@testing-library/svelte/vite";
 import { sveltekit } from "@sveltejs/kit/vite";
 import { defineConfig } from "vite";
+import { readFileSync } from "fs";
+
+const pkg = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8"));
 
 export default defineConfig({
   plugins: [
@@ -10,6 +13,9 @@ export default defineConfig({
     sveltekit(),
     paraglideVitePlugin({ project: "./project.inlang", outdir: "./src/i18n" }),
   ],
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   test: {
     projects: [
       {

@@ -11,7 +11,7 @@
   import { ROUTES } from "$lib/const/routes";
   import { tenants as tenantsStore } from "$lib/stores/tenants";
   import { type TTenant } from "$lib/types/tenant";
-  // import EditIcon from "@lucide/svelte/icons/pencil";
+  import EditIcon from "@lucide/svelte/icons/pencil";
   import SelectIcon from "@lucide/svelte/icons/plug-zap";
   import PlusIcon from "@lucide/svelte/icons/plus";
   import UnknownItemIcon from "@lucide/svelte/icons/landmark";
@@ -74,24 +74,19 @@
               <ListItem
                 image={item.logo || UnknownItemIcon}
                 title={item.shortName}
-                description={`${item.shortName}.${window.location.hostname}`}
+                description={item.domain}
                 descriptionOnClick={() =>
-                  window.open(
-                    `https://${item.shortName}.${window.location.hostname}`,
-                    "_blank",
-                    "noopener,noreferrer",
-                  )}
+                  window.open(`https://${item.domain}`, "_blank", "noopener,noreferrer")}
                 actions={[
-                  // Editiing will we re-introduced, when we support custom domains
-                  // {
-                  //   type: "action",
-                  //   icon: EditIcon,
-                  //   label: m["edit"](),
-                  //   onClick: () => {
-                  //     curItem = item;
-                  //     openDialog("edit");
-                  //   },
-                  // },
+                  {
+                    type: "action",
+                    icon: EditIcon,
+                    label: m["edit"](),
+                    onClick: () => {
+                      curItem = item;
+                      openDialog("edit");
+                    },
+                  },
                   {
                     type: "action",
                     icon: SelectIcon,

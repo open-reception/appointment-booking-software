@@ -38,6 +38,7 @@ describe("generateBaseUrl", () => {
         databaseUrl: "",
         setupState: "SETTINGS",
         links: { website: "", imprint: "", privacyStatement: "" },
+        domain: "tenant.example.com",
       };
 
       const result = generateBaseUrl(requestUrl, tenant);
@@ -64,6 +65,7 @@ describe("generateBaseUrl", () => {
         setupState: "SETTINGS",
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
+        domain: "tenant.example.com",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -85,6 +87,7 @@ describe("generateBaseUrl", () => {
         setupState: "SETTINGS",
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
+        domain: "tenant.example.com",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -106,6 +109,7 @@ describe("generateBaseUrl", () => {
         setupState: "SETTINGS",
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
+        domain: "tenant.example.com",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -147,6 +151,7 @@ describe("generateBaseUrl", () => {
         setupState: "SETTINGS",
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
+        domain: "tenant.example.com",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -168,6 +173,7 @@ describe("generateBaseUrl", () => {
         setupState: "SETTINGS",
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
+        domain: "tenant.example.com",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -189,6 +195,7 @@ describe("generateBaseUrl", () => {
         setupState: "SETTINGS",
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
+        domain: "tenant.example.com",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -210,6 +217,7 @@ describe("generateBaseUrl", () => {
         setupState: "SETTINGS",
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
+        domain: "tenant.example.com",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -231,6 +239,7 @@ describe("generateBaseUrl", () => {
         setupState: "SETTINGS",
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
+        domain: "tenant.example.com",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -252,6 +261,7 @@ describe("generateBaseUrl", () => {
         setupState: "SETTINGS",
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
+        domain: "tenant.example.com",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -273,6 +283,7 @@ describe("generateBaseUrl", () => {
         setupState: "SETTINGS",
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
+        domain: "tenant.example.com",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -297,6 +308,7 @@ describe("generateBaseUrl", () => {
         setupState: "SETTINGS",
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
+        domain: "tenant.example.com",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -319,6 +331,7 @@ describe("generateBaseUrl", () => {
         setupState: "SETTINGS",
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
+        domain: "tenant.example.com",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -341,6 +354,7 @@ describe("generateBaseUrl", () => {
         setupState: "SETTINGS",
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
+        domain: "tenant.example.com",
         createdAt: new Date(),
         updatedAt: new Date(),
       };

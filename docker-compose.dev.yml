@@ -28,8 +28,17 @@ services:
       start_period: 30s
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
     tmpfs:
       - /tmp
+      - /var/run/postgresql
 
 volumes:
   postgres_data_dev:

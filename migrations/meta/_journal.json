@@ -71,6 +71,13 @@
       "when": 1768324950524,
       "tag": "0009_bizarre_saracen",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1769196961847,
+      "tag": "0010_rich_stardust",
+      "breakpoints": true
     }
   ]
 }

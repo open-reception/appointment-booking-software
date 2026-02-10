@@ -36,7 +36,8 @@ const channelCreationSchema = z.object({
   descriptions: z.partialRecord(z.enum(supportedLocales), z.string().min(1)).optional(),
   isPublic: z.boolean().optional(),
   requiresConfirmation: z.boolean().optional(),
-  agentIds: z.array(z.string().uuid()).optional().default([]),
+  agentIds: z.array(z.uuid()).optional().default([]),
+  staffIds: z.array(z.uuid()).optional().default([]),
   slotTemplates: z.array(slotTemplateSchema).optional().default([]),
 });
 
@@ -47,7 +48,8 @@ const channelUpdateSchema = z.object({
   isPublic: z.boolean().optional(),
   pause: z.boolean().optional(),
   requiresConfirmation: z.boolean().optional(),
-  agentIds: z.array(z.string().uuid()).optional(),
+  agentIds: z.array(z.uuid()).optional(),
+  staffIds: z.array(z.uuid()).optional(),
   slotTemplates: z
     .array(
       slotTemplateSchema.extend({
@@ -64,6 +66,7 @@ export type SlotTemplateRequest = z.infer<typeof slotTemplateSchema>;
 export interface ChannelWithRelations extends SelectChannel {
   agents: SelectAgent[];
   slotTemplates: SelectSlotTemplate[];
+  staffIds: string[];
 }
 
 export class ChannelService {
@@ -198,10 +201,21 @@ export class ChannelService {
           agents.push(...existingAgents);
         }
 
+        // 4. Link staff to the channel
+        if (request.staffIds && request.staffIds.length > 0) {
+          for (const staffId of request.staffIds) {
+            await tx.insert(tenantSchema.channelStaff).values({
+              channelId: channel.id,
+              staffId: staffId,
+            });
+          }
+        }
+
         return {
           ...channel,
           agents,
           slotTemplates,
+          staffIds: request.staffIds || [],
         };
       });
 
@@ -355,7 +369,25 @@ export class ChannelService {
             );
         }
 
-        // 3. Handle slot template relationships
+        // 3. Handle staff relationships
+        if (updateData.staffIds !== undefined) {
+          // Remove all existing staff assignments
+          await tx
+            .delete(tenantSchema.channelStaff)
+            .where(eq(tenantSchema.channelStaff.channelId, channelId));
+
+          // Add new staff assignments
+          if (updateData.staffIds.length > 0) {
+            for (const staffId of updateData.staffIds) {
+              await tx.insert(tenantSchema.channelStaff).values({
+                channelId: channelId,
+                staffId: staffId,
+              });
+            }
+          }
+        }
+
+        // 4. Handle slot template relationships
         let slotTemplates: SelectSlotTemplate[] = [];
         if (updateData.slotTemplates !== undefined) {
           // Get existing slot template IDs for this channel
@@ -464,10 +496,19 @@ export class ChannelService {
             .where(eq(tenantSchema.channelSlotTemplate.channelId, channelId));
         }
 
+        // 5. Get staff IDs
+        const staffLinks = await tx
+          .select({ staffId: tenantSchema.channelStaff.staffId })
+          .from(tenantSchema.channelStaff)
+          .where(eq(tenantSchema.channelStaff.channelId, channelId));
+
+        const staffIds = staffLinks.map((link) => link.staffId);
+
         return {
           ...channel,
           agents,
           slotTemplates,
+          staffIds,
         };
       });
 
@@ -555,10 +596,19 @@ export class ChannelService {
         )
         .where(eq(tenantSchema.channelSlotTemplate.channelId, channelId));
 
+      // Get staff IDs
+      const staffLinks = await db
+        .select({ staffId: tenantSchema.channelStaff.staffId })
+        .from(tenantSchema.channelStaff)
+        .where(eq(tenantSchema.channelStaff.channelId, channelId));
+
+      const staffIds = staffLinks.map((link) => link.staffId);
+
       const result = {
         ...channel,
         agents,
         slotTemplates,
+        staffIds,
       };
 
       log.debug("Channel found", {

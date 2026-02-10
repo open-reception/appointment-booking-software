@@ -8,6 +8,7 @@ import { tenant } from "$lib/server/db/central-schema";
 import logger from "$lib/logger";
 import { checkPermission } from "$lib/server/utils/permissions";
 import { ERRORS } from "$lib/errors";
+import { eq } from "drizzle-orm";
 
 // Register OpenAPI documentation
 registerOpenAPIRoute("/tenants", "POST", {
@@ -28,8 +29,14 @@ registerOpenAPIRoute("/tenants", "POST", {
               description: "Short name for the tenant (4-15 characters)",
               example: "acme-corp",
             },
+            domain: {
+              type: "string",
+              format: "uri",
+              description: "Domain for the tenant",
+              example: "https://acme-corp.example.com",
+            },
           },
-          required: ["shortName"],
+          required: ["shortName", "domain"],
         },
       },
     },
@@ -48,8 +55,9 @@ registerOpenAPIRoute("/tenants", "POST", {
                 properties: {
                   id: { type: "string", description: "Generated tenant ID" },
                   shortName: { type: "string", description: "Tenant short name" },
+                  domain: { type: "string", format: "uri", description: "Tenant domain" },
                 },
-                required: ["id", "shortName"],
+                required: ["id", "shortName", "domain"],
               },
             },
             required: ["message", "tenant"],
@@ -88,7 +96,8 @@ registerOpenAPIRoute("/tenants", "POST", {
 // Register OpenAPI documentation for GET
 registerOpenAPIRoute("/tenants", "GET", {
   summary: "Get all tenant IDs",
-  description: "Returns a list of all tenant IDs and basic information",
+  description:
+    "Returns a list of all tenant IDs and basic information. For staff and tenant admins, this only returns the staff's tenant.",
   tags: ["Tenants"],
   responses: {
     "200": {
@@ -107,6 +116,7 @@ registerOpenAPIRoute("/tenants", "GET", {
                     shortName: { type: "string", description: "Tenant short name" },
                     longName: { type: "string", description: "Tenant long name" },
                     logo: { type: "string", format: "uri", description: "URL of the tenant logo" },
+                    domain: { type: "string", format: "uri", description: "Tenant domain" },
                     setupState: {
                       type: "string",
                       enum: ["NEW", "SETTINGS_CREATED", "AGENTS_SET_UP", "FIRST_CHANNEL_CREATED"],
@@ -165,6 +175,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 
     const tenantService = await TenantAdminService.createTenant({
       shortName: body.shortName,
+      domain: body.domain,
     });
 
     log.debug("Tenant created successfully", {
@@ -202,36 +213,56 @@ export const GET: RequestHandler = async ({ locals }) => {
 
   try {
     // Check if user is authenticated and is a global admin
-    checkPermission(
-      locals,
-      locals.user?.role === "TENANT_ADMIN" ? locals.user.tenantId : null,
-      true,
-    );
+    checkPermission(locals, locals.user?.tenantId ? locals.user?.tenantId : null, false);
 
     log.debug("Getting all tenants", {
       requestedBy: locals.user?.id,
     });
 
     // Get all tenants from database
-    const tenants = await db
-      .select({
-        id: tenant.id,
-        shortName: tenant.shortName,
-        languages: tenant.languages,
-        setupState: tenant.setupState,
-        logo: tenant.logo,
-      })
-      .from(tenant)
-      .orderBy(tenant.shortName);
+    if (locals.user?.role === "GLOBAL_ADMIN") {
+      const tenants = await db
+        .select({
+          id: tenant.id,
+          domain: tenant.domain,
+          shortName: tenant.shortName,
+          languages: tenant.languages,
+          setupState: tenant.setupState,
+          logo: tenant.logo,
+        })
+        .from(tenant)
+        .orderBy(tenant.shortName);
 
-    log.debug("Retrieved tenants successfully", {
-      tenantCount: tenants.length,
-      requestedBy: locals.user?.id,
-    });
+      log.debug("Retrieved tenants successfully", {
+        tenantCount: tenants.length,
+        requestedBy: locals.user?.id,
+      });
 
-    return json({
-      tenants: tenants,
-    });
+      return json({
+        tenants: tenants,
+      });
+    } else {
+      const tenants = await db
+        .select({
+          id: tenant.id,
+          domain: tenant.domain,
+          shortName: tenant.shortName,
+          languages: tenant.languages,
+          setupState: tenant.setupState,
+          logo: tenant.logo,
+        })
+        .from(tenant)
+        .where(eq(tenant.id, locals.user?.tenantId ?? ""));
+
+      log.debug("Retrieved tenant successfully", {
+        tenantId: tenants[0]?.id,
+        requestedBy: locals.user?.id,
+      });
+
+      return json({
+        tenants,
+      });
+    }
   } catch (error) {
     logError(log)("Error getting tenants", error, locals.user?.id);
     return new InternalError().toJson();

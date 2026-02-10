@@ -5,10 +5,10 @@ import { TenantConfig } from "../db/tenant-config";
 import { TenantMigrationService } from "./tenant-migration-service";
 
 import { env } from "$env/dynamic/private";
-import { eq, and, not, count, or } from "drizzle-orm";
 import logger from "$lib/logger";
+import { and, count, eq, ne, not, or } from "drizzle-orm";
 import { z } from "zod";
-import { ValidationError, NotFoundError, ConflictError } from "../utils/errors";
+import { ConflictError, NotFoundError, ValidationError } from "../utils/errors";
 import { redactDbUrl } from "../utils/url";
 
 if (!env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
@@ -19,6 +19,12 @@ const tenantCreationSchema = z.object({
     .min(4)
     .max(15)
     .regex(/^[a-z0-9][a-z0-9-]*[a-z0-9]$/),
+  domain: z
+    .string()
+    .min(1)
+    .max(253)
+    .toLowerCase()
+    .regex(/^([a-z0-9]+(-[a-z0-9]+)*\.)*[a-z0-9]+(-[a-z0-9]+)*$/, "Invalid domain format"),
 });
 
 export type TenantCreationRequest = z.infer<typeof tenantCreationSchema>;
@@ -61,16 +67,23 @@ export class TenantAdminService {
 
     log.debug("Creating new tenant", {
       shortName: request.shortName,
+      domain: request.domain,
     });
 
     // Check if tenant can be created without any duplications. Do not create tenant if:
     // - short name already exists
+    // - domain already exists
     const tenantExists = await centralDb
       .select()
       .from(centralSchema.tenant)
-      .where(eq(centralSchema.tenant.shortName, request.shortName));
+      .where(
+        or(
+          eq(centralSchema.tenant.shortName, request.shortName),
+          eq(centralSchema.tenant.domain, request.domain),
+        ),
+      );
     if (tenantExists.length > 0) {
-      throw new ConflictError("Tenant with shortname already exists");
+      throw new ConflictError("Tenant with shortname or domain already exists");
     }
 
     const configuration = TenantAdminService.getConfigDefaults();
@@ -90,6 +103,7 @@ export class TenantAdminService {
         imprint: "",
         privacyStatement: "",
       },
+      domain: request.domain,
     };
     newTenant.databaseUrl = urlParts.join("/") + "/" + newTenant.shortName;
 
@@ -203,7 +217,10 @@ export class TenantAdminService {
    */
   async updateTenantData(
     updateData: Partial<
-      Pick<InsertTenant, "longName" | "shortName" | "descriptions" | "languages" | "logo">
+      Pick<
+        InsertTenant,
+        "longName" | "shortName" | "descriptions" | "languages" | "logo" | "domain"
+      >
     >,
   ) {
     const log = logger.setContext("TenantAdminService");
@@ -214,6 +231,22 @@ export class TenantAdminService {
 
     if (updateData.shortName) {
       throw new ValidationError("Shortname cannot be changed");
+    }
+
+    // Check if domain is already in use
+    if (updateData.domain) {
+      const domainExists = await centralDb
+        .select()
+        .from(centralSchema.tenant)
+        .where(
+          and(
+            eq(centralSchema.tenant.domain, updateData.domain),
+            ne(centralSchema.tenant.id, this.tenantId),
+          ),
+        );
+      if (domainExists.length > 0) {
+        throw new ConflictError("Tenant with shortname or domain already exists");
+      }
     }
 
     try {

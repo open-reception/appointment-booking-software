@@ -1,7 +1,44 @@
 # Production Caddyfile for appointment booking application
 # Replace your-domain.com with your actual domain
+{
+	on_demand_tls {
+		ask http://app:3000/api/public/domains
+		burst 5
+		interval 60s
+	}
+}
 
-your-domain.com {
+:443 {
+	reverse_proxy app:3000
+
+	# Security headers
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		X-XSS-Protection "1; mode=block"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'"
+	}
+
+	encode gzip
+
+	log {
+		output file /data/access.log {
+			roll_size 100mb
+			roll_keep 10
+		}
+		format json
+	}
+
+	tls {
+		on_demand
+		protocols tls1.2 tls1.3
+	}
+}
+
+your-admin-domain.com {
 	reverse_proxy app:3000
 
 	# Security headers

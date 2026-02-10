@@ -16,6 +16,7 @@ import { render } from "svelte/server";
 import AppointmentBooked from "$lib/emails/AppointmentBooked.svelte";
 import AppointmentRequest from "$lib/emails/AppointmentRequest.svelte";
 import AppointmentRejected from "$lib/emails/AppointmentRejected.svelte";
+import AppointmentCancelled from "$lib/emails/AppointmentCancelled.svelte";
 import { htmlToText, renderOutputToHtml } from "$lib/emails/utils";
 import { AgentService } from "../services/agent-service";
 import { TenantService } from "../db/tenant-service";
@@ -528,17 +529,25 @@ export async function sendAppointmentCancelledEmail(
   channelTitle?: string,
 ): Promise<void> {
   // Create recipient directly for SelectClient type, use helper for SelectUser
-  const recipient: EmailRecipient =
-    "email" in user && typeof user.email === "string" && "language" in user && !("name" in user)
-      ? { email: user.email, language: user.language }
-      : createEmailRecipient(user);
-
-  const language = (recipient.language as Language) || "en";
-  const subject = language === "en" ? "Appointment Cancelled" : "Termin storniert";
-
-  await sendTemplatedEmail("appointment-cancelled", recipient, subject, language, tenant, {
-    appointment,
-    appointmentDate: appointment.appointmentDate,
-    title: channelTitle || appointment.channelId,
+  const { recipient, locale } = await getRecipient(user);
+  // Generate email
+  const subject = m["emails.appointmentCancelled.subject"]({
+    channel: channelTitle || appointment.channelId,
+    tenant: tenant.longName,
   });
+  const emailRender = render(AppointmentCancelled, {
+    props: {
+      locale,
+      channel: channelTitle || appointment.channelId,
+      user,
+      tenant,
+      appointment: { ...appointment, agentName: "---" },
+      address: await getAddressFromTenant(tenant.id),
+    },
+  });
+  const html = renderOutputToHtml(emailRender);
+  const text = htmlToText(html);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await sendEmail(recipient as any, subject, html, text);
 }
