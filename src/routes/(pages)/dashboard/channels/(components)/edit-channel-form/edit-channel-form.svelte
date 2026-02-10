@@ -10,6 +10,7 @@
   import { Textarea } from "$lib/components/ui/textarea";
   import { Headline, Text } from "$lib/components/ui/typography";
   import { agents as agentsStore } from "$lib/stores/agents";
+  import { staff as staffStore } from "$lib/stores/staff";
   import { tenants } from "$lib/stores/tenants";
   import type { TChannelWithFullAgents, TSlotTemplate } from "$lib/types/channel";
   import { toast } from "svelte-sonner";
@@ -20,8 +21,8 @@
   import { DEFAULT_SLOT_TEMPLATE } from "../utils";
 
   let { entity, done }: { entity: TChannelWithFullAgents; done: () => void } = $props();
-
   const agents = $derived($agentsStore.agents ?? []);
+  const staff = $derived($staffStore.staff ?? []);
   const tenantLocales = get(tenants).currentTenant?.languages ?? [];
 
   // svelte-ignore state_referenced_locally
@@ -37,6 +38,7 @@
         {} as { [key: string]: string },
       ),
       agentIds: entity.agents.map((a) => a.id) ?? [],
+      staffIds: entity.staffIds,
       isPublic: entity.isPublic || false,
       requiresConfirmation: entity.requiresConfirmation || false,
       slotTemplates: entity.slotTemplates,
@@ -130,6 +132,34 @@
           <Select.Content>
             {#each agents as agent (agent.id)}
               <Select.Item value={agent.id}>{agent.name}</Select.Item>
+            {/each}
+          </Select.Content>
+        </Select.Root>
+      {/snippet}
+    </Form.Control>
+    <Form.FieldErrors />
+  </Form.Field>
+  <Form.Field {form} name="staffIds">
+    <Form.Control>
+      {#snippet children({ props })}
+        <Form.Label>{m["channels.add.fields.staff.title"]()}</Form.Label>
+        <Form.Description>
+          {m["channels.add.fields.staff.description"]()}
+        </Form.Description>
+        <Select.Root
+          type="multiple"
+          bind:value={$formData.staffIds}
+          name={props.name}
+          onValueChange={(v) => ($formData.staffIds = v)}
+        >
+          <Select.Trigger {...props} class="w-full">
+            {$formData.staffIds.length > 0
+              ? $formData.staffIds.map((id) => staff.find((x) => x.id === id)?.name).join(", ")
+              : m["channels.add.fields.staff.placeholder"]()}
+          </Select.Trigger>
+          <Select.Content>
+            {#each staff as member (member.id)}
+              <Select.Item value={member.id}>{member.name}</Select.Item>
             {/each}
           </Select.Content>
         </Select.Root>

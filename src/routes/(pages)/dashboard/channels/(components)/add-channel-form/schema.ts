@@ -13,6 +13,7 @@ export const formSchema = z.object({
     .optional(),
   descriptions: z.record(z.string(), z.string()).optional(),
   agentIds: z.array(z.string()).default([]),
+  staffIds: z.array(z.string()).default([]),
   isPublic: z.boolean().optional().default(false),
   requiresConfirmation: z.boolean().optional().default(false),
   slotTemplates: z
