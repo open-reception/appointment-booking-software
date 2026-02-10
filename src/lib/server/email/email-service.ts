@@ -14,6 +14,7 @@ import { setLocale } from "$i18n/runtime";
 import { m } from "$i18n/messages";
 import { render } from "svelte/server";
 import AppointmentBooked from "$lib/emails/AppointmentBooked.svelte";
+import AppointmentRequest from "$lib/emails/AppointmentRequest.svelte";
 import AppointmentRejected from "$lib/emails/AppointmentRejected.svelte";
 import { htmlToText, renderOutputToHtml } from "$lib/emails/utils";
 import { AgentService } from "../services/agent-service";
@@ -338,7 +339,6 @@ export async function sendAppointmentRequestEmail(
   tenant: SelectTenant,
   appointment: SelectAppointment,
   channelTitle?: string,
-  cancelUrl?: string,
 ): Promise<void> {
   const agentService = await AgentService.forTenant(tenant.id);
   const agent = await agentService.getAgentById(appointment.agentId);
@@ -348,7 +348,7 @@ export async function sendAppointmentRequestEmail(
     channel: channelTitle || appointment.channelId,
     tenant: tenant.longName,
   });
-  const emailRender = render(AppointmentBooked, {
+  const emailRender = render(AppointmentRequest, {
     props: {
       locale,
       channel: channelTitle || appointment.channelId,
@@ -356,7 +356,6 @@ export async function sendAppointmentRequestEmail(
       tenant,
       appointment: { ...appointment, agentName: agent?.name ?? "---" },
       address: await getAddressFromTenant(tenant.id),
-      cancelUrl: cancelUrl || "",
     },
   });
   const html = renderOutputToHtml(emailRender);
