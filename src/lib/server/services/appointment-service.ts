@@ -199,7 +199,7 @@ export class AppointmentService {
         row.id,
         row.channelId,
         clientEmail,
-        clientLanguage || "de",
+        clientLanguage || "en",
         false,
       ).catch((error) => {
         log.error("Failed to send appointment confirmation email", {
@@ -249,11 +249,11 @@ export class AppointmentService {
 
     // Send rejection email to client if email is provided (async, don't wait)
     if (clientEmail) {
-      this.sendAppointmentNotification(
+      await this.sendAppointmentNotification(
         row.id,
         row.channelId,
         clientEmail,
-        clientLanguage || "de",
+        clientLanguage || "en",
         false,
       ).catch((error) => {
         log.error("Failed to send appointment rejection email", {

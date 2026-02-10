@@ -167,7 +167,7 @@ export const denyAppointment = async (opts: {
     };
   }
   const res = await fetch(`/api/tenants/${opts.tenant}/appointments/${opts.appointment}/deny`, {
-    method: "PUT",
+    method: "POST",
     body: JSON.stringify(body),
   });
 
