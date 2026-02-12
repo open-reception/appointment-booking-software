@@ -25,16 +25,25 @@
       onclick?.();
     }
   };
+
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Enter") {
+      if (!disabledStates.includes(state)) {
+        onclick?.();
+      }
+    }
+  };
 </script>
 
 <Button
   variant="outline"
   onclick={onClick}
   class={cn(
-    "flex h-[40px] w-full justify-start",
+    "flex h-10 w-full justify-start",
     state === "error" ? "dark:border-destructive border-destructive text-destructive" : "",
     className,
   )}
+  onkeydown={onKeyDown}
   disabled={disabledStates.includes(state)}
 >
   {#if state === "initial"}

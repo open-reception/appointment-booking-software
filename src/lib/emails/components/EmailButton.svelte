@@ -9,6 +9,7 @@
   <a class="button" {href}>{@render children?.()}</a>
 </div>
 <span class="html-only md">
+  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
   {m["emails.buttonAlternativeLink"]()}: <a {href}>{href}</a>
 </span>
 

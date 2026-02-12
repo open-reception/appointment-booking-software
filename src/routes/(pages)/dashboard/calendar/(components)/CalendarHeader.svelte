@@ -33,8 +33,8 @@
 <div
   class="flex flex-col items-start justify-between gap-2 min-[500px]:flex-row min-[500px]:items-center"
 >
-  <div class="-ml-1 flex w-[350px] items-center justify-between gap-5">
-    <Button size="sm" variant="ghost" class="h-6 !p-1" onclick={prev}>
+  <div class="-ml-1 flex w-87.5 items-center justify-between gap-5">
+    <Button size="sm" variant="ghost" class="h-6 p-1!" onclick={prev}>
       <ChevronLeft />
     </Button>
     <div>
@@ -46,7 +46,7 @@
         timeZone: getLocalTimeZone().toString(),
       }).format(startDate.toDate(getLocalTimeZone()))}
     </div>
-    <Button size="sm" variant="ghost" class="h-6 !p-1" onclick={next}>
+    <Button size="sm" variant="ghost" class="h-6 p-1!" onclick={next}>
       <ChevronRight />
     </Button>
   </div>

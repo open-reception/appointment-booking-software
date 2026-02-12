@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { getLocale } from "$i18n/runtime";
   import { Button } from "$lib/components/ui/button";
   import { Text } from "$lib/components/ui/typography";
   import { type CurAppointmentItem } from "$lib/stores/calendar";
@@ -8,6 +7,7 @@
   import { cancelAppointment, denyAppointment, confirmAppointment } from "./utils";
   import { toast } from "svelte-sonner";
   import { m } from "$i18n/messages";
+  import { toDisplayDateTime } from "$lib/utils/datetime";
 
   let {
     tenantId,
@@ -117,7 +117,7 @@
     <div class="flex gap-2 p-1">
       <Calendar class="size-4 " />
       <Text style="sm">
-        {Intl.DateTimeFormat(getLocale(), {
+        {toDisplayDateTime(item.appointment.appointment.dateTime, {
           year: "numeric",
           month: "long",
           day: "numeric",
@@ -125,7 +125,7 @@
           hour: "2-digit",
           minute: "2-digit",
           timeZone: getLocalTimeZone().toString(),
-        }).format(item.appointment.appointment.dateTime)}
+        })}
       </Text>
     </div>
     <div class="mt-5 flex w-full flex-col gap-4">

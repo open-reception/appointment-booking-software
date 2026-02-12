@@ -1,5 +1,6 @@
 <script lang="ts">
   import { replaceState } from "$app/navigation";
+  import { page } from "$app/state";
   import { m } from "$i18n/messages";
   import { MaxPageWidth } from "$lib/components/layouts/max-page-width";
   import { SidebarLayout } from "$lib/components/layouts/sidebar-layout";
@@ -23,12 +24,12 @@
   } from "@internationalized/date";
   import { Funnel } from "@lucide/svelte";
   import { onMount } from "svelte";
+  import AddAppointment from "./(components)/add-appointment/AddAppointment.svelte";
   import AppointmentDetail from "./(components)/AppointmentDetail.svelte";
   import CalendarDay from "./(components)/CalendarDay.svelte";
   import CalendarFilters from "./(components)/CalendarFilters.svelte";
   import CalendarHeader from "./(components)/CalendarHeader.svelte";
   import { fetchCalendar, openAppointmentById } from "./(components)/utils";
-  import { page } from "$app/state";
 
   const convertDate = (dateStr: string) => {
     const zonedDateTime = parseAbsoluteToLocal(dateStr);
@@ -36,6 +37,7 @@
   };
 
   const tenantId = $derived($auth.user?.tenantId);
+  const curEmptySlot = $derived($calendarStore.curEmptySlot);
   const curItem = $derived($calendarStore.curItem);
   const channels = $derived($channelsStore.channels);
   const agents = $derived($agentsStore.agents);
@@ -84,6 +86,7 @@
 
   onMount(() => {
     if (history.state["sveltekit:states"]?.date) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { date, ...rest } = history.state["sveltekit:states"];
       replaceState("", rest);
     }
@@ -146,6 +149,7 @@
                 color: channelData.channel.color,
                 column: 0,
                 status: "available",
+                availableAgents: slot.availableAgents,
               });
             }
           });
@@ -235,5 +239,17 @@
     triggerHidden={true}
   >
     <AppointmentDetail {tenantId} item={curItem} {updateCalendar} close={closeAppointmentDetail} />
+  </ResponsiveDialog>
+{/if}
+
+{#if curEmptySlot && tenantId}
+  {@const channel = channels.find((c) => c.id === curEmptySlot.channelId)}
+  <ResponsiveDialog
+    id="current-calendar-slot"
+    title="Add Appointment"
+    description={channel ? getCurrentTranlslation(channel.names) : undefined}
+    triggerHidden={true}
+  >
+    <AddAppointment {tenantId} item={curEmptySlot} {updateCalendar} />
   </ResponsiveDialog>
 {/if}

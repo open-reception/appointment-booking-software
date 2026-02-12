@@ -18,6 +18,7 @@
   import { positionItems } from "./utils";
   import AppointmentPreview from "./AppointmentPreview.svelte";
   import { getContrastColor } from "$lib/utils/color";
+  import SlotPreview from "./SlotPreview.svelte";
 
   let {
     day = $bindable(),
@@ -117,6 +118,8 @@
         >
           {#if ["booked", "reserved"].includes(item.status)}
             <AppointmentPreview {item} />
+          {:else if item.status === "available"}
+            <SlotPreview {item} />
           {/if}
         </div>
       </div>

@@ -946,6 +946,34 @@
 			"action": "Termin bestätigen",
 			"success": "Termin erfolgreich bestätigt",
 			"error": "Fehler beim Bestätigen des Termins"
+		},
+		"addAppointment": {
+			"preview": "Neuer Termin {time} Uhr {channel}",
+			"steps": {
+				"selectClient": {
+					"hasNoEmail": "Klient hat keine E-Mail Adresse",
+					"action": "Klient suchen"
+				},
+				"agents": {
+					"title": "Akteur auswählen"
+				},
+				"clientData": {
+					"shareEmail": "Klient wünscht Benachrichtigungen per E-Mail",
+					"phoneHint": "Format: +1234567890 (optional)",
+					"action": "Daten hinzufügen"
+				},
+				"summary": {
+					"action": "Termin hinzufügen"
+				},
+				"error": {
+					"title": "Fehler beim Hinzufügen des Termins",
+					"description": "Das Hinzufügen des Termins ist fehlgeschlagen. Bitte versuchen Sie es erneut."
+				},
+				"success": {
+					"title": "Termin hinzugefügt",
+					"description": "Der Termin wurde erfolgreich hinzugefügt"
+				}
+			}
 		}
 	},
 	"emails": {

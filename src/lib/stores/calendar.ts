@@ -1,6 +1,6 @@
 import type { AppointmentData } from "$lib/client/appointment-crypto";
 import { openDialog } from "$lib/components/ui/responsive-dialog";
-import type { TCalendarItem } from "$lib/types/calendar";
+import type { TCalendarItem, TCalendarSlot } from "$lib/types/calendar";
 import { writable } from "svelte/store";
 
 export type CurAppointmentItem = {
@@ -10,11 +10,13 @@ export type CurAppointmentItem = {
 
 interface CalendarState {
   curItem: CurAppointmentItem | null;
+  curEmptySlot: TCalendarSlot | null;
 }
 
 const createCalendarStore = () => {
   const store = writable<CalendarState>({
     curItem: null,
+    curEmptySlot: null,
   });
 
   return {
@@ -26,6 +28,15 @@ const createCalendarStore = () => {
 
       if (curItem) {
         openDialog("current-calendar-item");
+      }
+    },
+    setCurSlot: (curEmptySlot: TCalendarSlot | null) => {
+      store.update((state) => {
+        return { ...state, curEmptySlot };
+      });
+
+      if (curEmptySlot) {
+        openDialog("current-calendar-slot");
       }
     },
   };

@@ -955,6 +955,34 @@
 			"action": "Confirm Appointment",
 			"success": "Appointment confirmed successfully",
 			"error": "Failed to confirm appointment"
+		},
+		"addAppointment": {
+			"preview": "Add {time} {channel}",
+			"steps": {
+				"selectClient": {
+					"hasNoEmail": "Client has no e-mail",
+					"action": "Search Client"
+				},
+				"agents": {
+					"title": "Select an Agent"
+				},
+				"clientData": {
+					"shareEmail": "Client wishes updates via E-Mail",
+					"phoneHint": "Format: +1234567890 (optional)",
+					"action": "Add Client Details"
+				},
+				"summary": {
+					"action": "Add Appointment"
+				},
+				"error": {
+					"title": "Error adding Appointment",
+					"description": "Adding an appointment failed. Please try again."
+				},
+				"success": {
+					"title": "Appointment added",
+					"description": "This appointment was added successfully"
+				}
+			}
 		}
 	},
 	"emails": {

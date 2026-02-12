@@ -12,7 +12,7 @@ export const createFormSchema = (requirePhone?: boolean) => {
 
 export const formSchema = z.object({
   name: z.string().min(2, m["form.errors.name"]()).max(50, m["form.errors.name"]()),
-  email: z.string().email(m["form.errors.email"]()),
+  email: z.email(m["form.errors.email"]()),
   phone: z.e164(m["form.errors.phoneNoInvalid"]()).optional(),
 });
 
