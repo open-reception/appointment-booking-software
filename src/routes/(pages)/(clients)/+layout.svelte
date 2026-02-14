@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { page } from "$app/state";
   import { m } from "$i18n/messages";
   import { setLocale, type Locale } from "$i18n/runtime";
+  import PublicFooter from "$lib/components/templates/public-footer/public-footer.svelte";
   import Button from "$lib/components/ui/button/button.svelte";
   import { PageWithClaim } from "$lib/components/ui/page";
   import { ROUTES } from "$lib/const/routes.js";
@@ -38,28 +40,18 @@
 
 <PageWithClaim isWithLanguageSwitch={true} languages={tenant?.languages}>
   {#snippet left()}
-    <Button href={ROUTES.LOGIN} size="sm" variant="link">{m["login.action"]()}</Button>
+    {#if page.route.id?.includes(ROUTES.CLIENTS.MAIN)}
+      <Button href={ROUTES.MAIN} size="sm" variant="link">{m["home"]()}</Button>
+    {:else}
+      <Button href={ROUTES.CLIENTS.LOGIN} size="sm" variant="link">{m["login.action"]()}</Button>
+    {/if}
   {/snippet}
   {@render children()}
   {#snippet footer()}
     {#await data.streaming.tenant then tenant}
-      <div class="text-muted-foreground flex justify-center gap-2">
-        {#if tenant?.links.imprint}
-          <Button href={tenant?.links.imprint} size="xs" variant="link" class="text-inherit">
-            {m["public.links.imprint"]()}
-          </Button>
-        {/if}
-        {#if tenant?.links.privacyStatement}
-          <Button
-            href={tenant?.links.privacyStatement}
-            size="xs"
-            variant="link"
-            class="text-inherit"
-          >
-            {m["public.links.privacyStatement"]()}
-          </Button>
-        {/if}
-      </div>
+      {#if tenant}
+        <PublicFooter {tenant} />
+      {/if}
     {/await}
   {/snippet}
 </PageWithClaim>

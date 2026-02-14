@@ -82,12 +82,13 @@ interface StaffPublicKey {
   publicKey: string;
 }
 
-interface DecryptedAppointment {
+export interface DecryptedAppointment {
   id: string;
   appointmentDate: string;
   status: string;
   name: string;
   email: string;
+  shareEmail: boolean;
   phone?: string;
 }
 
@@ -364,6 +365,13 @@ export class UnifiedAppointmentCrypto {
       console.error("❌ Error creating appointment:", error);
       throw error;
     }
+  }
+
+  /**
+   * Allows to check, if a client is authenticated
+   */
+  isClientAuthenticated() {
+    return this.clientAuthenticated && this.tunnelKey;
   }
 
   /**

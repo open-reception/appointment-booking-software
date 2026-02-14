@@ -1052,5 +1052,32 @@
 				"description": "Der Klient hat den Termin in {channel} abgesagt."
 			}
 		}
+	},
+	"clients": {
+		"title": "Klienten",
+		"checking-auth": "Überprüfe Anmeldedaten...",
+		"login": {
+			"title": "Als Klient anmelden",
+			"description": "Bitte geben Sie Ihre E-Mail Adresse und Ihre PIN an."
+		},
+		"appointments": {
+			"title": "Meine Termine",
+			"empty": "Sie haben keine bevorstehenden Termine.",
+			"error": {
+				"title": "Zukünftige Termine konnten nicht geladen werden",
+				"description": "Wir konnten Ihre zukünftigen Termine nicht laden. Bitte versuchen Sie es später erneut."
+			},
+			"cancel": {
+				"title": "Termin absagen",
+				"description": "Sie verlieren Ihren Termin und müssen auf den nächsten freien Termin warten.",
+				"action": "Absagen",
+				"success": "Termin abgesagt",
+				"error": "Konnte Termin nicht absagen. Bitte versuchen Sie es später erneut"
+			},
+			"types": {
+				"NEW": "angefragt",
+				"CONFIRMED": "bestätigt"
+			}
+		}
 	}
 }

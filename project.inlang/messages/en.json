@@ -1061,5 +1061,33 @@
 				"description": "Client cancelled appointment in {channel}."
 			}
 		}
+	},
+	"clients": {
+		"title": "Clients",
+		"checking-auth": "Validating session...",
+		"login": {
+			"title": "Client Login",
+			"description": "Please enter your e-mail address and PIN.",
+			"altAction": "I am a staff member here"
+		},
+		"appointments": {
+			"title": "My Appointments",
+			"empty": "You don't have any upcoming appointments.",
+			"error": {
+				"title": "Unable to load upcoming appointments",
+				"description": "We were unable to load your upcoming appointments. Please try again later."
+			},
+			"cancel": {
+				"title": "Cancel Appointment",
+				"description": "You will loose your spot and have to wait for the next free appointment.",
+				"action": "Cancel",
+				"success": "Appointment cancelled",
+				"error": "Could not cancel appointment. Please try again later"
+			},
+			"types": {
+				"NEW": "requested",
+				"CONFIRMED": "confirmed"
+			}
+		}
 	}
 }
