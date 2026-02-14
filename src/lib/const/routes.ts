@@ -9,6 +9,10 @@ export const ROUTES = {
   },
   SETUP_PASSKEY: "/confirm/setup-passkey",
   RESEND_CONFIRMATION: "/confirm/resend",
+  CLIENTS: {
+    MAIN: "/clients",
+    LOGIN: "/clients/login",
+  },
   LOGIN: "/login",
   LOGOUT: "/logout",
   DASHBOARD: {
