@@ -44,7 +44,12 @@
         newAppointment = {
           ...data,
         };
-        step = "agent";
+        if (item.availableAgents && item.availableAgents.length === 1) {
+          const onlyAgent = item.availableAgents[0];
+          proceed({ ...data, agentId: onlyAgent.id });
+        } else {
+          step = "agent";
+        }
         break;
       }
     }
