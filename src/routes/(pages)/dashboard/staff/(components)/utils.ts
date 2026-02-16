@@ -13,5 +13,5 @@ export const permissions: { label: string; roles: TStaff["role"][] }[] = [
   { label: m["staff.permissions.absences"](), roles: ["STAFF", "TENANT_ADMIN", "GLOBAL_ADMIN"] },
   { label: m["staff.permissions.settings"](), roles: ["TENANT_ADMIN", "GLOBAL_ADMIN"] },
   { label: m["staff.permissions.staff"](), roles: ["TENANT_ADMIN", "GLOBAL_ADMIN"] },
-  { label: m["staff.permissions.appointments"](), roles: ["STAFF"] },
+  { label: m["staff.permissions.appointments"](), roles: ["TENANT_ADMIN", "STAFF"] },
 ];
