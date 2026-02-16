@@ -114,6 +114,11 @@ export const getCredentialOptions = ({
       pubKeyCredParams: [
         { alg: -7, type: "public-key" }, // ES256
       ],
+      authenticatorSelection: {
+        authenticatorAttachment: undefined, // Allow any authenticator (platform or cross-platform)
+        residentKey: "preferred",
+        userVerification: "preferred",
+      },
     },
   };
 
