@@ -109,6 +109,7 @@ export class UnifiedAppointmentCrypto {
   private tunnelId: string | null = null;
   private clientAuthenticated: boolean = false;
   private serverPrivateKeyShare: string | null = null; // Server share of the private key
+  private pin: string | null = null;
 
   // Staff-specific properties
   private staffKeyPair: StaffKeyPair | null = null;
@@ -188,6 +189,104 @@ export class UnifiedAppointmentCrypto {
       this.clientAuthenticated = true;
     } catch (error) {
       console.error("❌ Error during client initialization:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Cancel an appointment for a client
+   */
+  async cancelAppointmentByClient(opts: {
+    tenant: string;
+    appointment: string;
+    email: string;
+  }): Promise<void> {
+    try {
+      if (this.pin === null) {
+        throw new Error(
+          "⚠️ Secure session timed out. Abort cancellation of appointment. Please login again",
+        );
+      }
+
+      // 1. Generate email hash
+      this.emailHash = await this.hashEmail(opts.email);
+
+      // 2. Request challenge from server
+      const challengeResponse = await fetch(`/api/tenants/${opts.tenant}/appointments/challenge`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emailHash: this.emailHash }),
+      });
+
+      if (!challengeResponse.ok) {
+        if (challengeResponse.status === 429) {
+          const errorData = await challengeResponse.json();
+          const retryAfterMs = errorData.retryAfterMs || 60000;
+          const retryAfterSeconds = Math.ceil(retryAfterMs / 1000);
+
+          // Store throttle state for frontend to enforce
+          pinThrottleStore.setThrottle(this.emailHash, retryAfterMs, errorData.failedAttempts || 0);
+
+          if (retryAfterSeconds > 0) {
+            throw new Error(
+              `Too many failed attempts. Please try again in ${retryAfterSeconds} seconds.`,
+            );
+          } else {
+            throw new Error("Too many failed attempts. Please try again later.");
+          }
+        }
+        throw new Error("Challenge could not be retrieved");
+      }
+
+      const challengeData = await challengeResponse.json();
+
+      // 3. Reconstruct private key from PIN and server share
+      const privateKey = await this.reconstructPrivateKey(this.pin, challengeData.privateKeyShare);
+
+      // 4. Decrypt challenge
+      const decryptedChallenge = await this.decryptChallenge(
+        challengeData.encryptedChallenge,
+        privateKey,
+      );
+
+      // 5. Send challenge response to server
+      const cancelResponse = await fetch(
+        `/api/tenants/${opts.tenant}/appointments/${opts.appointment}/delete-by-client`,
+        {
+          method: "DELETE",
+          body: JSON.stringify({
+            emailHash: this.emailHash,
+            challengeId: challengeData.challengeId,
+            challengeResponse: decryptedChallenge,
+          }),
+        },
+      );
+
+      if (!cancelResponse.ok) {
+        const errorData = await cancelResponse.json();
+        console.error("❌ Cancelling appointment failed:", errorData);
+        if (cancelResponse.status === 429) {
+          const retryAfterMs = errorData.retryAfterMs || 60000;
+          const retryAfterSeconds = Math.ceil(retryAfterMs / 1000);
+
+          // Store throttle state for frontend to enforce
+          pinThrottleStore.setThrottle(this.emailHash, retryAfterMs, errorData.failedAttempts || 0);
+
+          if (retryAfterSeconds > 0) {
+            throw new Error(
+              `Too many failed attempts. Please try again in ${retryAfterSeconds} seconds.`,
+            );
+          } else {
+            throw new Error("Too many failed attempts. Please try again later.");
+          }
+        }
+        throw new Error("Challenge verification failed");
+      }
+
+      // Clear throttle on successful authentication
+      pinThrottleStore.clearThrottle();
+    } catch (error) {
+      console.error("❌ Error during client cancels appointment:", error);
       throw error;
     }
   }
@@ -282,6 +381,7 @@ export class UnifiedAppointmentCrypto {
 
       // Clear throttle on successful authentication
       pinThrottleStore.clearThrottle();
+      this.pin = pin;
     } catch (error) {
       console.error("❌ Error during client login:", error);
       throw error;
@@ -641,6 +741,7 @@ export class UnifiedAppointmentCrypto {
     this.tunnelId = null;
     this.serverPrivateKeyShare = null;
     this.clientAuthenticated = false;
+    this.pin = null;
   }
 
   // ===== SHARED PRIVATE METHODS =====
@@ -803,7 +904,7 @@ export class UnifiedAppointmentCrypto {
   /**
    * Generate deterministic SHA-256 hash of email for privacy-preserving lookups
    */
-  private async hashEmail(email: string): Promise<string> {
+  async hashEmail(email: string): Promise<string> {
     const emailNormalized = email.toLowerCase().trim();
     const encoder = new TextEncoder();
     const data = encoder.encode(emailNormalized);

@@ -392,7 +392,7 @@
 				},
 				"agents": {
 					"title": "Akteur:in hinzufügen",
-					"description": "Akteure sind die Personen, Teams oder Gruppen mit denen Deine Kunden einen Termin vereinbaren können.",
+					"description": "Akteure sind die Personen, Teams oder Gruppen mit denen Deine Klienten einen Termin vereinbaren können.",
 					"action": "Add Agent"
 				},
 				"channels": {
@@ -426,7 +426,7 @@
 				},
 				"description": {
 					"title": "Beschreibung (optional)",
-					"description": "Kann Schwerpunkte, Qualifikationen oder andere Informationen enthalten, die Kunden helfen, den richtigen Akteur auszuwählen."
+					"description": "Kann Schwerpunkte, Qualifikationen oder andere Informationen enthalten, die Klienten helfen, den richtigen Akteur auszuwählen."
 				},
 				"image": {
 					"title": "Bild (optional)"
@@ -502,7 +502,7 @@
 				},
 				"isPublic": {
 					"title": "Öffentlich",
-					"label": "Dieser Kanal kann von Kunden direkt gebucht werden"
+					"label": "Dieser Kanal kann von Klienten direkt gebucht werden"
 				},
 				"requiresConfirmation": {
 					"title": "Bestätigung erforderlich",
@@ -545,14 +545,14 @@
 		},
 		"pause": {
 			"title": "Kanal deaktivieren",
-			"description": "Das Deaktivieren von {name} verhindert, dass Kunden neue Termine in diesem Kanal buchen.",
+			"description": "Das Deaktivieren von {name} verhindert, dass Klienten neue Termine in diesem Kanal buchen.",
 			"action": "Kanal deaktivieren",
 			"success": "Kanal deaktiviert",
 			"error": "Konnte Kanal nicht deaktivieren."
 		},
 		"unpause": {
 			"title": "Kanal reaktivieren",
-			"description": "Das Reaktivieren von {name} ermöglicht es Kunden, neue Termine in diesem Kanal zu buchen.",
+			"description": "Das Reaktivieren von {name} ermöglicht es Klienten, neue Termine in diesem Kanal zu buchen.",
 			"action": "Kanal reaktivieren",
 			"success": "Kanal reaktiviert",
 			"error": "Konnte Kanal nicht reaktivieren."
@@ -591,7 +591,7 @@
 					"title": "Ende"
 				}
 			},
-			"hint": "Kunden werden nicht informiert. Bereits gebuchte Termine müssen manuell abgesagt werden.",
+			"hint": "Klienten werden nicht informiert. Bereits gebuchte Termine müssen manuell abgesagt werden.",
 			"action": "Abwesenheit hinzufügen",
 			"success": "Abwesenheit hinzugefügt",
 			"errors": {
@@ -645,12 +645,12 @@
 			"fields": {
 				"languages": {
 					"title": "Sprachen",
-					"description": "Wähle die Sprachen, die Kunden angezeigt bekommen sollen. Du musst mindestens Eine auswählen.",
+					"description": "Wähle die Sprachen, die Klienten angezeigt bekommen sollen. Du musst mindestens Eine auswählen.",
 					"placeholder": "Sprachen auswählen"
 				},
 				"defaultLanguage": {
 					"title": "Standardsprache",
-					"description": "Diese Sprache wird angezeigt, wenn die Sprache des Kunden nicht unterstützt wird. In den meisten Fällen sollte dies Englisch sein.",
+					"description": "Diese Sprache wird angezeigt, wenn die Sprache des Klienten nicht unterstützt wird. In den meisten Fällen sollte dies Englisch sein.",
 					"placeholder": "Standardsprache auswählen",
 					"errors": {
 						"notInLanguages": "Muss eine der ausgewählten Sprachen sein"
@@ -709,7 +709,7 @@
 				},
 				"requirePhone": {
 					"title": "Telefonnummer erforderlich",
-					"label": "Kunden müssen eine Telefonnummer angeben, wenn sie einen Termin buchen."
+					"label": "Klienten müssen eine Telefonnummer angeben, wenn sie einen Termin buchen."
 				}
 			},
 			"action": "Speichern"
@@ -800,7 +800,7 @@
 		},
 		"access": {
 			"title": "Zugriff auf Klientendaten gewähren",
-			"description": "Willst Du {name} Zugriff auf alle Kundendaten geben?",
+			"description": "Willst Du {name} Zugriff auf alle Klientendaten geben?",
 			"action": "Zugriff gewähren",
 			"loading": "Zugriff wird gewährt ({success}/{total} Klienten)",
 			"success": "Zugriff gewährt",
@@ -880,7 +880,7 @@
 					"description": "Bitte geben Sie Ihre PIN ein:",
 					"action": "Zusammenfassung anzeigen",
 					"throttled": "Zu viele Anmeldeversuche. Bitte warten Sie einige Minuten, bevor Sie es erneut versuchen.",
-					"retry": "Versuchen Sie es erneut in {seconds} Sekunden"
+					"retry": "Versuchen Sie es erneut in {seconds} SeKlienten"
 				}
 			},
 			"summary": {
@@ -920,7 +920,7 @@
 		"loading": "Loading calendar",
 		"decrypting": "wird entschlüsselt...",
 		"decryptingError": "Entschlüsselung fehlgeschlagen. Bitte neu anmelden.",
-		"notificationHint": "Kunden werden per E-Mail benachrichtigt, wenn diese Benachrichtigungen aktiviert haben.",
+		"notificationHint": "Klienten werden per E-Mail benachrichtigt, wenn diese Benachrichtigungen aktiviert haben.",
 		"shownAppointments": {
 			"title": "Termine",
 			"options": {

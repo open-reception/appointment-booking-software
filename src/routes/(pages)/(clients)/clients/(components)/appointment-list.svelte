@@ -16,7 +16,7 @@
   import { Calendar, CircleAlert } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
-  import { appointmentStatusToBadge, cancelAppointmentByClient } from "./utils";
+  import { appointmentStatusToBadge } from "./utils";
 
   let tenant = $derived($publicStore.tenant);
   let step: "loading" | "list" | "error" = $state("loading");
@@ -36,19 +36,26 @@
   };
 
   const cancelAppointment = async () => {
-    if (!cancelling) return;
+    if (!cancelling || !tenant) return;
 
     isCancelling = true;
-
-    // TODO: Actually cancel appointment
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    getAppointments();
-    toast.success(m["clients.appointments.cancel.success"]());
-    toast.error(m["clients.appointments.cancel.error"]());
-
-    isCancelling = false;
-    cancelling = undefined;
+    await $publicStore.crypto
+      ?.cancelAppointmentByClient({
+        appointment: cancelling.id,
+        tenant: tenant.id,
+        email: cancelling.email,
+      })
+      .then(() => {
+        getAppointments();
+        toast.success(m["clients.appointments.cancel.success"]());
+        cancelling = undefined;
+      })
+      .catch(() => {
+        toast.error(m["clients.appointments.cancel.error"]());
+      })
+      .finally(() => {
+        isCancelling = false;
+      });
   };
 </script>
 

@@ -203,7 +203,7 @@ export class StaffService {
           eq(user.tenantId, tenantId),
           eq(user.isActive, true),
           or(eq(user.role, "TENANT_ADMIN"), eq(user.role, "STAFF")),
-          eq(user.confirmationState, "ACCESS_GRANTED"),
+          eq(user.confirmationState, "ACCESS_GRANTED"), // prevents us from deleting the last staff member with appointment access
         ),
       );
 

@@ -33,7 +33,7 @@
           $publicStore.crypto = new UnifiedAppointmentCrypto();
           await $publicStore.crypto
             .loginExistingClient($formData.email, $formData.pin, $publicStore.tenant.id)
-            .then((data) => {
+            .then(() => {
               toast.success(m["public.login.success"]());
               goto(resolve(ROUTES.CLIENTS.MAIN));
             })
