@@ -29,9 +29,10 @@ export const proceed = (
       Boolean(newAppointment.slot) &&
       Boolean(newAppointment.channel) &&
       Boolean(newAppointment.agent): {
+      const isLoggedIn = get(publicStore).crypto?.isClientAuthenticated() ?? false;
       const updatedAppointment: TPublicAppointment = {
         ...newAppointment,
-        step: "LOGIN",
+        step: isLoggedIn ? "SUMMARY" : "LOGIN",
       };
       if (!curAppointment.data) {
         publicStore.update((state) => ({

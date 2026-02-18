@@ -23,6 +23,7 @@ import { TenantService } from "../db/tenant-service";
 import Confirmation from "$lib/emails/Confirmation.svelte";
 import PinReset from "$lib/emails/PinReset.svelte";
 import UserInvite from "$lib/emails/UserInvite.svelte";
+import { dev } from "$app/environment";
 
 export type SelectClient = {
   email: string;
@@ -186,7 +187,6 @@ export async function sendAppointmentReminderEmail(
   user: SelectClient | SelectUser,
   tenant: SelectTenant,
   appointment: SelectAppointment,
-  cancelUrl?: string,
 ): Promise<void> {
   const agentService = await AgentService.forTenant(tenant.id);
   const agent = await agentService.getAgentById(appointment.agentId);
@@ -204,7 +204,7 @@ export async function sendAppointmentReminderEmail(
       tenant,
       appointment: { ...appointment, agentName: agent?.name ?? "---" },
       address: await getAddressFromTenant(tenant.id),
-      cancelUrl: cancelUrl || "",
+      cancelUrl: dev ? `http://localhost:5173/clients` : `https://${tenant.domain}/clients`,
     },
   });
   const html = renderOutputToHtml(emailRender);
@@ -294,7 +294,6 @@ export async function sendAppointmentCreatedEmail(
   tenant: SelectTenant,
   appointment: SelectAppointment,
   channelTitle?: string,
-  cancelUrl?: string,
 ): Promise<void> {
   // Create recipient directly for SelectClient type, use helper for SelectUser
 
@@ -316,7 +315,7 @@ export async function sendAppointmentCreatedEmail(
       tenant,
       appointment: { ...appointment, agentName: agent?.name ?? "---" },
       address: await getAddressFromTenant(tenant.id),
-      cancelUrl: cancelUrl || "",
+      cancelUrl: dev ? `http://localhost:5173/clients` : `https://${tenant.domain}/clients`,
     },
   });
   const html = renderOutputToHtml(emailRender);
