@@ -81,7 +81,7 @@
     <Form.Control>
       {#snippet children({ props })}
         <Form.Label class="mb-2">{m["form.pin"]()}</Form.Label>
-        <InputOtpCustomized bind:value={$formData.pin} disabled={isThrottled} />
+        <InputOtpCustomized {...props} bind:value={$formData.pin} disabled={isThrottled} />
       {/snippet}
     </Form.Control>
     <Form.FieldErrors />

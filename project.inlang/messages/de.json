@@ -880,7 +880,7 @@
 					"description": "Bitte geben Sie Ihre PIN ein:",
 					"action": "Zusammenfassung anzeigen",
 					"throttled": "Zu viele Anmeldeversuche. Bitte warten Sie einige Minuten, bevor Sie es erneut versuchen.",
-					"retry": "Versuchen Sie es erneut in {seconds} SeKlienten"
+					"retry": "Versuchen Sie es erneut in {seconds} Sekunden"
 				}
 			},
 			"summary": {
