@@ -811,9 +811,16 @@
 			"title": "Grant access to appointments",
 			"description": "Do you want to grant {name} access to all client data?",
 			"action": "Grant access",
-			"loading": "Granting access ({success}/{total} clients)",
-			"success": "Access granted",
-			"error": "Granting access to all clients failed. You can retry anytime.",
+			"loadingTunnels": "Loading client list",
+			"loadingAddingKeyShares": "Grandting access",
+			"success": {
+				"title": "Access granted",
+				"description": "{name} is now ready to decrypt appointments."
+			},
+			"error": {
+				"title": "Granting access failed",
+				"description": "You can retry anytime."
+			},
 			"unavailable": {
 				"title": "You can't grant access",
 				"description": "Only Appointment Managers and Tenant Admins can be granted access to client data."
