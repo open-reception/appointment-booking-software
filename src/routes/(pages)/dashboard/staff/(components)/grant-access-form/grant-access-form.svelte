@@ -12,6 +12,7 @@
   import { toast } from "svelte-sonner";
   import { addStaffKeyShares, fetchClientTunnels } from "../utils";
   import { Check, TriangleAlert } from "@lucide/svelte";
+  import { staffCrypto } from "$lib/stores/staff-crypto";
 
   let { entity, done }: { entity: TStaff; done: () => void } = $props();
   const myUserRole = $derived($auth.user?.role);
@@ -28,12 +29,36 @@
     step = "fetch-tunnels";
 
     try {
-      // Fetching tunnels
+      // Fetching all tunnels
       tunnels = await fetchClientTunnels(tenantId);
       step = "add-staff-key-shares";
 
+      // For each tunnel: decrypt clientEncryptedTunnelKey with cur user private key,
+      const allPublicKeys = (await $staffCrypto.crypto?.fetchStaffPublicKeys(tenantId)) || [];
+      const newUserPublicKeys = allPublicKeys.filter((x) => x.userId === entity.id);
+      console.log("allPublicKeys", allPublicKeys);
+      console.log("newUserPublicKeys", newUserPublicKeys);
+
+      const keyShares = await Promise.all(
+        tunnels.map(async (tunnel) => {
+          const decryptedTunnelKey = await $staffCrypto.crypto?.decryptTunnelKeyByStaff(
+            tunnel.clientEncryptedTunnelKey!,
+          );
+          if (decryptedTunnelKey) {
+            return {
+              tunnelId: tunnel.id,
+              encryptedTunnelKey: $staffCrypto.crypto?.encryptTunnelKeyForStaff(
+                newUserPublicKeys,
+                decryptedTunnelKey,
+              ),
+            };
+          }
+        }),
+      );
+      console.log("keyShares", keyShares);
+
       // Setting staff key shares
-      const isOk = await addStaffKeyShares(tenantId, entity.id, tunnels);
+      const isOk = await addStaffKeyShares(tenantId, entity.id, keyShares);
       if (isOk) {
         step = "success";
         isSubmitting = false;

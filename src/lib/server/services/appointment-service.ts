@@ -46,6 +46,7 @@ export interface ClientTunnelResponse {
   id: string;
   emailHash: string;
   clientPublicKey: string;
+  clientEncryptedTunnelKey?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -439,6 +440,7 @@ export class AppointmentService {
       .select({
         id: tenantSchema.clientAppointmentTunnel.id,
         emailHash: tenantSchema.clientAppointmentTunnel.emailHash,
+        clientEncryptedTunnelKey: tenantSchema.clientAppointmentTunnel.clientEncryptedTunnelKey,
         clientPublicKey: tenantSchema.clientAppointmentTunnel.clientPublicKey,
         createdAt: tenantSchema.clientAppointmentTunnel.createdAt,
         updatedAt: tenantSchema.clientAppointmentTunnel.updatedAt,
@@ -455,6 +457,7 @@ export class AppointmentService {
       id: tunnel.id,
       emailHash: tunnel.emailHash,
       clientPublicKey: tunnel.clientPublicKey,
+      clientEncryptedTunnelKey: tunnel.clientEncryptedTunnelKey,
       createdAt: tunnel.createdAt?.toISOString(),
       updatedAt: tunnel.updatedAt?.toISOString(),
     }));
