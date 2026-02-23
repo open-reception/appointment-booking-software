@@ -1315,23 +1315,17 @@ export class UnifiedAppointmentCrypto {
   }
 
   async decryptTunnelKeyByStaff(staffKeyShare: string): Promise<CryptoKey> {
-    console.log("--- decryptTunnelKeyByStaff()");
-    console.log("staffKeyPair", this.staffKeyPair);
     if (!this.staffAuthenticated || !this.staffKeyPair) {
       throw new Error("Staff not authenticated");
     }
 
-    console.log("1");
-
     if (this.keyExpiry && Date.now() > this.keyExpiry) {
       throw new Error("Staff session expired - please authenticate again");
     }
-    console.log("2");
 
     try {
       // Parse the staffKeyShare which now contains: encapsulatedSecret || iv || encryptedTunnelKey
       const staffKeyShareBytes = this.hexToUint8Array(staffKeyShare);
-      console.log("3");
 
       // ML-KEM-768 encapsulated secret is 1088 bytes
       const ENCAPSULATED_SECRET_LENGTH = 1088;
@@ -1342,7 +1336,6 @@ export class UnifiedAppointmentCrypto {
           `staffKeyShare too short: ${staffKeyShareBytes.length} bytes, expected at least ${ENCAPSULATED_SECRET_LENGTH + IV_LENGTH}`,
         );
       }
-      console.log("4");
 
       const encapsulatedSecret = staffKeyShareBytes.slice(0, ENCAPSULATED_SECRET_LENGTH);
       const iv = staffKeyShareBytes.slice(
@@ -1356,7 +1349,6 @@ export class UnifiedAppointmentCrypto {
         this.staffKeyPair.privateKey,
         encapsulatedSecret,
       );
-      console.log("5", sharedSecret);
 
       // 2. Use first 32 bytes of shared secret as AES key
       const aesKeyBytes = sharedSecret.slice(0, 32);
@@ -1365,10 +1357,23 @@ export class UnifiedAppointmentCrypto {
       const aesKey = await crypto.subtle.importKey("raw", aesKeyBytes, { name: "AES-GCM" }, false, [
         "decrypt",
       ]);
-      console.log("6", aesKey);
-      return aesKey;
+
+      // 3. Decrypt the tunnel key
+      const decryptedTunnelKey = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv },
+        aesKey,
+        encryptedTunnelKey,
+      );
+
+      // 4. Import and return tunnel key as CryptoKey
+      return await crypto.subtle.importKey(
+        "raw",
+        new Uint8Array(decryptedTunnelKey),
+        { name: "AES-GCM" },
+        true,
+        ["encrypt", "decrypt"],
+      );
     } catch (error) {
-      console.error("❌ Failed to decrypt staff appointment:", error);
       throw new Error(
         `Decryption failed: ${error instanceof Error ? error.message : String(error)}`,
       );

@@ -46,7 +46,7 @@ export interface ClientTunnelResponse {
   id: string;
   emailHash: string;
   clientPublicKey: string;
-  clientEncryptedTunnelKey?: string;
+  currentStaffEncryptedTunnelKey?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -431,22 +431,37 @@ export class AppointmentService {
   /**
    * Get all client tunnels for the tenant
    */
-  public async getClientTunnels(): Promise<ClientTunnelResponse[]> {
+  public async getClientTunnels(staffUserId?: string): Promise<ClientTunnelResponse[]> {
     const log = logger.setContext("AppointmentService");
-    log.debug("Fetching client tunnels", { tenantId: this.tenantId });
+    log.debug("Fetching client tunnels", { tenantId: this.tenantId, staffUserId });
     const db = await this.getDb();
 
     const tunnels = await db
       .select({
         id: tenantSchema.clientAppointmentTunnel.id,
         emailHash: tenantSchema.clientAppointmentTunnel.emailHash,
-        clientEncryptedTunnelKey: tenantSchema.clientAppointmentTunnel.clientEncryptedTunnelKey,
         clientPublicKey: tenantSchema.clientAppointmentTunnel.clientPublicKey,
         createdAt: tenantSchema.clientAppointmentTunnel.createdAt,
         updatedAt: tenantSchema.clientAppointmentTunnel.updatedAt,
       })
       .from(tenantSchema.clientAppointmentTunnel)
       .orderBy(tenantSchema.clientAppointmentTunnel.createdAt);
+
+    let encryptedTunnelKeyByTunnelId = new Map<string, string>();
+
+    if (staffUserId) {
+      const staffKeyShares = await db
+        .select({
+          tunnelId: tenantSchema.clientTunnelStaffKeyShare.tunnelId,
+          encryptedTunnelKey: tenantSchema.clientTunnelStaffKeyShare.encryptedTunnelKey,
+        })
+        .from(tenantSchema.clientTunnelStaffKeyShare)
+        .where(eq(tenantSchema.clientTunnelStaffKeyShare.userId, staffUserId));
+
+      encryptedTunnelKeyByTunnelId = new Map(
+        staffKeyShares.map((share) => [share.tunnelId, share.encryptedTunnelKey]),
+      );
+    }
 
     log.debug("Client tunnels retrieved successfully", {
       tenantId: this.tenantId,
@@ -457,7 +472,7 @@ export class AppointmentService {
       id: tunnel.id,
       emailHash: tunnel.emailHash,
       clientPublicKey: tunnel.clientPublicKey,
-      clientEncryptedTunnelKey: tunnel.clientEncryptedTunnelKey,
+      currentStaffEncryptedTunnelKey: encryptedTunnelKeyByTunnelId.get(tunnel.id),
       createdAt: tunnel.createdAt?.toISOString(),
       updatedAt: tunnel.updatedAt?.toISOString(),
     }));

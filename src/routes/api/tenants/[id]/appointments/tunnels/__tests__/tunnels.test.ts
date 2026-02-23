@@ -17,6 +17,7 @@ describe("Client Tunnels API", () => {
             id: "tunnel-uuid-1",
             emailHash: "sha256-hash-of-client-email",
             clientPublicKey: "base64-encoded-ml-kem-768-key",
+            currentStaffEncryptedTunnelKey: "encrypted-key-for-current-staff",
             createdAt: "2024-01-01T00:00:00.000Z",
             updatedAt: "2024-01-01T00:00:00.000Z",
           },
@@ -27,6 +28,8 @@ describe("Client Tunnels API", () => {
       expect(mockTunnelResponse.tunnels[0]).toHaveProperty("id");
       expect(mockTunnelResponse.tunnels[0]).toHaveProperty("emailHash");
       expect(mockTunnelResponse.tunnels[0]).toHaveProperty("clientPublicKey");
+      expect(mockTunnelResponse.tunnels[0]).toHaveProperty("currentStaffEncryptedTunnelKey");
+      expect(mockTunnelResponse.tunnels[0]).not.toHaveProperty("clientEncryptedTunnelKey");
     });
 
     it("should validate email hash format", () => {

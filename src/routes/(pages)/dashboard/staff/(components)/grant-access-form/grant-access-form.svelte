@@ -23,7 +23,8 @@
   let tunnels: ClientTunnelResponse[] = $state([]);
 
   const grantAccess = async () => {
-    if (!tenantId) return;
+    if (!tenantId || !$staffCrypto.crypto) return;
+    const cryptoClient = $staffCrypto.crypto;
 
     isSubmitting = true;
     step = "fetch-tunnels";
@@ -33,26 +34,37 @@
       tunnels = await fetchClientTunnels(tenantId);
       step = "add-staff-key-shares";
 
-      // For each tunnel: decrypt clientEncryptedTunnelKey with cur user private key,
-      const allPublicKeys = (await $staffCrypto.crypto?.fetchStaffPublicKeys(tenantId)) || [];
+      // For each tunnel: decrypt currentStaffEncryptedTunnelKey with current user private key
+      const allPublicKeys = await cryptoClient.fetchStaffPublicKeys(tenantId);
       const newUserPublicKeys = allPublicKeys.filter((x) => x.userId === entity.id);
-      console.log("allPublicKeys", allPublicKeys);
-      console.log("newUserPublicKeys", newUserPublicKeys);
+
+      if (newUserPublicKeys.length === 0) {
+        throw new Error("No public key found for target staff member");
+      }
 
       const keyShares = await Promise.all(
         tunnels.map(async (tunnel) => {
-          const decryptedTunnelKey = await $staffCrypto.crypto?.decryptTunnelKeyByStaff(
-            tunnel.clientEncryptedTunnelKey!,
-          );
-          if (decryptedTunnelKey) {
-            return {
-              tunnelId: tunnel.id,
-              encryptedTunnelKey: $staffCrypto.crypto?.encryptTunnelKeyForStaff(
-                newUserPublicKeys,
-                decryptedTunnelKey,
-              ),
-            };
+          if (!tunnel.currentStaffEncryptedTunnelKey) {
+            throw new Error(`Missing current staff key share for tunnel ${tunnel.id}`);
           }
+
+          const decryptedTunnelKey = await cryptoClient.decryptTunnelKeyByStaff(
+            tunnel.currentStaffEncryptedTunnelKey,
+          );
+
+          const encryptedForNewStaff = await cryptoClient.encryptTunnelKeyForStaff(
+            newUserPublicKeys,
+            decryptedTunnelKey,
+          );
+
+          if (encryptedForNewStaff.length === 0) {
+            throw new Error(`Failed to encrypt tunnel key for new staff on tunnel ${tunnel.id}`);
+          }
+
+          return {
+            tunnelId: tunnel.id,
+            encryptedTunnelKey: encryptedForNewStaff[0].encryptedTunnelKey,
+          };
         }),
       );
       console.log("keyShares", keyShares);
