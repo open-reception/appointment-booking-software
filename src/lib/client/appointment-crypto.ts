@@ -1089,11 +1089,34 @@ export class UnifiedAppointmentCrypto {
       // Public key is stored as Base64, not Hex
       const staffPublicKeyBytes = this.base64ToUint8Array(staff.publicKey);
 
+      console.log("🔐 Encrypting tunnel key for staff:", {
+        userId: staff.userId,
+        publicKeyLength: staffPublicKeyBytes.length,
+        publicKeyHex:
+          Array.from(staffPublicKeyBytes)
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("")
+            .substring(0, 64) + "...",
+        tunnelKeyLength: tunnelKeyArray.length,
+      });
+
       // Kyber encapsulation creates a shared secret
       const { sharedSecret, encapsulatedSecret } = KyberCrypto.encapsulate(staffPublicKeyBytes);
 
+      console.log("🔑 Kyber encapsulation done:", {
+        sharedSecretLength: sharedSecret.length,
+        encapsulatedSecretLength: encapsulatedSecret.length,
+      });
+
       // Use the first 32 bytes of shared secret as AES key (same as decryption)
       const aesKeyBytes = sharedSecret.slice(0, 32);
+
+      console.log(
+        "🔑 AES key for encryption (hex):",
+        Array.from(aesKeyBytes)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join(""),
+      );
 
       // Import as CryptoKey for Web Crypto API
       const aesKey = await crypto.subtle.importKey("raw", aesKeyBytes, { name: "AES-GCM" }, false, [
@@ -1102,6 +1125,19 @@ export class UnifiedAppointmentCrypto {
 
       // Generate IV for AES-GCM
       const iv = BufferUtils.randomBytes(12);
+
+      console.log(
+        "📍 IV for encryption (hex):",
+        Array.from(iv)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join(""),
+      );
+      console.log(
+        "🔒 Tunnel key to encrypt (hex):",
+        Array.from(tunnelKeyArray)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join(""),
+      );
 
       // Encrypt tunnel key with AES-GCM
       const encrypted = await crypto.subtle.encrypt(
@@ -1112,6 +1148,13 @@ export class UnifiedAppointmentCrypto {
 
       // encrypted contains ciphertext + 16-byte auth tag
       const encryptedArray = new Uint8Array(encrypted);
+
+      console.log(
+        "🔒 Encrypted tunnel key (hex):",
+        Array.from(encryptedArray)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join(""),
+      );
 
       // Store: encapsulatedSecret || iv || encrypted (ciphertext+authTag)
       const combined = new Uint8Array(
