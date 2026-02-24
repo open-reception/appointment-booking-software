@@ -50,10 +50,5 @@ export const addStaffKeyShares = async (
   }
 
   const body: { success: boolean; skipped: number } = await resp.json();
-
-  if (resp.status < 400 && body.skipped === 0) {
-    return true;
-  } else {
-    return false;
-  }
+  return resp.status < 400 && body.success;
 };
