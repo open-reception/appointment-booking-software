@@ -17,7 +17,7 @@
   let { entity, done }: { entity: TStaff; done: () => void } = $props();
   const myUserRole = $derived($auth.user?.role);
   const tenantId = $derived($auth.user?.tenantId);
-  let step: "init" | "fetch-tunnels" | "add-staff-key-shares" | "success" | "error" =
+  let step: "init" | "fetch-tunnels" | "add-staff-key-shares" | "error-no-public-key" | "error" =
     $state("init");
   let isSubmitting = $state(false);
   let tunnels: ClientTunnelResponse[] = $state([]);
@@ -39,7 +39,8 @@
       const newUserPublicKeys = allPublicKeys.filter((x) => x.userId === entity.id);
 
       if (newUserPublicKeys.length === 0) {
-        throw new Error("No public key found for target staff member");
+        step = "error-no-public-key";
+        return;
       }
 
       const keyShares = await Promise.all(
@@ -67,14 +68,12 @@
           };
         }),
       );
-      console.log("keyShares", keyShares);
 
       // Setting staff key shares
       const isOk = await addStaffKeyShares(tenantId, entity.id, keyShares);
       if (isOk) {
-        step = "success";
         isSubmitting = false;
-        toast.success(m["staff.access.success.title"]());
+        toast.success(m["staff.access.success"]({ name: entity.name }));
         done();
       } else {
         step = "error";
@@ -118,11 +117,11 @@
     <CenterLoadingState label={m["staff.access.loadingTunnels"]()} />
   {:else if step === "add-staff-key-shares"}
     <CenterLoadingState label={m["staff.access.loadingAddingKeyShares"]()} />
-  {:else if step === "success"}
+  {:else if step === "error-no-public-key"}
     <CenterState
-      headline={m["staff.access.success.title"]()}
-      description={m["staff.access.success.description"]({ name: entity.name })}
-      Icon={Check}
+      headline={m["staff.access.errorNoPublicKey.title"]()}
+      description={m["staff.access.errorNoPublicKey.description"]()}
+      Icon={TriangleAlert}
       size="sm"
     />
   {:else if step === "error"}

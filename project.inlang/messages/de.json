@@ -804,9 +804,10 @@
 			"action": "Zugriff gewähren",
 			"loadingTunnels": "Lade Liste aller Klienten",
 			"loadingAddingKeyShares": "Gewähre Zugriff",
-			"success": {
-				"title": "Zugriff gewährt",
-				"description": "{name} kann jetzt Termine entschlüsseln."
+			"success": "Zugriff gewährt. {name} kann jetzt Termine entschlüsseln.",
+			"errorNoPublicKey": {
+				"title": "Zugriff gewähren fehlgeschlagen",
+				"description": "Diese Person muss zuerst die Einladung annehmen und ihren Passkey hinzufügen."
 			},
 			"error": {
 				"title": "Zugriff gewähren fehlgeschlagen",
@@ -927,6 +928,7 @@
 		"loading": "Loading calendar",
 		"decrypting": "wird entschlüsselt...",
 		"decryptingError": "Entschlüsselung fehlgeschlagen. Bitte neu anmelden.",
+		"decryptingErrorNoKeyShare": "Entschlüsselung fehlgeschlagen. Bitten Sie ein Teammitglied, Ihnen Zugriff zu gewähren.",
 		"notificationHint": "Klienten werden per E-Mail benachrichtigt, wenn diese Benachrichtigungen aktiviert haben.",
 		"shownAppointments": {
 			"title": "Termine",

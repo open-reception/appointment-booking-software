@@ -11,13 +11,16 @@ import { formSchema as editFormSchema } from "./(components)/edit-staff-member-f
 const log = logger.setContext(import.meta.filename);
 
 export const load = async (event) => {
-  if (!event.locals.user?.tenantId) {
+  const tenantId = event.locals.user?.tenantId;
+  event.depends(`app:staff-${tenantId}`);
+
+  if (!tenantId) {
     log.error("User trying to access staff, but has no tenantId");
     redirect(302, ROUTES.LOGOUT);
   }
 
   const list = event
-    .fetch(`/api/tenants/${event.locals.user?.tenantId}/staff`, {
+    .fetch(`/api/tenants/${tenantId}/staff`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
