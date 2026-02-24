@@ -7,12 +7,12 @@
   import { Text } from "$lib/components/ui/typography";
   import type { ClientTunnelResponse } from "$lib/server/services/appointment-service";
   import { auth } from "$lib/stores/auth";
+  import { staffCrypto } from "$lib/stores/staff-crypto";
   import type { TStaff } from "$lib/types/users";
+  import { TriangleAlert } from "@lucide/svelte";
   import StopIcon from "@lucide/svelte/icons/octagon-x";
   import { toast } from "svelte-sonner";
   import { addStaffKeyShares, fetchClientTunnels } from "../utils";
-  import { Check, TriangleAlert } from "@lucide/svelte";
-  import { staffCrypto } from "$lib/stores/staff-crypto";
 
   let { entity, done }: { entity: TStaff; done: () => void } = $props();
   const myUserRole = $derived($auth.user?.role);
