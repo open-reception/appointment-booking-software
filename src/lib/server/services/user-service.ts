@@ -578,6 +578,8 @@ export class UserService {
           name: centralSchema.user.name,
           role: centralSchema.user.role,
           tenantId: centralSchema.user.tenantId,
+          isActive: centralSchema.user.isActive,
+          confirmationState: centralSchema.user.confirmationState,
         })
         .from(centralSchema.user)
         .where(eq(centralSchema.user.id, userId))
@@ -591,7 +593,11 @@ export class UserService {
       const user = userToDelete[0];
 
       // We cannot delete the last user with access to the tenant's appointments
-      if (user.role === "TENANT_ADMIN" || user.role === "STAFF") {
+      if (
+        (user.role === "TENANT_ADMIN" || user.role === "STAFF") &&
+        user.isActive === true &&
+        user.confirmationState === "ACCESS_GRANTED"
+      ) {
         const usersCount = await tx
           .select({ count: count() })
           .from(centralSchema.user)

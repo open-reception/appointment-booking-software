@@ -370,6 +370,8 @@ describe("UserService", () => {
                       name: "Last Admin",
                       role: "TENANT_ADMIN",
                       tenantId: "tenant-123",
+                      isActive: true,
+                      confirmationState: "ACCESS_GRANTED",
                     },
                   ]),
                 }),
@@ -412,6 +414,8 @@ describe("UserService", () => {
                       name: "Deleted Admin",
                       role: "TENANT_ADMIN",
                       tenantId: "tenant-123",
+                      isActive: true,
+                      confirmationState: "ACCESS_GRANTED",
                     },
                   ]),
                 }),
@@ -444,6 +448,57 @@ describe("UserService", () => {
       expect(result.deletedUser).toEqual(mockDeletedAdmin);
       expect(result.deletedPasskeysCount).toBe(1);
       expect(result.tenantId).toBe("tenant-123");
+    });
+
+    it("should allow deleting non-ACCESS_GRANTED staff", async () => {
+      const userId = "018f-a1b2-c3d4-e5f6-789abcdef099";
+      const mockDeletedUser = {
+        id: userId,
+        name: "Pending Staff",
+        email: "pending@example.com",
+        role: "STAFF",
+      };
+
+      const mockTransaction = vi.fn().mockImplementation(async (callback) => {
+        const tx = {
+          select: vi.fn().mockReturnValueOnce({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue([
+                  {
+                    id: userId,
+                    email: "pending@example.com",
+                    name: "Pending Staff",
+                    role: "STAFF",
+                    tenantId: "tenant-123",
+                    isActive: true,
+                    confirmationState: "CONFIRMED",
+                  },
+                ]),
+              }),
+            }),
+          }),
+          delete: vi
+            .fn()
+            .mockReturnValueOnce({
+              where: vi.fn().mockResolvedValue({ count: 0 }),
+            })
+            .mockReturnValueOnce({
+              where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([mockDeletedUser]),
+              }),
+            }),
+        };
+        return await callback(tx);
+      });
+
+      mockCentralDb.transaction.mockImplementation(mockTransaction);
+
+      const result = await UserService.deleteUser(userId);
+
+      expect(result.success).toBe(true);
+      expect(result.deletedUser).toEqual(mockDeletedUser);
+      expect(result.deletedPasskeysCount).toBe(0);
     });
   });
 

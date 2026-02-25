@@ -159,7 +159,7 @@ export const actions: Actions = {
     }
 
     const resp = await event.fetch(
-      `/api/tenants/${event.locals.user?.tenantId}/staff/${form.data.id}?confirmationState=${form.data.confirmationState}`,
+      `/api/tenants/${event.locals.user?.tenantId}/staff/${form.data.id}`,
       {
         method: "DELETE",
         headers: {

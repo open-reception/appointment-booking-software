@@ -148,20 +148,39 @@ describe("StaffService", () => {
   });
 
   describe("deleteStaffMember", () => {
-    it("should prevent deletion of last staff member", async () => {
+    it("should propagate validation errors from UserService", async () => {
       const { centralDb } = await import("../../db");
+      const { UserService } = await import("../user-service");
 
-      // Mock the non-global admin staff check - only one staff member exists
-      const mockSelectBuilder = {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue([
-          {
-            id: "staff-123", // Only one staff member
-          },
-        ]),
-      };
+      vi.mocked(UserService.deleteUser).mockRejectedValue(
+        new ValidationError("Cannot delete the last STAFF user for this tenant"),
+      );
 
-      vi.mocked(centralDb.select).mockReturnValue(mockSelectBuilder as any);
+      const mockTransaction = vi.fn().mockImplementation(async (callback) => {
+        const tx = {
+          select: vi.fn().mockReturnValueOnce({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue([
+                  {
+                    id: "staff-123",
+                    email: "staff@example.com",
+                    name: "Staff Member",
+                    role: "STAFF",
+                    tenantId: "tenant-123",
+                  },
+                ]),
+              }),
+            }),
+          }),
+          delete: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue({ count: 1 }),
+          }),
+        };
+        return await callback(tx);
+      });
+
+      vi.mocked(centralDb.transaction).mockImplementation(mockTransaction);
 
       await expect(StaffService.deleteStaffMember("tenant-123", "staff-123")).rejects.toThrow(
         ValidationError,
@@ -171,21 +190,6 @@ describe("StaffService", () => {
     it("should delete a staff member successfully when multiple exist", async () => {
       const { centralDb, getTenantDb } = await import("../../db");
       const { UserService } = await import("../user-service");
-
-      // Mock the non-global admin staff check - multiple staff members exist
-      const mockSelectBuilder = {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue([
-          {
-            id: "staff-123",
-          },
-          {
-            id: "staff-456", // Multiple staff members
-          },
-        ]),
-      };
-
-      vi.mocked(centralDb.select).mockReturnValue(mockSelectBuilder as any);
 
       // Mock UserService.deleteUser - wichtig: das muss vor der transaction() mock sein
       const mockUserDeletionResult = {
@@ -253,27 +257,24 @@ describe("StaffService", () => {
     it("should throw NotFoundError when staff member not found", async () => {
       const { centralDb } = await import("../../db");
 
-      // Mock the pre-transaction select queries
-      const mockSelectBuilder = {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue([
-          {
-            id: "staff-456", // Different ID to simulate multiple staff members
-          },
-        ]),
-      };
-
-      vi.mocked(centralDb.select).mockReturnValue(mockSelectBuilder as any);
-
       const mockTransaction = vi.fn().mockImplementation(async (callback) => {
         const tx = {
-          select: vi.fn().mockReturnValue({
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([]), // No user found
+          select: vi
+            .fn()
+            .mockReturnValueOnce({
+              from: vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue([]), // No user found
+                }),
+              }),
+            })
+            .mockReturnValueOnce({
+              from: vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue([]), // No invite found
+                }),
               }),
             }),
-          }),
         };
         return await callback(tx);
       });
@@ -283,6 +284,44 @@ describe("StaffService", () => {
       await expect(StaffService.deleteStaffMember("tenant-123", "staff-123")).rejects.toThrow(
         NotFoundError,
       );
+    });
+
+    it("should delete invited staff member when no user exists", async () => {
+      const { centralDb } = await import("../../db");
+
+      const mockTransaction = vi.fn().mockImplementation(async (callback) => {
+        const tx = {
+          select: vi
+            .fn()
+            .mockReturnValueOnce({
+              from: vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue([]), // No user found
+                }),
+              }),
+            })
+            .mockReturnValueOnce({
+              from: vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue([{ id: "staff-123" }]), // Invite found
+                }),
+              }),
+            }),
+          delete: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue({ count: 1 }),
+          }),
+        };
+        return await callback(tx);
+      });
+
+      vi.mocked(centralDb.transaction).mockImplementation(mockTransaction);
+
+      const result = await StaffService.deleteStaffMember("tenant-123", "staff-123");
+
+      expect(result.success).toBe(true);
+      expect(result.deletedUser.id).toBe("staff-123");
+      expect(result.deletedPasskeysCount).toBe(0);
+      expect(result.deletedKeySharesCount).toBe(0);
     });
   });
 

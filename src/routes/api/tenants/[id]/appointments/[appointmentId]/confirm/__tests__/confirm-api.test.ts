@@ -78,7 +78,7 @@ describe("Appointment Confirm API Route", () => {
       expect(mockAppointmentService.confirmAppointment).toHaveBeenCalledWith(
         mockAppointmentId,
         undefined,
-        "de",
+        "en",
       );
     });
 

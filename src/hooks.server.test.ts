@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { handle } from "./hooks.server";
 import { mockCookies } from "$lib/tests/const";
+import { RATE_LIMIT_MAX_REQUESTS } from "./server-hooks/rateLimitHandle";
 
 // Mock the sequence function to avoid the request store issue
 vi.mock("@sveltejs/kit/hooks", () => ({
@@ -116,7 +117,7 @@ describe("hooks.server", () => {
       const event = createEvent("192.168.1.101"); // Unique IP for this test
 
       // Make multiple requests to exceed rate limit
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < RATE_LIMIT_MAX_REQUESTS; i++) {
         await handle({ event, resolve: mockResolve });
       }
 
@@ -131,7 +132,7 @@ describe("hooks.server", () => {
       const event = createEvent("192.168.1.102"); // Unique IP for this test
 
       // Exceed rate limit
-      for (let i = 0; i < 11; i++) {
+      for (let i = 0; i < RATE_LIMIT_MAX_REQUESTS + 1; i++) {
         await handle({ event, resolve: mockResolve });
       }
 

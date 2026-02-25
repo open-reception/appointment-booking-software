@@ -185,7 +185,6 @@ export class StaffService {
     tenantId: string,
     staffId: string,
     currentUserId?: string,
-    confirmationState?: "INVITED" | "CONFIRMED" | "ACCESS_GRANTED",
   ): Promise<StaffDeletionResult> {
     logger.debug("Deleting staff member", { tenantId, staffId, currentUserId });
 
@@ -194,57 +193,39 @@ export class StaffService {
       throw new ValidationError("You cannot delete your own account");
     }
 
-    // Check if this is the only non-global admin staff member
-    const nonGlobalAdminStaff = await centralDb
-      .select({ id: user.id })
-      .from(user)
-      .where(
-        and(
-          eq(user.tenantId, tenantId),
-          eq(user.isActive, true),
-          or(eq(user.role, "TENANT_ADMIN"), eq(user.role, "STAFF")),
-          eq(user.confirmationState, "ACCESS_GRANTED"), // prevents us from deleting the last staff member with appointment access
-        ),
-      );
-
-    if (nonGlobalAdminStaff.length === 1 && nonGlobalAdminStaff[0].id === staffId) {
-      throw new ValidationError("Cannot delete the last active non-global admin staff member");
-    }
-
     try {
       // Use transaction to ensure all related data is deleted consistently
       const result = await centralDb.transaction(async (tx) => {
-        // First, verify the user exists and belongs to this tenant
-        if (confirmationState !== "INVITED") {
-          const userToDelete = await tx
-            .select({
-              id: user.id,
-              email: user.email,
-              name: user.name,
-              role: user.role,
-              tenantId: user.tenantId,
-            })
-            .from(user)
-            .where(and(eq(user.id, staffId), eq(user.tenantId, tenantId)))
-            .limit(1);
+        const userToDelete = await tx
+          .select({
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            tenantId: user.tenantId,
+          })
+          .from(user)
+          .where(and(eq(user.id, staffId), eq(user.tenantId, tenantId)))
+          .limit(1);
 
-          if (userToDelete.length === 0) {
-            throw new NotFoundError("Staff member not found in this tenant");
-          }
-
-          // Use UserService to delete central database data (user + passkeys) first
-          // This ensures all validation logic is applied before deleting tenant data
-          const userDeletionResult = await UserService.deleteUser(staffId, tx);
-
-          // Remove old invites of user if any exist
+        if (userToDelete.length > 0) {
+          // Remove invites referencing this user before deleting user to avoid FK violations on createdUserId
           const deletedInvites = await tx
             .delete(userInvite)
-            .where(eq(userInvite.email, userToDelete[0].email));
+            .where(
+              or(
+                eq(userInvite.createdUserId, staffId),
+                eq(userInvite.email, userToDelete[0].email),
+              ),
+            );
           logger.debug("Deleted user invites", {
             staffId,
             tenantId,
             deletedCount: deletedInvites.count || 0,
           });
+
+          // Use UserService to delete central database data (user + passkeys)
+          const userDeletionResult = await UserService.deleteUser(staffId, tx);
 
           // Delete tenant-specific data (client tunnel key shares) after user deletion succeeds
           const tenantDb = await getTenantDb(tenantId);
@@ -262,7 +243,6 @@ export class StaffService {
             deletedKeySharesCount,
           });
 
-          // Combine results for staff-specific response format
           const staffDeletionResult: StaffDeletionResult = {
             success: userDeletionResult.success,
             deletedUser: userDeletionResult.deletedUser,
@@ -279,7 +259,15 @@ export class StaffService {
           });
 
           return staffDeletionResult;
-        } else {
+        }
+
+        const inviteToDelete = await tx
+          .select({ id: userInvite.id })
+          .from(userInvite)
+          .where(and(eq(userInvite.id, staffId), eq(userInvite.tenantId, tenantId)))
+          .limit(1);
+
+        if (inviteToDelete.length > 0) {
           const deletedInvites = await tx.delete(userInvite).where(eq(userInvite.id, staffId));
           logger.debug("Deleted user invites", {
             staffId,
@@ -299,17 +287,19 @@ export class StaffService {
             deletedKeySharesCount: 0,
           };
         }
+
+        throw new NotFoundError("Staff member not found in this tenant");
       });
       return result;
     } catch (error) {
-      if (error instanceof ValidationError || error instanceof NotFoundError) {
-        throw error;
-      }
       logger.error("Failed to delete staff member", {
         tenantId,
         staffId,
         error: String(error),
       });
+      if (error instanceof ValidationError || error instanceof NotFoundError) {
+        throw error;
+      }
       throw new InternalError("Failed to delete staff member");
     }
   }
