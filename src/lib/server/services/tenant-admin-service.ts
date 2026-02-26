@@ -190,7 +190,9 @@ export class TenantAdminService {
         // Do not log logo to not spam logs
         data: {
           ...tenant.#tenant,
-          databaseUrl: redactDbUrl(tenant.#tenant.databaseUrl),
+          databaseUrl: tenant.#tenant.databaseUrl
+            ? redactDbUrl(tenant.#tenant.databaseUrl)
+            : "<missing-db-url>",
           logo: tenant.#tenant.logo ? "removed-from-log-but-set" : null,
         },
       });

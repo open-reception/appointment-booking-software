@@ -6,7 +6,7 @@ const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 /** Rate limiting window duration in milliseconds */
 const RATE_LIMIT_WINDOW = 2000; // ms
 /** Maximum requests allowed per rate limiting window */
-const RATE_LIMIT_MAX_REQUESTS = 20;
+export const RATE_LIMIT_MAX_REQUESTS = 20;
 
 /**
  * Extracts the client IP address from request headers
