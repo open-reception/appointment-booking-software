@@ -48,6 +48,11 @@ registerOpenAPIRoute("/tenants/{id}/appointments/tunnels", "GET", {
                       type: "string",
                       description: "Client's ML-KEM-768 public key",
                     },
+                    currentStaffEncryptedTunnelKey: {
+                      type: "string",
+                      description:
+                        "Tunnel key encrypted for the currently authenticated staff user",
+                    },
                     createdAt: {
                       type: "string",
                       format: "date-time",
@@ -58,9 +63,8 @@ registerOpenAPIRoute("/tenants/{id}/appointments/tunnels", "GET", {
                       format: "date-time",
                       description: "Last update timestamp",
                     },
-                    isActive: { type: "boolean", description: "Whether tunnel is active" },
                   },
-                  required: ["id", "emailHash", "clientPublicKey", "isActive"],
+                  required: ["id", "emailHash", "clientPublicKey"],
                 },
               },
             },
@@ -114,21 +118,23 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
   checkPermission(locals, tenantId, false);
 
+  const requesterUserId = locals.user?.id;
+
   try {
-    log.debug("Fetching client tunnels", { tenantId, requesterId: locals.user?.id });
+    log.debug("Fetching client tunnels", { tenantId, requesterId: requesterUserId });
 
     const appointmentService = await AppointmentService.forTenant(tenantId);
-    const tunnels = await appointmentService.getClientTunnels();
+    const tunnels = await appointmentService.getClientTunnels(requesterUserId);
 
     log.debug("Client tunnels retrieved successfully", {
       tenantId,
-      requesterId: locals.user?.id,
+      requesterId: requesterUserId,
       tunnelCount: tunnels.length,
     });
 
     return json({ tunnels });
   } catch (error) {
-    logError(log)("Error fetching client tunnels", error, locals.user?.id, tenantId);
+    logError(log)("Error fetching client tunnels", error, requesterUserId, tenantId);
 
     if (error instanceof BackendError) {
       return error.toJson();

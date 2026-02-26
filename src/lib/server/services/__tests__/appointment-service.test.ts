@@ -146,6 +146,70 @@ describe("AppointmentService", () => {
 
       expect(result).toEqual([]);
     });
+
+    it("should include current staff encrypted tunnel key when staffUserId is provided", async () => {
+      const { getTenantDb } = await import("../../db");
+
+      const mockSelect = vi
+        .fn()
+        .mockReturnValueOnce({
+          from: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockResolvedValue([mockClientTunnel]),
+          }),
+        })
+        .mockReturnValueOnce({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue([
+              {
+                tunnelId: "tunnel-123",
+                encryptedTunnelKey: "staff-encrypted-tunnel-key",
+              },
+            ]),
+          }),
+        });
+
+      const mockDb = {
+        select: mockSelect,
+      };
+
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+      const result = await service.getClientTunnels("staff-123");
+
+      expect(result).toHaveLength(1);
+      expect(result[0].currentStaffEncryptedTunnelKey).toBe("staff-encrypted-tunnel-key");
+      expect(result[0]).not.toHaveProperty("clientEncryptedTunnelKey");
+    });
+
+    it("should set current staff encrypted tunnel key to undefined when no share exists", async () => {
+      const { getTenantDb } = await import("../../db");
+
+      const mockSelect = vi
+        .fn()
+        .mockReturnValueOnce({
+          from: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockResolvedValue([mockClientTunnel]),
+          }),
+        })
+        .mockReturnValueOnce({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue([]),
+          }),
+        });
+
+      const mockDb = {
+        select: mockSelect,
+      };
+
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+      const result = await service.getClientTunnels("staff-123");
+
+      expect(result).toHaveLength(1);
+      expect(result[0].currentStaffEncryptedTunnelKey).toBeUndefined();
+    });
   });
 
   describe("createNewClientWithAppointment", () => {

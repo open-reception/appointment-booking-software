@@ -5,26 +5,87 @@
   import { InlineCode } from "$lib/components/ui/inline-code";
   import { TranslationWithComponent } from "$lib/components/ui/translation-with-component";
   import { Text } from "$lib/components/ui/typography";
+  import type { ClientTunnelResponse } from "$lib/server/services/appointment-service";
   import { auth } from "$lib/stores/auth";
+  import { staffCrypto } from "$lib/stores/staff-crypto";
   import type { TStaff } from "$lib/types/users";
+  import { TriangleAlert } from "@lucide/svelte";
   import StopIcon from "@lucide/svelte/icons/octagon-x";
   import { toast } from "svelte-sonner";
+  import { addStaffKeyShares, fetchClientTunnels } from "../utils";
 
   let { entity, done }: { entity: TStaff; done: () => void } = $props();
   const myUserRole = $derived($auth.user?.role);
+  const tenantId = $derived($auth.user?.tenantId);
+  let step: "init" | "fetch-tunnels" | "add-staff-key-shares" | "error-no-public-key" | "error" =
+    $state("init");
   let isSubmitting = $state(false);
+  let tunnels: ClientTunnelResponse[] = $state([]);
 
-  const grantAccess = () => {
+  const grantAccess = async () => {
+    if (!tenantId || !$staffCrypto.crypto) return;
+    const cryptoClient = $staffCrypto.crypto;
+
     isSubmitting = true;
+    step = "fetch-tunnels";
 
-    // Simulate an async operation
-    setTimeout(() => {
+    try {
+      // Fetching all tunnels
+      tunnels = await fetchClientTunnels(tenantId);
+      step = "add-staff-key-shares";
+
+      // For each tunnel: decrypt currentStaffEncryptedTunnelKey with current user private key
+      const allPublicKeys = await cryptoClient.fetchStaffPublicKeys(tenantId);
+      const newUserPublicKeys = allPublicKeys.filter((x) => x.userId === entity.id);
+
+      if (newUserPublicKeys.length === 0) {
+        step = "error-no-public-key";
+        return;
+      }
+
+      const keyShares = await Promise.all(
+        tunnels.map(async (tunnel) => {
+          if (!tunnel.currentStaffEncryptedTunnelKey) {
+            throw new Error(`Missing current staff key share for tunnel ${tunnel.id}`);
+          }
+
+          const decryptedTunnelKey = await cryptoClient.decryptTunnelKeyByStaff(
+            tunnel.currentStaffEncryptedTunnelKey,
+          );
+
+          const encryptedForNewStaff = await cryptoClient.encryptTunnelKeyForStaff(
+            newUserPublicKeys,
+            decryptedTunnelKey,
+          );
+
+          if (encryptedForNewStaff.length === 0) {
+            throw new Error(`Failed to encrypt tunnel key for new staff on tunnel ${tunnel.id}`);
+          }
+
+          return {
+            tunnelId: tunnel.id,
+            encryptedTunnelKey: encryptedForNewStaff[0].encryptedTunnelKey,
+          };
+        }),
+      );
+
+      // Setting staff key shares
+      const isOk = await addStaffKeyShares(tenantId, entity.id, keyShares);
+      if (isOk) {
+        isSubmitting = false;
+        toast.success(m["staff.access.success"]({ name: entity.name }));
+        done();
+      } else {
+        step = "error";
+        toast.error(m["staff.access.error.title"]());
+        isSubmitting = false;
+      }
+    } catch (error) {
+      console.error(error);
+      step = "error";
+      toast.error(m["staff.access.error.title"]());
       isSubmitting = false;
-      toast.success(m["staff.access.success"]());
-      done();
-    }, 2000);
-
-    // toast.error(m["staff.access.error"]());
+    }
   };
 </script>
 
@@ -42,21 +103,34 @@
       Icon={StopIcon}
       size="sm"
     />
-  {:else}
-    <div class="mt-6 flex flex-col gap-4">
-      {#if isSubmitting}
-        <CenterLoadingState label={m["staff.access.loading"]({ success: 0, total: 1 })} />
-      {/if}
-      <Button
-        size="lg"
-        type="button"
-        onclick={grantAccess}
-        isLoading={isSubmitting}
-        disabled={isSubmitting}
-      >
-        {m["staff.access.action"]()}
-      </Button>
-    </div>
+  {:else if step === "init"}
+    <Button
+      size="lg"
+      type="button"
+      onclick={grantAccess}
+      isLoading={isSubmitting}
+      disabled={isSubmitting}
+    >
+      {m["staff.access.action"]()}
+    </Button>
+  {:else if step === "fetch-tunnels"}
+    <CenterLoadingState label={m["staff.access.loadingTunnels"]()} />
+  {:else if step === "add-staff-key-shares"}
+    <CenterLoadingState label={m["staff.access.loadingAddingKeyShares"]()} />
+  {:else if step === "error-no-public-key"}
+    <CenterState
+      headline={m["staff.access.errorNoPublicKey.title"]()}
+      description={m["staff.access.errorNoPublicKey.description"]()}
+      Icon={TriangleAlert}
+      size="sm"
+    />
+  {:else if step === "error"}
+    <CenterState
+      headline={m["staff.access.error.title"]()}
+      description={m["staff.access.error.description"]()}
+      Icon={TriangleAlert}
+      size="sm"
+    />
   {/if}
 </div>
 

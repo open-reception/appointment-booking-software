@@ -22,6 +22,10 @@
     decrypt();
   });
 
+  const errors = {
+    missingKeyShare: "Missing key share",
+  };
+
   const decrypt = async () => {
     if (!item.appointment) {
       console.error("Unable to decrypt appointment data - no appointment data in item.", item.id);
@@ -39,7 +43,7 @@
     // Check if we have staffKeyShare
     if (!item.appointment.staffKeyShare) {
       console.error("Unable to decrypt appointment data - missing staffKeyShare.", item.id);
-      error = "Missing key share";
+      error = errors.missingKeyShare;
       return;
     }
 
@@ -82,7 +86,13 @@
   };
 </script>
 
-{#if error}
+{#if error === errors.missingKeyShare}
+  <div class="text-destructive flex h-full items-center gap-1 px-1">
+    <Text style="xs" class="leading-none text-(--channel-color-contrast)" title={error}>
+      ⚠️ {m["calendar.decryptingErrorNoKeyShare"]()}
+    </Text>
+  </div>
+{:else if error}
   <div class="text-destructive flex h-full items-center gap-1 px-1">
     <Text style="xs" class="leading-none text-(--channel-color-contrast)" title={error}>
       ⚠️ {m["calendar.decryptingError"]()}

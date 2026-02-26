@@ -15,7 +15,7 @@ import { checkPermission } from "$lib/server/utils/permissions";
 import { getTenantDb, centralDb } from "$lib/server/db";
 import { clientAppointmentTunnel, clientTunnelStaffKeyShare } from "$lib/server/db/tenant-schema";
 import { user } from "$lib/server/db/central-schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 
 // Register OpenAPI documentation for POST
@@ -185,6 +185,7 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
         tenantId: user.tenantId,
         isActive: user.isActive,
         role: user.role,
+        confirmationState: user.confirmationState,
       })
       .from(user)
       .where(eq(user.id, staffUserId))
@@ -234,16 +235,30 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
 
     const newKeyShares = keyShares.filter((ks) => !existingKeyShareTunnelIds.has(ks.tunnelId));
 
+    const ensureAccessGranted = async () => {
+      await centralDb
+        .update(user)
+        .set({ confirmationState: "ACCESS_GRANTED" })
+        .where(and(eq(user.id, staffUserId), eq(user.tenantId, tenantId)));
+    };
+
     if (newKeyShares.length === 0) {
       log.info("No new key shares to add - all already exist", {
         tenantId,
         staffUserId,
         totalRequested: keyShares.length,
+        previousConfirmationState: staffUser[0].confirmationState,
       });
+
+      await ensureAccessGranted();
+
+      const wasAlreadyGranted = staffUser[0].confirmationState === "ACCESS_GRANTED";
 
       return json({
         success: true,
-        message: "All key shares already exist",
+        message: wasAlreadyGranted
+          ? "All key shares already exist"
+          : "All key shares already existed; access has now been granted",
         added: 0,
         skipped: keyShares.length,
       });
@@ -266,6 +281,8 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
 
       return insertedKeyShares;
     });
+
+    await ensureAccessGranted();
 
     log.info("Staff key shares added successfully", {
       tenantId,

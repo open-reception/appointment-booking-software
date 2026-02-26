@@ -802,9 +802,17 @@
 			"title": "Zugriff auf Klientendaten gewähren",
 			"description": "Willst Du {name} Zugriff auf alle Klientendaten geben?",
 			"action": "Zugriff gewähren",
-			"loading": "Zugriff wird gewährt ({success}/{total} Klienten)",
-			"success": "Zugriff gewährt",
-			"error": "Konnte Zugriff nicht für alle Klienten gewähren. Bitte erneut versuchen.",
+			"loadingTunnels": "Lade Liste aller Klienten",
+			"loadingAddingKeyShares": "Gewähre Zugriff",
+			"success": "Zugriff gewährt. {name} kann jetzt Termine entschlüsseln.",
+			"errorNoPublicKey": {
+				"title": "Zugriff gewähren fehlgeschlagen",
+				"description": "Diese Person muss zuerst die Einladung annehmen und ihren Passkey hinzufügen."
+			},
+			"error": {
+				"title": "Zugriff gewähren fehlgeschlagen",
+				"description": "Du kannst es jederzeit erneut probieren."
+			},
 			"unavailable": {
 				"title": "Du kannst keinen Zugriff gewähren",
 				"description": "Nur Mitarbeiter:innen und Mandanten-Admins können Zugriff gewähren."
@@ -920,6 +928,7 @@
 		"loading": "Loading calendar",
 		"decrypting": "wird entschlüsselt...",
 		"decryptingError": "Entschlüsselung fehlgeschlagen. Bitte neu anmelden.",
+		"decryptingErrorNoKeyShare": "Entschlüsselung fehlgeschlagen. Bitten Sie ein Teammitglied, Ihnen Zugriff zu gewähren.",
 		"notificationHint": "Klienten werden per E-Mail benachrichtigt, wenn diese Benachrichtigungen aktiviert haben.",
 		"shownAppointments": {
 			"title": "Termine",

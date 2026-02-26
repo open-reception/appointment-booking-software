@@ -27,6 +27,7 @@
   const { data } = $props();
   let curItem: TStaff | null = $state(null);
   const myUserId = $derived($auth.user?.id);
+  const tenantId = $derived($auth.user?.tenantId);
 
   onMount(() => {
     if (history.state["sveltekit:states"]?.action === "add") {
@@ -159,7 +160,7 @@
                 done={() => {
                   closeDialog("access");
                   curItem = null;
-                  invalidate(ROUTES.DASHBOARD.STAFF);
+                  invalidate(`app:staff-${tenantId}`);
                 }}
               />
             {/if}

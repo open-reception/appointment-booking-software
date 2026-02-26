@@ -77,6 +77,10 @@ export interface AppointmentData {
   locale?: string;
 }
 
+export type AppointmentDataByStaff = Omit<AppointmentData, "email"> & {
+  email?: string;
+};
+
 interface StaffPublicKey {
   userId: string;
   publicKey: string;
@@ -100,6 +104,18 @@ interface MyAppointmentsResponse {
     encryptedData: EncryptedData;
   }>;
 }
+/**
+ * Generate deterministic SHA-256 hash of email for privacy-preserving lookups
+ */
+export const hashEmail = async (email: string): Promise<string> => {
+  const emailNormalized = email.toLowerCase().trim();
+  const encoder = new TextEncoder();
+  const data = encoder.encode(emailNormalized);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+};
 
 export class UnifiedAppointmentCrypto {
   // Client-specific properties
@@ -130,7 +146,7 @@ export class UnifiedAppointmentCrypto {
    */
   async preCheck(email: string, tenantId: string): Promise<boolean> {
     try {
-      const emailHash = await this.hashEmail(email);
+      const emailHash = await hashEmail(email);
 
       const response = await fetch(`/api/tenants/${tenantId}/appointments/challenge`, {
         method: "POST",
@@ -151,7 +167,7 @@ export class UnifiedAppointmentCrypto {
   async initNewClient(email: string, pin: string, tenantId: string): Promise<void> {
     try {
       // 1. Generate email hash for privacy-preserving lookup
-      this.emailHash = await this.hashEmail(email);
+      this.emailHash = await hashEmail(email);
 
       // 2. Generate tunnel ID
       this.tunnelId = this.generateTunnelId();
@@ -209,7 +225,7 @@ export class UnifiedAppointmentCrypto {
       }
 
       // 1. Generate email hash
-      this.emailHash = await this.hashEmail(opts.email);
+      this.emailHash = await hashEmail(opts.email);
 
       // 2. Request challenge from server
       const challengeResponse = await fetch(`/api/tenants/${opts.tenant}/appointments/challenge`, {
@@ -297,7 +313,7 @@ export class UnifiedAppointmentCrypto {
   async loginExistingClient(email: string, pin: string, tenantId: string): Promise<void> {
     try {
       // 1. Generate email hash
-      this.emailHash = await this.hashEmail(email);
+      this.emailHash = await hashEmail(email);
 
       // 2. Request challenge from server
       const challengeResponse = await fetch(`/api/tenants/${tenantId}/appointments/challenge`, {
@@ -902,19 +918,6 @@ export class UnifiedAppointmentCrypto {
   }
 
   /**
-   * Generate deterministic SHA-256 hash of email for privacy-preserving lookups
-   */
-  async hashEmail(email: string): Promise<string> {
-    const emailNormalized = email.toLowerCase().trim();
-    const encoder = new TextEncoder();
-    const data = encoder.encode(emailNormalized);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    return Array.from(new Uint8Array(hashBuffer))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-  }
-
-  /**
    * Generate ML-KEM-768 keypair for clients
    */
   private async generateClientKeyPair(): Promise<ClientKeyPair> {
@@ -942,7 +945,9 @@ export class UnifiedAppointmentCrypto {
   /**
    * Encrypt appointment data with the tunnel key
    */
-  private async encryptAppointmentData(data: AppointmentData): Promise<EncryptedData> {
+  private async encryptAppointmentData(
+    data: AppointmentData | AppointmentDataByStaff,
+  ): Promise<EncryptedData> {
     if (!this.tunnelKey) throw new Error("No tunnel key available");
 
     const encoder = new TextEncoder();
@@ -1051,7 +1056,7 @@ export class UnifiedAppointmentCrypto {
     return this.uint8ArrayToHex(shares[1].y);
   }
 
-  private async fetchStaffPublicKeys(tenantId: string): Promise<StaffPublicKey[]> {
+  async fetchStaffPublicKeys(tenantId: string): Promise<StaffPublicKey[]> {
     const response = await fetch(`/api/tenants/${tenantId}/appointments/staff-public-keys`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
@@ -1067,13 +1072,15 @@ export class UnifiedAppointmentCrypto {
 
   // getTenantId method removed - tenantId is now always passed explicitly
 
-  private async encryptTunnelKeyForStaff(
+  async encryptTunnelKeyForStaff(
     staffKeys: StaffPublicKey[],
+    externalTunnelKey?: CryptoKey,
   ): Promise<Array<{ userId: string; encryptedTunnelKey: string }>> {
-    if (!this.tunnelKey) throw new Error("No tunnel key available");
+    const usedKey = externalTunnelKey ?? this.tunnelKey;
+    if (!usedKey) throw new Error("No tunnel key available");
 
     // Export tunnel key as raw bytes
-    const tunnelKeyBytes = await crypto.subtle.exportKey("raw", this.tunnelKey);
+    const tunnelKeyBytes = await crypto.subtle.exportKey("raw", usedKey);
     const tunnelKeyArray = new Uint8Array(tunnelKeyBytes);
 
     const results = [];
@@ -1303,6 +1310,72 @@ export class UnifiedAppointmentCrypto {
       true,
       ["encrypt", "decrypt"],
     );
+  }
+
+  async decryptTunnelKeyByStaff(staffKeyShare: string): Promise<CryptoKey> {
+    if (!this.staffAuthenticated || !this.staffKeyPair) {
+      throw new Error("Staff not authenticated");
+    }
+
+    if (this.keyExpiry && Date.now() > this.keyExpiry) {
+      throw new Error("Staff session expired - please authenticate again");
+    }
+
+    try {
+      // Parse the staffKeyShare which now contains: encapsulatedSecret || iv || encryptedTunnelKey
+      const staffKeyShareBytes = this.hexToUint8Array(staffKeyShare);
+
+      // ML-KEM-768 encapsulated secret is 1088 bytes
+      const ENCAPSULATED_SECRET_LENGTH = 1088;
+      const IV_LENGTH = 12;
+
+      if (staffKeyShareBytes.length < ENCAPSULATED_SECRET_LENGTH + IV_LENGTH) {
+        throw new Error(
+          `staffKeyShare too short: ${staffKeyShareBytes.length} bytes, expected at least ${ENCAPSULATED_SECRET_LENGTH + IV_LENGTH}`,
+        );
+      }
+
+      const encapsulatedSecret = staffKeyShareBytes.slice(0, ENCAPSULATED_SECRET_LENGTH);
+      const iv = staffKeyShareBytes.slice(
+        ENCAPSULATED_SECRET_LENGTH,
+        ENCAPSULATED_SECRET_LENGTH + IV_LENGTH,
+      );
+      const encryptedTunnelKey = staffKeyShareBytes.slice(ENCAPSULATED_SECRET_LENGTH + IV_LENGTH);
+
+      // 1. Decapsulate to get shared secret
+      const sharedSecret = KyberCrypto.decapsulate(
+        this.staffKeyPair.privateKey,
+        encapsulatedSecret,
+      );
+
+      // 2. Use first 32 bytes of shared secret as AES key
+      const aesKeyBytes = sharedSecret.slice(0, 32);
+
+      // Import as CryptoKey for Web Crypto API
+      const aesKey = await crypto.subtle.importKey("raw", aesKeyBytes, { name: "AES-GCM" }, false, [
+        "decrypt",
+      ]);
+
+      // 3. Decrypt the tunnel key
+      const decryptedTunnelKey = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv },
+        aesKey,
+        encryptedTunnelKey,
+      );
+
+      // 4. Import and return tunnel key as CryptoKey
+      return await crypto.subtle.importKey(
+        "raw",
+        new Uint8Array(decryptedTunnelKey),
+        { name: "AES-GCM" },
+        true,
+        ["encrypt", "decrypt"],
+      );
+    } catch (error) {
+      throw new Error(
+        `Decryption failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 
   // Helper methods for completing the API
