@@ -7,6 +7,9 @@
   import { formSchema } from ".";
   import type { TAddAppointment } from "../types";
   import Button from "$lib/components/ui/button/button.svelte";
+  import { hashEmail } from "$lib/client/appointment-crypto";
+  import { fetchClientTunnels } from "../../../../staff/(components)/utils";
+  import { toast } from "svelte-sonner";
 
   let {
     tenantId,
@@ -27,25 +30,23 @@
         if (validation.valid) {
           cancel();
           isSubmitting = true;
-          console.log("tenantId", tenantId);
-          console.log("email", $formData.email);
-          const hashedEmail = await hashEmail($formData.email);
-          console.log("hashed", hashedEmail);
-          proceed({ ...newAppointment, email: $formData.email, hasNoEmail: false });
-          // const success = await confirmAppointment({
-          //   tenant: tenantId,
-          //   appointment: item.appointment.id,
-          //   email: item.decrypted.shareEmail ? item.decrypted.email : undefined,
-          //   locale: "de", // TODO: Use client language as soon as available in appointment
-          // });
-          // if (success) {
-          //   toast.success(m["calendar.confirmAppointment.success"]());
-          //   updateCalendar();
-          //   close();
-          // } else {
-          //   toast.error(m["calendar.confirmAppointment.error"]());
-          // }
 
+          // Find client tunnel, if it exists
+          const tunnels = await fetchClientTunnels(tenantId);
+          const hashedEmail = await hashEmail($formData.email);
+          const tunnel = tunnels.find((t) => t.emailHash === hashedEmail);
+
+          if (tunnel) {
+            toast.success(m["calendar.addAppointment.steps.selectClient.proceedExistingClient"]());
+            proceed({ ...newAppointment, email: $formData.email, hasNoEmail: false, tunnel });
+          } else {
+            const isOk = confirm(
+              m["calendar.addAppointment.steps.selectClient.confirmNewClient"](),
+            );
+            if (isOk) {
+              proceed({ ...newAppointment, email: $formData.email, hasNoEmail: false, tunnel });
+            }
+          }
           isSubmitting = false;
         }
       },
@@ -55,17 +56,6 @@
   let isSubmitting = $state(false);
 
   const { form: formData, enhance, validateForm } = form;
-
-  // TODO: Use the version from appointment-crypto
-  const hashEmail = async (email: string): Promise<string> => {
-    const emailNormalized = email.toLowerCase().trim();
-    const encoder = new TextEncoder();
-    const data = encoder.encode(emailNormalized);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    return Array.from(new Uint8Array(hashBuffer))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-  };
 
   const proceedWithoutEmail = () => {
     proceed({ ...newAppointment, email: undefined, hasNoEmail: true });
@@ -77,7 +67,13 @@
     <Form.Control>
       {#snippet children({ props })}
         <Form.Label>{m["form.email"]()}</Form.Label>
-        <Input {...props} bind:value={$formData.email} type="email" />
+        <Input
+          {...props}
+          bind:value={$formData.email}
+          type="email"
+          autocomplete="off"
+          autocapitalize="off"
+        />
       {/snippet}
     </Form.Control>
     <Form.FieldErrors />

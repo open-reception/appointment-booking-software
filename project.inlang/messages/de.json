@@ -957,11 +957,14 @@
 			"error": "Fehler beim Bestätigen des Termins"
 		},
 		"addAppointment": {
+			"title": "Neuen Termin erstellen",
 			"preview": "Neuer Termin {time} Uhr {channel}",
 			"steps": {
 				"selectClient": {
 					"hasNoEmail": "Klient hat keine E-Mail Adresse",
-					"action": "Klient suchen"
+					"action": "Klient suchen",
+					"confirmNewClient": "Dieser Klient hat noch kein Konto. Möchten Sie für ihn ein Konto erstellen?",
+					"proceedExistingClient": "Klient ausgewählt."
 				},
 				"agents": {
 					"title": "Akteur auswählen"
