@@ -966,11 +966,14 @@
 			"error": "Failed to confirm appointment"
 		},
 		"addAppointment": {
+			"title": "Add Appointment",
 			"preview": "Add {time} {channel}",
 			"steps": {
 				"selectClient": {
 					"hasNoEmail": "Client has no e-mail",
-					"action": "Search Client"
+					"action": "Search Client",
+					"confirmNewClient": "This client does not have an account yet. Do you want to create an account for them?",
+					"proceedExistingClient": "Client selected."
 				},
 				"agents": {
 					"title": "Select an Agent"

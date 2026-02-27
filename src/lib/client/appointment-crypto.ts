@@ -48,8 +48,9 @@
  */
 
 import { OptimizedArgon2 } from "$lib/crypto/hashing";
+import { AESCrypto, BufferUtils, KyberCrypto, ShamirSecretSharing } from "$lib/crypto/utils";
+import type { ClientTunnelResponse } from "$lib/server/services/appointment-service";
 import { pinThrottleStore } from "$lib/stores/pin-throttle";
-import { KyberCrypto, AESCrypto, ShamirSecretSharing, BufferUtils } from "$lib/crypto/utils";
 
 // Type definitions for unified cryptography
 interface ClientKeyPair {
@@ -104,6 +105,17 @@ interface MyAppointmentsResponse {
     encryptedData: EncryptedData;
   }>;
 }
+
+type StaffKeyShares = Array<{ userId: string; encryptedTunnelKey: string }>;
+
+type EncryptableTunnelConfig = {
+  emailHash: string;
+  decryptedTunnelKey: CryptoKey;
+  staffKeyShares: StaffKeyShares;
+  clientPublicKey: string;
+  tunnelId: string;
+};
+
 /**
  * Generate deterministic SHA-256 hash of email for privacy-preserving lookups
  */
@@ -480,6 +492,143 @@ export class UnifiedAppointmentCrypto {
     } catch (error) {
       console.error("❌ Error creating appointment:", error);
       throw error;
+    }
+  }
+
+  private createTunnelForNewClient = async (params: {
+    tenantId: string;
+    email: string;
+  }): Promise<EncryptableTunnelConfig> => {
+    const usedPin = crypto.randomUUID().slice(0, 6);
+
+    // Create tunnel
+    await this.initNewClient(params.email, usedPin, params.tenantId);
+
+    if (!this.tunnelId) {
+      throw new Error("Failed to use initialized client tunnel");
+    }
+
+    if (!this.tunnelKey) {
+      throw new Error("Failed to use initialized client tunnel key");
+    }
+
+    if (!this.clientKeyPair?.publicKey) {
+      throw new Error("Failed to use initialized client public key");
+    }
+
+    return {
+      tunnelId: this.tunnelId,
+      emailHash: await hashEmail(params.email),
+      clientPublicKey: this.clientKeyPair?.publicKey,
+      decryptedTunnelKey: this.tunnelKey,
+      staffKeyShares: await this.getStaffKeyShares(params.tenantId),
+    };
+  };
+
+  private useTunnelForExistingClient = async (params: {
+    tunnel: ClientTunnelResponse;
+    tenantId: string;
+    email: string;
+  }): Promise<EncryptableTunnelConfig> => {
+    const decryptedTunnelKey = await this.decryptTunnelKeyByStaff(
+      params.tunnel.currentStaffEncryptedTunnelKey!,
+    );
+    return {
+      tunnelId: params.tunnel.id,
+      emailHash: await hashEmail(params.email),
+      clientPublicKey: params.tunnel.clientPublicKey,
+      decryptedTunnelKey,
+      staffKeyShares: await this.getStaffKeyShares(params.tenantId, decryptedTunnelKey),
+    };
+  };
+
+  /**
+   * Creates a new encrypted appointment that is created by a staff member
+   */
+  async createAppointmentByStaff(params: {
+    appointmentData: AppointmentDataByStaff;
+    appointmentDate: Date;
+    agentId: string;
+    channelId: string;
+    duration: number;
+    tenantId: string;
+    email?: string;
+    hasNoEmail: boolean;
+    tunnel: ClientTunnelResponse | undefined;
+  }): Promise<string> {
+    if (!this.staffAuthenticated || !this.staffKeyPair) {
+      throw new Error("Staff Member not authenticated");
+    }
+
+    try {
+      // If new client, create new tunnel and then get it
+      const usedEmail = params.email ?? `${crypto.randomUUID()}@client.noemail`;
+      const tunnelConfig = !params.tunnel
+        ? await this.createTunnelForNewClient({ tenantId: params.tenantId, email: usedEmail })
+        : await this.useTunnelForExistingClient({
+            tunnel: params.tunnel,
+            tenantId: params.tenantId,
+            email: usedEmail,
+          });
+
+      // Encrypt appointment data
+      const encryptedAppointment = await this.encryptAppointmentData(
+        params.appointmentData,
+        tunnelConfig.decryptedTunnelKey,
+      );
+
+      // Set tunnelKey & clientKeyPair for encryptTunnelKeyForClient
+      this.tunnelKey = tunnelConfig.decryptedTunnelKey;
+      this.clientKeyPair = {
+        publicKey: tunnelConfig.clientPublicKey,
+        privateKey: "", // Not needed here
+      };
+
+      // Call endpoint
+      const sendEmail = params.appointmentData.shareEmail && Boolean(params.email);
+      const requestData = {
+        clientEmail: params.appointmentData.shareEmail ? usedEmail : undefined,
+        hasNoEmail: params.hasNoEmail,
+        emailHash: await hashEmail(usedEmail),
+        appointmentDate: params.appointmentDate.toISOString(),
+        duration: params.duration,
+        agentId: params.agentId,
+        channelId: params.channelId,
+        encryptedAppointment,
+        sendEmail,
+        clientLanguage: params.appointmentData.locale,
+        tunnelId: tunnelConfig.tunnelId,
+        clientPublicKey: tunnelConfig.clientPublicKey,
+        staffKeyShares: tunnelConfig.staffKeyShares,
+        privateKeyShare: await this.getClientKeyShare(),
+        clientEncryptedTunnelKey: await this.encryptTunnelKeyForClient(),
+      };
+      const response = await fetch(`/api/tenants/${params.tenantId}/appointments/staff-create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Appointment could not be created");
+      }
+
+      const result = await response.json();
+
+      console.log("✅ Encrypted appointment created:", result.id);
+      return result.id;
+    } catch (error) {
+      console.error("❌ Error creating appointment:", error);
+      throw error;
+    } finally {
+      // Clear sensitive data from class properties to prevent leaks on reuse
+      this.tunnelKey = null;
+      this.clientKeyPair = null;
+      this.emailHash = null;
+      this.tunnelId = null;
+      this.serverPrivateKeyShare = null;
+      this.clientAuthenticated = false;
+      this.pin = null;
     }
   }
 
@@ -947,8 +1096,10 @@ export class UnifiedAppointmentCrypto {
    */
   private async encryptAppointmentData(
     data: AppointmentData | AppointmentDataByStaff,
+    tunnelKey?: CryptoKey,
   ): Promise<EncryptedData> {
-    if (!this.tunnelKey) throw new Error("No tunnel key available");
+    const usedTunnelKey = tunnelKey ?? this.tunnelKey;
+    if (!usedTunnelKey) throw new Error("No tunnel key available");
 
     const encoder = new TextEncoder();
     const plaintext = encoder.encode(JSON.stringify(data));
@@ -956,7 +1107,7 @@ export class UnifiedAppointmentCrypto {
 
     const encrypted = await crypto.subtle.encrypt(
       { name: "AES-GCM", iv },
-      this.tunnelKey,
+      usedTunnelKey,
       plaintext,
     );
 
@@ -1089,34 +1240,11 @@ export class UnifiedAppointmentCrypto {
       // Public key is stored as Base64, not Hex
       const staffPublicKeyBytes = this.base64ToUint8Array(staff.publicKey);
 
-      console.log("🔐 Encrypting tunnel key for staff:", {
-        userId: staff.userId,
-        publicKeyLength: staffPublicKeyBytes.length,
-        publicKeyHex:
-          Array.from(staffPublicKeyBytes)
-            .map((b) => b.toString(16).padStart(2, "0"))
-            .join("")
-            .substring(0, 64) + "...",
-        tunnelKeyLength: tunnelKeyArray.length,
-      });
-
       // Kyber encapsulation creates a shared secret
       const { sharedSecret, encapsulatedSecret } = KyberCrypto.encapsulate(staffPublicKeyBytes);
 
-      console.log("🔑 Kyber encapsulation done:", {
-        sharedSecretLength: sharedSecret.length,
-        encapsulatedSecretLength: encapsulatedSecret.length,
-      });
-
       // Use the first 32 bytes of shared secret as AES key (same as decryption)
       const aesKeyBytes = sharedSecret.slice(0, 32);
-
-      console.log(
-        "🔑 AES key for encryption (hex):",
-        Array.from(aesKeyBytes)
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join(""),
-      );
 
       // Import as CryptoKey for Web Crypto API
       const aesKey = await crypto.subtle.importKey("raw", aesKeyBytes, { name: "AES-GCM" }, false, [
@@ -1125,19 +1253,6 @@ export class UnifiedAppointmentCrypto {
 
       // Generate IV for AES-GCM
       const iv = BufferUtils.randomBytes(12);
-
-      console.log(
-        "📍 IV for encryption (hex):",
-        Array.from(iv)
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join(""),
-      );
-      console.log(
-        "🔒 Tunnel key to encrypt (hex):",
-        Array.from(tunnelKeyArray)
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join(""),
-      );
 
       // Encrypt tunnel key with AES-GCM
       const encrypted = await crypto.subtle.encrypt(
@@ -1148,13 +1263,6 @@ export class UnifiedAppointmentCrypto {
 
       // encrypted contains ciphertext + 16-byte auth tag
       const encryptedArray = new Uint8Array(encrypted);
-
-      console.log(
-        "🔒 Encrypted tunnel key (hex):",
-        Array.from(encryptedArray)
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join(""),
-      );
 
       // Store: encapsulatedSecret || iv || encrypted (ciphertext+authTag)
       const combined = new Uint8Array(
@@ -1386,10 +1494,11 @@ export class UnifiedAppointmentCrypto {
 
   private async getStaffKeyShares(
     tenantId: string,
-  ): Promise<Array<{ userId: string; encryptedTunnelKey: string }>> {
+    decryptedTunnelKey?: CryptoKey,
+  ): Promise<StaffKeyShares> {
     // Fetch and encrypt tunnel key for all staff members
     const staffPublicKeys = await this.fetchStaffPublicKeys(tenantId);
-    return await this.encryptTunnelKeyForStaff(staffPublicKeys);
+    return await this.encryptTunnelKeyForStaff(staffPublicKeys, decryptedTunnelKey);
   }
 
   private async getClientKeyShare(): Promise<string> {

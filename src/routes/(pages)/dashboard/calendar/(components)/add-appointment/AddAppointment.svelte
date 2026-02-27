@@ -1,15 +1,20 @@
 <script lang="ts">
   import { m } from "$i18n/messages";
+  import { type AppointmentDataByStaff } from "$lib/client/appointment-crypto";
   import { CenterState } from "$lib/components/templates/empty-state";
   import Button from "$lib/components/ui/button/button.svelte";
+  import { staffCrypto } from "$lib/stores/staff-crypto";
+  import { tenants } from "$lib/stores/tenants";
   import type { TCalendarSlot } from "$lib/types/calendar";
   import { calendarItemToDate } from "$lib/utils/datetime";
+  import { getDefaultAppointmentLocale } from "$lib/utils/localizations";
   import { BanIcon, Check } from "@lucide/svelte";
+  import { get } from "svelte/store";
+  import { ClientDataForm } from "./client-data-form";
   import { SearchClientForm } from "./search-client-form";
   import SelectAgent from "./SelectAgent.svelte";
   import Summary from "./Summary.svelte";
   import type { TAddAppointment, TAddAppointmentStep } from "./types";
-  import { ClientDataForm } from "./client-data-form";
 
   let {
     tenantId,
@@ -22,7 +27,11 @@
   } = $props();
 
   let step: TAddAppointmentStep = $state("email");
-  let newAppointment: TAddAppointment = $state({ dateTime: calendarItemToDate(item) });
+  let newAppointment: TAddAppointment = $state({
+    locale: getDefaultAppointmentLocale(get(tenants).currentTenant),
+    dateTime: calendarItemToDate(item),
+  });
+  let isSubmitting = $state(false);
 
   const proceed = (data: TAddAppointment) => {
     switch (true) {
@@ -56,19 +65,56 @@
   };
 
   const addAppointment = async () => {
-    console.log("adding appointment", newAppointment);
-    updateCalendar();
-    step = "success";
+    if (
+      newAppointment.name &&
+      newAppointment.agentId &&
+      typeof newAppointment.hasNoEmail !== "undefined"
+    ) {
+      isSubmitting = true;
+      const appointmentData: AppointmentDataByStaff = {
+        name: newAppointment.name,
+        shareEmail: newAppointment.shareEmail || false,
+        email: newAppointment.email,
+        phone: newAppointment.phone,
+        locale: newAppointment.locale,
+      };
+      await $staffCrypto.crypto
+        ?.createAppointmentByStaff({
+          appointmentData,
+          tenantId,
+          appointmentDate: newAppointment.dateTime,
+          duration: item.duration,
+          hasNoEmail: newAppointment.hasNoEmail,
+          agentId: newAppointment.agentId,
+          channelId: item.channelId,
+          tunnel: newAppointment.tunnel,
+          email: newAppointment.email,
+        })
+        .then(() => {
+          step = "success";
+          updateCalendar();
+        })
+        .catch(() => {
+          step = "error";
+        })
+        .finally(() => {
+          isSubmitting = false;
+        });
+    }
+  };
+
+  const onChangeLocale = (locale: string) => {
+    newAppointment = { ...newAppointment, locale };
   };
 </script>
 
-<Summary {step} {newAppointment} />
+<Summary {step} {newAppointment} {onChangeLocale} />
 {#if step === "email"}
   <SearchClientForm {tenantId} {newAppointment} {proceed} />
 {:else if step === "agent" && item.availableAgents}
   <SelectAgent availableAgents={item.availableAgents} {newAppointment} {proceed} />
 {:else if step === "summary"}
-  <Button onclick={addAppointment} class="w-full">
+  <Button onclick={addAppointment} class="w-full" isLoading={isSubmitting} disabled={isSubmitting}>
     {m["calendar.addAppointment.steps.summary.action"]()}
   </Button>
 {:else if step === "client"}

@@ -340,7 +340,7 @@ export class AppointmentService {
    */
   public async deleteAppointmentByStaff(
     appointmentId: string,
-    clientEmail: string,
+    clientEmail: string | undefined,
     clientLanguage: string = "de",
   ): Promise<void> {
     const log = logger.setContext("AppointmentService");
@@ -388,18 +388,22 @@ export class AppointmentService {
     const channelTitle = await getChannelTitle(this.tenantId, channelId, clientLanguage);
 
     // Send cancellation email to client (async, don't wait)
-    const clientData = {
-      email: clientEmail,
-      language: clientLanguage,
-    };
+    if (clientEmail) {
+      const clientData = {
+        email: clientEmail,
+        language: clientLanguage,
+      };
 
-    sendAppointmentCancelledEmail(clientData, tenant, appointment, channelTitle).catch((error) => {
-      log.error("Failed to send appointment cancellation email", {
-        appointmentId,
-        clientEmail,
-        error: String(error),
-      });
-    });
+      sendAppointmentCancelledEmail(clientData, tenant, appointment, channelTitle).catch(
+        (error) => {
+          log.error("Failed to send appointment cancellation email", {
+            appointmentId,
+            clientEmail,
+            error: String(error),
+          });
+        },
+      );
+    }
 
     // Create notifications for all staff members in the channel
     const notificationService = await NotificationService.forTenant(this.tenantId);

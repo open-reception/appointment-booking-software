@@ -8,8 +8,8 @@ import logger from "$lib/logger";
 import { checkPermission } from "$lib/server/utils/permissions";
 
 const requestSchema = z.object({
-  clientEmail: z.string().email(),
-  clientLanguage: z.string().optional().default("de"),
+  clientEmail: z.email().optional(),
+  clientLanguage: z.string().optional().default("en"),
 });
 
 // Register OpenAPI documentation for DELETE

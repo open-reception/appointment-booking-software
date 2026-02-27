@@ -246,7 +246,7 @@
   {@const channel = channels.find((c) => c.id === curEmptySlot.channelId)}
   <ResponsiveDialog
     id="current-calendar-slot"
-    title="Add Appointment"
+    title={m["calendar.addAppointment.title"]()}
     description={channel ? getCurrentTranlslation(channel.names) : undefined}
     triggerHidden={true}
   >
