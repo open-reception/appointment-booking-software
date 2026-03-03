@@ -1,6 +1,6 @@
 import { centralDb } from "../db";
 import * as centralSchema from "../db/central-schema";
-import { eq, desc, gt, and, count, or } from "drizzle-orm";
+import { eq, desc, gt, and, count, or, sql } from "drizzle-orm";
 import type { InferInsertModel, TablesRelationalConfig } from "drizzle-orm";
 
 import { z } from "zod";
@@ -296,7 +296,7 @@ export class UserService {
         .where(
           and(
             eq(centralSchema.user.token, linkToken),
-            gt(centralSchema.user.tokenValidUntil, new Date()),
+            gt(centralSchema.user.tokenValidUntil, sql`timezone('utc', now())`),
           ),
         )
         .limit(1);
@@ -315,7 +315,7 @@ export class UserService {
           .where(
             and(
               eq(centralSchema.userInvite.inviteCode, linkToken),
-              gt(centralSchema.userInvite.expiresAt, new Date()),
+              gt(centralSchema.userInvite.expiresAt, sql`timezone('utc', now())`),
             ),
           )
           .limit(1);
