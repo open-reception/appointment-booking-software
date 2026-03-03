@@ -102,30 +102,33 @@ describe("POST /api/tenants/[id]/appointments/staff-create", () => {
       expect(data.id).toBe("appointment-123");
       expect(data.isNewClient).toBe(true);
       expect(data.pinResetToken).toBe("reset-token-123");
-      expect(mockAppointmentService.createNewClientWithAppointment).toHaveBeenCalledWith({
-        tunnelId: "tunnel-123",
-        channelId: "channel-123",
-        agentId: "agent-123",
-        appointmentDate: "2026-01-15T14:00:00.000Z",
-        duration: 30,
-        emailHash,
-        clientEmail: "test@example.com",
-        clientLanguage: "de",
-        clientPublicKey: "public-key",
-        privateKeyShare: "private-key-share",
-        encryptedAppointment: {
-          encryptedPayload: "encrypted-payload",
-          iv: "iv",
-          authTag: "auth-tag",
-        },
-        staffKeyShares: [
-          {
-            userId: "staff-123",
-            encryptedTunnelKey: "encrypted-for-staff",
+      expect(mockAppointmentService.createNewClientWithAppointment).toHaveBeenCalledWith(
+        {
+          tunnelId: "tunnel-123",
+          channelId: "channel-123",
+          agentId: "agent-123",
+          appointmentDate: "2026-01-15T14:00:00.000Z",
+          duration: 30,
+          emailHash,
+          clientEmail: "test@example.com",
+          clientLanguage: "de",
+          clientPublicKey: "public-key",
+          privateKeyShare: "private-key-share",
+          encryptedAppointment: {
+            encryptedPayload: "encrypted-payload",
+            iv: "iv",
+            authTag: "auth-tag",
           },
-        ],
-        clientEncryptedTunnelKey: "encrypted-tunnel-key",
-      });
+          staffKeyShares: [
+            {
+              userId: "staff-123",
+              encryptedTunnelKey: "encrypted-for-staff",
+            },
+          ],
+          clientEncryptedTunnelKey: "encrypted-tunnel-key",
+        },
+        true,
+      );
       expect(mockPinResetService.createResetToken).toHaveBeenCalledWith(emailHash, 60);
     });
   });
@@ -235,21 +238,24 @@ describe("POST /api/tenants/[id]/appointments/staff-create", () => {
       expect(data.id).toBe("appointment-789");
       expect(data.isNewClient).toBe(false);
       expect(data.pinResetToken).toBeUndefined();
-      expect(mockAppointmentService.addAppointmentToTunnel).toHaveBeenCalledWith({
-        emailHash,
-        tunnelId: "tunnel-789",
-        channelId: "channel-123",
-        agentId: "agent-123",
-        appointmentDate: "2026-01-15T14:00:00.000Z",
-        duration: 30,
-        clientEmail: "existing@example.com",
-        clientLanguage: "de",
-        encryptedAppointment: {
-          encryptedPayload: "encrypted-payload",
-          iv: "iv",
-          authTag: "auth-tag",
+      expect(mockAppointmentService.addAppointmentToTunnel).toHaveBeenCalledWith(
+        {
+          emailHash,
+          tunnelId: "tunnel-789",
+          channelId: "channel-123",
+          agentId: "agent-123",
+          appointmentDate: "2026-01-15T14:00:00.000Z",
+          duration: 30,
+          clientEmail: "existing@example.com",
+          clientLanguage: "de",
+          encryptedAppointment: {
+            encryptedPayload: "encrypted-payload",
+            iv: "iv",
+            authTag: "auth-tag",
+          },
         },
-      });
+        true,
+      );
     });
   });
 
@@ -468,7 +474,7 @@ describe("POST /api/tenants/[id]/appointments/staff-create", () => {
         "channel-123",
         "test@example.com",
         "de",
-        true,
+        false,
       );
     });
 
