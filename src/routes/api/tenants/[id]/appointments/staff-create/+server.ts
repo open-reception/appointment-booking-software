@@ -321,7 +321,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
         encryptedAppointment: validatedData.encryptedAppointment,
       };
 
-      result = await appointmentService.addAppointmentToTunnel(appointmentData);
+      result = await appointmentService.addAppointmentToTunnel(appointmentData, true);
     } else {
       // New client - create tunnel and appointment
       isNewClient = true;
@@ -360,7 +360,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
         clientEncryptedTunnelKey: validatedData.clientEncryptedTunnelKey,
       };
 
-      result = await appointmentService.createNewClientWithAppointment(clientData);
+      result = await appointmentService.createNewClientWithAppointment(clientData, true);
 
       // For new clients with email: initiate PIN reset flow
       if (validatedData.clientEmail && !validatedData.hasNoEmail) {
@@ -397,7 +397,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
           validatedData.channelId,
           validatedData.clientEmail,
           validatedData.clientLanguage,
-          !!result.requiresConfirmation,
+          false,
         );
       } catch (error) {
         logger.error("Failed to send appointment notification", {
