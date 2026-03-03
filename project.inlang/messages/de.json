@@ -924,8 +924,9 @@
 		}
 	},
 	"calendar": {
+		"title": "Kalender",
 		"today": "Heute",
-		"loading": "Loading calendar",
+		"loading": "Kalender wird geladen",
 		"decrypting": "wird entschlüsselt...",
 		"decryptingError": "Entschlüsselung fehlgeschlagen. Bitte neu anmelden.",
 		"decryptingErrorNoKeyShare": "Entschlüsselung fehlgeschlagen. Bitten Sie ein Teammitglied, Ihnen Zugriff zu gewähren.",

@@ -199,6 +199,10 @@
   });
 </script>
 
+<svelte:head>
+  <title>{m["calendar.title"]()} - OpenReception</title>
+</svelte:head>
+
 <SidebarLayout breakcrumbs={[{ label: m["nav.calendar"](), href: ROUTES.DASHBOARD.CALENDAR }]}>
   <MaxPageWidth maxWidth="xl">
     <div class="flex flex-col gap-10">

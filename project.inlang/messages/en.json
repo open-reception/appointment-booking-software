@@ -933,6 +933,7 @@
 		}
 	},
 	"calendar": {
+		"title": "Calendar",
 		"today": "Today",
 		"loading": "Loading calendar",
 		"decrypting": "decrypting...",
