@@ -489,21 +489,24 @@ export class AppointmentService {
   /**
    * Add appointment to existing client tunnel
    */
-  public async addAppointmentToTunnel(appointmentData: {
-    emailHash: string;
-    tunnelId: string;
-    channelId: string;
-    agentId: string;
-    appointmentDate: string;
-    duration: number;
-    clientEmail: string;
-    clientLanguage?: string;
-    encryptedAppointment: {
-      encryptedPayload: string;
-      iv: string;
-      authTag: string;
-    };
-  }): Promise<AppointmentResponse> {
+  public async addAppointmentToTunnel(
+    appointmentData: {
+      emailHash: string;
+      tunnelId: string;
+      channelId: string;
+      agentId: string;
+      appointmentDate: string;
+      duration: number;
+      clientEmail: string;
+      clientLanguage?: string;
+      encryptedAppointment: {
+        encryptedPayload: string;
+        iv: string;
+        authTag: string;
+      };
+    },
+    staffCreated = false,
+  ): Promise<AppointmentResponse> {
     const log = logger.setContext("AppointmentService");
 
     log.info("Adding appointment to existing tunnel", {
@@ -547,8 +550,11 @@ export class AppointmentService {
       throw new NotFoundError("Active channel not found");
     }
 
-    const initialStatus = channelResult[0].requiresConfirmation ? "NEW" : "CONFIRMED";
-    const requiresConfirmation = channelResult[0].requiresConfirmation || false;
+    const initialStatus =
+      channelResult[0].requiresConfirmation && !staffCreated ? "NEW" : "CONFIRMED";
+    const requiresConfirmation = staffCreated
+      ? false
+      : channelResult[0].requiresConfirmation || false;
 
     // Create encrypted appointment
     const appointmentResult = await db
@@ -597,6 +603,7 @@ export class AppointmentService {
    */
   public async createNewClientWithAppointment(
     clientData: ClientTunnelData,
+    staffCreated = false,
   ): Promise<AppointmentResponse> {
     const log = logger.setContext("AppointmentService");
 
@@ -693,8 +700,11 @@ export class AppointmentService {
         throw new NotFoundError("Channel not found");
       }
 
-      const initialStatus = channelResult[0].requiresConfirmation ? "NEW" : "CONFIRMED";
-      const requiresConfirmation = channelResult[0].requiresConfirmation || false;
+      const initialStatus =
+        channelResult[0].requiresConfirmation && !staffCreated ? "NEW" : "CONFIRMED";
+      const requiresConfirmation = staffCreated
+        ? false
+        : channelResult[0].requiresConfirmation || false;
 
       // 4. Create encrypted appointment
       const appointmentResult = await tx
