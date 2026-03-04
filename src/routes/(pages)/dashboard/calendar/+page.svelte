@@ -15,7 +15,6 @@
   import type { TAppointmentFilter, TCalendar, TCalendarItem } from "$lib/types/calendar";
   import { getCurrentTranlslation } from "$lib/utils/localizations";
   import {
-    DateFormatter,
     getLocalTimeZone,
     parseAbsoluteToLocal,
     toCalendarDate,
@@ -158,11 +157,6 @@
 
       // Appointments
       if (["all", "booked", "reserved"].includes(shownAppointments)) {
-        const formatter = new DateFormatter(navigator.language, {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        });
         channelData.appointments.forEach((appointment) => {
           const status = appointment.status === "CONFIRMED" ? "booked" : "reserved";
           if (shownAppointments === "all" || shownAppointments === status) {
@@ -171,8 +165,7 @@
                 channelItems.push({
                   id: appointment.id,
                   date: dayEntry.date,
-                  // TODO: Fix incoming date type is actually string
-                  start: formatter.format(new Date(appointment.appointmentDate)),
+                  start: new Date(appointment.appointmentDate).toISOString(),
                   duration: appointment.duration,
                   channelId,
                   color: channelData.channel.color,

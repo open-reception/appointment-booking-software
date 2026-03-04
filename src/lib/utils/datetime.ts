@@ -16,8 +16,24 @@ export const toDisplayDateTime = (date: Date, opts?: Intl.DateTimeFormatOptions)
 };
 
 export const calendarItemToDate = (item: TCalendarSlot) => {
+  if (item.start.includes("T")) {
+    const parsedDate = new Date(item.start);
+    if (!Number.isNaN(parsedDate.getTime())) {
+      const [year, month, day] = item.date.split("-").map(Number);
+      return new Date(
+        year,
+        month - 1,
+        day,
+        parsedDate.getUTCHours(),
+        parsedDate.getUTCMinutes(),
+        0,
+        0,
+      );
+    }
+  }
+
   const [year, month, day] = item.date.split("-").map(Number);
-  const [hours, minutes] = item.start.split(":").map((it) => parseInt(it));
+  const [hours, minutes] = item.start.split(":").map((it) => Number.parseInt(it));
   const date = new Date(year, month - 1, day);
   date.setHours(hours, minutes, 0, 0);
   return date;
