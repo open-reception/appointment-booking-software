@@ -70,8 +70,9 @@ registerOpenAPIRoute("/tenants/{id}/calendar", "GET", {
                     },
                     channels: {
                       type: "object",
+                      additionalProperties: true,
                       description:
-                        "Calendar data organized by channel ID (key-value pairs where key is channel UUID and value contains channel info, appointments, and available slots)",
+                        "Calendar data organized by channel ID (key-value pairs where key is channel UUID and value contains channel info, appointments, and available slots). Slot fields `availableSlots[].from` and `availableSlots[].to` are full UTC ISO 8601 timestamps (e.g. 2024-01-01T09:00:00.000Z).",
                     },
                   },
                 },
@@ -132,7 +133,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
     const startDate = new Date(startDateParam);
     const endDate = new Date(endDateParam);
 
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
       throw new ValidationError(
         "Invalid date format. Use ISO 8601 format with timezone (YYYY-MM-DDTHH:mm:ss.sssZ or YYYY-MM-DDTHH:mm:ss±HH:mm)",
       );

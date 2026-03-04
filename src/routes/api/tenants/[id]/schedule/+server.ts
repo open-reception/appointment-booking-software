@@ -84,6 +84,59 @@ registerOpenAPIRoute("/tenants/{id}/schedule", "GET", {
                     },
                     channels: {
                       type: "object",
+                      additionalProperties: {
+                        type: "object",
+                        properties: {
+                          channel: {
+                            type: "object",
+                            properties: {
+                              id: { type: "string", format: "uuid" },
+                              names: { type: "object" },
+                              descriptions: { type: "object" },
+                              requiresConfirmation: { type: "boolean" },
+                              pause: { type: "boolean" },
+                            },
+                            required: [
+                              "id",
+                              "names",
+                              "descriptions",
+                              "requiresConfirmation",
+                              "pause",
+                            ],
+                          },
+                          availableSlots: {
+                            type: "array",
+                            items: {
+                              type: "object",
+                              properties: {
+                                from: {
+                                  type: "string",
+                                  format: "date-time",
+                                  description: "Slot start as full UTC timestamp",
+                                  example: "2024-01-01T09:00:00.000Z",
+                                },
+                                to: {
+                                  type: "string",
+                                  format: "date-time",
+                                  description: "Slot end as full UTC timestamp",
+                                  example: "2024-01-01T09:30:00.000Z",
+                                },
+                                duration: {
+                                  type: "number",
+                                  description: "Slot duration in minutes",
+                                  example: 30,
+                                },
+                                availableAgents: {
+                                  type: "array",
+                                  items: { type: "object" },
+                                },
+                              },
+                              required: ["from", "to", "duration", "availableAgents"],
+                            },
+                          },
+                        },
+                        required: ["channel", "availableSlots"],
+                      },
                       description:
                         "Available slots organized by channel ID (key-value pairs where key is channel UUID and value contains channel info and available slots only)",
                     },
@@ -148,7 +201,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
     const startDate = new Date(startDateParam);
     const endDate = new Date(endDateParam);
 
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
       throw new ValidationError(
         "Invalid date format. Use ISO 8601 format with timezone (YYYY-MM-DDTHH:mm:ss.sssZ or YYYY-MM-DDTHH:mm:ss±HH:mm)",
       );

@@ -25,8 +25,8 @@ const scheduleRequestSchema = z.object({
 export type ScheduleRequest = z.infer<typeof scheduleRequestSchema>;
 
 export interface TimeSlot {
-  from: string; // HH:MM format
-  to: string; // HH:MM format
+  from: string; // UTC ISO timestamp
+  to: string; // UTC ISO timestamp
   duration: number; // minutes
   availableAgents: SelectAgent[];
 }
@@ -266,9 +266,14 @@ export class ScheduleService {
 
     // Iterate through each day in the period
     const currentDate = new Date(startDate);
-    while (currentDate <= endDate) {
+    currentDate.setUTCHours(0, 0, 0, 0);
+
+    const normalizedEndDate = new Date(endDate);
+    normalizedEndDate.setUTCHours(23, 59, 59, 999);
+
+    while (currentDate <= normalizedEndDate) {
       const dateString = currentDate.toISOString().split("T")[0]; // YYYY-MM-DD
-      const weekday = currentDate.getDay(); // 0 = Sunday, 1 = Monday, ...
+      const weekday = currentDate.getUTCDay(); // 0 = Sunday, 1 = Monday, ...
       const weekdayBit = weekday === 0 ? 64 : Math.pow(2, weekday - 1); // Convert to bitmask
 
       const daySchedule: DaySchedule = {
@@ -283,9 +288,7 @@ export class ScheduleService {
           .filter(
             (appointment) =>
               appointment.channelId === channel.id &&
-              (typeof appointment.appointmentDate === "string"
-                ? (appointment.appointmentDate as string).startsWith(dateString)
-                : appointment.appointmentDate.toISOString().startsWith(dateString)),
+              new Date(appointment.appointmentDate).toISOString().startsWith(dateString),
           )
           .map((appointment) => ({
             ...appointment,
@@ -326,7 +329,7 @@ export class ScheduleService {
       dailySchedules.push(daySchedule);
 
       // Move to next day
-      currentDate.setDate(currentDate.getDate() + 1);
+      currentDate.setUTCDate(currentDate.getUTCDate() + 1);
     }
 
     return dailySchedules;
@@ -367,30 +370,50 @@ export class ScheduleService {
         const slotEndHour = Math.floor(slotEndTime / 60);
         const slotEndMinute = slotEndTime % 60;
 
-        const slotStart = `${slotStartHour.toString().padStart(2, "0")}:${slotStartMinute.toString().padStart(2, "0")}`;
-        const slotEnd = `${slotEndHour.toString().padStart(2, "0")}:${slotEndMinute.toString().padStart(2, "0")}`;
+        const slotStartDateTime = new Date(
+          Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate(),
+            slotStartHour,
+            slotStartMinute,
+            0,
+            0,
+          ),
+        );
+        const slotEndDateTime = new Date(
+          Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate(),
+            slotEndHour,
+            slotEndMinute,
+            0,
+            0,
+          ),
+        );
 
-        // Check if this slot conflicts with any appointments
-        const hasAppointmentConflict = appointments.some((appointment) => {
-          const appointmentTime = new Date(appointment.appointmentDate).toTimeString().slice(0, 5);
-          return appointmentTime === slotStart;
+        const availableAgents = agents.filter((agent) => {
+          if (this.isAgentAbsent(agent.id, slotStartDateTime, slotEndDateTime, absences)) {
+            return false;
+          }
+
+          return !this.hasAgentAppointmentConflict(
+            agent.id,
+            slotStartDateTime,
+            slotEndDateTime,
+            appointments,
+          );
         });
 
-        if (!hasAppointmentConflict) {
-          // Get available agents for this slot (not absent)
-          const availableAgents = agents.filter((agent) => {
-            return !this.isAgentAbsent(agent.id, date, slotStart, slotEnd, absences);
+        // Only include slot if there are available agents
+        if (availableAgents.length > 0) {
+          availableSlots.push({
+            from: slotStartDateTime.toISOString(),
+            to: slotEndDateTime.toISOString(),
+            duration: slotDuration,
+            availableAgents,
           });
-
-          // Only include slot if there are available agents
-          if (availableAgents.length > 0) {
-            availableSlots.push({
-              from: slotStart,
-              to: slotEnd,
-              duration: slotDuration,
-              availableAgents,
-            });
-          }
         }
 
         currentTime += slotDuration;
@@ -405,15 +428,10 @@ export class ScheduleService {
    */
   private isAgentAbsent(
     agentId: string,
-    date: Date,
-    slotStart: string,
-    slotEnd: string,
+    slotStartDateTime: Date,
+    slotEndDateTime: Date,
     absences: SelectAgentAbsence[],
   ): boolean {
-    const dateString = date.toISOString().split("T")[0];
-    const slotStartDateTime = new Date(`${dateString}T${slotStart}:00.000Z`);
-    const slotEndDateTime = new Date(`${dateString}T${slotEnd}:00.000Z`);
-
     return absences.some((absence) => {
       if (absence.agentId !== agentId) return false;
 
@@ -426,6 +444,26 @@ export class ScheduleService {
         (slotEndDateTime > absenceStart && slotEndDateTime <= absenceEnd) ||
         (slotStartDateTime <= absenceStart && slotEndDateTime >= absenceEnd)
       );
+    });
+  }
+
+  /**
+   * Check if an agent already has an appointment that overlaps with a specific slot
+   */
+  private hasAgentAppointmentConflict(
+    agentId: string,
+    slotStartDateTime: Date,
+    slotEndDateTime: Date,
+    appointments: SelectAppointment[],
+  ): boolean {
+    return appointments.some((appointment) => {
+      if (appointment.agentId !== agentId) return false;
+
+      const appointmentStart = new Date(appointment.appointmentDate);
+      const appointmentDuration = Number.isFinite(appointment.duration) ? appointment.duration : 0;
+      const appointmentEnd = new Date(appointmentStart.getTime() + appointmentDuration * 60 * 1000);
+
+      return slotStartDateTime < appointmentEnd && slotEndDateTime > appointmentStart;
     });
   }
 

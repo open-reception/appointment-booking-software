@@ -5,23 +5,22 @@ import { ROUTES } from "$lib/const/routes";
 import { calendarStore } from "$lib/stores/calendar";
 import { staffCrypto } from "$lib/stores/staff-crypto";
 import type { TCalendar, TCalendarItem } from "$lib/types/calendar";
-import { toCalendarDateTime, toZoned, type CalendarDate } from "@internationalized/date";
+import type { CalendarDate } from "@internationalized/date";
 import { get } from "svelte/store";
 
 export const fetchCalendar = async (opts: { tenant: string; startDate: CalendarDate }) => {
   if (!browser) return;
 
+  const localStartDate = new Date(
+    Date.UTC(opts.startDate.year, opts.startDate.month - 1, opts.startDate.day, 0, 0, 0, 0),
+  );
+  const localEndDate = new Date(
+    Date.UTC(opts.startDate.year, opts.startDate.month - 1, opts.startDate.day, 23, 59, 59, 999),
+  );
+
   const params = new URLSearchParams({
-    startDate: toZoned(opts.startDate, "UTC").toAbsoluteString(),
-    endDate: toZoned(
-      toCalendarDateTime(opts.startDate).set({
-        hour: 23,
-        minute: 59,
-        second: 59,
-        millisecond: 999,
-      }),
-      "UTC",
-    ).toAbsoluteString(),
+    startDate: localStartDate.toISOString(),
+    endDate: localEndDate.toISOString(),
   });
   const res = await fetch(`/api/tenants/${opts.tenant}/calendar?${params}`, {
     method: "GET",
@@ -34,17 +33,22 @@ export const fetchCalendar = async (opts: { tenant: string; startDate: CalendarD
     } catch (error) {
       console.error("Unable to parse calendar response", error);
     }
+  } else if (res.status === 401) {
+    goto(resolve(ROUTES.LOGIN));
   } else {
-    if (res.status === 401) {
-      goto(resolve(ROUTES.LOGIN));
-    } else {
-      console.error("Unable to fetch calendar", res.status, res.statusText);
-    }
+    console.error("Unable to fetch calendar", res.status, res.statusText);
   }
 };
 
 // Convert time string to minutes since midnight
 function timeToMinutes(time: string): number {
+  if (time.includes("T")) {
+    const parsedDate = new Date(time);
+    if (!Number.isNaN(parsedDate.getTime())) {
+      return parsedDate.getUTCHours() * 60 + parsedDate.getUTCMinutes();
+    }
+  }
+
   const [hours, minutes] = time.split(":").map(Number);
   return hours * 60 + minutes;
 }
@@ -224,8 +228,7 @@ export const openAppointmentById = async (
   const staffCryptoStore = get(staffCrypto);
   if (
     staffCryptoStore.crypto &&
-    appointment &&
-    appointment.appointment?.encryptedPayload &&
+    appointment?.appointment?.encryptedPayload &&
     appointment.appointment.iv &&
     appointment.appointment.authTag &&
     appointment.appointment.staffKeyShare

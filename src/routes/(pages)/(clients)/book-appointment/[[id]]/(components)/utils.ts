@@ -4,7 +4,7 @@ import { resolve } from "$app/paths";
 import { ROUTES } from "$lib/const/routes";
 import { publicStore } from "$lib/stores/public";
 import type { TPublicAppointment, TPublicSchedule } from "$lib/types/public";
-import { CalendarDateTime, getLocalTimeZone, toZoned, today } from "@internationalized/date";
+import { getLocalTimeZone, today } from "@internationalized/date";
 import { get } from "svelte/store";
 
 export const proceed = (
@@ -99,16 +99,14 @@ export const fetchSchedule = async (opts: {
 
   const curDate = today(getLocalTimeZone());
   const startDay = curDate.year === opts.year && curDate.month === opts.month ? curDate.day : 1;
-  const startDate = new CalendarDateTime(opts.year, opts.month, startDay, 0, 0, 0, 0);
-  const endDate = startDate
-    .add({ months: 1 })
-    .set({ day: 1 })
-    .subtract({ days: 1 })
-    .set({ hour: 23, minute: 59, second: 59, millisecond: 999 });
+  const lastDayOfMonth = new Date(opts.year, opts.month, 0).getDate();
+
+  const startDate = new Date(Date.UTC(opts.year, opts.month - 1, startDay, 0, 0, 0, 0));
+  const endDate = new Date(Date.UTC(opts.year, opts.month - 1, lastDayOfMonth, 23, 59, 59, 999));
 
   const params = new URLSearchParams({
-    startDate: toZoned(startDate, "UTC").toAbsoluteString(),
-    endDate: toZoned(endDate, "UTC").toAbsoluteString(),
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString(),
     channel: opts.channel,
     agent: opts.agent || "",
   });

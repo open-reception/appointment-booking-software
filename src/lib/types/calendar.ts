@@ -27,7 +27,7 @@ export type TCalendarItem = TCalendarSlot & {
 export type TCalendarSlot = {
   date: string; // YYYY-MM-DD
   id: string;
-  start: string; // HH:mm
+  start: string; // UTC ISO date-time string
   duration: number; // in minutes
   status: AppointmentStatus;
   color: string | null;

@@ -108,12 +108,15 @@
         ? slots.filter((slot) => {
             if (dateStr === curDateStr) {
               const now = new Date();
+              const slotDate = new Date(slot.from);
               const slotTime = new Date(
                 date.year,
                 date.month - 1,
                 date.day,
-                parseInt(slot.from.split(":")[0], 10),
-                parseInt(slot.from.split(":")[1], 10),
+                slotDate.getUTCHours(),
+                slotDate.getUTCMinutes(),
+                0,
+                0,
               );
               return slotTime > now;
             }
@@ -142,13 +145,32 @@
         },
         slot: {
           datetime: toCalendarDateTime(selectedDate).set({
-            hour: parseInt(slot.from.split(":")[0], 10),
-            minute: parseInt(slot.from.split(":")[1], 10),
+            hour: new Date(slot.from).getUTCHours(),
+            minute: new Date(slot.from).getUTCMinutes(),
           }),
           duration: slot.duration,
         },
       });
     }
+  };
+
+  const formatSlotTime = (slot: TPublicSlot) => {
+    const slotDate = new Date(slot.from);
+    const displayDate = new Date(
+      2000,
+      0,
+      1,
+      slotDate.getUTCHours(),
+      slotDate.getUTCMinutes(),
+      0,
+      0,
+    );
+
+    return new Intl.DateTimeFormat(getLocale(), {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(displayDate);
   };
 </script>
 
@@ -213,7 +235,9 @@
                 {m["public.steps.slot.selectTime"]()}
               </Text>
               {#each slots as slot (slot.from)}
-                <Button onclick={() => selectSlot(slot)} class="w-full">{slot.from}</Button>
+                <Button onclick={() => selectSlot(slot)} class="w-full"
+                  >{formatSlotTime(slot)}</Button
+                >
               {/each}
             </div>
           </ScrollArea>
