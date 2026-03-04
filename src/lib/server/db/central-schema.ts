@@ -223,7 +223,7 @@ export const userInvite = pgTable(
     createdUserId: uuid("created_user_id").references(() => user.id),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
-    /** Invitation expires after 7 days */
+    /** Invitation expires after 30 minutes */
     expiresAt: timestamp("expires_at").notNull(),
   },
   (table) => ({
