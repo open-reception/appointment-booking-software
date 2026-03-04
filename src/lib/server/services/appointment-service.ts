@@ -77,6 +77,14 @@ export class AppointmentService {
     }
   }
 
+  async hasAppointments(): Promise<boolean> {
+    const log = logger.setContext("AppointmentService");
+    log.debug("Checking if tenant has appointments", { tenantId: this.tenantId });
+    const db = await this.getDb();
+    const result = await db.select().from(tenantSchema.appointment).limit(1);
+    return result.length > 0;
+  }
+
   /**
    * Send appointment notification email to client
    * @param appointmentId - The appointment ID

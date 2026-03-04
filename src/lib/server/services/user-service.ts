@@ -19,6 +19,7 @@ import { TenantAdminService } from "./tenant-admin-service";
 import { InviteService } from "./invite-service";
 import type { PgTransaction } from "drizzle-orm/pg-core";
 import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
+import { AppointmentService } from "./appointment-service";
 
 export type InsertUser = InferInsertModel<typeof centralSchema.user>;
 export type InsertUserPasskey = InferInsertModel<typeof centralSchema.userPasskey>;
@@ -140,6 +141,15 @@ export class UserService {
     if (userData.role === "GLOBAL_ADMIN") {
       userDataForDb.confirmationState = "ACCESS_GRANTED"; // Admin account is active immediately after email confirmation
       userDataForDb.isActive = true;
+    } else if (userData.tenantId) {
+      const appointmentService = await AppointmentService.forTenant(userData.tenantId);
+      const hasAppointments = await appointmentService.hasAppointments();
+      if (!hasAppointments) {
+        log.debug("No appointments found for tenant, granting immediate access to user", {
+          tenantId: userData.tenantId,
+        });
+        userDataForDb.confirmationState = "ACCESS_GRANTED";
+      }
     }
 
     // Handle passphrase or generate recovery passphrase
