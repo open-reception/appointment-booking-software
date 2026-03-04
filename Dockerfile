@@ -10,6 +10,9 @@ COPY package*.json ./
 RUN npm ci --ignore-scripts && \
     npm cache clean --force
 
+# Set node env
+ENV NODE_ENV=production
+
 # Copy source and build
 COPY . .
 RUN npm run build
