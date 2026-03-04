@@ -105,11 +105,17 @@ describe("DELETE /api/tenants/[id]/appointments/[appointmentId]/delete", () => {
     expect(mockDeleteAppointmentByStaff).toHaveBeenCalledWith(
       mockAppointmentId,
       mockClientEmail,
-      "de",
+      "en",
     );
   });
 
-  it("should return 422 when clientEmail is missing", async () => {
+  it("should allow clientEmail to be is missing", async () => {
+    const mockDeleteAppointmentByStaff = vi.fn().mockResolvedValue(undefined);
+
+    vi.mocked(appointmentService.AppointmentService.forTenant).mockResolvedValue({
+      deleteAppointmentByStaff: mockDeleteAppointmentByStaff,
+    } as any);
+
     const request = new Request("http://localhost", {
       method: "DELETE",
       body: JSON.stringify({}),
@@ -124,7 +130,8 @@ describe("DELETE /api/tenants/[id]/appointments/[appointmentId]/delete", () => {
       locals: { user: { id: "user-123" } },
     } as any);
 
-    expect(response.status).toBe(422);
+    expect(response.status).toBe(200);
+    expect(mockDeleteAppointmentByStaff).toHaveBeenCalledWith(mockAppointmentId, undefined, "en");
   });
 
   it("should return 422 when clientEmail is invalid", async () => {
