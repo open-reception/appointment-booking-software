@@ -223,14 +223,14 @@ describe("ScheduleService", () => {
 
       // Validate each slot has correct times, duration, and agents
       const expectedSlots = [
-        { from: "09:00", to: "10:00" },
-        { from: "10:00", to: "11:00" },
-        { from: "11:00", to: "12:00" },
-        { from: "12:00", to: "13:00" },
-        { from: "13:00", to: "14:00" },
-        { from: "14:00", to: "15:00" },
-        { from: "15:00", to: "16:00" },
-        { from: "16:00", to: "17:00" },
+        { from: "2024-01-01T09:00:00.000Z", to: "2024-01-01T10:00:00.000Z" },
+        { from: "2024-01-01T10:00:00.000Z", to: "2024-01-01T11:00:00.000Z" },
+        { from: "2024-01-01T11:00:00.000Z", to: "2024-01-01T12:00:00.000Z" },
+        { from: "2024-01-01T12:00:00.000Z", to: "2024-01-01T13:00:00.000Z" },
+        { from: "2024-01-01T13:00:00.000Z", to: "2024-01-01T14:00:00.000Z" },
+        { from: "2024-01-01T14:00:00.000Z", to: "2024-01-01T15:00:00.000Z" },
+        { from: "2024-01-01T15:00:00.000Z", to: "2024-01-01T16:00:00.000Z" },
+        { from: "2024-01-01T16:00:00.000Z", to: "2024-01-01T17:00:00.000Z" },
       ];
 
       expectedSlots.forEach((expectedSlot, index) => {
@@ -381,7 +381,7 @@ describe("ScheduleService", () => {
       // Should only have Monday slot (09:00-10:00), not Tuesday slot
       const channelSchedule = result.schedule[0].channels["channel1"];
       expect(channelSchedule.availableSlots).toHaveLength(1);
-      expect(channelSchedule.availableSlots[0].from).toBe("09:00");
+      expect(channelSchedule.availableSlots[0].from).toBe("2024-01-01T09:00:00.000Z");
     });
 
     it("should exclude slots with appointments", async () => {
@@ -420,12 +420,12 @@ describe("ScheduleService", () => {
       const mockAppointments = [
         {
           id: "appointment1",
-          clientId: "client1",
+          tunnelId: "tunnel1",
           channelId: "channel1",
+          agentId: "agent1",
           appointmentDate: "2024-01-01T09:00:00.000Z", // 09:00 UTC
+          duration: 60,
           expiryDate: "2024-01-01",
-          title: "Test Appointment",
-          description: null,
           status: "NEW",
         },
       ];
@@ -456,7 +456,7 @@ describe("ScheduleService", () => {
       const channelSchedule = result.schedule[0].channels["channel1"];
       // Should only have 10:00-11:00 slot, not 09:00-10:00 (has appointment)
       expect(channelSchedule.availableSlots).toHaveLength(1);
-      expect(channelSchedule.availableSlots[0].from).toBe("10:00");
+      expect(channelSchedule.availableSlots[0].from).toBe("2024-01-01T10:00:00.000Z");
     });
 
     it("should handle appointments correctly and reduce available slots", async () => {
@@ -496,22 +496,22 @@ describe("ScheduleService", () => {
       const mockAppointments = [
         {
           id: "appointment1",
-          clientId: "client1",
+          tunnelId: "tunnel1",
           channelId: "channel1",
+          agentId: "agent1",
           appointmentDate: "2024-01-01T10:00:00.000Z", // 10:00 UTC
+          duration: 60,
           expiryDate: "2024-01-01",
-          title: "Appointment 1",
-          description: null,
           status: "CONFIRMED",
         },
         {
           id: "appointment2",
-          clientId: "client2",
+          tunnelId: "tunnel2",
           channelId: "channel1",
+          agentId: "agent1",
           appointmentDate: "2024-01-01T14:00:00.000Z", // 14:00 UTC
+          duration: 60,
           expiryDate: "2024-01-01",
-          title: "Appointment 2",
-          description: null,
           status: "NEW",
         },
       ];
@@ -550,12 +550,12 @@ describe("ScheduleService", () => {
 
       // Validate available slots exclude booked times (10:00-11:00 and 14:00-15:00)
       const expectedAvailableSlots = [
-        { from: "09:00", to: "10:00" },
-        { from: "11:00", to: "12:00" },
-        { from: "12:00", to: "13:00" },
-        { from: "13:00", to: "14:00" },
-        { from: "15:00", to: "16:00" },
-        { from: "16:00", to: "17:00" },
+        { from: "2024-01-01T09:00:00.000Z", to: "2024-01-01T10:00:00.000Z" },
+        { from: "2024-01-01T11:00:00.000Z", to: "2024-01-01T12:00:00.000Z" },
+        { from: "2024-01-01T12:00:00.000Z", to: "2024-01-01T13:00:00.000Z" },
+        { from: "2024-01-01T13:00:00.000Z", to: "2024-01-01T14:00:00.000Z" },
+        { from: "2024-01-01T15:00:00.000Z", to: "2024-01-01T16:00:00.000Z" },
+        { from: "2024-01-01T16:00:00.000Z", to: "2024-01-01T17:00:00.000Z" },
       ];
 
       expectedAvailableSlots.forEach((expectedSlot, index) => {
@@ -639,6 +639,90 @@ describe("ScheduleService", () => {
       const channelSchedule = result.schedule[0].channels["channel1"];
       // Should have no available slots since only agent is absent
       expect(channelSchedule.availableSlots).toHaveLength(0);
+    });
+
+    it("should keep slot if one agent is booked but another is available", async () => {
+      const validRequest: ScheduleRequest = {
+        startDate: "2024-01-01T00:00:00.000Z",
+        endDate: "2024-01-01T23:59:59.999Z",
+        tenantId: mockTenantId,
+      };
+
+      const mockChannels = [
+        {
+          id: "channel1",
+          names: ["Test"],
+          pause: false,
+          descriptions: ["Test"],
+          languages: ["de"],
+          isPublic: true,
+          requiresConfirmation: false,
+          color: null,
+        },
+      ];
+
+      const mockSlotTemplates = [
+        {
+          slotTemplate: {
+            id: "template1",
+            weekdays: 1,
+            from: "09:00",
+            to: "10:00",
+            duration: 60,
+          },
+          channelId: "channel1",
+        },
+      ];
+
+      const mockAppointments = [
+        {
+          id: "appointment1",
+          tunnelId: "tunnel1",
+          channelId: "channel1",
+          agentId: "agent1",
+          appointmentDate: "2024-01-01T09:00:00.000Z",
+          duration: 60,
+          expiryDate: "2024-01-01",
+          status: "CONFIRMED",
+        },
+      ];
+
+      const mockChannelAgents = [
+        {
+          channelId: "channel1",
+          agent: {
+            id: "agent1",
+            name: "Agent 1",
+            description: null,
+            logo: null,
+          },
+        },
+        {
+          channelId: "channel1",
+          agent: {
+            id: "agent2",
+            name: "Agent 2",
+            description: null,
+            logo: null,
+          },
+        },
+      ];
+
+      setupDbMocks({
+        channels: mockChannels,
+        slotTemplates: mockSlotTemplates,
+        appointments: mockAppointments,
+        absences: [],
+        channelAgents: mockChannelAgents,
+      });
+
+      const result = await service.getSchedule(validRequest);
+
+      const channelSchedule = result.schedule[0].channels["channel1"];
+      expect(channelSchedule.availableSlots).toHaveLength(1);
+      expect(channelSchedule.availableSlots[0].from).toBe("2024-01-01T09:00:00.000Z");
+      expect(channelSchedule.availableSlots[0].availableAgents).toHaveLength(1);
+      expect(channelSchedule.availableSlots[0].availableAgents[0].id).toBe("agent2");
     });
   });
 });

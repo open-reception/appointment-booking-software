@@ -15,7 +15,7 @@ export const GET: RequestHandler = async () => {
       },
       tenant: { longName: "Praxis Dr. Jane Doe" } as SelectTenant,
       confirmUrl: "https://open-reception.org/confirm/abc123",
-      expirationMinutes: 10,
+      expirationMinutes: 30,
     },
   });
   const html = renderOutputToHtml(emailRender);

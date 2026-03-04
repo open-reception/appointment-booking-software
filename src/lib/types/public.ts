@@ -73,8 +73,8 @@ export type TPublicSchedule = {
 };
 
 export type TPublicSlot = {
-  from: string; // Format HH:mm
-  to: string; // Format HH:mm
+  from: string; // UTC ISO date-time string
+  to: string; // UTC ISO date-time string
   duration: number;
   availableAgents: {
     id: string;

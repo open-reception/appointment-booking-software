@@ -62,7 +62,7 @@ describe("POST /api/auth/invite", () => {
     createdUserId: null,
     createdAt: new Date(),
     updatedAt: new Date(),
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    expiresAt: new Date(Date.now() + 30 * 60 * 1000),
   };
 
   const createRequestEvent = (body: any, user: any = null) =>

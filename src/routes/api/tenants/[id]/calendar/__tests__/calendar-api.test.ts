@@ -79,8 +79,8 @@ describe("Calendar API", () => {
             ],
             availableSlots: [
               {
-                from: "09:00",
-                to: "09:30",
+                from: "2024-01-01T09:00:00.000Z",
+                to: "2024-01-01T09:30:00.000Z",
                 duration: 30,
                 availableAgents: [
                   {
@@ -91,8 +91,8 @@ describe("Calendar API", () => {
                 ],
               },
               {
-                from: "11:00",
-                to: "11:30",
+                from: "2024-01-01T11:00:00.000Z",
+                to: "2024-01-01T11:30:00.000Z",
                 duration: 30,
                 availableAgents: [
                   {
@@ -185,7 +185,7 @@ describe("Calendar API", () => {
     });
 
     it("should return 400 for missing endDate", async () => {
-      const request = createRequest("tenant-123", "2024-01-01T00:00:00.000Z", undefined);
+      const request = createRequest("tenant-123", "2024-01-01T00:00:00.000Z");
       const response = await GET(request);
 
       expect(response.status).toBe(422);

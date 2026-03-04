@@ -1,6 +1,6 @@
 import { centralDb } from "../db";
 import * as centralSchema from "../db/central-schema";
-import { eq, desc, gt, and, count, or } from "drizzle-orm";
+import { eq, desc, gt, and, count, or, sql } from "drizzle-orm";
 import type { InferInsertModel, TablesRelationalConfig } from "drizzle-orm";
 
 import { z } from "zod";
@@ -19,6 +19,7 @@ import { TenantAdminService } from "./tenant-admin-service";
 import { InviteService } from "./invite-service";
 import type { PgTransaction } from "drizzle-orm/pg-core";
 import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
+import { AppointmentService } from "./appointment-service";
 
 export type InsertUser = InferInsertModel<typeof centralSchema.user>;
 export type InsertUserPasskey = InferInsertModel<typeof centralSchema.userPasskey>;
@@ -140,6 +141,15 @@ export class UserService {
     if (userData.role === "GLOBAL_ADMIN") {
       userDataForDb.confirmationState = "ACCESS_GRANTED"; // Admin account is active immediately after email confirmation
       userDataForDb.isActive = true;
+    } else if (userData.tenantId) {
+      const appointmentService = await AppointmentService.forTenant(userData.tenantId);
+      const hasAppointments = await appointmentService.hasAppointments();
+      if (!hasAppointments) {
+        log.debug("No appointments found for tenant, granting immediate access to user", {
+          tenantId: userData.tenantId,
+        });
+        userDataForDb.confirmationState = "ACCESS_GRANTED";
+      }
     }
 
     // Handle passphrase or generate recovery passphrase
@@ -296,7 +306,7 @@ export class UserService {
         .where(
           and(
             eq(centralSchema.user.token, linkToken),
-            gt(centralSchema.user.tokenValidUntil, new Date()),
+            gt(centralSchema.user.tokenValidUntil, sql`timezone('utc', now())`),
           ),
         )
         .limit(1);
@@ -315,7 +325,7 @@ export class UserService {
           .where(
             and(
               eq(centralSchema.userInvite.inviteCode, linkToken),
-              gt(centralSchema.userInvite.expiresAt, new Date()),
+              gt(centralSchema.userInvite.expiresAt, sql`timezone('utc', now())`),
             ),
           )
           .limit(1);

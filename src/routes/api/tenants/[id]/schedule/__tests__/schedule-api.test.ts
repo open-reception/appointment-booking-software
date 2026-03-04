@@ -71,8 +71,8 @@ describe("Schedule API Route", () => {
                 ],
                 availableSlots: [
                   {
-                    from: "09:00",
-                    to: "09:30",
+                    from: "2024-01-01T09:00:00.000Z",
+                    to: "2024-01-01T09:30:00.000Z",
                     duration: 30,
                     availableAgents: [{ id: "agent-1", name: "Agent 1" }],
                   },
@@ -102,8 +102,8 @@ describe("Schedule API Route", () => {
                 },
                 availableSlots: [
                   {
-                    from: "09:00",
-                    to: "09:30",
+                    from: "2024-01-01T09:00:00.000Z",
+                    to: "2024-01-01T09:30:00.000Z",
                     duration: 30,
                     availableAgents: [{ id: "agent-1", name: "Agent 1" }],
                   },
