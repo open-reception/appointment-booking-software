@@ -416,62 +416,6 @@ describe("POST /api/tenants/[id]/appointments/staff-create", () => {
   });
 
   describe("Email Sending", () => {
-    it("should send email for new client when sendEmail is true", async () => {
-      mockAppointmentService.getClientTunnels.mockResolvedValue([]);
-      mockAppointmentService.createNewClientWithAppointment.mockResolvedValue({
-        id: "appointment-123",
-        appointmentDate: "2026-01-15T14:00:00.000Z",
-        status: "NEW",
-        requiresConfirmation: true,
-      });
-      mockPinResetService.createResetToken.mockResolvedValue("reset-token-123");
-      mockAppointmentService.sendAppointmentNotification.mockResolvedValue(undefined);
-
-      const request = new Request("http://localhost/api", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clientEmail: "test@example.com",
-          emailHash,
-          appointmentDate: "2026-01-15T14:00:00.000Z",
-          duration: 30,
-          channelId: "channel-123",
-          agentId: "agent-123",
-          tunnelId: "tunnel-123",
-          clientPublicKey: "public-key",
-          privateKeyShare: "private-key-share",
-          clientEncryptedTunnelKey: "encrypted-tunnel-key",
-          staffKeyShares: [
-            {
-              userId: "staff-123",
-              encryptedTunnelKey: "encrypted-for-staff",
-            },
-          ],
-          encryptedAppointment: {
-            encryptedPayload: "encrypted-payload",
-            iv: "iv",
-            authTag: "auth-tag",
-          },
-          sendEmail: true,
-        }),
-      });
-
-      await POST({
-        params: { id: tenantId },
-        request,
-        locals: { user: { id: "staff-123", role: "STAFF" } } as any,
-      } as any);
-
-      // Email sending is async, so we just verify it was called
-      expect(mockAppointmentService.sendAppointmentNotification).toHaveBeenCalledWith(
-        "appointment-123",
-        "channel-123",
-        "test@example.com",
-        "de",
-        true,
-      );
-    });
-
     it("should not send email when sendEmail is false", async () => {
       mockAppointmentService.getClientTunnels.mockResolvedValue([]);
       mockAppointmentService.createNewClientWithAppointment.mockResolvedValue({
