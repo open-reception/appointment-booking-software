@@ -84,59 +84,7 @@ registerOpenAPIRoute("/tenants/{id}/schedule", "GET", {
                     },
                     channels: {
                       type: "object",
-                      additionalProperties: {
-                        type: "object",
-                        properties: {
-                          channel: {
-                            type: "object",
-                            properties: {
-                              id: { type: "string", format: "uuid" },
-                              names: { type: "object" },
-                              descriptions: { type: "object" },
-                              requiresConfirmation: { type: "boolean" },
-                              pause: { type: "boolean" },
-                            },
-                            required: [
-                              "id",
-                              "names",
-                              "descriptions",
-                              "requiresConfirmation",
-                              "pause",
-                            ],
-                          },
-                          availableSlots: {
-                            type: "array",
-                            items: {
-                              type: "object",
-                              properties: {
-                                from: {
-                                  type: "string",
-                                  format: "date-time",
-                                  description: "Slot start as full UTC timestamp",
-                                  example: "2024-01-01T09:00:00.000Z",
-                                },
-                                to: {
-                                  type: "string",
-                                  format: "date-time",
-                                  description: "Slot end as full UTC timestamp",
-                                  example: "2024-01-01T09:30:00.000Z",
-                                },
-                                duration: {
-                                  type: "number",
-                                  description: "Slot duration in minutes",
-                                  example: 30,
-                                },
-                                availableAgents: {
-                                  type: "array",
-                                  items: { type: "object" },
-                                },
-                              },
-                              required: ["from", "to", "duration", "availableAgents"],
-                            },
-                          },
-                        },
-                        required: ["channel", "availableSlots"],
-                      },
+                      additionalProperties: true,
                       description:
                         "Available slots organized by channel ID (key-value pairs where key is channel UUID and value contains channel info and available slots only)",
                     },
