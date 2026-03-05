@@ -724,5 +724,112 @@ describe("ScheduleService", () => {
       expect(channelSchedule.availableSlots[0].availableAgents).toHaveLength(1);
       expect(channelSchedule.availableSlots[0].availableAgents[0].id).toBe("agent2");
     });
+
+    it("should block same agent across channels at the same time", async () => {
+      const validRequest: ScheduleRequest = {
+        startDate: "2024-01-01T00:00:00.000Z",
+        endDate: "2024-01-01T23:59:59.999Z",
+        tenantId: mockTenantId,
+      };
+
+      const mockChannels = [
+        {
+          id: "channel1",
+          names: ["Channel 1"],
+          pause: false,
+          descriptions: ["Channel 1"],
+          languages: ["de"],
+          isPublic: true,
+          requiresConfirmation: false,
+          color: null,
+        },
+        {
+          id: "channel2",
+          names: ["Channel 2"],
+          pause: false,
+          descriptions: ["Channel 2"],
+          languages: ["de"],
+          isPublic: true,
+          requiresConfirmation: false,
+          color: null,
+        },
+      ];
+
+      const mockSlotTemplates = [
+        {
+          slotTemplate: {
+            id: "template1",
+            weekdays: 1,
+            from: "09:00",
+            to: "11:00",
+            duration: 60,
+          },
+          channelId: "channel1",
+        },
+        {
+          slotTemplate: {
+            id: "template2",
+            weekdays: 1,
+            from: "09:00",
+            to: "11:00",
+            duration: 60,
+          },
+          channelId: "channel2",
+        },
+      ];
+
+      const mockAppointments = [
+        {
+          id: "appointment1",
+          tunnelId: "tunnel1",
+          channelId: "channel1",
+          agentId: "agent1",
+          appointmentDate: "2024-01-01T10:00:00.000Z",
+          duration: 60,
+          expiryDate: "2024-01-01",
+          status: "CONFIRMED",
+        },
+      ];
+
+      const mockChannelAgents = [
+        {
+          channelId: "channel1",
+          agent: {
+            id: "agent1",
+            name: "Agent 1",
+            description: null,
+            logo: null,
+          },
+        },
+        {
+          channelId: "channel2",
+          agent: {
+            id: "agent1",
+            name: "Agent 1",
+            description: null,
+            logo: null,
+          },
+        },
+      ];
+
+      setupDbMocks({
+        channels: mockChannels,
+        slotTemplates: mockSlotTemplates,
+        appointments: mockAppointments,
+        absences: [],
+        channelAgents: mockChannelAgents,
+      });
+
+      const result = await service.getSchedule(validRequest);
+
+      const channel1Schedule = result.schedule[0].channels["channel1"];
+      const channel2Schedule = result.schedule[0].channels["channel2"];
+
+      expect(channel1Schedule.availableSlots).toHaveLength(1);
+      expect(channel1Schedule.availableSlots[0].from).toBe("2024-01-01T09:00:00.000Z");
+
+      expect(channel2Schedule.availableSlots).toHaveLength(1);
+      expect(channel2Schedule.availableSlots[0].from).toBe("2024-01-01T09:00:00.000Z");
+    });
   });
 });
