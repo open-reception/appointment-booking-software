@@ -275,6 +275,9 @@ export class ScheduleService {
       const dateString = currentDate.toISOString().split("T")[0]; // YYYY-MM-DD
       const weekday = currentDate.getUTCDay(); // 0 = Sunday, 1 = Monday, ...
       const weekdayBit = weekday === 0 ? 64 : Math.pow(2, weekday - 1); // Convert to bitmask
+      const dayAppointments = appointments.filter((appointment) =>
+        new Date(appointment.appointmentDate).toISOString().startsWith(dateString),
+      );
 
       const daySchedule: DaySchedule = {
         date: dateString,
@@ -284,12 +287,8 @@ export class ScheduleService {
       // Process each channel
       for (const channel of channels) {
         // Get appointments for this channel on this day
-        const dayAppointments = appointments
-          .filter(
-            (appointment) =>
-              appointment.channelId === channel.id &&
-              new Date(appointment.appointmentDate).toISOString().startsWith(dateString),
-          )
+        const dayChannelAppointments = dayAppointments
+          .filter((appointment) => appointment.channelId === channel.id)
           .map((appointment) => ({
             ...appointment,
             staffKeyShare: staffKeyShares[appointment.tunnelId],
@@ -321,7 +320,7 @@ export class ScheduleService {
 
         daySchedule.channels[channel.id] = {
           channel,
-          appointments: dayAppointments,
+          appointments: dayChannelAppointments,
           availableSlots,
         };
       }
