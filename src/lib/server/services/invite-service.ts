@@ -1,11 +1,6 @@
 import { db } from "$lib/server/db";
-import {
-  userInvite,
-  tenant,
-  type InsertUserInvite,
-  type SelectUserInvite,
-} from "$lib/server/db/central-schema";
-import { eq, and, lt } from "drizzle-orm";
+import { userInvite, tenant, type SelectUserInvite } from "$lib/server/db/central-schema";
+import { eq, and, lt, gt, sql } from "drizzle-orm";
 import { UniversalLogger } from "$lib/logger";
 import { InternalError } from "../utils/errors";
 
@@ -31,18 +26,14 @@ export class InviteService {
     language: "de" | "en" = "de",
   ): Promise<SelectUserInvite> {
     try {
-      // Set expiration to 7 days from now
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7);
-
-      const inviteData: InsertUserInvite = {
+      const inviteData = {
         email,
         name,
         role,
         tenantId,
         invitedBy,
         language,
-        expiresAt,
+        expiresAt: sql`timezone('utc', now()) + interval '30 minutes'`,
         used: false,
       };
 
@@ -80,27 +71,23 @@ export class InviteService {
         })
         .from(userInvite)
         .innerJoin(tenant, eq(userInvite.tenantId, tenant.id))
-        .where(and(eq(userInvite.inviteCode, inviteCode), eq(userInvite.used, false)))
+        .where(
+          and(
+            eq(userInvite.inviteCode, inviteCode),
+            eq(userInvite.used, false),
+            gt(userInvite.expiresAt, sql`timezone('utc', now())`),
+          ),
+        )
         .limit(1);
 
       if (result.length === 0) {
-        return null;
-      }
-
-      const invitation = result[0];
-
-      // Check if invitation has expired
-      if (invitation.invite.expiresAt < new Date()) {
-        logger.warn("Attempted to use expired invitation", {
-          inviteCode,
-          expiresAt: invitation.invite.expiresAt,
-        });
+        logger.warn("Attempted to use expired or non-existent invitation", {});
         return null;
       }
 
       return {
-        ...invitation.invite,
-        tenant: invitation.tenant,
+        ...result[0].invite,
+        tenant: result[0].tenant,
       };
     } catch (error) {
       logger.error("Failed to get invitation by code", { error, inviteCode });
@@ -163,6 +150,7 @@ export class InviteService {
             eq(userInvite.email, email),
             eq(userInvite.tenantId, tenantId),
             eq(userInvite.used, false),
+            gt(userInvite.expiresAt, sql`timezone('utc', now())`),
           ),
         )
         .limit(1);
@@ -184,7 +172,7 @@ export class InviteService {
         and(
           eq(userInvite.used, false),
           // Delete invitations that expired more than 1 day ago
-          lt(userInvite.expiresAt, new Date(Date.now() - 24 * 60 * 60 * 1000)),
+          lt(userInvite.expiresAt, sql`timezone('utc', now()) - interval '1 day'`),
         ),
       );
 
