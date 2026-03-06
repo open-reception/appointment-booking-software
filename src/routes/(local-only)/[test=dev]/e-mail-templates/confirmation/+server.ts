@@ -1,5 +1,5 @@
 import Confirmation from "$lib/emails/Confirmation.svelte";
-import { htmlToText, renderOutputToHtml } from "$lib/emails/utils";
+import { renderOutputToHtml } from "$lib/emails/utils";
 import type { RequestHandler } from "@sveltejs/kit";
 import { render } from "svelte/server";
 

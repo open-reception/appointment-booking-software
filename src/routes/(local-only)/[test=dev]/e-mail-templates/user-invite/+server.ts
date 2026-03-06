@@ -1,5 +1,5 @@
 import UserInvite from "$lib/emails/UserInvite.svelte";
-import { htmlToText, renderOutputToHtml } from "$lib/emails/utils";
+import { renderOutputToHtml } from "$lib/emails/utils";
 import type { SelectTenant } from "$lib/server/db/central-schema";
 import type { RequestHandler } from "@sveltejs/kit";
 import { render } from "svelte/server";

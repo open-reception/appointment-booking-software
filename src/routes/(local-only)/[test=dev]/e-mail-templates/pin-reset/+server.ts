@@ -1,5 +1,5 @@
 import PinReset from "$lib/emails/PinReset.svelte";
-import { renderOutputToHtml, htmlToText } from "$lib/emails/utils";
+import { renderOutputToHtml } from "$lib/emails/utils";
 import type { SelectTenant } from "$lib/server/db/central-schema";
 import type { RequestHandler } from "@sveltejs/kit";
 import { render } from "svelte/server";
