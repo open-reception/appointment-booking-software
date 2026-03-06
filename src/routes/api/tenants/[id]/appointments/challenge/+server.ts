@@ -144,7 +144,6 @@ export const POST: RequestHandler = async ({ request, params }) => {
     if (!throttleResult.allowed) {
       logger.warn("PIN challenge throttled", {
         tenantId,
-        emailHashPrefix: emailHash.slice(0, 8),
         retryAfterMs: throttleResult.retryAfterMs,
         failedAttempts: throttleResult.failedAttempts,
       });
@@ -163,7 +162,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
       );
     }
 
-    logger.info("Creating challenge for existing client", {
+    logger.debug("Creating challenge for existing client", {
       tenantId,
       emailHashPrefix: emailHash.slice(0, 8),
     });
@@ -184,7 +183,6 @@ export const POST: RequestHandler = async ({ request, params }) => {
     if (tunnelResult.length === 0) {
       logger.warn("Client tunnel not found for challenge", {
         tenantId,
-        emailHashPrefix: emailHash.slice(0, 8),
       });
       return json({ error: "Client not found" }, { status: 404 });
     }
@@ -223,7 +221,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
       privateKeyShare: tunnel.privateKeyShare,
     };
 
-    logger.info("Successfully created challenge", {
+    logger.debug("Successfully created challenge", {
       tenantId,
       tunnelId: tunnel.id,
       challengeLength: challenge.length,

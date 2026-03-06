@@ -208,11 +208,10 @@ export const POST: RequestHandler = async ({ request, params }) => {
       throw new ValidationError("Bees incoming");
     }
 
-    logger.info("Adding appointment to existing tunnel", {
+    logger.debug("Adding appointment to existing tunnel", {
       tenantId,
       tunnelId: validatedData.tunnelId,
       appointmentDate: validatedData.appointmentDate,
-      emailHashPrefix: validatedData.emailHash.slice(0, 8),
     });
 
     const db = await getTenantDb(tenantId);
@@ -230,7 +229,6 @@ export const POST: RequestHandler = async ({ request, params }) => {
       logger.warn("Client tunnel not found", {
         tenantId,
         tunnelId: validatedData.tunnelId,
-        emailHashPrefix: validatedData.emailHash.slice(0, 8),
       });
       throw new NotFoundError("Tunnel not found or access denied");
     }
@@ -335,14 +333,14 @@ export const POST: RequestHandler = async ({ request, params }) => {
 
           if (requiresConfirmation) {
             await sendAppointmentRequestEmail(clientData, tenant, result, channelTitle);
-            logger.info("Appointment request email sent", {
+            logger.debug("Appointment request email sent", {
               tunnelId: validatedData.tunnelId,
               appointmentId: result.id,
               tenantId,
             });
           } else {
             await sendAppointmentCreatedEmail(clientData, tenant, result, channelTitle);
-            logger.info("Appointment confirmation email sent", {
+            logger.debug("Appointment confirmation email sent", {
               tunnelId: validatedData.tunnelId,
               appointmentId: result.id,
               tenantId,
@@ -352,7 +350,6 @@ export const POST: RequestHandler = async ({ request, params }) => {
       }
     } catch (emailError) {
       logger.error("Failed to send appointment notification email", {
-        tunnelId: validatedData.tunnelId,
         appointmentId: result.id,
         tenantId,
         error: String(emailError),

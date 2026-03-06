@@ -13,9 +13,7 @@ export class AuthorizationService {
     }
 
     if (user.role !== requiredRole) {
-      logger.warn(
-        `Access denied: User ${user.email} has role ${user.role}, required ${requiredRole}`,
-      );
+      logger.warn(`Access denied: User ${user.id} has role ${user.role}, required ${requiredRole}`);
       throw new AuthorizationError();
     }
 
@@ -29,7 +27,7 @@ export class AuthorizationService {
 
     if (!allowedRoles.includes(user.role as UserRole)) {
       logger.warn(
-        `Access denied: User ${user.email} has role ${user.role}, allowed roles: ${allowedRoles.join(", ")}`,
+        `Access denied: User ${user.id} has role ${user.role}, allowed roles: ${allowedRoles.join(", ")}`,
       );
       throw new AuthorizationError();
     }
@@ -51,13 +49,13 @@ export class AuthorizationService {
 
     if (user.role === "TENANT_ADMIN" || user.role === "STAFF") {
       if (!user.tenantId) {
-        logger.warn(`Access denied: User ${user.email} has no tenant assigned`);
+        logger.warn(`Access denied: User ${user.id} has no tenant assigned`);
         throw new AuthorizationError("No tenant access");
       }
 
       if (user.tenantId !== tenantId) {
         logger.warn(
-          `Access denied: User ${user.email} trying to access tenant ${tenantId}, but belongs to ${user.tenantId}`,
+          `Access denied: User ${user.id} trying to access tenant ${tenantId}, but belongs to ${user.tenantId}`,
         );
         throw new AuthorizationError("Tenant access denied");
       }
@@ -66,7 +64,7 @@ export class AuthorizationService {
       return;
     }
 
-    logger.warn(`Access denied: User ${user.email} has invalid role ${user.role}`);
+    logger.warn(`Access denied: User ${user.id} has invalid role ${user.role}`);
     throw new AuthorizationError("Invalid role");
   }
 

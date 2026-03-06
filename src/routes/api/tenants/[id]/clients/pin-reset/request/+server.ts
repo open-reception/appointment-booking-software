@@ -166,12 +166,10 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
     const baseUrl = env.PUBLIC_APP_URL || "http://localhost:5173";
     const resetUrl = `${baseUrl}/reset-pin/${token}`;
 
-    logger.info("PIN reset token created for email", {
+    logger.debug("PIN reset token created for email", {
       tenantId,
       emailHash: validatedData.emailHash.slice(0, 8),
-      tokenId: token.slice(0, 8),
       initiatedBy: locals.user?.id,
-      resetUrl,
     });
 
     // TODO: Send actual email once we have a way to get the client's email

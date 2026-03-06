@@ -17,10 +17,6 @@ export const GET: RequestHandler = async () => {
     },
   });
   const html = renderOutputToHtml(emailRender);
-  const text = htmlToText(html);
-
-  // Output for testing purposes
-  console.log(text);
   return new Response(html, {
     headers: {
       "Content-Type": "text/html",

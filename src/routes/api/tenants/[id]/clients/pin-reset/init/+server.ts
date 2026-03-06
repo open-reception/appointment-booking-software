@@ -152,10 +152,9 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 
     const expiresAt = new Date(Date.now() + expirationMinutes * 60 * 1000);
 
-    logger.info("PIN reset token created for QR code", {
+    logger.debug("PIN reset token created for QR code", {
       tenantId,
       emailHash: validatedData.emailHash.slice(0, 8),
-      tokenId: token.slice(0, 8),
       initiatedBy: locals.user?.id,
     });
 

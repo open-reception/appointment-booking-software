@@ -376,7 +376,6 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 
           logger.info("PIN reset token created for new client", {
             tenantId,
-            tokenId: pinResetToken.slice(0, 8),
           });
         } catch (error) {
           logger.error("Failed to create PIN reset token for new client", {

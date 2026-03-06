@@ -250,7 +250,7 @@ export class StaffService {
             deletedKeySharesCount,
           };
 
-          logger.info("Staff member deleted successfully", {
+          logger.debug("Staff member deleted successfully", {
             staffId,
             tenantId,
             deletedUser: userDeletionResult.deletedUser,

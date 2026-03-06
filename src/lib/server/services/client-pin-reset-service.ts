@@ -90,8 +90,6 @@ export class ClientPinResetService {
         .returning({ token: tenantSchema.clientPinResetToken.token });
 
       log.info("PIN reset token created", {
-        emailHash: emailHash.slice(0, 8),
-        tokenId: resetToken.token.slice(0, 8),
         expiresAt,
       });
 
@@ -226,9 +224,7 @@ export class ClientPinResetService {
         .where(eq(tenantSchema.clientPinResetToken.token, token));
 
       log.info("PIN reset completed successfully", {
-        tokenId: token.slice(0, 8),
         tunnelId: tunnel.id,
-        emailHash: emailHash.slice(0, 8),
       });
 
       return tunnel.id;

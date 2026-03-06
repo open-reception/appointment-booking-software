@@ -262,11 +262,9 @@ export async function POST({ request, params, locals }: RequestEvent) {
       privateKeyShare,
     );
 
-    log.info("Crypto keys stored successfully", {
-      passkeyId,
+    log.debug("Crypto keys stored successfully", {
       userId,
       tenantId,
-      prfHash: prfHash.substring(0, 16) + "...",
     });
 
     return json({
