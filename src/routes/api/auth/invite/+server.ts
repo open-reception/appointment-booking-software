@@ -206,8 +206,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     // Send invitation email
     await sendUserInviteEmail(email, name, tenant, role, registrationUrl, language);
 
-    logger.info("User invitation sent successfully", {
-      invitedBy: locals.user.id,
+    logger.debug("User invitation sent successfully", {
       invitedEmail: email,
       tenantId,
       role,

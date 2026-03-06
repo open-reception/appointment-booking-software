@@ -246,8 +246,6 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
       log.info("No new key shares to add - all already exist", {
         tenantId,
         staffUserId,
-        totalRequested: keyShares.length,
-        previousConfirmationState: staffUser[0].confirmationState,
       });
 
       await ensureAccessGranted();
@@ -284,12 +282,11 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
 
     await ensureAccessGranted();
 
-    log.info("Staff key shares added successfully", {
+    log.debug("Staff key shares added successfully", {
       tenantId,
       staffUserId,
       addedCount: result.length,
       skippedCount: duplicateKeyShares.length,
-      requesterId: locals.user?.id,
     });
 
     return json({

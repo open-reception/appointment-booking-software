@@ -243,7 +243,7 @@ export const DELETE: RequestHandler = async ({ params, url, locals }) => {
     const notificationService = await NotificationService.forTenant(tenantId);
     const deletedCount = await notificationService.deleteAllNotifications(locals.user.id, readOnly);
 
-    log.info("Notifications deleted successfully", {
+    log.debug("Notifications deleted successfully", {
       tenantId,
       staffId: locals.user.id,
       deletedCount,

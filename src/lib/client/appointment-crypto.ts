@@ -208,11 +208,7 @@ export class UnifiedAppointmentCrypto {
       // Note: clientKeyShare will be used during actual appointment creation
       await this.encryptTunnelKeyForClient();
 
-      console.log("✅ New client initialized", {
-        tunnelId: this.tunnelId,
-        emailHashPrefix: this.emailHash.slice(0, 8),
-        staffCount: staffPublicKeys.length,
-      });
+      console.log("✅ New client initialized", {});
 
       this.clientAuthenticated = true;
     } catch (error) {

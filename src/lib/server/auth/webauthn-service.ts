@@ -155,8 +155,7 @@ export class WebAuthnService {
         })
         .where(eq(userPasskey.id, normalizedCredentialId));
 
-      logger.info("WebAuthn authentication successful", {
-        credentialId: normalizedCredentialId.substring(0, 20) + "...",
+      logger.debug("WebAuthn authentication successful", {
         userId: passkey.userId,
         counterUpdated: `${passkey.counter} → ${newCounter}`,
       });
@@ -244,12 +243,9 @@ export class WebAuthnService {
         "base64",
       );
 
-      logger.info("Registration verified successfully", {
-        credentialId: normalizedCredentialId.substring(0, 20) + "...",
-        credentialIdLength: normalizedCredentialId.length,
+      logger.debug("Registration verified successfully", {
         counter: registrationInfo.credential.counter,
         publicKeyLength: registrationInfo.credential.publicKey.length,
-        publicKeyBytesFirst10: Array.from(registrationInfo.credential.publicKey.slice(0, 10)),
       });
 
       return {

@@ -233,12 +233,9 @@ export const POST: RequestHandler = async ({ request, params }) => {
       throw new ValidationError("Bees incoming");
     }
 
-    logger.info("Creating new client appointment tunnel", {
+    logger.debug("Creating new client appointment tunnel", {
       tenantId,
       tunnelId: validatedData.tunnelId,
-      appointmentDate: validatedData.appointmentDate,
-      duration: validatedData.duration,
-      emailHashPrefix: validatedData.emailHash.slice(0, 8),
     });
 
     const appointmentService = await AppointmentService.forTenant(tenantId);

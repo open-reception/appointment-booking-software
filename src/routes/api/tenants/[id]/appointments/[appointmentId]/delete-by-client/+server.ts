@@ -133,7 +133,7 @@ export const DELETE: RequestHandler = async ({ request, params }) => {
     const body = await request.json();
     const { emailHash, challengeId, challengeResponse } = requestSchema.parse(body);
 
-    log.info("Client deleting appointment", {
+    log.debug("Client deleting appointment", {
       tenantId,
       appointmentId,
       emailHashPrefix: emailHash.slice(0, 8),
@@ -148,10 +148,9 @@ export const DELETE: RequestHandler = async ({ request, params }) => {
       challengeResponse,
     );
 
-    log.info("Appointment deleted successfully by client", {
+    log.debug("Appointment deleted successfully by client", {
       tenantId,
       appointmentId,
-      emailHashPrefix: emailHash.slice(0, 8),
     });
 
     return json({

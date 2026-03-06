@@ -284,7 +284,6 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
 
     logger.info("Login successful", {
       userId: sessionData.user.id,
-      email: sessionData.user.email,
       role: sessionData.user.role,
       authMethod: body.passphrase ? "passphrase" : "webauthn",
     });

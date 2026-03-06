@@ -39,13 +39,10 @@ export class InviteService {
 
       const [createdInvite] = await db.insert(userInvite).values(inviteData).returning();
 
-      logger.info("User invitation created", {
+      logger.debug("User invitation created", {
         inviteId: createdInvite.id,
-        inviteCode: createdInvite.inviteCode,
-        email: createdInvite.email,
         tenantId: createdInvite.tenantId,
         role: createdInvite.role,
-        invitedBy: createdInvite.invitedBy,
       });
 
       return createdInvite;
@@ -124,7 +121,6 @@ export class InviteService {
       logger.info("Invitation marked as used", {
         inviteCode,
         createdUserId,
-        email: updatedInvite.email,
       });
 
       return updatedInvite;

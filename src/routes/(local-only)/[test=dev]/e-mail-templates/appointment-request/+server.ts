@@ -1,5 +1,5 @@
 import AppointmentRequested from "$lib/emails/AppointmentRequest.svelte";
-import { renderOutputToHtml, htmlToText } from "$lib/emails/utils";
+import { renderOutputToHtml } from "$lib/emails/utils";
 import type { SelectTenant } from "$lib/server/db/central-schema";
 import type { SelectAppointment } from "$lib/server/db/tenant-schema";
 import type { RequestHandler } from "@sveltejs/kit";
@@ -29,10 +29,6 @@ export const GET: RequestHandler = async () => {
     },
   });
   const html = renderOutputToHtml(emailRender);
-  const text = htmlToText(html);
-
-  // Output for testing purposes
-  console.log(text);
   return new Response(html, {
     headers: {
       "Content-Type": "text/html",
