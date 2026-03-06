@@ -16,6 +16,7 @@ vi.mock("$lib/server/utils/permissions", () => ({
 vi.mock("$lib/logger", () => ({
   default: {
     setContext: vi.fn(() => ({
+      debug: vi.fn(),
       info: vi.fn(),
       error: vi.fn(),
     })),
