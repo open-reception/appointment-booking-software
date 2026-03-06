@@ -1,6 +1,7 @@
 import { getLocale } from "$i18n/runtime";
 import type { supportedLocales } from "$lib/const/locales";
 import type { TPublicTenant } from "$lib/types/public";
+import type { TTenant } from "$lib/types/tenant";
 
 export const removeEmptyTranslations = (object: { [key: string]: string } | undefined) => {
   if (!object) return object;
@@ -24,4 +25,17 @@ export const getPublicLocale = (tenant: TPublicTenant): string => {
     return locale;
   }
   return tenant.defaultLanguage as unknown as string;
+};
+
+export const getDefaultAppointmentLocale = (tenant: TTenant | null): string => {
+  const locale = getLocale();
+  if (!tenant) return locale;
+
+  const availableLanguages = tenant.languages;
+  if (availableLanguages.includes(locale)) {
+    return locale;
+  }
+
+  // TODO: Not ideal
+  return availableLanguages[0];
 };

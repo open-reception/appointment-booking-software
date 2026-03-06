@@ -28,7 +28,7 @@
     }
     if (!intervalSession) {
       refreshSession();
-      intervalSession = setInterval(refreshSession, 10 * 60 * 1000); // 10 minutes
+      intervalSession = setInterval(refreshSession, 3 * 60 * 1000); // 3 minutes
     }
 
     const unsubscribe = () => {

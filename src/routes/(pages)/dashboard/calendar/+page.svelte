@@ -192,6 +192,10 @@
   });
 </script>
 
+<svelte:head>
+  <title>{m["calendar.title"]()} - OpenReception</title>
+</svelte:head>
+
 <SidebarLayout breakcrumbs={[{ label: m["nav.calendar"](), href: ROUTES.DASHBOARD.CALENDAR }]}>
   <MaxPageWidth maxWidth="xl">
     <div class="flex flex-col gap-10">
@@ -239,7 +243,7 @@
   {@const channel = channels.find((c) => c.id === curEmptySlot.channelId)}
   <ResponsiveDialog
     id="current-calendar-slot"
-    title="Add Appointment"
+    title={m["calendar.addAppointment.title"]()}
     description={channel ? getCurrentTranlslation(channel.names) : undefined}
     triggerHidden={true}
   >
