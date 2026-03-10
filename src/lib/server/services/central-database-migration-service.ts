@@ -194,8 +194,6 @@ export class CentralDatabaseMigrationService {
 
     logger.info("Central database created and initialized", {
       database: config.database,
-      host: config.host,
-      port: config.port,
     });
   }
 

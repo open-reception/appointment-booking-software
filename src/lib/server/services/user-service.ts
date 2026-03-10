@@ -660,7 +660,6 @@ export class UserService {
 
       log.info("User deleted successfully", {
         userId,
-        deletedUser: deletedUsers[0],
         deletedPasskeysCount,
         tenantId: user.tenantId,
       });

@@ -123,14 +123,13 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
     const body = await request.json();
     const { clientEmail, clientLanguage } = requestSchema.parse(body);
 
-    log.info("Denying appointment", {
+    log.debug("Denying appointment", {
       tenantId,
       appointmentId,
-      clientEmailPrefix: clientEmail ? clientEmail.slice(0, 3) : undefined,
     });
 
     await appointmentService.denyAppointment(appointmentId, clientEmail, clientLanguage);
-    log.info("Appointment denied successfully", {
+    log.debug("Appointment denied successfully", {
       tenantId,
       appointmentId,
     });

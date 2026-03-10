@@ -182,7 +182,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
     const notificationService = await NotificationService.forTenant(tenantId);
     await notificationService.deleteNotification(notificationId, locals.user.id);
 
-    log.info("Notification deleted successfully", {
+    log.debug("Notification deleted successfully", {
       tenantId,
       staffId: locals.user.id,
       notificationId,
@@ -233,7 +233,7 @@ export const PUT: RequestHandler = async ({ params, locals }) => {
     const notificationService = await NotificationService.forTenant(tenantId);
     await notificationService.markAsRead(notificationId, locals.user.id);
 
-    log.info("Notification marked as read successfully", {
+    log.debug("Notification marked as read successfully", {
       tenantId,
       staffId: locals.user.id,
       notificationId,

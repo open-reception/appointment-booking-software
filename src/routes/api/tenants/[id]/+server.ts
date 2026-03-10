@@ -497,7 +497,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
       throw new ValidationError(ERRORS.TENANTS.NO_TENANT_ID);
     }
 
-    log.info("Attempting tenant deletion", {
+    log.debug("Attempting tenant deletion", {
       tenantId,
       requestedBy: locals.user?.id,
       userRole: locals.user?.role,

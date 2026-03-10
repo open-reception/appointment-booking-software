@@ -97,7 +97,6 @@ export class StaffCryptoService {
       log.info("Staff keypair stored successfully", {
         tenantId,
         userId,
-        passkeyId,
         hasPublicKey: !!publicKey,
         hasPrivateKeyShare: !!privateKeyShare,
       });
@@ -321,7 +320,6 @@ export class StaffCryptoService {
       log.info("Staff crypto deletion completed", {
         tenantId,
         userId,
-        passkeyId,
         deleted,
       });
 

@@ -91,7 +91,7 @@ export const apiAuthHandle: Handle = async ({ event, resolve }) => {
   // Protected auth paths require any authenticated user (no specific role required)
   // The authentication check above is sufficient
 
-  logger.debug(`User authenticated: ${sessionData?.user.email ?? "unauthenticated"} for ${path}`);
+  logger.debug(`User authenticated: ${sessionData?.user.id ?? "unauthenticated"} for ${path}`);
 
   return resolve(event);
 };
