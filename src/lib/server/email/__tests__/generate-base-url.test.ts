@@ -143,6 +143,7 @@ describe("generateBaseUrl", () => {
       const tenant: SelectTenant = {
         id: "tenant-1",
         shortName: "acme",
+        domain: "acme",
         longName: "ACME Corp",
         descriptions: { en: "" },
         languages: ["en"],
@@ -151,7 +152,6 @@ describe("generateBaseUrl", () => {
         setupState: "SETTINGS",
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
-        domain: "tenant.example.com",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -173,7 +173,7 @@ describe("generateBaseUrl", () => {
         setupState: "SETTINGS",
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
-        domain: "tenant.example.com",
+        domain: "acme",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -195,13 +195,13 @@ describe("generateBaseUrl", () => {
         setupState: "SETTINGS",
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
-        domain: "tenant.example.com",
+        domain: "new-tenant",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
       const result = generateBaseUrl(requestUrl, tenant);
-      expect(result).toBe("https://new-tenant.example.com");
+      expect(result).toBe("https://new-tenant.old-tenant.example.com");
     });
 
     it("should replace existing subdomain with port", () => {
@@ -217,13 +217,13 @@ describe("generateBaseUrl", () => {
         setupState: "SETTINGS",
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
-        domain: "tenant.example.com",
+        domain: "new-tenant",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
       const result = generateBaseUrl(requestUrl, tenant);
-      expect(result).toBe("https://new-tenant.example.com:8443");
+      expect(result).toBe("https://new-tenant.old-tenant.example.com:8443");
     });
 
     it("should handle complex subdomains (keep last two parts)", () => {
@@ -239,13 +239,13 @@ describe("generateBaseUrl", () => {
         setupState: "SETTINGS",
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
-        domain: "tenant.example.com",
+        domain: "tenant",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
       const result = generateBaseUrl(requestUrl, tenant);
-      expect(result).toBe("https://tenant.example.com");
+      expect(result).toBe("https://tenant.admin.api.example.com");
     });
 
     it("should handle http protocol", () => {
@@ -261,7 +261,7 @@ describe("generateBaseUrl", () => {
         setupState: "SETTINGS",
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
-        domain: "tenant.example.com",
+        domain: "acme",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -283,7 +283,7 @@ describe("generateBaseUrl", () => {
         setupState: "SETTINGS",
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
-        domain: "tenant.example.com",
+        domain: "",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -308,7 +308,7 @@ describe("generateBaseUrl", () => {
         setupState: "SETTINGS",
         logo: null,
         links: { website: "", imprint: "", privacyStatement: "" },
-        domain: "tenant.example.com",
+        domain: "acme",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
