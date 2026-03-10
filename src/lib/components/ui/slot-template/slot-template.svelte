@@ -12,6 +12,7 @@
   import { Input } from "../input";
   import { Text } from "../typography";
   import { durations, times, weekdays } from "./utils";
+  import { localTimeToUTC, utcTimeToLocal } from "$lib/utils/datetime";
 
   let {
     form,
@@ -70,8 +71,9 @@
     );
   };
 
-  const getSelectedTime = (key: keyof typeof times) => {
-    return times[key]?.label || "";
+  const getSelectedTime = (utcTime: string) => {
+    const localTime = utcTimeToLocal(utcTime) as keyof typeof times;
+    return times[localTime]?.label ?? "";
   };
 </script>
 
@@ -137,7 +139,7 @@
             </Select.Trigger>
             <Select.Content>
               {#each Object.entries(times) as [time, value] (time)}
-                <Select.Item value={time}>{value.label}</Select.Item>
+                <Select.Item value={localTimeToUTC(time)}>{value.label}</Select.Item>
               {/each}
             </Select.Content>
           </Select.Root>
@@ -160,7 +162,7 @@
             </Select.Trigger>
             <Select.Content>
               {#each Object.entries(times) as [time, value] (time)}
-                <Select.Item value={time}>{value.label}</Select.Item>
+                <Select.Item value={localTimeToUTC(time)}>{value.label}</Select.Item>
               {/each}
             </Select.Content>
           </Select.Root>

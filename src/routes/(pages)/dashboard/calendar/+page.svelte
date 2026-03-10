@@ -29,6 +29,7 @@
   import CalendarFilters from "./(components)/CalendarFilters.svelte";
   import CalendarHeader from "./(components)/CalendarHeader.svelte";
   import { fetchCalendar, openAppointmentById } from "./(components)/utils";
+  import { utcTimeToLocal } from "$lib/utils/datetime";
 
   const convertDate = (dateStr: string) => {
     const zonedDateTime = parseAbsoluteToLocal(dateStr);
@@ -54,14 +55,14 @@
       .map((c) => c.slotTemplates.map((t) => t.from))
       .flat()
       .map((time) => {
-        const [hourStr] = time.split(":");
+        const [hourStr] = utcTimeToLocal(time).split(":");
         return parseInt(hourStr, 10);
       });
     const to = channels
       .map((c) => c.slotTemplates.map((t) => t.to))
       .flat()
       .map((time) => {
-        const [hourStr] = time.split(":");
+        const [hourStr] = utcTimeToLocal(time).split(":");
         return parseInt(hourStr, 10);
       });
     return { from: Math.min(...from), to: Math.max(...to) };
