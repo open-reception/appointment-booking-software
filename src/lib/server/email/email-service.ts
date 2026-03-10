@@ -410,9 +410,9 @@ export function generateBaseUrl(requestUrl: URL, tenant: SelectTenant | null): s
   }
 
   // In production, handle tenant subdomains.
-  // Exclude the system tenant when determining if we should use the tenant's shortName for the URL, as the system tenant does not have a shortName and should use the main domain.
-  if (tenant?.shortName && tenant.id !== "system") {
-    return `${protocol}//${tenant.shortName}.${hostname}${port}`;
+  // Exclude the system tenant when determining if we should use the tenant's domain for the URL, as the system tenant does not have a domain and should use the main domain.
+  if (tenant?.domain && tenant.id !== "system") {
+    return `${protocol}//${tenant.domain}.${hostname}${port}`;
   }
 
   // For global admin or no tenant, use main domain
