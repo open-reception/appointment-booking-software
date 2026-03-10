@@ -180,12 +180,7 @@
   </Text>
   <Card.Root class="flex flex-col gap-4 rounded-lg border shadow-sm">
     <div class="flex gap-3">
-      <Button
-        size="sm"
-        variant="outline"
-        onclick={setToToday}
-        disabled={selectedDate?.toString() === today(getLocalTimeZone()).toString()}
-      >
+      <Button size="sm" variant="outline" onclick={setToToday}>
         {m["public.steps.slot.today"]()}
       </Button>
       {#if schedule === undefined}{/if}

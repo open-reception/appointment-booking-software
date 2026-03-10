@@ -136,21 +136,23 @@
       if (["all", "available"].includes(shownAppointments)) {
         if (shownChannels.length === 0 || shownChannels.includes(channelId)) {
           channelData.availableSlots.forEach((slot) => {
-            if (
-              shownAgents.length === 0 ||
-              shownAgents.some((id) => slot.availableAgents.map((a) => a.id).includes(id))
-            ) {
-              channelItems.push({
-                id: `${channelId}-${slot.from}`,
-                date: dayEntry.date,
-                start: slot.from,
-                duration: slot.duration,
-                channelId,
-                color: channelData.channel.color,
-                column: 0,
-                status: "available",
-                availableAgents: slot.availableAgents,
-              });
+            if (new Date(slot.to) > new Date()) {
+              if (
+                shownAgents.length === 0 ||
+                shownAgents.some((id) => slot.availableAgents.map((a) => a.id).includes(id))
+              ) {
+                channelItems.push({
+                  id: `${channelId}-${slot.from}`,
+                  date: dayEntry.date,
+                  start: slot.from,
+                  duration: slot.duration,
+                  channelId,
+                  color: channelData.channel.color,
+                  column: 0,
+                  status: "available",
+                  availableAgents: slot.availableAgents,
+                });
+              }
             }
           });
         }
