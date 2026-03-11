@@ -126,6 +126,7 @@ export class UnifiedAppointmentCrypto {
   private clientAuthenticated: boolean = false;
   private serverPrivateKeyShare: string | null = null; // Server share of the private key
   private pin: string | null = null;
+  private bookingAccessToken: string | null = null;
 
   // Staff-specific properties
   private staffKeyPair: StaffKeyPair | null = null;
@@ -392,6 +393,7 @@ export class UnifiedAppointmentCrypto {
       // 6. Decrypt tunnel key and store tunnel ID
       this.tunnelKey = await this.decryptTunnelKey(verificationData.encryptedTunnelKey, privateKey);
       this.tunnelId = verificationData.tunnelId;
+      this.bookingAccessToken = verificationData.bookingAccessToken;
 
       this.clientAuthenticated = true;
 
@@ -756,6 +758,7 @@ export class UnifiedAppointmentCrypto {
     this.emailHash = null;
     this.tunnelId = null;
     this.serverPrivateKeyShare = null;
+    this.bookingAccessToken = null;
     this.clientAuthenticated = false;
     this.pin = null;
   }
@@ -1057,9 +1060,18 @@ export class UnifiedAppointmentCrypto {
   }
 
   async fetchStaffPublicKeys(tenantId: string): Promise<StaffPublicKey[]> {
+    if (!this.bookingAccessToken) {
+      throw new Error(
+        "Missing booking access token. Please authenticate as existing client first.",
+      );
+    }
+
     const response = await fetch(`/api/tenants/${tenantId}/appointments/staff-public-keys`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.bookingAccessToken}`,
+      },
     });
 
     if (!response.ok) {

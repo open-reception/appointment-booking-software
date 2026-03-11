@@ -1,14 +1,22 @@
 import { json, type RequestHandler } from "@sveltejs/kit";
 import { logger } from "$lib/logger";
 import { StaffCryptoService } from "$lib/server/services/staff-crypto.service";
-import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
+import {
+  AuthenticationError,
+  AuthorizationError,
+  BackendError,
+  InternalError,
+  logError,
+  ValidationError,
+} from "$lib/server/utils/errors";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
+import { verifyBookingAccessToken } from "$lib/server/auth/booking-access-token";
 
 // Register OpenAPI documentation for GET
 registerOpenAPIRoute("/tenants/{id}/appointments/staff-public-keys", "GET", {
   summary: "Get staff public keys",
   description:
-    "Returns public encryption keys for all staff members. Used by clients to encrypt appointment data for staff access. This is a public endpoint that doesn't require authentication.",
+    "Returns public encryption keys for all staff members. Requires a valid short-lived booking access token from /appointments/verify-challenge.",
   tags: ["Appointments", "Encryption"],
   parameters: [
     {
@@ -17,6 +25,13 @@ registerOpenAPIRoute("/tenants/{id}/appointments/staff-public-keys", "GET", {
       required: true,
       schema: { type: "string", format: "uuid" },
       description: "Tenant ID",
+    },
+    {
+      name: "Authorization",
+      in: "header",
+      required: true,
+      schema: { type: "string" },
+      description: "Bearer booking access token from /appointments/verify-challenge",
     },
   ],
   responses: {
@@ -61,6 +76,22 @@ registerOpenAPIRoute("/tenants/{id}/appointments/staff-public-keys", "GET", {
         },
       },
     },
+    "401": {
+      description: "Missing or invalid booking access token",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "403": {
+      description: "Booking access token does not match requested tenant",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
     "500": {
       description: "Internal server error or no staff keys found",
       content: {
@@ -76,13 +107,32 @@ registerOpenAPIRoute("/tenants/{id}/appointments/staff-public-keys", "GET", {
  * GET /api/tenants/[id]/appointments/staff-public-keys
  *
  * Returns the public keys of all staff members for encryption.
- * This is a public endpoint used by clients to encrypt appointment data.
+ * Requires booking access token from verify-challenge endpoint.
  */
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async ({ params, request }) => {
   try {
     const tenantId = params.id;
     if (!tenantId) {
       throw new ValidationError("Tenant ID is required");
+    }
+
+    const authorizationHeader = request.headers.get("Authorization");
+    if (!authorizationHeader?.startsWith("Bearer ")) {
+      throw new AuthenticationError("Booking access token is required");
+    }
+
+    const token = authorizationHeader.substring("Bearer ".length).trim();
+    if (!token) {
+      throw new AuthenticationError("Booking access token is required");
+    }
+
+    const tokenPayload = await verifyBookingAccessToken(token);
+    if (!tokenPayload) {
+      throw new AuthenticationError("Invalid or expired booking access token");
+    }
+
+    if (tokenPayload.tenantId !== tenantId) {
+      throw new AuthorizationError("Booking access token is not valid for this tenant");
     }
 
     logger.info("Fetching staff public keys", { tenantId });
