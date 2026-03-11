@@ -47,6 +47,7 @@
  * ```
  */
 
+import type { BootstrapChallengeResponse, BootstrapVerifyResponse } from "$lib/types/appointment";
 import { OptimizedArgon2 } from "$lib/crypto/hashing";
 import { pinThrottleStore } from "$lib/stores/pin-throttle";
 import { KyberCrypto, AESCrypto, ShamirSecretSharing, BufferUtils } from "$lib/crypto/utils";
@@ -186,14 +187,17 @@ export class UnifiedAppointmentCrypto {
         pin,
       );
 
-      // 6. Fetch staff public keys from server
+      // 6. Complete bootstrap challenge to obtain a short-lived booking token
+      await this.bootstrapNewClientAccess(tenantId);
+
+      // 7. Fetch staff public keys from server
       const staffPublicKeys = await this.fetchStaffPublicKeys(tenantId);
 
-      // 7. Encrypt tunnel key for all staff members
+      // 8. Encrypt tunnel key for all staff members
       // Note: staffKeyShares will be used during actual appointment creation
       await this.encryptTunnelKeyForStaff(staffPublicKeys);
 
-      // 8. Encrypt tunnel key for client (for later use)
+      // 9. Encrypt tunnel key for client (for later use)
       // Note: clientKeyShare will be used during actual appointment creation
       await this.encryptTunnelKeyForClient();
 
@@ -467,7 +471,12 @@ export class UnifiedAppointmentCrypto {
 
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(isFirstAppointment && this.bookingAccessToken
+            ? { Authorization: `Bearer ${this.bookingAccessToken}` }
+            : {}),
+        },
         body: JSON.stringify(requestData),
       });
 
@@ -500,12 +509,17 @@ export class UnifiedAppointmentCrypto {
       throw new Error("Client not authenticated");
     }
 
+    if (!this.bookingAccessToken) {
+      throw new Error("Missing booking access token. Please authenticate first.");
+    }
+
     try {
       const response = await fetch(`/api/tenants/${tenantId}/appointments/my-appointments`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
           "X-Email-Hash": this.emailHash!,
+          Authorization: `Bearer ${this.bookingAccessToken}`,
         },
       });
 
@@ -1061,9 +1075,7 @@ export class UnifiedAppointmentCrypto {
 
   async fetchStaffPublicKeys(tenantId: string): Promise<StaffPublicKey[]> {
     if (!this.bookingAccessToken) {
-      throw new Error(
-        "Missing booking access token. Please authenticate as existing client first.",
-      );
+      throw new Error("Missing booking access token. Please authenticate or complete bootstrap.");
     }
 
     const response = await fetch(`/api/tenants/${tenantId}/appointments/staff-public-keys`, {
@@ -1080,6 +1092,78 @@ export class UnifiedAppointmentCrypto {
 
     const data = await response.json();
     return data.staffPublicKeys;
+  }
+
+  private async bootstrapNewClientAccess(tenantId: string): Promise<void> {
+    if (!this.tunnelId || !this.clientKeyPair) {
+      throw new Error("Bootstrap requires generated client tunnel and key pair");
+    }
+
+    const challengeResponse = await fetch(
+      `/api/tenants/${tenantId}/appointments/bootstrap-challenge`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tunnelId: this.tunnelId,
+          clientPublicKey: this.clientKeyPair.publicKey,
+          emailHash: this.emailHash ?? undefined,
+        }),
+      },
+    );
+
+    if (!challengeResponse.ok) {
+      throw new Error(`Failed to request bootstrap challenge: ${challengeResponse.statusText}`);
+    }
+
+    const challengeData: BootstrapChallengeResponse = await challengeResponse.json();
+    const counter = await this.solveBootstrapProofOfWork(
+      challengeData.nonce,
+      this.tunnelId,
+      this.clientKeyPair.publicKey,
+      challengeData.difficulty,
+    );
+
+    const verifyResponse = await fetch(`/api/tenants/${tenantId}/appointments/bootstrap-verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        challengeId: challengeData.challengeId,
+        tunnelId: this.tunnelId,
+        clientPublicKey: this.clientKeyPair.publicKey,
+        counter,
+        emailHash: this.emailHash ?? undefined,
+      }),
+    });
+
+    if (!verifyResponse.ok) {
+      throw new Error(`Failed to verify bootstrap challenge: ${verifyResponse.statusText}`);
+    }
+
+    const verificationData: BootstrapVerifyResponse = await verifyResponse.json();
+    this.bookingAccessToken = verificationData.bookingAccessToken;
+  }
+
+  private async solveBootstrapProofOfWork(
+    nonce: string,
+    tunnelId: string,
+    clientPublicKey: string,
+    difficulty: number,
+  ): Promise<number> {
+    const targetPrefix = "0".repeat(difficulty);
+    const encoder = new TextEncoder();
+
+    for (let counter = 0; ; counter += 1) {
+      const input = `${nonce}:${tunnelId}:${clientPublicKey}:${counter}`;
+      const digestBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(input));
+      const digestHex = Array.from(new Uint8Array(digestBuffer))
+        .map((byte) => byte.toString(16).padStart(2, "0"))
+        .join("");
+
+      if (digestHex.startsWith(targetPrefix)) {
+        return counter;
+      }
+    }
   }
 
   // getTenantId method removed - tenantId is now always passed explicitly

@@ -9,6 +9,21 @@ const logger = new UniversalLogger().setContext("AuthHandle");
 
 const GLOBAL_ADMIN_PATHS = ["/api/admin"];
 
+const CLIENT_APPOINTMENT_PUBLIC_ROUTE_PATTERNS: RegExp[] = [
+  /^\/api\/tenants\/[^/]+\/appointments\/challenge$/,
+  /^\/api\/tenants\/[^/]+\/appointments\/verify-challenge$/,
+  /^\/api\/tenants\/[^/]+\/appointments\/bootstrap-challenge$/,
+  /^\/api\/tenants\/[^/]+\/appointments\/bootstrap-verify$/,
+  /^\/api\/tenants\/[^/]+\/appointments\/staff-public-keys$/,
+  /^\/api\/tenants\/[^/]+\/appointments\/create-new-client$/,
+  /^\/api\/tenants\/[^/]+\/appointments\/add-to-tunnel$/,
+  /^\/api\/tenants\/[^/]+\/appointments\/my-appointments$/,
+  /^\/api\/tenants\/[^/]+\/appointments\/[^/]+\/delete-by-client$/,
+];
+
+const isClientAppointmentPublicRoute = (path: string): boolean =>
+  CLIENT_APPOINTMENT_PUBLIC_ROUTE_PATTERNS.some((pattern) => pattern.test(path));
+
 export const apiAuthHandle: Handle = async ({ event, resolve }) => {
   const { url } = event;
   const path = url.pathname;
@@ -28,6 +43,11 @@ export const apiAuthHandle: Handle = async ({ event, resolve }) => {
   // Check for tenant client booking routes (public for clients)
   const isGlobalAdminPath = GLOBAL_ADMIN_PATHS.some((gadPath) => path.startsWith(gadPath));
   const isAdminPath = false;
+
+  const hasSessionCookie = Boolean(event.cookies.get("access_token"));
+  if (isClientAppointmentPublicRoute(path) && !hasSessionCookie) {
+    return resolve(event);
+  }
 
   const accessToken: string | null = getAccessToken(event);
   let sessionData: {

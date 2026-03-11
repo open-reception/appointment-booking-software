@@ -16,7 +16,7 @@ import { verifyBookingAccessToken } from "$lib/server/auth/booking-access-token"
 registerOpenAPIRoute("/tenants/{id}/appointments/staff-public-keys", "GET", {
   summary: "Get staff public keys",
   description:
-    "Returns public encryption keys for all staff members. Requires a valid short-lived booking access token from /appointments/verify-challenge.",
+    "Returns public encryption keys for all staff members. Requires a valid short-lived booking access token from /appointments/verify-challenge or /appointments/bootstrap-verify.",
   tags: ["Appointments", "Encryption"],
   parameters: [
     {
@@ -31,7 +31,8 @@ registerOpenAPIRoute("/tenants/{id}/appointments/staff-public-keys", "GET", {
       in: "header",
       required: true,
       schema: { type: "string" },
-      description: "Bearer booking access token from /appointments/verify-challenge",
+      description:
+        "Bearer booking access token from /appointments/verify-challenge or /appointments/bootstrap-verify",
     },
   ],
   responses: {
@@ -107,7 +108,7 @@ registerOpenAPIRoute("/tenants/{id}/appointments/staff-public-keys", "GET", {
  * GET /api/tenants/[id]/appointments/staff-public-keys
  *
  * Returns the public keys of all staff members for encryption.
- * Requires booking access token from verify-challenge endpoint.
+ * Requires booking access token from verify-challenge or bootstrap-verify endpoint.
  */
 export const GET: RequestHandler = async ({ params, request }) => {
   try {

@@ -104,4 +104,28 @@ describe("Staff Public Keys API", () => {
     expect(data.staffPublicKeys).toEqual(staffPublicKeys);
     expect(serviceMock.getStaffPublicKeys).toHaveBeenCalledWith(tenantId);
   });
+
+  it("accepts valid bootstrap-scope booking token", async () => {
+    (verifyBookingAccessToken as any).mockResolvedValue({
+      tenantId,
+      tunnelId: "tunnel-id",
+      clientPublicKey: "client-public-key",
+      scope: "appointments:new-client-bootstrap",
+    });
+
+    const staffPublicKeys = [
+      {
+        userId: "550e8400-e29b-41d4-a716-446655440111",
+        publicKey: "base64-public-key",
+      },
+    ];
+
+    serviceMock.getStaffPublicKeys.mockResolvedValue(staffPublicKeys);
+
+    const response = await GET(createEvent("Bearer bootstrap-token"));
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.staffPublicKeys).toEqual(staffPublicKeys);
+  });
 });
