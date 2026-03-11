@@ -36,7 +36,7 @@ export async function getTenantDb(
     .limit(1);
 
   if (tenant.length === 0) {
-    throw new Error(`Tenant with ID ${tenantId} not found`);
+    throw new Error(`Tenant or client not found`);
   }
 
   // Create tenant-specific database connection
@@ -62,7 +62,7 @@ export async function getTenant(tenantId: string): Promise<centralSchema.SelectT
     .limit(1);
 
   if (tenant.length === 0) {
-    throw new Error(`Tenant with ID ${tenantId} not found`);
+    throw new Error(`Tenant or client not found`);
   }
 
   return tenant[0];

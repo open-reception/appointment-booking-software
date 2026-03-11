@@ -171,7 +171,7 @@ export const GET: RequestHandler = async ({ request, params }) => {
         tenantId,
         emailHashPrefix: validatedEmailHash.slice(0, 8),
       });
-      throw new ValidationError("Client not found");
+      throw new ValidationError("Tenant or client not found");
     }
 
     const tunnel = tunnelResult[0];

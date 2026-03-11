@@ -87,7 +87,7 @@ registerOpenAPIRoute("/tenants/{id}/appointments/challenge", "POST", {
       },
     },
     "404": {
-      description: "Client not found",
+      description: "Tenant or client not found",
       content: {
         "application/json": {
           schema: { $ref: "#/components/schemas/Error" },
@@ -186,7 +186,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
         tenantId,
         emailHashPrefix: emailHash.slice(0, 8),
       });
-      return json({ error: "Client not found" }, { status: 404 });
+      return json({ error: "Tenant or client not found" }, { status: 404 });
     }
 
     const tunnel = tunnelResult[0];

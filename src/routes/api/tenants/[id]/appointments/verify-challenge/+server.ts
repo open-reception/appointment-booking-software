@@ -187,7 +187,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
         challengeId,
         emailHashPrefix: storedChallenge.emailHash.slice(0, 8),
       });
-      throw new NotFoundError("Client not found");
+      throw new NotFoundError("Tenant or client not found");
     }
 
     const tunnel = tunnelResult[0];

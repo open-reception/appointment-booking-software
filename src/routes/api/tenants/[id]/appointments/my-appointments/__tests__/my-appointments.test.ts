@@ -182,7 +182,7 @@ describe("GET /api/tenants/[id]/appointments/my-appointments", () => {
     const data = await response.json();
 
     expect(response.status).toBe(422);
-    expect(data.error).toBe("Client not found");
+    expect(data.error).toBe("Tenant or client not found");
   });
 
   it("should return 422 when email hash is empty", async () => {

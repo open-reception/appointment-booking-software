@@ -75,7 +75,7 @@ export class ClientPinResetService {
 
       if (tunnel.length === 0) {
         log.warn("No client tunnel found for email hash", { emailHash: emailHash.slice(0, 8) });
-        throw new NotFoundError("Client not found");
+        throw new NotFoundError("Tenant or client not found");
       }
 
       // Create reset token with expiration
@@ -203,7 +203,7 @@ export class ClientPinResetService {
         .limit(1);
 
       if (!tunnel) {
-        throw new NotFoundError("Client tunnel not found");
+        throw new NotFoundError("Tenant or client not found");
       }
 
       // 3. Update the client tunnel with new keys
