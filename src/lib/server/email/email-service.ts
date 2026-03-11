@@ -409,18 +409,10 @@ export function generateBaseUrl(requestUrl: URL, tenant: SelectTenant | null): s
     return `${protocol}//${hostname}${port}`;
   }
 
-  // In production, handle tenant subdomains
-  if (tenant?.shortName) {
-    const parts = hostname.split(".");
-
-    if (parts.length > 2) {
-      // Complex subdomain - use only the last two parts (domain.tld) and add tenant
-      const domain = parts.slice(-2).join(".");
-      return `${protocol}//${tenant.shortName}.${domain}${port}`;
-    } else {
-      // Main domain, prepend tenant subdomain
-      return `${protocol}//${tenant.shortName}.${hostname}${port}`;
-    }
+  // In production, handle tenant subdomains.
+  // Exclude the system tenant when determining if we should use the tenant's domain for the URL, as the system tenant does not have a domain and should use the main domain.
+  if (tenant?.domain && tenant.id !== "system") {
+    return `${protocol}//${tenant.domain}.${hostname}${port}`;
   }
 
   // For global admin or no tenant, use main domain
