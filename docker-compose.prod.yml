@@ -1,9 +1,8 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: open-reception-postgres
+    container_name: postgres
     restart: unless-stopped
-    user: postgres
     environment:
       POSTGRES_DB_FILE: /run/secrets/postgres_db
       POSTGRES_USER_FILE: /run/secrets/postgres_user
@@ -15,7 +14,6 @@ services:
       - postgres_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init-db:/docker-entrypoint-initdb.d:ro
     networks:
       - open-reception-internal
     healthcheck:
@@ -24,10 +22,10 @@ services:
           "CMD-SHELL",
           "pg_isready -U $$(cat /run/secrets/postgres_user) -d $$(cat /run/secrets/postgres_db)",
         ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 60s
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -44,23 +42,25 @@ services:
     read_only: true
 
   app:
-    image: openreception/open-reception:${VERSION:-latest}
-    container_name: open-reception-app
+    # use specific version here to watch for breaking changes
+    image: openreception/open-reception:latest
+    container_name: app
     restart: unless-stopped
     user: "1001:1001"
     environment:
       NODE_ENV: production
-      SMTP_HOST: /run/secrets/smtp_host
-      SMTP_PORT: /run/secrets/smtp_port
-      SMTP_SECURE: /run/secrets/smtp_secure
-      SMTP_USER: /run/secrets/smtp_user
-      SMTP_PASS: /run/secrets/smtp_pass
-      SMTP_FROM_NAME: /run/secrets/smtp_from_name
-      SMTP_FROM_EMAIL: /run/secrets/smtp_from_email
     secrets:
       - postgres_db
       - postgres_user
       - postgres_password
+      - smtp_host
+      - smtp_port
+      - smtp_secure
+      - smtp_user
+      - smtp_pass
+      - smtp_from_name
+      - smtp_from_email
+      - jwt_secret
     depends_on:
       postgres:
         condition: service_healthy
@@ -68,11 +68,18 @@ services:
       - open-reception-internal
     healthcheck:
       test:
-        ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/health"]
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://127.0.0.1:3000/api/health",
+        ]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 40s
+      retries: 5
+      start_period: 60s
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -85,26 +92,30 @@ services:
         export POSTGRES_USER=$$(cat /run/secrets/postgres_user)
         export POSTGRES_PASSWORD=$$(cat /run/secrets/postgres_password)
         export DATABASE_URL=\"postgres://$$POSTGRES_USER:$$POSTGRES_PASSWORD@postgres:5432/$$POSTGRES_DB\"
+        export SMTP_HOST=$$(cat /run/secrets/smtp_host)
+        export SMTP_PORT=$$(cat /run/secrets/smtp_port)
+        export SMTP_SECURE=$$(cat /run/secrets/smtp_secure)
+        export SMTP_USER=$$(cat /run/secrets/smtp_user)
+        export SMTP_PASS=$$(cat /run/secrets/smtp_pass)
+        export SMTP_FROM_NAME=$$(cat /run/secrets/smtp_from_name)
+        export SMTP_FROM_EMAIL=$$(cat /run/secrets/smtp_from_email)
+        export JWT_SECRET=$$(cat /run/secrets/jwt_secret)
         exec node build/index.js
       "
     read_only: true
 
   caddy:
-    image: caddy:2-alpine
-    container_name: open-reception-caddy
+    image: caddy:2
+    container_name: caddy
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
+      - caddy-data:/data"
     networks:
       - open-reception-internal
-    depends_on:
-      app:
-        condition: service_healthy
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -119,10 +130,10 @@ secrets:
     file: ./secrets/postgres_user.txt
   postgres_password:
     file: ./secrets/postgres_password.txt
-  smtp_port:
-    file: ./secrets/smtp_port.txt
   smtp_host:
     file: ./secrets/smtp_host.txt
+  smtp_port:
+    file: ./secrets/smtp_port.txt
   smtp_secure:
     file: ./secrets/smtp_secure.txt
   smtp_user:
@@ -133,14 +144,22 @@ secrets:
     file: ./secrets/smtp_from_name.txt
   smtp_from_email:
     file: ./secrets/smtp_from_email.txt
+  jwt_secret:
+    file: ./secrets/jwt_secret.txt
 
 volumes:
   postgres_data:
     driver: local
-  caddy_data:
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/openreception/postgres
+  caddy-data:
     driver: local
-  caddy_config:
-    driver: local
+    driver_opts:
+      type: "none"
+      o: "bind"
+      device: "/opt/openreception/caddy/data"
 
 networks:
   open-reception-internal:
