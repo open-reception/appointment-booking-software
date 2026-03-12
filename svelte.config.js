@@ -16,6 +16,18 @@ const config = {
     alias: {
       $i18n: path.resolve("./src/i18n"),
     },
+    csp: {
+      mode: "hash",
+      directives: {
+        "script-src": [
+          "'self'",
+          "'unsafe-inline'",
+          "'wasm-unsafe-eval'",
+          "'unsafe-eval'",
+          "https://unpkg.com",
+        ],
+      },
+    },
   },
 };
 

@@ -40,7 +40,7 @@ export const secHeaderHandle: Handle = async ({ event, resolve }) => {
   ];
   if (!dev) {
     cspDirectives.unshift("default-src 'self' 'wasm-unsafe-eval'");
-    cspDirectives.push("img-src 'self' data: https:");
+    cspDirectives.push("img-src 'self' data: blob: https:");
   }
   response.headers.set("Content-Security-Policy", cspDirectives.join("; "));
 

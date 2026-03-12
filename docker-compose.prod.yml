@@ -68,7 +68,14 @@ services:
       - open-reception-internal
     healthcheck:
       test:
-        ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/health"]
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://127.0.0.1:3000/api/health",
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
