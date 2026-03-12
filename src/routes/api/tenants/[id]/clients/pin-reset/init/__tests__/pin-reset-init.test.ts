@@ -80,7 +80,7 @@ describe("POST /api/tenants/[id]/clients/pin-reset/init", () => {
   });
 
   it("should return 404 when client not found", async () => {
-    mockPinResetService.createResetToken.mockRejectedValue(new Error("Client not found"));
+    mockPinResetService.createResetToken.mockRejectedValue(new Error("Tenant or client not found"));
 
     const request = new Request("http://localhost/api", {
       method: "POST",

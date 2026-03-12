@@ -92,7 +92,7 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}/delete-by-clien
       },
     },
     "404": {
-      description: "Appointment or client not found",
+      description: "Tenant or client not found",
       content: {
         "application/json": {
           schema: { $ref: "#/components/schemas/Error" },

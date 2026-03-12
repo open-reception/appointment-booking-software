@@ -99,7 +99,7 @@ registerOpenAPIRoute("/tenants/{id}/clients/pin-reset/init", "POST", {
       },
     },
     "404": {
-      description: "Client not found",
+      description: "Tenant or client not found",
       content: {
         "application/json": {
           schema: { $ref: "#/components/schemas/Error" },

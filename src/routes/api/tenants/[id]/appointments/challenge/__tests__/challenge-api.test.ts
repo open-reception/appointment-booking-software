@@ -174,7 +174,7 @@ describe("Challenge API Route", () => {
       const data = await response.json();
 
       expect(response.status).toBe(404);
-      expect(data.error).toBe("Client not found");
+      expect(data.error).toBe("Tenant or client not found");
     });
 
     it("should handle database errors", async () => {

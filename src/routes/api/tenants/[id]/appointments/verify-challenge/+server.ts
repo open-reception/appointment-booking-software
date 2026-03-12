@@ -185,7 +185,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
         tenantId,
         challengeId,
       });
-      throw new NotFoundError("Client not found");
+      throw new NotFoundError("Tenant or client not found");
     }
 
     const tunnel = tunnelResult[0];
