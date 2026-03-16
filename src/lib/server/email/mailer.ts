@@ -2,6 +2,7 @@ import nodemailer from "nodemailer";
 import { env } from "$env/dynamic/private";
 import type Mail from "nodemailer/lib/mailer";
 import type { SelectUser } from "../db/central-schema";
+import logger from "$lib/logger";
 
 /**
  * Simple client data type for email sending
@@ -92,10 +93,11 @@ export async function sendEmail(
   textContent: string,
 ): Promise<void> {
   const transporter = createTransporter();
+  logger.setContext("sendMail");
 
   if (!recipient.email) {
     // Recipient has not stored an email address, so no mail will be send
-    // TODO: Log this event
+    logger.info("Recipient has no email address, skipping email sending");
     return;
   }
 
@@ -121,9 +123,9 @@ export async function sendEmail(
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Email sent successfully to ${recipient.email}`);
+    logger.debug(`Email sent successfully to ${recipient.email}`);
   } catch (error) {
-    console.error("Failed to send email:", error);
+    logger.error("Failed to send email:", { error });
     throw new Error(`Failed to send email to ${recipient.email}`);
   }
 }
@@ -134,11 +136,12 @@ export async function sendEmail(
  */
 export async function testEmailConnection(): Promise<boolean> {
   try {
+    logger.setContext("testEmailConnection");
     const transporter = createTransporter();
     await transporter.verify();
     return true;
   } catch (error) {
-    console.error("SMTP connection test failed:", error);
+    logger.error("SMTP connection test failed:", { error });
     return false;
   }
 }

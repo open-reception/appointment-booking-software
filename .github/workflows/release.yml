@@ -63,7 +63,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker image
-        run: docker build -t openreception/open-reception:${{ github.ref_name }} .
+        run: docker buildx build --platform linux/amd64,linux/arm64 -t openreception/open-reception:${{ github.ref_name }} .
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master

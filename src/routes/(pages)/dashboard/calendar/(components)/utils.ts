@@ -45,7 +45,7 @@ function timeToMinutes(time: string): number {
   if (time.includes("T")) {
     const parsedDate = new Date(time);
     if (!Number.isNaN(parsedDate.getTime())) {
-      return parsedDate.getUTCHours() * 60 + parsedDate.getUTCMinutes();
+      return parsedDate.getHours() * 60 + parsedDate.getMinutes();
     }
   }
 

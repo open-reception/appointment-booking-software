@@ -149,7 +149,6 @@ export async function DELETE({ params, locals }: RequestEvent) {
     log.info("Passkey deleted successfully", {
       passkeyId,
       userId,
-      deviceName: deletedPasskey.deviceName,
     });
 
     // If user has a tenant (STAFF or TENANT_ADMIN), also delete associated crypto data (CASCADE)
@@ -165,7 +164,6 @@ export async function DELETE({ params, locals }: RequestEvent) {
         );
 
         log.info("Staff crypto data cascaded deletion completed", {
-          passkeyId,
           userId,
           tenantId,
           deleted,

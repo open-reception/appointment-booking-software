@@ -74,7 +74,7 @@
         staffKeyShare: item.appointment.staffKeyShare,
       });
     } catch (err) {
-      console.error("Error decrypting appointment:", err);
+      console.error("Error decrypting appointment:", item.id);
       error = err instanceof Error ? err.message : "Decryption failed";
     }
   };

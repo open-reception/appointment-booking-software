@@ -29,6 +29,7 @@
   import CalendarFilters from "./(components)/CalendarFilters.svelte";
   import CalendarHeader from "./(components)/CalendarHeader.svelte";
   import { fetchCalendar, openAppointmentById } from "./(components)/utils";
+  import { utcTimeToLocal } from "$lib/utils/datetime";
 
   const convertDate = (dateStr: string) => {
     const zonedDateTime = parseAbsoluteToLocal(dateStr);
@@ -54,14 +55,14 @@
       .map((c) => c.slotTemplates.map((t) => t.from))
       .flat()
       .map((time) => {
-        const [hourStr] = time.split(":");
+        const [hourStr] = utcTimeToLocal(time).split(":");
         return parseInt(hourStr, 10);
       });
     const to = channels
       .map((c) => c.slotTemplates.map((t) => t.to))
       .flat()
       .map((time) => {
-        const [hourStr] = time.split(":");
+        const [hourStr] = utcTimeToLocal(time).split(":");
         return parseInt(hourStr, 10);
       });
     return { from: Math.min(...from), to: Math.max(...to) };
@@ -135,21 +136,23 @@
       if (["all", "available"].includes(shownAppointments)) {
         if (shownChannels.length === 0 || shownChannels.includes(channelId)) {
           channelData.availableSlots.forEach((slot) => {
-            if (
-              shownAgents.length === 0 ||
-              shownAgents.some((id) => slot.availableAgents.map((a) => a.id).includes(id))
-            ) {
-              channelItems.push({
-                id: `${channelId}-${slot.from}`,
-                date: dayEntry.date,
-                start: slot.from,
-                duration: slot.duration,
-                channelId,
-                color: channelData.channel.color,
-                column: 0,
-                status: "available",
-                availableAgents: slot.availableAgents,
-              });
+            if (new Date(slot.to) > new Date()) {
+              if (
+                shownAgents.length === 0 ||
+                shownAgents.some((id) => slot.availableAgents.map((a) => a.id).includes(id))
+              ) {
+                channelItems.push({
+                  id: `${channelId}-${slot.from}`,
+                  date: dayEntry.date,
+                  start: slot.from,
+                  duration: slot.duration,
+                  channelId,
+                  color: channelData.channel.color,
+                  column: 0,
+                  status: "available",
+                  availableAgents: slot.availableAgents,
+                });
+              }
             }
           });
         }
@@ -191,6 +194,10 @@
     }, []);
   });
 </script>
+
+<svelte:head>
+  <title>{m["calendar.title"]()} - OpenReception</title>
+</svelte:head>
 
 <SidebarLayout breakcrumbs={[{ label: m["nav.calendar"](), href: ROUTES.DASHBOARD.CALENDAR }]}>
   <MaxPageWidth maxWidth="xl">
@@ -239,7 +246,7 @@
   {@const channel = channels.find((c) => c.id === curEmptySlot.channelId)}
   <ResponsiveDialog
     id="current-calendar-slot"
-    title="Add Appointment"
+    title={m["calendar.addAppointment.title"]()}
     description={channel ? getCurrentTranlslation(channel.names) : undefined}
     triggerHidden={true}
   >

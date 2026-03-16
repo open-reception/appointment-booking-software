@@ -98,6 +98,11 @@ export const fetchSchedule = async (opts: {
   if (!browser) return;
 
   const curDate = today(getLocalTimeZone());
+
+  // Return empty list for past months
+  if (opts.year < curDate.year || (opts.year === curDate.year && opts.month < curDate.month)) {
+    return [];
+  }
   const startDay = curDate.year === opts.year && curDate.month === opts.month ? curDate.day : 1;
   const lastDayOfMonth = new Date(opts.year, opts.month, 0).getDate();
 

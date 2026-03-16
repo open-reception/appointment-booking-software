@@ -113,8 +113,8 @@
                 date.year,
                 date.month - 1,
                 date.day,
-                slotDate.getUTCHours(),
-                slotDate.getUTCMinutes(),
+                slotDate.getHours(),
+                slotDate.getMinutes(),
                 0,
                 0,
               );
@@ -157,11 +157,11 @@
   const formatSlotTime = (slot: TPublicSlot) => {
     const slotDate = new Date(slot.from);
     const displayDate = new Date(
-      2000,
-      0,
-      1,
-      slotDate.getUTCHours(),
-      slotDate.getUTCMinutes(),
+      slotDate.getFullYear(),
+      slotDate.getMonth(),
+      slotDate.getDate(),
+      slotDate.getHours(),
+      slotDate.getMinutes(),
       0,
       0,
     );
@@ -180,12 +180,7 @@
   </Text>
   <Card.Root class="flex flex-col gap-4 rounded-lg border shadow-sm">
     <div class="flex gap-3">
-      <Button
-        size="sm"
-        variant="outline"
-        onclick={setToToday}
-        disabled={selectedDate?.toString() === today(getLocalTimeZone()).toString()}
-      >
+      <Button size="sm" variant="outline" onclick={setToToday}>
         {m["public.steps.slot.today"]()}
       </Button>
       {#if schedule === undefined}{/if}

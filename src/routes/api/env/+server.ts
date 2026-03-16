@@ -11,8 +11,6 @@ export async function GET() {
     envOkay = false;
   if (!process.env.DATABASE_URL?.startsWith("postgres:")) envOkay = false;
 
-  console.warn("Environment is okay", envOkay);
-
   return json({
     envOkay,
   });

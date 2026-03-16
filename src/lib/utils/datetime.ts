@@ -20,15 +20,7 @@ export const calendarItemToDate = (item: TCalendarSlot) => {
     const parsedDate = new Date(item.start);
     if (!Number.isNaN(parsedDate.getTime())) {
       const [year, month, day] = item.date.split("-").map(Number);
-      return new Date(
-        year,
-        month - 1,
-        day,
-        parsedDate.getUTCHours(),
-        parsedDate.getUTCMinutes(),
-        0,
-        0,
-      );
+      return new Date(year, month - 1, day, parsedDate.getHours(), parsedDate.getMinutes(), 0, 0);
     }
   }
 
@@ -42,6 +34,32 @@ export const calendarItemToDate = (item: TCalendarSlot) => {
 export const toInputDateTime = (dateStr: string) => {
   return toCalendarDateTime(parseAbsoluteToLocal(dateStr));
 };
+
+export const localTimeToUTC = (localTime: string) => {
+  const [hours, minutes, seconds] = localTime.split(":").map(Number);
+
+  const now = new Date();
+  now.setHours(hours, minutes, seconds, 0);
+
+  const utcHours = String(now.getUTCHours()).padStart(2, "0");
+  const utcMinutes = String(now.getUTCMinutes()).padStart(2, "0");
+  const utcSeconds = String(now.getUTCSeconds()).padStart(2, "0");
+
+  return `${utcHours}:${utcMinutes}:${utcSeconds}`;
+};
+
+export function utcTimeToLocal(utcTime: string): string {
+  const [hours, minutes, seconds] = utcTime.split(":").map(Number);
+
+  const now = new Date();
+  now.setUTCHours(hours, minutes, seconds, 0);
+
+  const localHours = String(now.getHours()).padStart(2, "0");
+  const localMinutes = String(now.getMinutes()).padStart(2, "0");
+  const localSeconds = String(now.getSeconds()).padStart(2, "0");
+
+  return `${localHours}:${localMinutes}:${localSeconds}`;
+}
 
 export const getDefaultStartTime = () => {
   const date = new Date();

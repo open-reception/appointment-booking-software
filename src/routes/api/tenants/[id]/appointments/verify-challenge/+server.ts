@@ -139,7 +139,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
     const body = await request.json();
     const { challengeId, challengeResponse } = requestSchema.parse(body);
 
-    logger.info("Verifying challenge for existing client", {
+    logger.debug("Verifying challenge for existing client", {
       tenantId,
       challengeId,
     });
@@ -166,7 +166,6 @@ export const POST: RequestHandler = async ({ request, params }) => {
       logger.warn("Challenge response mismatch", {
         tenantId,
         challengeId,
-        emailHashPrefix: storedChallenge.emailHash.slice(0, 8),
       });
 
       // Record failed attempt for throttling
@@ -191,14 +190,13 @@ export const POST: RequestHandler = async ({ request, params }) => {
       logger.warn("Client tunnel not found for verification", {
         tenantId,
         challengeId,
-        emailHashPrefix: storedChallenge.emailHash.slice(0, 8),
       });
       throw new NotFoundError("Tenant or client not found");
     }
 
     const tunnel = tunnelResult[0];
 
-    logger.info("Challenge response validated successfully", {
+    logger.debug("Challenge response validated successfully", {
       tenantId,
       challengeId,
       tunnelId: tunnel.id,
@@ -220,7 +218,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
       bookingAccessToken,
     };
 
-    logger.info("Successfully verified challenge", {
+    logger.debug("Successfully verified challenge", {
       tenantId,
       tunnelId: tunnel.id,
     });

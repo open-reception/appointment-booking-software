@@ -43,7 +43,7 @@ export class SessionService {
     userAgent?: string,
     passkeyId?: string,
   ): Promise<SessionData> {
-    logger.info(`Creating session for user: ${userId}`);
+    logger.debug(`Creating session for user: ${userId}`);
 
     const existingUser = await db.select().from(user).where(eq(user.id, userId)).limit(1);
 
@@ -88,7 +88,7 @@ export class SessionService {
 
     await db.update(user).set({ lastLoginAt: new Date() }).where(eq(user.id, userId));
 
-    logger.info(`Session created successfully for user: ${userId}`, { passkeyId });
+    logger.debug(`Session created successfully for user: ${userId}`, { passkeyId });
 
     return {
       sessionToken: updatedSession.sessionToken,
@@ -246,7 +246,7 @@ export class SessionService {
       })
       .where(eq(userSession.id, session.user_session.id));
 
-    logger.info("Session tokens refreshed successfully");
+    logger.debug("Session tokens refreshed successfully");
 
     return {
       accessToken: newTokens.accessToken,
@@ -256,27 +256,27 @@ export class SessionService {
   }
 
   static async logout(sessionToken: string): Promise<void> {
-    logger.info(`Logging out session: ${sessionToken}`);
+    logger.debug(`Logging out session: ${sessionToken}`);
 
     await db.delete(userSession).where(eq(userSession.sessionToken, sessionToken));
 
-    logger.info(`Session logged out successfully: ${sessionToken}`);
+    logger.debug(`Session logged out successfully: ${sessionToken}`);
   }
 
   static async logoutAllSessions(userId: string): Promise<void> {
-    logger.info(`Logging out all sessions for user: ${userId}`);
+    logger.debug(`Logging out all sessions for user: ${userId}`);
 
     await db.delete(userSession).where(eq(userSession.userId, userId));
 
-    logger.info(`All sessions logged out for user: ${userId}`);
+    logger.debug(`All sessions logged out for user: ${userId}`);
   }
 
   static async cleanupExpiredSessions(): Promise<void> {
-    logger.info("Cleaning up expired sessions");
+    logger.debug("Cleaning up expired sessions");
 
     await db.delete(userSession).where(lt(userSession.expiresAt, new Date()));
 
-    logger.info("Expired sessions cleaned up");
+    logger.debug("Expired sessions cleaned up");
   }
 
   static async getUserSession(sessionId: string): Promise<SelectUserSession | null> {
@@ -309,10 +309,10 @@ export class SessionService {
   }
 
   static async revokeSession(sessionId: string): Promise<void> {
-    logger.info(`Revoking session: ${sessionId}`);
+    logger.debug(`Revoking session: ${sessionId}`);
 
     await db.delete(userSession).where(eq(userSession.id, sessionId));
 
-    logger.info(`Session revoked: ${sessionId}`);
+    logger.debug(`Session revoked: ${sessionId}`);
   }
 }

@@ -148,14 +148,12 @@
 
         prfOutput = prfOutputResp;
         logger.info("PRF output retrieved successfully", {
-          passkeyId: passkeyResp.id,
           prfOutputLength: prfOutputResp.byteLength,
         });
       } catch (error) {
         $passkeyLoading = "error";
         logger.error("Failed to get PRF output", {
           email: $formData.email,
-          passkeyId: passkeyResp.id,
           error,
         });
         toast.error(m["setupPasskey.errorGettingPrfOutput"]());

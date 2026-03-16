@@ -137,13 +137,11 @@
       if (credentialResp.prfOutput) {
         prfOutputBase64 = arrayBufferToBase64(credentialResp.prfOutput);
         logger.info("PRF output retrieved from login", {
-          passkeyId,
           prfOutputLength: credentialResp.prfOutput.byteLength,
         });
       } else {
         logger.warn("No PRF output in login response - crypto features may not work", {
           email: $formData.email,
-          passkeyId,
         });
       }
 

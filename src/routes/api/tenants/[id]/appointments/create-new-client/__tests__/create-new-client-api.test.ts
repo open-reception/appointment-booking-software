@@ -13,6 +13,7 @@ vi.mock("$lib/server/services/appointment-service", () => ({
 
 vi.mock("$lib/logger", () => ({
   logger: {
+    debug: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
@@ -116,12 +117,9 @@ describe("Create New Client API Route", () => {
       expect(data).toEqual(mockAppointment);
       expect(mockService.createNewClientWithAppointment).toHaveBeenCalledWith(validRequestBody);
       expect(consumeBookingAccessToken).toHaveBeenCalledOnce();
-      expect(logger.info).toHaveBeenCalledWith("Creating new client appointment tunnel", {
+      expect(logger.debug).toHaveBeenCalledWith("Creating new client appointment tunnel", {
         tenantId: mockTenantId,
         tunnelId: mockTunnelId,
-        appointmentDate: validRequestBody.appointmentDate,
-        duration: validRequestBody.duration,
-        emailHashPrefix: "test-ema",
       });
     });
 
@@ -244,12 +242,9 @@ describe("Create New Client API Route", () => {
       expect(data.error).toBe(
         "Cannot create client appointments: No authorized users found in tenant",
       );
-      expect(logger.info).toHaveBeenCalledWith("Creating new client appointment tunnel", {
+      expect(logger.debug).toHaveBeenCalledWith("Creating new client appointment tunnel", {
         tenantId: mockTenantId,
         tunnelId: mockTunnelId,
-        appointmentDate: validRequestBody.appointmentDate,
-        duration: validRequestBody.duration,
-        emailHashPrefix: "test-ema",
       });
     });
 
@@ -311,12 +306,9 @@ describe("Create New Client API Route", () => {
       const event = createMockRequestEvent();
       await POST(event);
 
-      expect(logger.info).toHaveBeenCalledWith("Creating new client appointment tunnel", {
+      expect(logger.debug).toHaveBeenCalledWith("Creating new client appointment tunnel", {
         tenantId: mockTenantId,
         tunnelId: mockTunnelId,
-        appointmentDate: validRequestBody.appointmentDate,
-        duration: 10,
-        emailHashPrefix: "test-ema", // First 8 chars of "test-email-hash"
       });
     });
 

@@ -924,8 +924,9 @@
 		}
 	},
 	"calendar": {
+		"title": "Kalender",
 		"today": "Heute",
-		"loading": "Loading calendar",
+		"loading": "Kalender wird geladen",
 		"decrypting": "wird entschlüsselt...",
 		"decryptingError": "Entschlüsselung fehlgeschlagen. Bitte neu anmelden.",
 		"decryptingErrorNoKeyShare": "Entschlüsselung fehlgeschlagen. Bitten Sie ein Teammitglied, Ihnen Zugriff zu gewähren.",
@@ -957,11 +958,14 @@
 			"error": "Fehler beim Bestätigen des Termins"
 		},
 		"addAppointment": {
+			"title": "Neuen Termin erstellen",
 			"preview": "Neuer Termin {time} Uhr {channel}",
 			"steps": {
 				"selectClient": {
 					"hasNoEmail": "Klient hat keine E-Mail Adresse",
-					"action": "Klient suchen"
+					"action": "Klient suchen",
+					"confirmNewClient": "Dieser Klient hat noch kein Konto. Möchten Sie für ihn ein Konto erstellen?",
+					"proceedExistingClient": "Klient ausgewählt."
 				},
 				"agents": {
 					"title": "Akteur auswählen"

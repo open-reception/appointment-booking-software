@@ -376,7 +376,6 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 
           logger.info("PIN reset token created for new client", {
             tenantId,
-            tokenId: pinResetToken.slice(0, 8),
           });
         } catch (error) {
           logger.error("Failed to create PIN reset token for new client", {
@@ -390,7 +389,12 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
     }
 
     // Send email notification if requested and client has email
-    if (validatedData.sendEmail && validatedData.clientEmail && !validatedData.hasNoEmail) {
+    if (
+      existingTunnel &&
+      validatedData.sendEmail &&
+      validatedData.clientEmail &&
+      !validatedData.hasNoEmail
+    ) {
       try {
         await appointmentService.sendAppointmentNotification(
           result.id,

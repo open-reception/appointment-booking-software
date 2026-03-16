@@ -36,8 +36,8 @@ const createPinThrottleStore = () => {
           // Throttle expired, clear storage
           localStorage.removeItem(STORAGE_KEY);
         }
-      } catch (e) {
-        console.error("Failed to parse throttle state:", e);
+      } catch (error) {
+        console.error("Failed to parse throttle state:", error);
         localStorage.removeItem(STORAGE_KEY);
       }
     }

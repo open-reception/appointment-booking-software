@@ -348,7 +348,7 @@ export class AppointmentService {
    */
   public async deleteAppointmentByStaff(
     appointmentId: string,
-    clientEmail: string,
+    clientEmail: string | undefined,
     clientLanguage: string = "de",
   ): Promise<void> {
     const log = logger.setContext("AppointmentService");
@@ -396,18 +396,22 @@ export class AppointmentService {
     const channelTitle = await getChannelTitle(this.tenantId, channelId, clientLanguage);
 
     // Send cancellation email to client (async, don't wait)
-    const clientData = {
-      email: clientEmail,
-      language: clientLanguage,
-    };
+    if (clientEmail) {
+      const clientData = {
+        email: clientEmail,
+        language: clientLanguage,
+      };
 
-    sendAppointmentCancelledEmail(clientData, tenant, appointment, channelTitle).catch((error) => {
-      log.error("Failed to send appointment cancellation email", {
-        appointmentId,
-        clientEmail,
-        error: String(error),
-      });
-    });
+      sendAppointmentCancelledEmail(clientData, tenant, appointment, channelTitle).catch(
+        (error) => {
+          log.error("Failed to send appointment cancellation email", {
+            appointmentId,
+            clientEmail,
+            error: String(error),
+          });
+        },
+      );
+    }
 
     // Create notifications for all staff members in the channel
     const notificationService = await NotificationService.forTenant(this.tenantId);
@@ -509,11 +513,10 @@ export class AppointmentService {
   ): Promise<AppointmentResponse> {
     const log = logger.setContext("AppointmentService");
 
-    log.info("Adding appointment to existing tunnel", {
+    log.debug("Adding appointment to existing tunnel", {
       tenantId: this.tenantId,
       tunnelId: appointmentData.tunnelId,
       appointmentDate: appointmentData.appointmentDate,
-      emailHashPrefix: appointmentData.emailHash.slice(0, 8),
     });
 
     const db = await this.getDb();
@@ -589,7 +592,7 @@ export class AppointmentService {
       requiresConfirmation,
     };
 
-    log.info("Successfully added appointment to tunnel", {
+    log.debug("Successfully added appointment to tunnel", {
       tenantId: this.tenantId,
       tunnelId: appointmentData.tunnelId,
       appointmentId: result.id,
@@ -607,11 +610,10 @@ export class AppointmentService {
   ): Promise<AppointmentResponse> {
     const log = logger.setContext("AppointmentService");
 
-    log.info("Creating new client appointment tunnel", {
+    log.debug("Creating new client appointment tunnel", {
       tenantId: this.tenantId,
       tunnelId: clientData.tunnelId,
       appointmentDate: clientData.appointmentDate,
-      emailHashPrefix: clientData.emailHash.slice(0, 8),
     });
 
     // Check if there are any authorized users (ACCESS_GRANTED) in this tenant
@@ -760,7 +762,7 @@ export class AppointmentService {
       requiresConfirmation: result.requiresConfirmation,
     };
 
-    log.info("Successfully created new client appointment tunnel", {
+    log.debug("Successfully created new client appointment tunnel", {
       tenantId: this.tenantId,
       tunnelId: clientData.tunnelId,
       appointmentId: result.appointment.id,
@@ -951,10 +953,9 @@ export class AppointmentService {
     challengeResponse: string,
   ): Promise<void> {
     const log = logger.setContext("AppointmentService");
-    log.info("Client deleting appointment with authentication", {
+    log.debug("Client deleting appointment with authentication", {
       tenantId: this.tenantId,
       appointmentId,
-      emailHashPrefix: emailHash.slice(0, 8),
     });
 
     // 1. Verify challenge-response
@@ -1054,7 +1055,7 @@ export class AppointmentService {
     // 4. Delete the appointment
     await db.delete(tenantSchema.appointment).where(eq(tenantSchema.appointment.id, appointmentId));
 
-    log.info("Appointment deleted successfully by client", {
+    log.debug("Appointment deleted successfully by client", {
       tenantId: this.tenantId,
       appointmentId,
       emailHashPrefix: emailHash.slice(0, 8),
@@ -1069,7 +1070,7 @@ export class AppointmentService {
       },
     });
 
-    log.info("Staff notification sent for client-initiated deletion", {
+    log.debug("Staff notification sent for client-initiated deletion", {
       tenantId: this.tenantId,
       appointmentId,
       channelId: appointment.channelId,

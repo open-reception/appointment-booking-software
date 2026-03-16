@@ -157,10 +157,9 @@ export const POST: RequestHandler = async ({ params, request }) => {
       validatedData.newClientEncryptedTunnelKey,
     );
 
-    logger.info("PIN reset completed successfully", {
+    logger.debug("PIN reset completed successfully", {
       tenantId,
       tunnelId,
-      tokenId: validatedData.token.slice(0, 8),
     });
 
     return json({

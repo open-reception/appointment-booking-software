@@ -131,7 +131,6 @@ export const POST: RequestHandler = async ({ params, locals, request, cookies })
     const validation = requestSchema.safeParse(body);
 
     if (!validation.success) {
-      console.error("Validation error:", validation.error.issues);
       throw new ValidationError(
         "Invalid request data: " + validation.error.issues.map((e) => e.message).join(", "),
       );
@@ -174,7 +173,6 @@ export const POST: RequestHandler = async ({ params, locals, request, cookies })
     log.info("Staff crypto keys stored successfully", {
       tenantId,
       staffId,
-      passkeyId,
     });
 
     return json({
