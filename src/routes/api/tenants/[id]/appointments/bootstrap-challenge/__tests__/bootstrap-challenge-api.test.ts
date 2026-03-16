@@ -37,7 +37,11 @@ describe("Bootstrap Challenge API", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(challengeThrottleService.checkThrottle).mockResolvedValue({ allowed: true });
+    vi.mocked(challengeThrottleService.checkThrottle).mockResolvedValue({
+      allowed: true,
+      failedAttempts: 0,
+      retryAfterMs: 1500,
+    });
   });
 
   function createEvent(body: unknown = validBody): RequestEvent {
@@ -63,6 +67,7 @@ describe("Bootstrap Challenge API", () => {
   it("returns 429 when throttled", async () => {
     vi.mocked(challengeThrottleService.checkThrottle).mockResolvedValue({
       allowed: false,
+      failedAttempts: 0,
       retryAfterMs: 15000,
     });
 
