@@ -545,7 +545,7 @@ export class UnifiedAppointmentCrypto {
       emailHash: await hashEmail(params.email),
       clientPublicKey: params.tunnel.clientPublicKey,
       decryptedTunnelKey,
-      staffKeyShares: await this.getStaffKeyShares(params.tenantId, decryptedTunnelKey),
+      staffKeyShares: [], // Not needed for existing clients as tunnel key is already encrypted for staff in this flow
     };
   };
 
