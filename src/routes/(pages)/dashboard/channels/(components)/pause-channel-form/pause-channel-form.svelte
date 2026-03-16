@@ -11,6 +11,7 @@
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from ".";
+  import { Checkbox } from "$lib/components/ui/checkbox";
 
   let { entity, done }: { entity: TChannelWithFullAgents; done: () => void } = $props();
 
@@ -56,6 +57,13 @@
     <Form.Control>
       {#snippet children({ props })}
         <Input {...props} bind:value={$formData.id} type="hidden" />
+      {/snippet}
+    </Form.Control>
+  </Form.Field>
+  <Form.Field {form} name="pause" class="hidden">
+    <Form.Control>
+      {#snippet children({ props })}
+        <Checkbox {...props} bind:checked={$formData.pause} />
       {/snippet}
     </Form.Control>
   </Form.Field>
