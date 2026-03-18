@@ -962,16 +962,16 @@
 			"preview": "Neuer Termin {time} Uhr {channel}",
 			"steps": {
 				"selectClient": {
-					"hasNoEmail": "Klient hat keine E-Mail Adresse",
-					"action": "Klient suchen",
-					"confirmNewClient": "Dieser Klient hat noch kein Konto. Möchten Sie für ihn ein Konto erstellen?",
-					"proceedExistingClient": "Klient ausgewählt."
+					"hasNoEmail": "Klient:in hat keine E-Mail Adresse",
+					"action": "Klient:in suchen",
+					"confirmNewClient": "Diese Klient:in hat noch kein Konto. Möchten Sie ein Konto erstellen?",
+					"proceedExistingClient": "Klient:in ausgewählt."
 				},
 				"agents": {
 					"title": "Akteur auswählen"
 				},
 				"clientData": {
-					"shareEmail": "Klient wünscht Benachrichtigungen per E-Mail",
+					"shareEmail": "Klient:in wünscht Benachrichtigungen per E-Mail",
 					"phoneHint": "Format: +1234567890 (optional)",
 					"action": "Daten hinzufügen"
 				},
@@ -1071,7 +1071,8 @@
 		"checking-auth": "Überprüfe Anmeldedaten...",
 		"login": {
 			"title": "Als Klient anmelden",
-			"description": "Bitte geben Sie Ihre E-Mail Adresse und Ihre PIN an."
+			"description": "Bitte geben Sie Ihre E-Mail Adresse und Ihre PIN an.",
+			"altAction": "Ich bin Mitarbeiter:in hier"
 		},
 		"appointments": {
 			"title": "Meine Termine",
