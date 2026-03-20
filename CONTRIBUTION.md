@@ -22,7 +22,8 @@ Instead, we recommend using our Discussion Forum space to ask support-related qu
 
 ## <a name="issue"></a> Found a Bug?
 
-If you find a bug in the source code, you can help us by [Opening a Ticket](#submit-issue) to our [Ticketing System](https://github.com/open-reception/appointment-booking-software/issues).
+If you find a bug in the source code, you can help us by [Opening a Ticket](#submit-issue) to our Ticketing System.
+
 Even better, you can [Submit a Pull Request](#submit-pr) with a fix.
 
 ## <a name="feature"></a> Do you have a Feature Idea?
@@ -65,28 +66,32 @@ You can file new issues by selecting from our [new issue templates](https://gith
 
 Before you submit your Pull Request consider the following guidelines:
 
-1. Search on the [List of Pull Requests](https://github.com/open-reception/appointment-booking-software/pulls) for an open or closed pull requests that relates to your contribution.
+1. Read and accept the [legal implications](#submission-legal).
+
+1. Search on the [List of Pull Requests](https://github.com/open-reception/appointment-booking-software/pulls) for an open or closed pull requests that relates to your contribution.  
    You don't want to duplicate existing efforts.
 
-2. Be sure that an issue describes the problem you're fixing, or documents the design for the feature you'd like to add.
+1. Be sure that an issue describes the problem you're fixing, or documents the design for the feature you'd like to add.
    Discussing the design upfront helps to ensure that we're ready to accept your work.
 
-3. Fork the `appointment-booking-software` repository.
+1. Fork the `appointment-booking-software` repository.
 
-4. In your forked repository, make your changes in dedicated git branch.
+1. In your forked repository, make your changes in dedicated git branch.
 
-5. Create your patch, documenting your code and including appropriate test cases.
+1. Create your patch, documenting your code and including appropriate test cases.
 
-6. Follow standard coding guidelines for each specific language.
+1. Follow standard coding guidelines for each specific language.
 
-7. Run the full `appointment-booking-software` test suite and ensure that all tests pass.
+1. Run the full `appointment-booking-software` test suite and ensure that all tests pass.
 
-8. Also run full formatting, linting, and type checking.
+1. Also run full formatting, linting, and type checking.
 
-9. Commit your changes using a descriptive commit message.
+1. Commit your changes using a descriptive commit message.
 
-10. In GitHub, send a pull request to `main` branch.
+1. In GitHub, send a pull request to `main` branch.
 
 ---
 
 A big thank you to everyone who has already contributed to the development of OpenReception!
+
+This contribution guide was largely inspired by the [GlobaLeaks Contribution Guide](https://www.globaleaks.org)
