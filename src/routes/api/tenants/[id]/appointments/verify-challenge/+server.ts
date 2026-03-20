@@ -16,6 +16,7 @@ import {
 } from "$lib/server/utils/errors";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { challengeThrottleService } from "$lib/server/services/challenge-throttle";
+import { generateBookingAccessToken } from "$lib/server/auth/booking-access-token";
 
 const requestSchema = z.object({
   challengeId: z.string(),
@@ -84,8 +85,13 @@ registerOpenAPIRoute("/tenants/{id}/appointments/verify-challenge", "POST", {
                 description: "Client tunnel identifier for accessing appointments",
                 example: "550e8400-e29b-41d4-a716-446655440000",
               },
+              bookingAccessToken: {
+                type: "string",
+                description:
+                  "Short-lived token for authenticated client booking operations (e.g. fetching staff public keys)",
+              },
             },
-            required: ["valid", "encryptedTunnelKey", "tunnelId"],
+            required: ["valid", "encryptedTunnelKey", "tunnelId", "bookingAccessToken"],
           },
         },
       },
@@ -196,6 +202,12 @@ export const POST: RequestHandler = async ({ request, params }) => {
       tunnelId: tunnel.id,
     });
 
+    const bookingAccessToken = await generateBookingAccessToken({
+      tenantId,
+      emailHash: storedChallenge.emailHash,
+      tunnelId: tunnel.id,
+    });
+
     // Clear throttle on successful verification
     await challengeThrottleService.clearThrottle(storedChallenge.emailHash, "pin");
 
@@ -203,6 +215,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
       valid: true,
       encryptedTunnelKey: tunnel.clientEncryptedTunnelKey,
       tunnelId: tunnel.id,
+      bookingAccessToken,
     };
 
     logger.debug("Successfully verified challenge", {

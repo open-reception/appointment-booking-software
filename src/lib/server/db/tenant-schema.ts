@@ -369,6 +369,32 @@ export const authChallenge = pgTable("auth_challenge", {
 });
 
 /**
+ * BookingAccessToken table - stores short-lived booking JWT sessions by JTI
+ * Enables token allowlisting, revocation and one-time consumption for bootstrap flow
+ * @table bookingAccessToken
+ */
+export const bookingAccessToken = pgTable("booking_access_token", {
+  /** JWT ID (jti) as primary key */
+  id: text("id").primaryKey(),
+  /** Token scope (appointments:client / appointments:new-client-bootstrap) */
+  scope: text("scope").notNull(),
+  /** Tenant binding */
+  tenantId: uuid("tenant_id").notNull(),
+  /** Optional client email hash binding */
+  emailHash: text("email_hash"),
+  /** Tunnel binding */
+  tunnelId: uuid("tunnel_id").notNull(),
+  /** Optional client key binding for bootstrap */
+  clientPublicKey: text("client_public_key"),
+  /** Creation timestamp */
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  /** Expiry timestamp */
+  expiresAt: timestamp("expires_at").notNull(),
+  /** Whether token was consumed (one-time semantics) */
+  consumed: boolean("consumed").default(false).notNull(),
+});
+
+/**
  * ClientPinResetToken table - stores temporary PIN reset tokens for clients
  * Used for secure PIN reset via QR code or email link
  * @table clientPinResetToken
@@ -399,3 +425,6 @@ export type SelectClientTunnelStaffKeyShare = InferSelectModel<typeof clientTunn
 
 /** ClientPinResetToken record type for database queries */
 export type SelectClientPinResetToken = InferSelectModel<typeof clientPinResetToken>;
+
+/** BookingAccessToken record type for database queries */
+export type SelectBookingAccessToken = InferSelectModel<typeof bookingAccessToken>;
