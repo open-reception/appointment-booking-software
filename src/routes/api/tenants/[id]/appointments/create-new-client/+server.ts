@@ -1,8 +1,20 @@
 import { json, type RequestHandler } from "@sveltejs/kit";
 import { z } from "zod";
 import { logger } from "$lib/logger";
+import {
+  consumeBookingAccessToken,
+  NEW_CLIENT_BOOTSTRAP_SCOPE,
+  verifyBookingAccessToken,
+} from "$lib/server/auth/booking-access-token";
 import { AppointmentService } from "$lib/server/services/appointment-service";
-import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
+import {
+  AuthenticationError,
+  AuthorizationError,
+  BackendError,
+  InternalError,
+  logError,
+  ValidationError,
+} from "$lib/server/utils/errors";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 
 const requestSchema = z.object({
@@ -31,6 +43,55 @@ const requestSchema = z.object({
   clientEncryptedTunnelKey: z.string(),
 });
 
+type CreateNewClientRequest = z.infer<typeof requestSchema>;
+
+async function requireBootstrapBookingAccessToken(
+  request: Request,
+  tenantId: string,
+): Promise<NonNullable<Awaited<ReturnType<typeof verifyBookingAccessToken>>>> {
+  const authorizationHeader = request.headers.get("Authorization");
+  if (!authorizationHeader?.startsWith("Bearer ")) {
+    throw new AuthenticationError("Bootstrap booking access token is required");
+  }
+
+  const token = authorizationHeader.substring("Bearer ".length).trim();
+  if (!token) {
+    throw new AuthenticationError("Bootstrap booking access token is required");
+  }
+
+  const tokenPayload = await verifyBookingAccessToken(token);
+  if (!tokenPayload) {
+    throw new AuthenticationError("Invalid or expired booking access token");
+  }
+
+  if (tokenPayload.scope !== NEW_CLIENT_BOOTSTRAP_SCOPE) {
+    throw new AuthorizationError("Booking access token is not valid for new client bootstrap");
+  }
+
+  if (tokenPayload.tenantId !== tenantId) {
+    throw new AuthorizationError("Booking access token is not valid for this tenant");
+  }
+
+  return tokenPayload;
+}
+
+function validateBootstrapTokenBinding(
+  tokenPayload: NonNullable<Awaited<ReturnType<typeof verifyBookingAccessToken>>>,
+  requestData: CreateNewClientRequest,
+): void {
+  if (tokenPayload.tunnelId !== requestData.tunnelId) {
+    throw new AuthorizationError("Booking access token is not valid for this tunnel");
+  }
+
+  if (tokenPayload.clientPublicKey !== requestData.clientPublicKey) {
+    throw new AuthorizationError("Booking access token is not valid for this client key");
+  }
+
+  if (tokenPayload.emailHash && tokenPayload.emailHash !== requestData.emailHash) {
+    throw new AuthorizationError("Booking access token is not valid for this email hash");
+  }
+}
+
 // Register OpenAPI documentation for POST
 registerOpenAPIRoute("/tenants/{id}/appointments/create-new-client", "POST", {
   summary: "Create new client with appointment",
@@ -44,6 +105,13 @@ registerOpenAPIRoute("/tenants/{id}/appointments/create-new-client", "POST", {
       required: true,
       schema: { type: "string", format: "uuid" },
       description: "Tenant ID",
+    },
+    {
+      name: "Authorization",
+      in: "header",
+      required: true,
+      schema: { type: "string" },
+      description: "Bearer bootstrap booking access token from /appointments/bootstrap-verify",
     },
   ],
   requestBody: {
@@ -218,6 +286,7 @@ registerOpenAPIRoute("/tenants/{id}/appointments/create-new-client", "POST", {
  *
  * Creates a new client tunnel with their first appointment.
  * This handles the complete setup for new clients including tunnel creation.
+ * Requires bootstrap booking access token from bootstrap-verify endpoint.
  */
 export const POST: RequestHandler = async ({ request, params }) => {
   try {
@@ -226,8 +295,11 @@ export const POST: RequestHandler = async ({ request, params }) => {
       throw new ValidationError("Tenant ID is required");
     }
 
+    const tokenPayload = await requireBootstrapBookingAccessToken(request, tenantId);
+
     const body = await request.json();
     const validatedData = requestSchema.parse(body);
+    validateBootstrapTokenBinding(tokenPayload, validatedData);
 
     if (validatedData.salutation) {
       throw new ValidationError("Bees incoming");
@@ -240,6 +312,8 @@ export const POST: RequestHandler = async ({ request, params }) => {
 
     const appointmentService = await AppointmentService.forTenant(tenantId);
     const response = await appointmentService.createNewClientWithAppointment(validatedData);
+
+    await consumeBookingAccessToken(tokenPayload);
 
     return json(response);
   } catch (error) {
