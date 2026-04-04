@@ -634,6 +634,7 @@
 		}
 	},
 	"settings": {
+		"title": "Einstellungen",
 		"loading": "Lade Einstellungen...",
 		"form": {
 			"sections": {

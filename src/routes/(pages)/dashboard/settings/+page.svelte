@@ -11,6 +11,10 @@
   let { data } = $props();
 </script>
 
+<svelte:head>
+  <title>{m["settings.title"]()} - OpenReception</title>
+</svelte:head>
+
 <SidebarLayout
   breakcrumbs={[
     {

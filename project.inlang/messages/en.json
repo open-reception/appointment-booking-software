@@ -643,6 +643,7 @@
 		}
 	},
 	"settings": {
+		"title": "Settings",
 		"loading": "Loading settings...",
 		"form": {
 			"sections": {
