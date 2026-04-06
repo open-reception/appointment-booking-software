@@ -22,6 +22,7 @@
   import type { DateMatcher } from "bits-ui";
   import type { OnChangeFn } from "vaul-svelte";
   import { fetchSchedule } from "./utils";
+  import { timeUTCToLocalWithoutOffset } from "$lib/utils/datetime";
 
   const {
     channel,
@@ -156,21 +157,26 @@
 
   const formatSlotTime = (slot: TPublicSlot) => {
     const slotDate = new Date(slot.from);
-    const displayDate = new Date(
-      slotDate.getFullYear(),
-      slotDate.getMonth(),
-      slotDate.getDate(),
-      slotDate.getHours(),
-      slotDate.getMinutes(),
-      0,
-      0,
-    );
+    const utcTime = slot.from.slice(11, 19); // "HH:mm:ss" from ISO string
+    const localTime = timeUTCToLocalWithoutOffset(utcTime);
+
+    const [hours, minutes] = localTime.split(":");
 
     return new Intl.DateTimeFormat(getLocale(), {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
-    }).format(displayDate);
+    }).format(
+      new Date(
+        slotDate.getFullYear(),
+        slotDate.getMonth(),
+        slotDate.getDate(),
+        Number(hours),
+        Number(minutes),
+        0,
+        0,
+      ),
+    );
   };
 </script>
 

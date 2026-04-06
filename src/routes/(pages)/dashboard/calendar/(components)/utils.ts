@@ -41,9 +41,9 @@ export const fetchCalendar = async (opts: { tenant: string; startDate: CalendarD
 };
 
 // Convert time string to minutes since midnight
-function timeToMinutes(time: string): number {
-  if (time.includes("T")) {
-    const parsedDate = new Date(time);
+function timeToMinutes(dateTimeStr: string): number {
+  if (dateTimeStr.includes("T")) {
+    const parsedDate = new Date(dateTimeStr);
     if (!Number.isNaN(parsedDate.getTime())) {
       return (
         parsedDate.getHours() * 60 + parsedDate.getMinutes() + parsedDate.getTimezoneOffset() + 60
@@ -51,7 +51,7 @@ function timeToMinutes(time: string): number {
     }
   }
 
-  const [hours, minutes] = time.split(":").map(Number);
+  const [hours, minutes] = dateTimeStr.split(":").map(Number);
   return hours * 60 + minutes;
 }
 

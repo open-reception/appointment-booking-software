@@ -10,6 +10,7 @@ export const toDisplayDateTime = (date: Date, opts?: Intl.DateTimeFormatOptions)
     opts ?? {
       dateStyle: "short",
       ...(hours !== 0 || minutes !== 0 ? { timeStyle: "short" } : {}),
+      timeZone: "Etc/GMT-1",
     },
   );
   return formatter.format(date);
@@ -20,46 +21,31 @@ export const calendarItemToDate = (item: TCalendarSlot) => {
     const parsedDate = new Date(item.start);
     if (!Number.isNaN(parsedDate.getTime())) {
       const [year, month, day] = item.date.split("-").map(Number);
-      return new Date(year, month - 1, day, parsedDate.getHours(), parsedDate.getMinutes(), 0, 0);
+
+      // Get standard (non-DST) offset from a winter date
+      const jan = new Date(year, 0, 1);
+      const standardOffsetMs = jan.getTimezoneOffset() * 60 * 1000;
+
+      // Build a UTC date and apply the standard offset
+      const utc = Date.UTC(
+        year,
+        month - 1,
+        day,
+        parsedDate.getUTCHours(),
+        parsedDate.getUTCMinutes(),
+        0,
+        0,
+      );
+      return new Date(utc - standardOffsetMs);
     }
   }
 
-  const [year, month, day] = item.date.split("-").map(Number);
-  const [hours, minutes] = item.start.split(":").map((it) => Number.parseInt(it));
-  const date = new Date(year, month - 1, day);
-  date.setHours(hours, minutes, 0, 0);
-  return date;
+  throw new Error(`Unable to parse date from calendar item: ${item.start}`);
 };
 
 export const toInputDateTime = (dateStr: string) => {
   return toCalendarDateTime(parseAbsoluteToLocal(dateStr));
 };
-
-export const localTimeToUTC = (localTime: string) => {
-  const [hours, minutes, seconds] = localTime.split(":").map(Number);
-
-  const now = new Date();
-  now.setHours(hours, minutes, seconds, 0);
-
-  const utcHours = String(now.getUTCHours()).padStart(2, "0");
-  const utcMinutes = String(now.getUTCMinutes()).padStart(2, "0");
-  const utcSeconds = String(now.getUTCSeconds()).padStart(2, "0");
-
-  return `${utcHours}:${utcMinutes}:${utcSeconds}`;
-};
-
-export function utcTimeToLocal(utcTime: string): string {
-  const [hours, minutes, seconds] = utcTime.split(":").map(Number);
-
-  const now = new Date();
-  now.setUTCHours(hours, minutes, seconds, 0);
-
-  const localHours = String(now.getHours()).padStart(2, "0");
-  const localMinutes = String(now.getMinutes()).padStart(2, "0");
-  const localSeconds = String(now.getSeconds()).padStart(2, "0");
-
-  return `${localHours}:${localMinutes}:${localSeconds}`;
-}
 
 export const getDefaultStartTime = () => {
   const date = new Date();
@@ -77,4 +63,95 @@ export const getDefaultEndTime = () => {
   date.setSeconds(0);
   date.setMilliseconds(0);
   return date.toISOString();
+};
+
+/*
+
+    Date and Time processing
+    See datetime.md for reference
+
+*/
+
+export const timeLocalWithoutOffsetToUTC = (localTime: string) => {
+  const [hours, minutes, seconds] = localTime.split(":").map(Number);
+
+  // Get the standard (non-DST) offset by checking a date in winter
+  const jan = new Date(new Date().getFullYear(), 0, 1); // January 1st
+  const standardOffsetMs = jan.getTimezoneOffset() * 60 * 1000;
+
+  const now = new Date();
+  now.setHours(hours, minutes, seconds, 0);
+
+  // Remove the current offset and apply the standard one instead
+  const utc = new Date(now.getTime() - now.getTimezoneOffset() * 60 * 1000 + standardOffsetMs);
+
+  const utcHours = String(utc.getUTCHours()).padStart(2, "0");
+  const utcMinutes = String(utc.getUTCMinutes()).padStart(2, "0");
+  const utcSeconds = String(utc.getUTCSeconds()).padStart(2, "0");
+
+  return `${utcHours}:${utcMinutes}:${utcSeconds}`;
+};
+
+export function timeUTCToLocalWithoutOffset(utcTime: string): string {
+  const [hours, minutes, seconds] = utcTime.split(":").map(Number);
+
+  // Standard (non-DST) offset
+  const jan = new Date(new Date().getFullYear(), 0, 1);
+  const standardOffsetMs = jan.getTimezoneOffset() * 60 * 1000;
+
+  const now = new Date();
+  now.setUTCHours(hours, minutes, seconds, 0);
+
+  // Remove the standard offset, then re-apply the current one
+  const local = new Date(now.getTime() + now.getTimezoneOffset() * 60 * 1000 - standardOffsetMs);
+
+  const localHours = String(local.getHours()).padStart(2, "0");
+  const localMinutes = String(local.getMinutes()).padStart(2, "0");
+  const localSeconds = String(local.getSeconds()).padStart(2, "0");
+
+  return `${localHours}:${localMinutes}:${localSeconds}`;
+}
+
+export const timeLocalToUTC = (localTime: string, date?: Date) => {
+  const [hours, minutes, seconds] = localTime.split(":").map(Number);
+
+  // Use the provided date (to get the correct DST offset for that day),
+  // or fall back to today
+  const target = date ? new Date(date) : new Date();
+  target.setHours(hours, minutes, seconds, 0);
+
+  const utcHours = String(target.getUTCHours()).padStart(2, "0");
+  const utcMinutes = String(target.getUTCMinutes()).padStart(2, "0");
+  const utcSeconds = String(target.getUTCSeconds()).padStart(2, "0");
+
+  return `${utcHours}:${utcMinutes}:${utcSeconds}`;
+};
+
+export const timeUTCToLocal = (utcTime: string, date?: Date) => {
+  const [hours, minutes, seconds] = utcTime.split(":").map(Number);
+
+  const target = date ? new Date(date) : new Date();
+  target.setUTCHours(hours, minutes, seconds, 0);
+
+  const localHours = String(target.getHours()).padStart(2, "0");
+  const localMinutes = String(target.getMinutes()).padStart(2, "0");
+  const localSeconds = String(target.getSeconds()).padStart(2, "0");
+
+  return `${localHours}:${localMinutes}:${localSeconds}`;
+};
+
+export const utcToLocalWithoutDST = (utcDate: Date): Date => {
+  const jan = new Date(utcDate.getFullYear(), 0, 1);
+  const standardOffsetMs = jan.getTimezoneOffset() * 60 * 1000;
+  const currentOffsetMs = utcDate.getTimezoneOffset() * 60 * 1000;
+
+  return new Date(utcDate.getTime() - standardOffsetMs + currentOffsetMs);
+};
+
+export const localToUTCWithoutDST = (localDate: Date): Date => {
+  const jan = new Date(localDate.getFullYear(), 0, 1);
+  const standardOffsetMs = jan.getTimezoneOffset() * 60 * 1000;
+  const currentOffsetMs = localDate.getTimezoneOffset() * 60 * 1000;
+
+  return new Date(localDate.getTime() + standardOffsetMs - currentOffsetMs);
 };

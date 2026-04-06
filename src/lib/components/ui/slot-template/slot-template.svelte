@@ -5,6 +5,7 @@
   import * as Select from "$lib/components/ui/select";
   import type { TNewSlotTemplate, TSlotTemplate } from "$lib/types/channel";
   import { cn } from "$lib/utils";
+  import { timeLocalWithoutOffsetToUTC, timeUTCToLocalWithoutOffset } from "$lib/utils/datetime";
   import { Trash } from "@lucide/svelte/icons";
   import type { FsSuperForm } from "formsnap";
   import type { HTMLAttributes } from "svelte/elements";
@@ -12,7 +13,6 @@
   import { Input } from "../input";
   import { Text } from "../typography";
   import { durations, times, weekdays } from "./utils";
-  import { localTimeToUTC, utcTimeToLocal } from "$lib/utils/datetime";
 
   let {
     form,
@@ -72,7 +72,7 @@
   };
 
   const getSelectedTime = (utcTime: string) => {
-    const localTime = utcTimeToLocal(utcTime) as keyof typeof times;
+    const localTime = timeUTCToLocalWithoutOffset(utcTime) as keyof typeof times;
     return times[localTime]?.label ?? "";
   };
 </script>
@@ -139,7 +139,7 @@
             </Select.Trigger>
             <Select.Content>
               {#each Object.entries(times) as [time, value] (time)}
-                <Select.Item value={localTimeToUTC(time)}>{value.label}</Select.Item>
+                <Select.Item value={timeLocalWithoutOffsetToUTC(time)}>{value.label}</Select.Item>
               {/each}
             </Select.Content>
           </Select.Root>
@@ -162,7 +162,7 @@
             </Select.Trigger>
             <Select.Content>
               {#each Object.entries(times) as [time, value] (time)}
-                <Select.Item value={localTimeToUTC(time)}>{value.label}</Select.Item>
+                <Select.Item value={timeLocalWithoutOffsetToUTC(time)}>{value.label}</Select.Item>
               {/each}
             </Select.Content>
           </Select.Root>

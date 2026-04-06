@@ -4,7 +4,7 @@
   import { calendarStore } from "$lib/stores/calendar";
   import { channels as channelsStore } from "$lib/stores/channels";
   import { type TCalendarItem } from "$lib/types/calendar";
-  import { calendarItemToDate, toDisplayDateTime } from "$lib/utils/datetime";
+  import { toDisplayDateTime, utcToLocalWithoutDST } from "$lib/utils/datetime";
   import { getCurrentTranlslation } from "$lib/utils/localizations";
 
   let {
@@ -29,7 +29,7 @@
 >
   <span class="sr-only">
     {m["calendar.addAppointment.preview"]({
-      time: toDisplayDateTime(calendarItemToDate(item), {
+      time: toDisplayDateTime(utcToLocalWithoutDST(new Date(item.start)), {
         hour: "2-digit",
         minute: "2-digit",
       }),

@@ -7,7 +7,7 @@
   import { cancelAppointment, denyAppointment, confirmAppointment } from "./utils";
   import { toast } from "svelte-sonner";
   import { m } from "$i18n/messages";
-  import { toDisplayDateTime } from "$lib/utils/datetime";
+  import { toDisplayDateTime, utcToLocalWithoutDST } from "$lib/utils/datetime";
 
   let {
     tenantId,
@@ -121,7 +121,7 @@
     <div class="flex gap-2 p-1">
       <Calendar class="size-4 " />
       <Text style="sm">
-        {toDisplayDateTime(item.appointment.appointment.dateTime, {
+        {toDisplayDateTime(utcToLocalWithoutDST(item.appointment.appointment.dateTime), {
           year: "numeric",
           month: "long",
           day: "numeric",

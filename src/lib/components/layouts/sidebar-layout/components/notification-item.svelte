@@ -11,8 +11,9 @@
   import { channels as channelsStore } from "$lib/stores/channels";
   import type { TAppointment } from "$lib/types/appointments";
   import type { TNotification } from "$lib/types/notification";
+  import { utcToLocalWithoutDST } from "$lib/utils/datetime";
   import { getCurrentTranlslation } from "$lib/utils/localizations";
-  import { getLocalTimeZone, parseAbsolute } from "@internationalized/date";
+  import { getLocalTimeZone } from "@internationalized/date";
   import { onMount } from "svelte";
 
   let {
@@ -89,12 +90,7 @@
         hour: "2-digit",
         minute: "2-digit",
         timeZone: getLocalTimeZone().toString(),
-      }).format(
-        parseAbsolute(
-          appointment.appointmentDate as unknown as string,
-          getLocalTimeZone(),
-        ).toDate(),
-      )}
+      }).format(utcToLocalWithoutDST(new Date(appointment.appointmentDate)))}
     </Text>
   {/if}
   <Text style="md" class="flex pr-8 text-start whitespace-break-spaces">
