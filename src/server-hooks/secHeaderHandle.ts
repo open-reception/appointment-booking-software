@@ -32,7 +32,7 @@ export const secHeaderHandle: Handle = async ({ event, resolve }) => {
     "font-src 'self' data: https://unpkg.com",
     "connect-src 'self'",
     "media-src 'self'",
-    "object-src 'none'",
+    "object-src 'self'",
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
