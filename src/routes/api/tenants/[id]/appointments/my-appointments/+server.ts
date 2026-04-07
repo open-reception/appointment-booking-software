@@ -9,18 +9,29 @@ import type { RequestHandler } from "@sveltejs/kit";
 import { json } from "@sveltejs/kit";
 import { z } from "zod";
 import { logger } from "$lib/logger";
-import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
+import {
+  AuthenticationError,
+  AuthorizationError,
+  BackendError,
+  InternalError,
+  logError,
+  ValidationError,
+} from "$lib/server/utils/errors";
 import { AppointmentService } from "$lib/server/services/appointment-service";
 import { getTenantDb } from "$lib/server/db";
 import { clientAppointmentTunnel } from "$lib/server/db/tenant-schema";
 import { eq } from "drizzle-orm";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
+import {
+  EXISTING_CLIENT_BOOKING_SCOPE,
+  verifyBookingAccessToken,
+} from "$lib/server/auth/booking-access-token";
 
 // Register OpenAPI documentation for GET
 registerOpenAPIRoute("/tenants/{id}/appointments/my-appointments", "GET", {
   summary: "Get client's future appointments",
   description:
-    "Returns all future appointments for a client. Requires the client to be authenticated via PIN challenge-response flow. The emailHash header must match the authenticated client.",
+    "Returns all future appointments for a client. Requires a valid existing-client booking access token and matching email hash.",
   tags: ["Appointments", "Clients"],
   parameters: [
     {
@@ -36,6 +47,13 @@ registerOpenAPIRoute("/tenants/{id}/appointments/my-appointments", "GET", {
       required: true,
       schema: { type: "string" },
       description: "SHA-256 hash of client email for authentication",
+    },
+    {
+      name: "Authorization",
+      in: "header",
+      required: true,
+      schema: { type: "string" },
+      description: "Bearer booking access token from /appointments/verify-challenge",
     },
   ],
   responses: {
@@ -107,6 +125,22 @@ registerOpenAPIRoute("/tenants/{id}/appointments/my-appointments", "GET", {
         },
       },
     },
+    "401": {
+      description: "Missing or invalid booking access token",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "403": {
+      description: "Booking access token does not match requested tenant or email hash",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
     "404": {
       description: "Client tunnel not found",
       content: {
@@ -132,7 +166,7 @@ const emailHashSchema = z.string().min(1);
  * GET /api/tenants/[id]/appointments/my-appointments
  *
  * Returns all future appointments for an authenticated client.
- * The client must provide their email hash in the X-Email-Hash header.
+ * Requires existing-client booking token and matching email hash.
  */
 export const GET: RequestHandler = async ({ request, params }) => {
   const log = logger.setContext("API.MyAppointments");
@@ -150,6 +184,33 @@ export const GET: RequestHandler = async ({ request, params }) => {
     }
 
     const validatedEmailHash = emailHashSchema.parse(emailHash);
+
+    const authorizationHeader = request.headers.get("Authorization");
+    if (!authorizationHeader?.startsWith("Bearer ")) {
+      throw new AuthenticationError("Booking access token is required");
+    }
+
+    const token = authorizationHeader.substring("Bearer ".length).trim();
+    if (!token) {
+      throw new AuthenticationError("Booking access token is required");
+    }
+
+    const tokenPayload = await verifyBookingAccessToken(token);
+    if (!tokenPayload) {
+      throw new AuthenticationError("Invalid or expired booking access token");
+    }
+
+    if (tokenPayload.scope !== EXISTING_CLIENT_BOOKING_SCOPE) {
+      throw new AuthorizationError("Booking access token is not valid for this endpoint");
+    }
+
+    if (tokenPayload.tenantId !== tenantId) {
+      throw new AuthorizationError("Booking access token is not valid for this tenant");
+    }
+
+    if (tokenPayload.emailHash !== validatedEmailHash) {
+      throw new AuthorizationError("Booking access token is not valid for this email hash");
+    }
 
     log.debug("Fetching appointments for client", {
       tenantId,

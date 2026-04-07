@@ -58,6 +58,32 @@ export interface ChallengeVerificationResponse {
   valid: boolean;
   encryptedTunnelKey: string; // Encrypted with client public key
   tunnelId: string; // ID of client tunnel (to save or load appointments)
+  bookingAccessToken: string; // Short-lived token for booking-scoped API calls
+}
+
+export interface BootstrapChallengeRequest {
+  tunnelId: string;
+  clientPublicKey: string;
+  emailHash?: string;
+}
+
+export interface BootstrapChallengeResponse {
+  challengeId: string;
+  nonce: string;
+  difficulty: number;
+}
+
+export interface BootstrapVerifyRequest {
+  challengeId: string;
+  tunnelId: string;
+  clientPublicKey: string;
+  counter: number;
+  emailHash?: string;
+}
+
+export interface BootstrapVerifyResponse {
+  valid: boolean;
+  bookingAccessToken: string;
 }
 
 // Existing Client - New Appointment
