@@ -19,12 +19,15 @@ const createStaffStore = () => {
     load: async () => {
       if (!browser) return;
 
+      const tenantId = auth.getTenant();
+      if (!tenantId) return;
+
       store.update((state) => {
         return { ...state, isLoading: true };
       });
 
       try {
-        const tenantId = auth.getTenant();
+        await auth.waitForRefresh();
         const res = await fetch(`/api/tenants/${tenantId}/staff`, {
           method: "GET",
           headers: {

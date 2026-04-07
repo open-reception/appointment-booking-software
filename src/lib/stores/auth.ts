@@ -11,7 +11,7 @@ export interface PasskeyAuthData {
 
 export interface AuthState {
   isAuthenticated: boolean;
-  isRefreshing: boolean;
+  refreshPromise: Promise<Response> | null;
   user?: {
     id: string;
     email: string;
@@ -26,16 +26,16 @@ export interface AuthState {
 function createAuthStore() {
   const store = writable<AuthState>({
     isAuthenticated: false,
-    isRefreshing: false,
+    refreshPromise: null,
   });
 
   return {
     ...store,
-    setRefreshing: (isRefreshing: boolean) => {
-      store.update((state) => ({ ...state, isRefreshing }));
-    },
     setAuthenticated: (isAuthenticated: boolean) => {
       store.update((state) => ({ ...state, isAuthenticated }));
+    },
+    setRefreshPromise: (promise: Promise<Response> | null) => {
+      store.update((state) => ({ ...state, refreshPromise: promise }));
     },
     setUser: (user: AuthState["user"]) => {
       store.update((state) => ({ ...state, isAuthenticated: true, user }));
@@ -57,7 +57,7 @@ function createAuthStore() {
     reset: () => {
       store.set({
         isAuthenticated: false,
-        isRefreshing: false,
+        refreshPromise: null,
         user: undefined,
         passkeyAuthData: undefined,
       });
@@ -93,6 +93,17 @@ function createAuthStore() {
       });
       unsubscribe();
       return authState!.user?.tenantId || null;
+    },
+    waitForRefresh: async () => {
+      let authState: AuthState;
+      const unsubscribe = store.subscribe((state) => {
+        authState = state;
+      });
+      unsubscribe();
+
+      if (authState!.refreshPromise) {
+        await authState!.refreshPromise;
+      }
     },
   };
 }

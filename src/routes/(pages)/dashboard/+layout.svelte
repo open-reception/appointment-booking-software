@@ -23,12 +23,11 @@
     updateStores();
 
     if (!intervalData) {
-      refreshSession();
       intervalData = setInterval(updateStores, 2 * 60 * 1000); // 2 minutes
     }
     if (!intervalSession) {
       refreshSession();
-      intervalSession = setInterval(refreshSession, 5 * 60 * 1000); // 5 minutes
+      intervalSession = setInterval(refreshSession, 10 * 60 * 1000); // 10 minutes
     }
 
     const unsubscribe = () => {

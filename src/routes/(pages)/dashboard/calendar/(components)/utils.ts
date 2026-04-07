@@ -2,6 +2,7 @@ import { browser } from "$app/environment";
 import { goto } from "$app/navigation";
 import { resolve } from "$app/paths";
 import { ROUTES } from "$lib/const/routes";
+import { auth } from "$lib/stores/auth";
 import { calendarStore } from "$lib/stores/calendar";
 import { staffCrypto } from "$lib/stores/staff-crypto";
 import type { TCalendar, TCalendarItem } from "$lib/types/calendar";
@@ -22,6 +23,7 @@ export const fetchCalendar = async (opts: { tenant: string; startDate: CalendarD
     startDate: localStartDate.toISOString(),
     endDate: localEndDate.toISOString(),
   });
+  await auth.waitForRefresh();
   const res = await fetch(`/api/tenants/${opts.tenant}/calendar?${params}`, {
     method: "GET",
   });

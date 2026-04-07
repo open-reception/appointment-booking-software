@@ -929,7 +929,7 @@
 		"today": "Heute",
 		"loading": "Kalender wird geladen",
 		"decrypting": "wird entschlüsselt...",
-		"decryptingError": "Entschlüsselung fehlgeschlagen. Bitte neu anmelden.",
+		"decryptingError": "Entschlüsselung fehlgeschlagen. Bitte neu laden/anmelden.",
 		"decryptingErrorNoKeyShare": "Entschlüsselung fehlgeschlagen. Bitten Sie ein Teammitglied, Ihnen Zugriff zu gewähren.",
 		"notificationHint": "Klienten werden per E-Mail benachrichtigt, wenn diese Benachrichtigungen aktiviert haben.",
 		"shownAppointments": {
