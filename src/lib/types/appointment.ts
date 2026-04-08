@@ -91,6 +91,7 @@ export interface AddAppointmentToTunnelRequest {
   emailHash: string;
   tunnelId: string;
   appointmentDate: string;
+  appointmentTimeZone: string;
   encryptedAppointment: EncryptedAppointmentData;
 }
 
@@ -132,6 +133,7 @@ export interface ClientAppointmentsTunnel {
 export interface AppointmentResponse {
   id: string;
   appointmentDate: string;
+  appointmentTimeZone: string;
   status: "NEW" | "CONFIRMED" | "HELD" | "REJECTED" | "NO_SHOW";
   requiresConfirmation?: boolean;
 }

@@ -24,6 +24,7 @@ export interface ClientTunnelData {
   channelId: string;
   agentId: string;
   appointmentDate: string;
+  appointmentTimeZone: string;
   duration: number;
   emailHash: string;
   clientEmail?: string;
@@ -500,6 +501,7 @@ export class AppointmentService {
       channelId: string;
       agentId: string;
       appointmentDate: string;
+      appointmentTimeZone: string;
       duration: number;
       clientEmail: string;
       clientLanguage?: string;
@@ -567,6 +569,7 @@ export class AppointmentService {
         channelId: appointmentData.channelId,
         agentId: appointmentData.agentId,
         appointmentDate: new Date(appointmentData.appointmentDate),
+        timezone: appointmentData.appointmentTimeZone,
         duration: appointmentData.duration,
         encryptedPayload: appointmentData.encryptedAppointment.encryptedPayload,
         iv: appointmentData.encryptedAppointment.iv,
@@ -588,6 +591,7 @@ export class AppointmentService {
     const response: AppointmentResponse = {
       id: result.id,
       appointmentDate: result.appointmentDate.toISOString(),
+      appointmentTimeZone: appointmentData.appointmentTimeZone,
       status: result.status,
       requiresConfirmation,
     };
@@ -716,6 +720,7 @@ export class AppointmentService {
           channelId: clientData.channelId,
           agentId: clientData.agentId,
           appointmentDate: new Date(clientData.appointmentDate),
+          timezone: clientData.appointmentTimeZone,
           duration: clientData.duration,
           encryptedPayload: clientData.encryptedAppointment.encryptedPayload,
           iv: clientData.encryptedAppointment.iv,
@@ -725,6 +730,7 @@ export class AppointmentService {
         .returning({
           id: tenantSchema.appointment.id,
           appointmentDate: tenantSchema.appointment.appointmentDate,
+          timezone: tenantSchema.appointment.timezone,
           status: tenantSchema.appointment.status,
           tunnelId: tenantSchema.appointment.tunnelId,
           channelId: tenantSchema.appointment.channelId,
@@ -758,6 +764,7 @@ export class AppointmentService {
     const response: AppointmentResponse = {
       id: result.appointment.id,
       appointmentDate: result.appointment.appointmentDate.toISOString(),
+      appointmentTimeZone: result.appointment.timezone,
       status: result.appointment.status,
       requiresConfirmation: result.requiresConfirmation,
     };

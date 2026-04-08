@@ -27,6 +27,7 @@ const requestSchema = z.object({
   channelId: z.string(),
   agentId: z.string(),
   appointmentDate: z.string(),
+  appointmentTimeZone: z.string(),
   duration: z.number().int().positive(),
   clientEmail: z.email().optional(),
   clientLanguage: z.string().optional().default("en"),
@@ -254,6 +255,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
         channelId: validatedData.channelId,
         agentId: validatedData.agentId,
         appointmentDate: new Date(validatedData.appointmentDate),
+        timezone: validatedData.appointmentTimeZone,
         duration: validatedData.duration,
         encryptedPayload: validatedData.encryptedAppointment.encryptedPayload,
         iv: validatedData.encryptedAppointment.iv,
@@ -266,6 +268,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
         channelId: appointment.channelId,
         agentId: appointment.agentId,
         appointmentDate: appointment.appointmentDate,
+        timezone: appointment.timezone,
         expiryDate: appointment.expiryDate,
         status: appointment.status,
         encryptedPayload: appointment.encryptedPayload,
@@ -287,6 +290,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
     const response: AppointmentResponse = {
       id: result.id,
       appointmentDate: result.appointmentDate.toISOString(),
+      appointmentTimeZone: result.timezone,
       status: result.status,
     };
 
