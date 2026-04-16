@@ -596,12 +596,14 @@ export class UnifiedAppointmentCrypto {
       };
 
       // Call endpoint
+      const appointmentTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
       const sendEmail = params.appointmentData.shareEmail && Boolean(params.email);
       const requestData = {
         clientEmail: params.appointmentData.shareEmail ? usedEmail : undefined,
         hasNoEmail: params.hasNoEmail,
         emailHash: await hashEmail(usedEmail),
         appointmentDate: params.appointmentDate.toISOString(),
+        appointmentTimeZone,
         duration: params.duration,
         agentId: params.agentId,
         channelId: params.channelId,

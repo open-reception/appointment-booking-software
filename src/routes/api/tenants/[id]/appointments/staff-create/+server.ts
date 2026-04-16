@@ -16,6 +16,7 @@ const requestSchema = z
 
     // Appointment details
     appointmentDate: z.string(),
+    appointmentTimeZone: z.string(),
     duration: z.number().int().positive(),
     channelId: z.string(),
     agentId: z.string(),
@@ -315,6 +316,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
         channelId: validatedData.channelId,
         agentId: validatedData.agentId,
         appointmentDate: validatedData.appointmentDate,
+        appointmentTimeZone: validatedData.appointmentTimeZone,
         duration: validatedData.duration,
         clientEmail: validatedData.clientEmail || "",
         clientLanguage: validatedData.clientLanguage,
@@ -349,6 +351,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
         channelId: validatedData.channelId,
         agentId: validatedData.agentId,
         appointmentDate: validatedData.appointmentDate,
+        appointmentTimeZone: validatedData.appointmentTimeZone,
         duration: validatedData.duration,
         emailHash: validatedData.emailHash,
         clientEmail: validatedData.clientEmail || "",
