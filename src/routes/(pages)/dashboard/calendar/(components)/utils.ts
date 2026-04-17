@@ -6,6 +6,7 @@ import { auth } from "$lib/stores/auth";
 import { calendarStore } from "$lib/stores/calendar";
 import { staffCrypto } from "$lib/stores/staff-crypto";
 import type { TCalendar, TCalendarItem } from "$lib/types/calendar";
+import { localToUTCWithoutDST } from "$lib/utils/datetime";
 import type { CalendarDate } from "@internationalized/date";
 import { get } from "svelte/store";
 
@@ -60,8 +61,19 @@ function timeToMinutes(dateTimeStr: string): number {
 export function positionItems(items: TCalendarItem[] | undefined) {
   if (!items) return [];
 
+  // Adjust actual appointments
+  const adjustedItems = [...items].map((item) => {
+    if (item.appointment) {
+      return {
+        ...item,
+        start: localToUTCWithoutDST(item.appointment.dateTime).toISOString(),
+      };
+    }
+    return item;
+  });
+
   // Sort items by start time
-  const sortedItems = [...items]
+  const sortedItems = [...adjustedItems]
     .sort((a, b) => b.duration - a.duration)
     .sort((a, b) => timeToMinutes(a.start) - timeToMinutes(b.start));
 

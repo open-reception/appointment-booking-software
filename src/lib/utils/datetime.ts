@@ -1,16 +1,35 @@
 import { getLocale } from "$i18n/runtime";
 import type { TCalendarSlot } from "$lib/types/calendar";
-import { parseAbsoluteToLocal, toCalendarDateTime } from "@internationalized/date";
+import {
+  getLocalTimeZone,
+  parseAbsoluteToLocal,
+  toCalendarDateTime,
+} from "@internationalized/date";
 
-export const toDisplayDateTime = (date: Date, opts?: Intl.DateTimeFormatOptions) => {
+export const toDisplayDateTime = (
+  date: Date,
+  opts: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: getLocalTimeZone(),
+    timeZoneName: "short",
+  },
+) => {
   const hours = date.getHours();
   const minutes = date.getMinutes();
   const formatter = new Intl.DateTimeFormat(
     getLocale(),
-    opts ?? {
+    opts || {
+      // TODO: Should be moved outside, in cases where needed
       dateStyle: "short",
-      ...(hours !== 0 || minutes !== 0 ? { timeStyle: "short" } : {}),
-      timeZone: "Etc/GMT-1",
+      ...(hours !== 0 || minutes !== 0
+        ? { timeStyle: "short" }
+        : { hour: "2-digit", minute: "2-digit" }),
+      timeZone: getLocalTimeZone(),
+      timeZoneName: "short",
     },
   );
   return formatter.format(date);
@@ -154,4 +173,14 @@ export const localToUTCWithoutDST = (localDate: Date): Date => {
   const currentOffsetMs = localDate.getTimezoneOffset() * 60 * 1000;
 
   return new Date(localDate.getTime() + standardOffsetMs - currentOffsetMs);
+};
+
+export const localToUTC = (localDate: Date): Date => {
+  const currentOffsetMs = localDate.getTimezoneOffset() * 60 * 1000;
+  return new Date(localDate.getTime() + currentOffsetMs);
+};
+
+export const utcToLocal = (utcDate: Date): Date => {
+  const currentOffsetMs = utcDate.getTimezoneOffset() * 60 * 1000;
+  return new Date(utcDate.getTime() - currentOffsetMs);
 };

@@ -47,7 +47,6 @@
     {appointment.agentName}<br />
     {renderAppointmentDate(appointment.appointmentDate, locale, appointment.timezone)}<br />
     {renderAppointmentTime(appointment.appointmentDate, locale, appointment.timezone)}
-    {m["emails.oclock"]()}
   </EmailText>
   <EmailHeadline>{tenant.longName}</EmailHeadline>
   <EmailText variant="md">

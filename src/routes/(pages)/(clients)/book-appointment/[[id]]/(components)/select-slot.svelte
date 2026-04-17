@@ -11,6 +11,7 @@
   import type { TPublicAppointment, TPublicSchedule, TPublicSlot } from "$lib/types/public.js";
   import {
     CalendarDate,
+    fromDate,
     getLocalTimeZone,
     parseDate,
     toCalendarDate,
@@ -22,7 +23,11 @@
   import type { DateMatcher } from "bits-ui";
   import type { OnChangeFn } from "vaul-svelte";
   import { fetchSchedule } from "./utils";
-  import { timeUTCToLocalWithoutOffset } from "$lib/utils/datetime";
+  import {
+    localToUTC,
+    timeUTCToLocalWithoutOffset,
+    utcToLocalWithoutDST,
+  } from "$lib/utils/datetime";
 
   const {
     channel,
@@ -137,6 +142,8 @@
 
   const selectSlot = (slot: TPublicSlot) => {
     if (selectedDate && slot.availableAgents.length > 0) {
+      const localTime = utcToLocalWithoutDST(new Date(slot.from));
+      const utc = localToUTC(localTime);
       proceed({
         ...appointment,
         agent: {
@@ -145,10 +152,7 @@
           image: slot.availableAgents[0].image || null,
         },
         slot: {
-          datetime: toCalendarDateTime(selectedDate).set({
-            hour: new Date(slot.from).getUTCHours(),
-            minute: new Date(slot.from).getUTCMinutes(),
-          }),
+          datetime: toCalendarDateTime(fromDate(utc, getLocalTimeZone())),
           duration: slot.duration,
         },
       });

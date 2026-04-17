@@ -3,7 +3,6 @@
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import { m } from "$i18n/messages";
-  import { getLocale } from "$i18n/runtime";
   import { Button } from "$lib/components/ui/button";
   import { Text } from "$lib/components/ui/typography";
   import { ROUTES } from "$lib/const/routes";
@@ -11,7 +10,7 @@
   import { channels as channelsStore } from "$lib/stores/channels";
   import type { TAppointment } from "$lib/types/appointments";
   import type { TNotification } from "$lib/types/notification";
-  import { utcToLocalWithoutDST } from "$lib/utils/datetime";
+  import { toDisplayDateTime } from "$lib/utils/datetime";
   import { getCurrentTranlslation } from "$lib/utils/localizations";
   import { getLocalTimeZone } from "@internationalized/date";
   import { onMount } from "svelte";
@@ -82,15 +81,15 @@
       style="xs"
       class="text-muted-foreground -mb-1 flex pr-8 text-start font-light whitespace-break-spaces"
     >
-      {Intl.DateTimeFormat(getLocale(), {
+      {toDisplayDateTime(new Date(appointment.appointmentDate), {
         year: "numeric",
-        month: "short",
-        day: "numeric",
-        weekday: "short",
+        month: "2-digit",
+        day: "2-digit",
         hour: "2-digit",
         minute: "2-digit",
-        timeZone: getLocalTimeZone().toString(),
-      }).format(utcToLocalWithoutDST(new Date(appointment.appointmentDate)))}
+        timeZone: getLocalTimeZone(),
+        timeZoneName: "short",
+      })}
     </Text>
   {/if}
   <Text style="md" class="flex pr-8 text-start whitespace-break-spaces">

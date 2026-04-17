@@ -82,15 +82,7 @@
                 {/if}
               </Item.Title>
               <Item.Description>
-                {toDisplayDateTime(utcToLocalWithoutDST(new Date(item.appointmentDate)), {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                  weekday: "short",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  timeZone: getLocalTimeZone().toString(),
-                })}
+                {toDisplayDateTime(new Date(item.appointmentDate))}
               </Item.Description>
             </Item.Content>
             <Item.Actions>

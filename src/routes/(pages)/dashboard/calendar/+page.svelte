@@ -29,7 +29,7 @@
   import CalendarFilters from "./(components)/CalendarFilters.svelte";
   import CalendarHeader from "./(components)/CalendarHeader.svelte";
   import { fetchCalendar, openAppointmentById } from "./(components)/utils";
-  import { timeUTCToLocalWithoutOffset } from "$lib/utils/datetime";
+  import { timeUTCToLocalWithoutOffset, utcToLocalWithoutDST } from "$lib/utils/datetime";
 
   const convertDate = (dateStr: string) => {
     const zonedDateTime = parseAbsoluteToLocal(dateStr);
@@ -136,7 +136,7 @@
       if (["all", "available"].includes(shownAppointments)) {
         if (shownChannels.length === 0 || shownChannels.includes(channelId)) {
           channelData.availableSlots.forEach((slot) => {
-            if (new Date(slot.to) > new Date()) {
+            if (utcToLocalWithoutDST(new Date(slot.to)) > new Date()) {
               if (
                 shownAgents.length === 0 ||
                 shownAgents.some((id) => slot.availableAgents.map((a) => a.id).includes(id))

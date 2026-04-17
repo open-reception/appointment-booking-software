@@ -3,7 +3,7 @@
   import { Separator } from "$lib/components/ui/separator";
   import { Text } from "$lib/components/ui/typography";
   import { agents as agentsStore } from "$lib/stores/agents";
-  import { toDisplayDateTime, utcToLocalWithoutDST } from "$lib/utils/datetime";
+  import { toDisplayDateTime } from "$lib/utils/datetime";
   import { Calendar, Languages, Mail, Phone, User, UserStar } from "@lucide/svelte";
   import type { TAddAppointment, TAddAppointmentStep } from "./types";
   import * as Select from "$lib/components/ui/select";
@@ -28,14 +28,7 @@
   <div class="flex gap-2">
     <Calendar class="size-4 " />
     <Text style="sm">
-      {toDisplayDateTime(utcToLocalWithoutDST(newAppointment.dateTime), {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        weekday: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      })}
+      {toDisplayDateTime(newAppointment.dateTime)}
     </Text>
   </div>
   {#if newAppointment.name}

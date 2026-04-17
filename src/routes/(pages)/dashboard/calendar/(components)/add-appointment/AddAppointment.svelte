@@ -14,6 +14,7 @@
   import SelectAgent from "./SelectAgent.svelte";
   import Summary from "./Summary.svelte";
   import type { TAddAppointment, TAddAppointmentStep } from "./types";
+  import { utcToLocalWithoutDST } from "$lib/utils/datetime";
 
   let {
     tenantId,
@@ -25,10 +26,13 @@
     updateCalendar: () => void;
   } = $props();
 
+  // Set the utc time for it to be properly saved
+  const localTime = utcToLocalWithoutDST(new Date(item.start));
+
   let step: TAddAppointmentStep = $state("email");
   let newAppointment: TAddAppointment = $state({
     locale: getDefaultAppointmentLocale(get(tenants).currentTenant),
-    dateTime: new Date(item.start),
+    dateTime: localTime,
   });
   let isSubmitting = $state(false);
 

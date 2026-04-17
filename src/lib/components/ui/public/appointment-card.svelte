@@ -10,6 +10,7 @@
   import { resest } from "../../../../routes/(pages)/(clients)/book-appointment/[[id]]/(components)/utils";
   import { Button } from "../button";
   import LocalizedText from "./localized-text.svelte";
+  import { toDisplayDateTime } from "$lib/utils/datetime";
 
   let {
     class: className,
@@ -75,14 +76,7 @@
               <div class="flex items-start gap-2">
                 <Calendar class="mt-1 size-3 shrink-0" />
                 <Text style="sm" class="font-normal">
-                  {new Intl.DateTimeFormat($publicStore.locale, {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    timeZone: "Etc/GMT-1",
-                  }).format(appointment.slot.datetime.toDate("UTC"))}
+                  {toDisplayDateTime(appointment.slot.datetime.toDate("UTC"))}
                 </Text>
               </div>
             {/if}
