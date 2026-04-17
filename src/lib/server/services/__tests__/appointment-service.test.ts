@@ -63,6 +63,7 @@ const mockClientTunnelData = {
   channelId: "channel-123",
   agentId: "agent-123",
   appointmentDate: "2024-01-15T10:00:00Z",
+  appointmentTimeZone: "Europe/Berlin",
   duration: 10,
   emailHash: "email-hash-123",
   clientEmail: "test@example.com",
