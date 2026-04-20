@@ -76,7 +76,7 @@ const createTenantsStore = () => {
         const newCurrentTenantId = auth.getTenant();
         const newCurrentTenant = tenants.find((t: TTenant) => t.id === newCurrentTenantId) || null;
 
-        if (newCurrentTenant?.setupState !== "READY") {
+        if (newCurrentTenant && newCurrentTenant?.setupState !== "READY") {
           toast.info(m["dashboard.onboarding.notification.ongoing.title"](), {
             duration: 4000,
             description: m["dashboard.onboarding.notification.ongoing.description"](),
@@ -87,7 +87,11 @@ const createTenantsStore = () => {
           });
         } else {
           const curState = get(store);
-          if (curState && curState.currentTenant?.setupState !== "READY") {
+          if (
+            curState &&
+            curState.currentTenant &&
+            curState.currentTenant?.setupState !== "READY"
+          ) {
             toast.info(m["dashboard.onboarding.notification.done.title"](), {
               duration: 4000,
               description: m["dashboard.onboarding.notification.done.description"](),

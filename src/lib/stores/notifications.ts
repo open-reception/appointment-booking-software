@@ -19,12 +19,14 @@ const createNotificationsStore = () => {
     load: async () => {
       if (!browser) return;
 
+      const tenantId = auth.getTenant();
+      if (!tenantId) return;
+
       store.update((state) => {
         return { ...state, isLoading: true };
       });
 
       try {
-        const tenantId = auth.getTenant();
         const res = await fetch(`/api/tenants/${tenantId}/notifications`, {
           method: "GET",
           headers: {

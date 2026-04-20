@@ -23,8 +23,14 @@ export const i18nHandle: Handle = ({ event, resolve }) => {
 
   if (!locale) {
     locale = extractLocaleFromHeader(event.request);
-    setLocale(locale);
-    event.locals.locale = locale;
+    if (locale) {
+      setLocale(locale);
+      event.locals.locale = locale;
+    } else {
+      // Default to English if no locale could be determined
+      setLocale("en");
+      event.locals.locale = "en";
+    }
   }
 
   return paraglideMiddleware(event.request, ({ request: localizedRequest, locale }) => {
