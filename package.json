@@ -91,7 +91,7 @@
     "date-fns": "^4.1.0",
     "dotenv": "^16.5.0",
     "dotenv-expand": "^12.0.2",
-    "drizzle-orm": "^0.44.2",
+    "drizzle-orm": "^0.45.2",
     "jose": "^6.0.11",
     "mode-watcher": "^1.0.8",
     "nodemailer": "^7.0.11",
