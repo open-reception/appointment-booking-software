@@ -232,7 +232,6 @@
               {#each slots as slot (slot.from)}
                 <Button onclick={() => selectSlot(slot)} class="w-full">
                   {formatSlotTime(slot)}
-                  {slot.from}
                 </Button>
               {/each}
             </div>

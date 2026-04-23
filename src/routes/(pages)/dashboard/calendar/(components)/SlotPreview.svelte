@@ -27,8 +27,7 @@
   variant="ghost"
   onclick={setCalendarItem}
 >
-  <span class="">
-    {item.start}
+  <span class="sr-only">
     {m["calendar.addAppointment.preview"]({
       time: toDisplayDateTime(utcToLocalWithoutDST(new Date(item.start)), {
         hour: "2-digit",
