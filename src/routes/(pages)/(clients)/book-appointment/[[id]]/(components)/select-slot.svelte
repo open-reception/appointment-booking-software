@@ -10,6 +10,11 @@
   import { publicStore } from "$lib/stores/public.js";
   import type { TPublicAppointment, TPublicSchedule, TPublicSlot } from "$lib/types/public.js";
   import {
+    localToUTC,
+    timeUTCToLocalWithoutOffset,
+    utcToLocalWithoutDST,
+  } from "$lib/utils/datetime";
+  import {
     CalendarDate,
     fromDate,
     getLocalTimeZone,
@@ -23,11 +28,6 @@
   import type { DateMatcher } from "bits-ui";
   import type { OnChangeFn } from "vaul-svelte";
   import { fetchSchedule } from "./utils";
-  import {
-    localToUTC,
-    timeUTCToLocalWithoutOffset,
-    utcToLocalWithoutDST,
-  } from "$lib/utils/datetime";
 
   const {
     channel,
@@ -113,18 +113,8 @@
       curDateStr === dateStr
         ? slots.filter((slot) => {
             if (dateStr === curDateStr) {
-              const now = new Date();
-              const slotDate = new Date(slot.from);
-              const slotTime = new Date(
-                date.year,
-                date.month - 1,
-                date.day,
-                slotDate.getHours(),
-                slotDate.getMinutes(),
-                0,
-                0,
-              );
-              return slotTime > now;
+              // double check, when be changed
+              return utcToLocalWithoutDST(new Date(slot.from)) > new Date();
             }
             return true;
           })
@@ -240,9 +230,10 @@
                 {m["public.steps.slot.selectTime"]()}
               </Text>
               {#each slots as slot (slot.from)}
-                <Button onclick={() => selectSlot(slot)} class="w-full"
-                  >{formatSlotTime(slot)}</Button
-                >
+                <Button onclick={() => selectSlot(slot)} class="w-full">
+                  {formatSlotTime(slot)}
+                  {slot.from}
+                </Button>
               {/each}
             </div>
           </ScrollArea>

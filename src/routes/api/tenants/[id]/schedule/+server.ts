@@ -138,6 +138,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
     // Parse query parameters for date range
     const startDateParam = url.searchParams.get("startDate");
     const endDateParam = url.searchParams.get("endDate");
+    const timeZoneParam = url.searchParams.get("timeZone") || "UTC";
     const channelIdParam = url.searchParams.get("channel");
     const agentIdParam = url.searchParams.get("agent");
 
@@ -169,6 +170,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
       tenantId,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
+      timeZone: timeZoneParam,
     });
 
     const scheduleService = await ScheduleService.forTenant(tenantId);
@@ -178,6 +180,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
       endDate: endDateParam,
       channelId: channelIdParam || undefined,
       agentId: agentIdParam || undefined,
+      timeZone: timeZoneParam,
     });
 
     // Transform schedule to client-friendly format (remove appointments, simplify available slots)

@@ -142,6 +142,7 @@ describe("Calendar API", () => {
         tenantId: "tenant-123",
         startDate: "2024-01-01T00:00:00.000Z",
         endDate: "2024-01-02T00:00:00.000Z",
+        timeZone: "UTC",
         staffUserId: undefined,
       });
     });

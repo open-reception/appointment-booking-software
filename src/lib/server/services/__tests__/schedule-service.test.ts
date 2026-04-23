@@ -148,6 +148,7 @@ describe("ScheduleService", () => {
       const validRequest: ScheduleRequest = {
         startDate: "2024-01-01T00:00:00.000Z",
         endDate: "2024-01-01T23:59:59.999Z",
+        timeZone: "Europe/Berlin",
         tenantId: mockTenantId,
       };
 
@@ -248,6 +249,7 @@ describe("ScheduleService", () => {
       const validRequest: ScheduleRequest = {
         startDate: "2024-01-01T00:00:00.000Z",
         endDate: "2024-01-01T23:59:59.999Z",
+        timeZone: "Europe/Berlin",
         tenantId: mockTenantId,
       };
 
@@ -270,6 +272,7 @@ describe("ScheduleService", () => {
       const validRequest: ScheduleRequest = {
         startDate: "2024-01-01T00:00:00.000Z",
         endDate: "2024-01-01T23:59:59.999Z",
+        timeZone: "Europe/Berlin",
         tenantId: mockTenantId,
       };
 
@@ -284,6 +287,7 @@ describe("ScheduleService", () => {
       const validRequest: ScheduleRequest = {
         startDate: "2024-01-01T00:00:00.000Z",
         endDate: "2024-01-03T23:59:59.999Z", // 3 days
+        timeZone: "Europe/Berlin",
         tenantId: mockTenantId,
       };
 
@@ -316,6 +320,7 @@ describe("ScheduleService", () => {
       const validRequest: ScheduleRequest = {
         startDate: "2024-01-01T00:00:00.000Z", // Monday
         endDate: "2024-01-01T23:59:59.999Z",
+        timeZone: "Europe/Berlin",
         tenantId: mockTenantId,
       };
 
@@ -388,6 +393,7 @@ describe("ScheduleService", () => {
       const validRequest: ScheduleRequest = {
         startDate: "2024-01-01T00:00:00.000Z",
         endDate: "2024-01-01T23:59:59.999Z",
+        timeZone: "Europe/Berlin",
         tenantId: mockTenantId,
       };
 
@@ -463,6 +469,7 @@ describe("ScheduleService", () => {
       const validRequest: ScheduleRequest = {
         startDate: "2024-01-01T00:00:00.000Z", // Monday
         endDate: "2024-01-01T23:59:59.999Z",
+        timeZone: "Europe/Berlin",
         tenantId: mockTenantId,
       };
 
@@ -572,6 +579,7 @@ describe("ScheduleService", () => {
       const validRequest: ScheduleRequest = {
         startDate: "2024-01-01T00:00:00.000Z",
         endDate: "2024-01-01T23:59:59.999Z",
+        timeZone: "Europe/Berlin",
         tenantId: mockTenantId,
       };
 
@@ -645,6 +653,7 @@ describe("ScheduleService", () => {
       const validRequest: ScheduleRequest = {
         startDate: "2024-01-01T00:00:00.000Z",
         endDate: "2024-01-01T23:59:59.999Z",
+        timeZone: "Europe/Berlin",
         tenantId: mockTenantId,
       };
 
@@ -729,6 +738,7 @@ describe("ScheduleService", () => {
       const validRequest: ScheduleRequest = {
         startDate: "2024-01-01T00:00:00.000Z",
         endDate: "2024-01-01T23:59:59.999Z",
+        timeZone: "Europe/Berlin",
         tenantId: mockTenantId,
       };
 

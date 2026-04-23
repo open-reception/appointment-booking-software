@@ -7,7 +7,7 @@ import { calendarStore } from "$lib/stores/calendar";
 import { staffCrypto } from "$lib/stores/staff-crypto";
 import type { TCalendar, TCalendarItem } from "$lib/types/calendar";
 import { localToUTCWithoutDST } from "$lib/utils/datetime";
-import type { CalendarDate } from "@internationalized/date";
+import { getLocalTimeZone, type CalendarDate } from "@internationalized/date";
 import { get } from "svelte/store";
 
 export const fetchCalendar = async (opts: { tenant: string; startDate: CalendarDate }) => {
@@ -23,6 +23,7 @@ export const fetchCalendar = async (opts: { tenant: string; startDate: CalendarD
   const params = new URLSearchParams({
     startDate: localStartDate.toISOString(),
     endDate: localEndDate.toISOString(),
+    timeZone: getLocalTimeZone().toString(),
   });
   await auth.waitForRefresh();
   const res = await fetch(`/api/tenants/${opts.tenant}/calendar?${params}`, {

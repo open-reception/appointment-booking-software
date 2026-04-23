@@ -13,6 +13,7 @@
   import { channels as channelsStore } from "$lib/stores/channels";
   import { sidebar } from "$lib/stores/sidebar";
   import type { TAppointmentFilter, TCalendar, TCalendarItem } from "$lib/types/calendar";
+  import { timeUTCToLocalWithoutOffset, utcToLocalWithoutDST } from "$lib/utils/datetime";
   import { getCurrentTranlslation } from "$lib/utils/localizations";
   import {
     getLocalTimeZone,
@@ -29,7 +30,6 @@
   import CalendarFilters from "./(components)/CalendarFilters.svelte";
   import CalendarHeader from "./(components)/CalendarHeader.svelte";
   import { fetchCalendar, openAppointmentById } from "./(components)/utils";
-  import { timeUTCToLocalWithoutOffset, utcToLocalWithoutDST } from "$lib/utils/datetime";
 
   const convertDate = (dateStr: string) => {
     const zonedDateTime = parseAbsoluteToLocal(dateStr);
@@ -136,7 +136,8 @@
       if (["all", "available"].includes(shownAppointments)) {
         if (shownChannels.length === 0 || shownChannels.includes(channelId)) {
           channelData.availableSlots.forEach((slot) => {
-            if (utcToLocalWithoutDST(new Date(slot.to)) > new Date()) {
+            const isSlotInPast = utcToLocalWithoutDST(new Date(slot.to)) < new Date();
+            if (!isSlotInPast) {
               if (
                 shownAgents.length === 0 ||
                 shownAgents.some((id) => slot.availableAgents.map((a) => a.id).includes(id))

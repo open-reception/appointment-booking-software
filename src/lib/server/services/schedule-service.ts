@@ -12,11 +12,16 @@ import { eq, and, between, sql, or, inArray } from "drizzle-orm";
 import logger from "$lib/logger";
 import { z } from "zod";
 import { ValidationError } from "../utils/errors";
+import { isValidTimeZone, toLocalTime, toLocalTimeIgnoringDst } from "../utils/timezone";
 
 const scheduleRequestSchema = z.object({
   startDate: z.string().datetime({ offset: true }), // ISO date string with timezone
   endDate: z.string().datetime({ offset: true }), // ISO date string with timezone
   tenantId: z.string().uuid({ message: "Invalid tenant ID format" }),
+  timeZone: z
+    .string()
+    .refine((tz) => isValidTimeZone(tz), { message: "Invalid IANA timezone format" })
+    .default("UTC"),
   channelId: z.string().uuid({ message: "Invalid channel ID format" }).optional(),
   agentId: z.string().uuid({ message: "Invalid agent ID format" }).optional(),
   staffUserId: z.string().uuid({ message: "Invalid staff user ID format" }).optional(),
@@ -217,6 +222,7 @@ export class ScheduleService {
         absences,
         channelAgents,
         staffKeyShares,
+        timeZone: request.timeZone,
       });
 
       log.debug("Schedule generated successfully", {
@@ -252,6 +258,7 @@ export class ScheduleService {
     absences,
     channelAgents,
     staffKeyShares,
+    timeZone,
   }: {
     startDate: Date;
     endDate: Date;
@@ -261,6 +268,7 @@ export class ScheduleService {
     absences: SelectAgentAbsence[];
     channelAgents: { channelId: string; agent: SelectAgent }[];
     staffKeyShares: Record<string, string>;
+    timeZone: string;
   }): Promise<DaySchedule[]> {
     const dailySchedules: DaySchedule[] = [];
 
@@ -316,6 +324,7 @@ export class ScheduleService {
           appointments: dayAppointments,
           agents: channelAgentsList,
           absences,
+          timeZone,
         });
 
         daySchedule.channels[channel.id] = {
@@ -343,12 +352,14 @@ export class ScheduleService {
     appointments,
     agents,
     absences,
+    timeZone,
   }: {
     date: Date;
     slotTemplates: SelectSlotTemplate[];
     appointments: SelectAppointment[];
     agents: SelectAgent[];
     absences: SelectAgentAbsence[];
+    timeZone: string;
   }): TimeSlot[] {
     const availableSlots: TimeSlot[] = [];
 
@@ -393,7 +404,9 @@ export class ScheduleService {
         );
 
         const availableAgents = agents.filter((agent) => {
-          if (this.isAgentAbsent(agent.id, slotStartDateTime, slotEndDateTime, absences)) {
+          if (
+            this.isAgentAbsent(agent.id, slotStartDateTime, slotEndDateTime, absences, timeZone)
+          ) {
             return false;
           }
 
@@ -402,6 +415,7 @@ export class ScheduleService {
             slotStartDateTime,
             slotEndDateTime,
             appointments,
+            timeZone,
           );
         });
 
@@ -430,19 +444,21 @@ export class ScheduleService {
     slotStartDateTime: Date,
     slotEndDateTime: Date,
     absences: SelectAgentAbsence[],
+    timeZone: string,
   ): boolean {
     return absences.some((absence) => {
       if (absence.agentId !== agentId) return false;
 
-      const absenceStart = new Date(absence.startDate);
-      const absenceEnd = new Date(absence.endDate);
+      const absenceStart = toLocalTime(new Date(absence.startDate), timeZone);
+      const absenceEnd = toLocalTime(new Date(absence.endDate), timeZone);
+      const slotStart = toLocalTimeIgnoringDst(slotStartDateTime, timeZone);
+      const slotEnd = toLocalTimeIgnoringDst(slotEndDateTime, timeZone);
 
       // For time-specific absences, check if the time slot overlaps
-      return (
-        (slotStartDateTime >= absenceStart && slotStartDateTime < absenceEnd) ||
-        (slotEndDateTime > absenceStart && slotEndDateTime <= absenceEnd) ||
-        (slotStartDateTime <= absenceStart && slotEndDateTime >= absenceEnd)
-      );
+      const slotStartsDuringAbsence = slotStart >= absenceStart && slotStart < absenceEnd;
+      const slotEndsDuringAbsence = slotEnd > absenceStart && slotEnd <= absenceEnd;
+      const slotCoversEntireAbsence = slotStart <= absenceStart && slotEnd >= absenceEnd;
+      return slotStartsDuringAbsence || slotEndsDuringAbsence || slotCoversEntireAbsence;
     });
   }
 
@@ -454,6 +470,7 @@ export class ScheduleService {
     slotStartDateTime: Date,
     slotEndDateTime: Date,
     appointments: SelectAppointment[],
+    timeZone: string,
   ): boolean {
     return appointments.some((appointment) => {
       if (appointment.agentId !== agentId) return false;
@@ -461,8 +478,13 @@ export class ScheduleService {
       const appointmentStart = new Date(appointment.appointmentDate);
       const appointmentDuration = Number.isFinite(appointment.duration) ? appointment.duration : 0;
       const appointmentEnd = new Date(appointmentStart.getTime() + appointmentDuration * 60 * 1000);
+      const slotStart = toLocalTimeIgnoringDst(slotStartDateTime, timeZone);
+      const slotEnd = toLocalTimeIgnoringDst(slotEndDateTime, timeZone);
 
-      return slotStartDateTime < appointmentEnd && slotEndDateTime > appointmentStart;
+      return (
+        slotStart < toLocalTime(appointmentEnd, timeZone) &&
+        slotEnd > toLocalTime(appointmentStart, timeZone)
+      );
     });
   }
 

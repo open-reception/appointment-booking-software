@@ -33,6 +33,14 @@ registerOpenAPIRoute("/tenants/{id}/calendar", "GET", {
       schema: { type: "string", format: "date-time" },
       description: "End date for the calendar range (ISO 8601 format with timezone)",
     },
+    {
+      name: "timeZone",
+      in: "query",
+      required: false,
+      schema: { type: "string" },
+      description:
+        "IANA timezone name for schedule calculations (e.g., 'Europe/Berlin', 'America/New_York'). Defaults to 'UTC' if not provided. This ensures slots are calculated with the correct daylight saving time offset.",
+    },
   ],
   responses: {
     "200": {
@@ -124,6 +132,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
     // Parse query parameters for date range
     const startDateParam = url.searchParams.get("startDate");
     const endDateParam = url.searchParams.get("endDate");
+    const timeZoneParam = url.searchParams.get("timeZone") || "UTC";
 
     if (!startDateParam || !endDateParam) {
       throw new ValidationError("Both startDate and endDate query parameters are required");
@@ -153,6 +162,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
       tenantId,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
+      timeZone: timeZoneParam,
     });
 
     const scheduleService = await ScheduleService.forTenant(tenantId);
@@ -164,6 +174,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
       tenantId,
       startDate: startDateParam,
       endDate: endDateParam,
+      timeZone: timeZoneParam,
       staffUserId,
     });
 
