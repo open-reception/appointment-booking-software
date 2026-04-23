@@ -444,6 +444,8 @@ export class UnifiedAppointmentCrypto {
         ? `/api/tenants/${tenantId}/appointments/create-new-client`
         : `/api/tenants/${tenantId}/appointments/add-to-tunnel`;
 
+      const appointmentTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
       const requestData = isFirstAppointment
         ? {
             // New client
@@ -451,6 +453,7 @@ export class UnifiedAppointmentCrypto {
             agentId,
             channelId,
             appointmentDate,
+            appointmentTimeZone,
             duration,
             emailHash: this.emailHash,
             clientEmail: appointmentData.shareEmail ? appointmentData.email : undefined,
@@ -470,6 +473,7 @@ export class UnifiedAppointmentCrypto {
             agentId,
             channelId,
             appointmentDate,
+            appointmentTimeZone,
             duration,
             clientEmail: appointmentData.shareEmail ? appointmentData.email : undefined,
             clientLanguage,
@@ -592,12 +596,14 @@ export class UnifiedAppointmentCrypto {
       };
 
       // Call endpoint
+      const appointmentTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
       const sendEmail = params.appointmentData.shareEmail && Boolean(params.email);
       const requestData = {
         clientEmail: params.appointmentData.shareEmail ? usedEmail : undefined,
         hasNoEmail: params.hasNoEmail,
         emailHash: await hashEmail(usedEmail),
         appointmentDate: params.appointmentDate.toISOString(),
+        appointmentTimeZone,
         duration: params.duration,
         agentId: params.agentId,
         channelId: params.channelId,

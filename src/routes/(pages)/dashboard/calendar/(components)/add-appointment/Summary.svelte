@@ -28,14 +28,7 @@
   <div class="flex gap-2">
     <Calendar class="size-4 " />
     <Text style="sm">
-      {toDisplayDateTime(newAppointment.dateTime, {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        weekday: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      })}
+      {toDisplayDateTime(newAppointment.dateTime)}
     </Text>
   </div>
   {#if newAppointment.name}

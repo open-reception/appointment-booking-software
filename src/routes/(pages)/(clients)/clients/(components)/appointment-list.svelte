@@ -11,7 +11,7 @@
   import { Headline, Text } from "$lib/components/ui/typography";
   import { ROUTES } from "$lib/const/routes";
   import { publicStore } from "$lib/stores/public";
-  import { toDisplayDateTime } from "$lib/utils/datetime";
+  import { toDisplayDateTime, utcToLocalWithoutDST } from "$lib/utils/datetime";
   import { getLocalTimeZone } from "@internationalized/date";
   import { Calendar, CircleAlert } from "@lucide/svelte";
   import { onMount } from "svelte";
@@ -82,15 +82,7 @@
                 {/if}
               </Item.Title>
               <Item.Description>
-                {toDisplayDateTime(new Date(item.appointmentDate), {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                  weekday: "short",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  timeZone: getLocalTimeZone().toString(),
-                })}
+                {toDisplayDateTime(new Date(item.appointmentDate))}
               </Item.Description>
             </Item.Content>
             <Item.Actions>
@@ -135,7 +127,7 @@
     <div class="flex gap-2 p-1">
       <Calendar class="size-4 " />
       <Text style="sm">
-        {toDisplayDateTime(new Date(cancelling.appointmentDate), {
+        {toDisplayDateTime(utcToLocalWithoutDST(new Date(cancelling.appointmentDate)), {
           year: "numeric",
           month: "long",
           day: "numeric",

@@ -2,10 +2,12 @@ import { browser } from "$app/environment";
 import { goto } from "$app/navigation";
 import { resolve } from "$app/paths";
 import { ROUTES } from "$lib/const/routes";
+import { auth } from "$lib/stores/auth";
 import { calendarStore } from "$lib/stores/calendar";
 import { staffCrypto } from "$lib/stores/staff-crypto";
 import type { TCalendar, TCalendarItem } from "$lib/types/calendar";
-import type { CalendarDate } from "@internationalized/date";
+import { localToUTCWithoutDST } from "$lib/utils/datetime";
+import { getLocalTimeZone, type CalendarDate } from "@internationalized/date";
 import { get } from "svelte/store";
 
 export const fetchCalendar = async (opts: { tenant: string; startDate: CalendarDate }) => {
@@ -21,7 +23,9 @@ export const fetchCalendar = async (opts: { tenant: string; startDate: CalendarD
   const params = new URLSearchParams({
     startDate: localStartDate.toISOString(),
     endDate: localEndDate.toISOString(),
+    timeZone: getLocalTimeZone().toString(),
   });
+  await auth.waitForRefresh();
   const res = await fetch(`/api/tenants/${opts.tenant}/calendar?${params}`, {
     method: "GET",
   });
@@ -41,9 +45,9 @@ export const fetchCalendar = async (opts: { tenant: string; startDate: CalendarD
 };
 
 // Convert time string to minutes since midnight
-function timeToMinutes(time: string): number {
-  if (time.includes("T")) {
-    const parsedDate = new Date(time);
+function timeToMinutes(dateTimeStr: string): number {
+  if (dateTimeStr.includes("T")) {
+    const parsedDate = new Date(dateTimeStr);
     if (!Number.isNaN(parsedDate.getTime())) {
       return (
         parsedDate.getHours() * 60 + parsedDate.getMinutes() + parsedDate.getTimezoneOffset() + 60
@@ -51,15 +55,26 @@ function timeToMinutes(time: string): number {
     }
   }
 
-  const [hours, minutes] = time.split(":").map(Number);
+  const [hours, minutes] = dateTimeStr.split(":").map(Number);
   return hours * 60 + minutes;
 }
 
 export function positionItems(items: TCalendarItem[] | undefined) {
   if (!items) return [];
 
+  // Adjust actual appointments
+  const adjustedItems = [...items].map((item) => {
+    if (item.appointment) {
+      return {
+        ...item,
+        start: localToUTCWithoutDST(item.appointment.dateTime).toISOString(),
+      };
+    }
+    return item;
+  });
+
   // Sort items by start time
-  const sortedItems = [...items]
+  const sortedItems = [...adjustedItems]
     .sort((a, b) => b.duration - a.duration)
     .sort((a, b) => timeToMinutes(a.start) - timeToMinutes(b.start));
 

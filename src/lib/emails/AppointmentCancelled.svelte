@@ -45,9 +45,8 @@
   <EmailHeadline>{channel}</EmailHeadline>
   <EmailText variant="md">
     {appointment.agentName}<br />
-    {renderAppointmentDate(appointment.appointmentDate, locale)}<br />
-    {renderAppointmentTime(appointment.appointmentDate, locale)}
-    {m["emails.oclock"]()}
+    {renderAppointmentDate(appointment.appointmentDate, locale, appointment.timezone)}<br />
+    {renderAppointmentTime(appointment.appointmentDate, locale, appointment.timezone)}
   </EmailText>
   <EmailHeadline>{tenant.longName}</EmailHeadline>
   <EmailText variant="md">

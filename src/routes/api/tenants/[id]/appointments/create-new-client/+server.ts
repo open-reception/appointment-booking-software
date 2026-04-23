@@ -22,6 +22,7 @@ const requestSchema = z.object({
   channelId: z.string(),
   agentId: z.string(),
   appointmentDate: z.string(),
+  appointmentTimeZone: z.string(),
   duration: z.number().int().positive(),
   emailHash: z.string(),
   clientEmail: z.email().optional(),
@@ -135,6 +136,11 @@ registerOpenAPIRoute("/tenants/{id}/appointments/create-new-client", "POST", {
               type: "string",
               format: "date-time",
               description: "Appointment date and time (ISO 8601)",
+            },
+            appointmentTimezone: {
+              type: "string",
+              format: "IANA Timezone",
+              description: "Time zone of the appointment (e.g. Europe/Berlin)",
             },
             emailHash: {
               type: "string",

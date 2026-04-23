@@ -36,6 +36,7 @@ describe("Create New Client API Route", () => {
     channelId: mockChannelId,
     agentId: "agent-123", // Missing field added
     appointmentDate: "2024-12-25T14:30:00.000Z",
+    appointmentTimeZone: "Europe/Berlin",
     duration: 10,
     emailHash: "test-email-hash",
     clientEmail: "test@example.com",

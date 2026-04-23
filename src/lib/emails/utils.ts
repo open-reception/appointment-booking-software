@@ -1,6 +1,4 @@
 import type { SupportedLocale } from "$lib/const/locales";
-import { format, type Locale } from "date-fns";
-import { de, enUS } from "date-fns/locale";
 
 // is not exported from svelte
 export type RenderOutput = {
@@ -68,15 +66,29 @@ export const htmlToText = (html: string) => {
   return text;
 };
 
-const localeMap: { [key: string]: Locale } = {
-  en: enUS,
-  de: de,
+export const renderAppointmentDate = (date: Date, locale: SupportedLocale, timezone: string) => {
+  return new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: timezone,
+  }).format(date);
 };
 
-export const renderAppointmentDate = (date: Date, locale: SupportedLocale) => {
-  return format(date, "PPP", { locale: localeMap[locale] as unknown as Locale });
-};
+export const renderAppointmentTime = (date: Date, locale: SupportedLocale, timezone: string) => {
+  const time = new Intl.DateTimeFormat(locale, {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: timezone,
+  }).format(date);
 
-export const renderAppointmentTime = (date: Date, locale: SupportedLocale) => {
-  return format(date, "p", { locale: localeMap[locale] as unknown as Locale });
+  const timeZoneName =
+    new Intl.DateTimeFormat(locale, {
+      timeZone: timezone,
+      timeZoneName: "long",
+    })
+      .formatToParts(date)
+      .find((part) => part.type === "timeZoneName")?.value ?? timezone;
+
+  return `${time}, ${timeZoneName}`;
 };

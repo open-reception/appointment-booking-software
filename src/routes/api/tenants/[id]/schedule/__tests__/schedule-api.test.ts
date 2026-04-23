@@ -126,6 +126,7 @@ describe("Schedule API Route", () => {
         tenantId: mockTenantId,
         startDate: "2024-01-01T00:00:00.000Z",
         endDate: "2024-01-07T23:59:59.999Z",
+        timeZone: "UTC",
       });
     });
 
@@ -305,6 +306,7 @@ describe("Schedule API Route", () => {
         tenantId: mockTenantId,
         startDate,
         endDate,
+        timeZone: "UTC",
       });
     });
   });

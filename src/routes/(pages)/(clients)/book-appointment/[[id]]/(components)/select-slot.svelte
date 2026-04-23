@@ -10,7 +10,13 @@
   import { publicStore } from "$lib/stores/public.js";
   import type { TPublicAppointment, TPublicSchedule, TPublicSlot } from "$lib/types/public.js";
   import {
+    localToUTC,
+    timeUTCToLocalWithoutOffset,
+    utcToLocalWithoutDST,
+  } from "$lib/utils/datetime";
+  import {
     CalendarDate,
+    fromDate,
     getLocalTimeZone,
     parseDate,
     toCalendarDate,
@@ -107,18 +113,8 @@
       curDateStr === dateStr
         ? slots.filter((slot) => {
             if (dateStr === curDateStr) {
-              const now = new Date();
-              const slotDate = new Date(slot.from);
-              const slotTime = new Date(
-                date.year,
-                date.month - 1,
-                date.day,
-                slotDate.getHours(),
-                slotDate.getMinutes(),
-                0,
-                0,
-              );
-              return slotTime > now;
+              // double check, when be changed
+              return utcToLocalWithoutDST(new Date(slot.from)) > new Date();
             }
             return true;
           })
@@ -136,6 +132,8 @@
 
   const selectSlot = (slot: TPublicSlot) => {
     if (selectedDate && slot.availableAgents.length > 0) {
+      const localTime = utcToLocalWithoutDST(new Date(slot.from));
+      const utc = localToUTC(localTime);
       proceed({
         ...appointment,
         agent: {
@@ -144,10 +142,7 @@
           image: slot.availableAgents[0].image || null,
         },
         slot: {
-          datetime: toCalendarDateTime(selectedDate).set({
-            hour: new Date(slot.from).getUTCHours(),
-            minute: new Date(slot.from).getUTCMinutes(),
-          }),
+          datetime: toCalendarDateTime(fromDate(utc, getLocalTimeZone())),
           duration: slot.duration,
         },
       });
@@ -156,21 +151,26 @@
 
   const formatSlotTime = (slot: TPublicSlot) => {
     const slotDate = new Date(slot.from);
-    const displayDate = new Date(
-      slotDate.getFullYear(),
-      slotDate.getMonth(),
-      slotDate.getDate(),
-      slotDate.getHours(),
-      slotDate.getMinutes(),
-      0,
-      0,
-    );
+    const utcTime = slot.from.slice(11, 19); // "HH:mm:ss" from ISO string
+    const localTime = timeUTCToLocalWithoutOffset(utcTime);
+
+    const [hours, minutes] = localTime.split(":");
 
     return new Intl.DateTimeFormat(getLocale(), {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
-    }).format(displayDate);
+    }).format(
+      new Date(
+        slotDate.getFullYear(),
+        slotDate.getMonth(),
+        slotDate.getDate(),
+        Number(hours),
+        Number(minutes),
+        0,
+        0,
+      ),
+    );
   };
 </script>
 
@@ -230,9 +230,10 @@
                 {m["public.steps.slot.selectTime"]()}
               </Text>
               {#each slots as slot (slot.from)}
-                <Button onclick={() => selectSlot(slot)} class="w-full"
-                  >{formatSlotTime(slot)}</Button
-                >
+                <Button onclick={() => selectSlot(slot)} class="w-full">
+                  {formatSlotTime(slot)}
+                  {slot.from}
+                </Button>
               {/each}
             </div>
           </ScrollArea>

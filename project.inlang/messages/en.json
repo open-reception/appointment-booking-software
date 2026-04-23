@@ -643,6 +643,7 @@
 		}
 	},
 	"settings": {
+		"title": "Settings",
 		"loading": "Loading settings...",
 		"form": {
 			"sections": {
@@ -937,7 +938,7 @@
 		"today": "Today",
 		"loading": "Loading calendar",
 		"decrypting": "decrypting...",
-		"decryptingError": "Unable to decrypt data. Please log-in again",
+		"decryptingError": "Unable to decrypt data. Please reload/log-in again",
 		"decryptingErrorNoKeyShare": "Unable to decrypt data. Get a team member to grant you access.",
 		"notificationHint": "Clients will be notified via e-mail, if they have enabled e-mail notifications.",
 		"shownAppointments": {

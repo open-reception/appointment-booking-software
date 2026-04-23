@@ -7,6 +7,7 @@ const config = {
   // Consult https://svelte.dev/docs/kit/integrations
   // for more information about preprocessors
   preprocess: vitePreprocess(),
+  checkOrigin: true,
 
   kit: {
     // adapter-auto only supports some environments, see https://svelte.dev/docs/kit/adapter-auto for a list.
@@ -15,6 +16,18 @@ const config = {
     adapter: adapter(),
     alias: {
       $i18n: path.resolve("./src/i18n"),
+    },
+    csp: {
+      mode: "hash",
+      directives: {
+        "script-src": [
+          "'self'",
+          "'unsafe-inline'",
+          "'wasm-unsafe-eval'",
+          "'unsafe-eval'",
+          "https://unpkg.com",
+        ],
+      },
     },
   },
 };

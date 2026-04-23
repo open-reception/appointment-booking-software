@@ -112,6 +112,7 @@ export const fetchSchedule = async (opts: {
   const params = new URLSearchParams({
     startDate: startDate.toISOString(),
     endDate: endDate.toISOString(),
+    timeZone: getLocalTimeZone().toString(),
     channel: opts.channel,
     agent: opts.agent || "",
   });

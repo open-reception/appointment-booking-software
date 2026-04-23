@@ -27,6 +27,7 @@ const createStaffStore = () => {
       });
 
       try {
+        await auth.waitForRefresh();
         const res = await fetch(`/api/tenants/${tenantId}/staff`, {
           method: "GET",
           headers: {

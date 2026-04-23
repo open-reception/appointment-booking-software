@@ -65,6 +65,8 @@
   >
     <Separator class="bg-secondary absolute top-0 right-0 left-16 h-px w-auto!" />
   </div>
+
+  <!-- Hour markers -->
   {#each shownHours as hour (`hour-${hour}`)}
     <div
       class="relative flex w-full items-start justify-between transition-all duration-200 select-none"

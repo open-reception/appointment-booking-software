@@ -27,6 +27,7 @@ const createNotificationsStore = () => {
       });
 
       try {
+        await auth.waitForRefresh();
         const res = await fetch(`/api/tenants/${tenantId}/notifications`, {
           method: "GET",
           headers: {

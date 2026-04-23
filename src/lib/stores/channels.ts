@@ -25,6 +25,7 @@ const createChannelsStore = () => {
 
       try {
         const tenantId = auth.getTenant();
+        await auth.waitForRefresh();
         const res = await fetch(`/api/tenants/${tenantId}/channels`, {
           method: "GET",
           headers: {

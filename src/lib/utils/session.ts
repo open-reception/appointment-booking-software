@@ -6,10 +6,8 @@ import { auth } from "$lib/stores/auth";
 export const refreshSession = async () => {
   if (!auth.isAuthenticated()) return;
 
-  auth.setRefreshing(true);
-
   try {
-    const response = await fetch("/api/auth/refresh", {
+    const refreshPromise = fetch("/api/auth/refresh", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -17,9 +15,12 @@ export const refreshSession = async () => {
       credentials: "same-origin",
     });
 
+    auth.setRefreshPromise(refreshPromise);
+    const response = await refreshPromise;
+
     if (!response.ok) {
       if (response.status === 401) {
-        auth.setRefreshing(false);
+        auth.setRefreshPromise(null);
         goto(resolve(ROUTES.LOGOUT));
         return;
       }
@@ -27,7 +28,7 @@ export const refreshSession = async () => {
 
     refreshUserData();
   } finally {
-    auth.setRefreshing(false);
+    auth.setRefreshPromise(null);
   }
 };
 

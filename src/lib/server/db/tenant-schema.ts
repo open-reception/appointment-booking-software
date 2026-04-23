@@ -171,6 +171,8 @@ export const appointment = pgTable("appointment", {
   appointmentDate: timestamp("appointment_date").notNull(),
   /** Duration of the appointment in minutes */
   duration: integer("duration").notNull(),
+  /** Timezone of client booking appointment */
+  timezone: text("timezone").notNull(),
   /** When appointment data expires and can be auto-deleted */
   expiryDate: date("expiry_date"),
   /** Current status of the appointment - defaults depend on channel's requiresConfirmation setting */

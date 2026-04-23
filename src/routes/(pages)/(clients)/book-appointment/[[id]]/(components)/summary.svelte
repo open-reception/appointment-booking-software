@@ -7,7 +7,6 @@
   import { Text } from "$lib/components/ui/typography";
   import { ROUTES } from "$lib/const/routes";
   import { publicStore } from "$lib/stores/public.js";
-  import { toZoned } from "@internationalized/date";
   import { toast } from "svelte-sonner";
 
   const tenant = $derived($publicStore.tenant);
@@ -30,7 +29,7 @@
       $publicStore.crypto
         .createAppointment(
           appointment.data,
-          toZoned(appointment.slot.datetime, "UTC").toAbsoluteString(),
+          appointment.slot.datetime.toDate("UTC").toISOString(),
           appointment.agent.id,
           channel.id,
           appointment.slot.duration,

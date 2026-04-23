@@ -25,6 +25,7 @@ const createAgentsStore = () => {
 
       try {
         const tenantId = auth.getTenant();
+        await auth.waitForRefresh();
         const res = await fetch(`/api/tenants/${tenantId}/agents`, {
           method: "GET",
           headers: {

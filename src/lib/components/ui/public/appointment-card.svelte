@@ -5,12 +5,12 @@
   import { publicStore } from "$lib/stores/public";
   import type { TPublicAppointment } from "$lib/types/public";
   import { cn } from "$lib/utils";
-  import { getLocalTimeZone } from "@internationalized/date";
-  import { Eye, User, Calendar, FileText } from "@lucide/svelte";
+  import { Calendar, Eye, FileText, User } from "@lucide/svelte";
   import type { HTMLAttributes } from "svelte/elements";
   import { resest } from "../../../../routes/(pages)/(clients)/book-appointment/[[id]]/(components)/utils";
   import { Button } from "../button";
   import LocalizedText from "./localized-text.svelte";
+  import { toDisplayDateTime } from "$lib/utils/datetime";
 
   let {
     class: className,
@@ -76,14 +76,7 @@
               <div class="flex items-start gap-2">
                 <Calendar class="mt-1 size-3 shrink-0" />
                 <Text style="sm" class="font-normal">
-                  {Intl.DateTimeFormat($publicStore.locale, {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    timeZone: getLocalTimeZone().toString(),
-                  }).format(appointment.slot.datetime.toDate(getLocalTimeZone()))}
+                  {toDisplayDateTime(appointment.slot.datetime.toDate("UTC"))}
                 </Text>
               </div>
             {/if}

@@ -6,7 +6,6 @@
   import { staffCrypto } from "$lib/stores/staff-crypto";
   import { tenants } from "$lib/stores/tenants";
   import type { TCalendarSlot } from "$lib/types/calendar";
-  import { calendarItemToDate } from "$lib/utils/datetime";
   import { getDefaultAppointmentLocale } from "$lib/utils/localizations";
   import { BanIcon, Check } from "@lucide/svelte";
   import { get } from "svelte/store";
@@ -15,6 +14,7 @@
   import SelectAgent from "./SelectAgent.svelte";
   import Summary from "./Summary.svelte";
   import type { TAddAppointment, TAddAppointmentStep } from "./types";
+  import { utcToLocalWithoutDST } from "$lib/utils/datetime";
 
   let {
     tenantId,
@@ -26,10 +26,13 @@
     updateCalendar: () => void;
   } = $props();
 
+  // Set the utc time for it to be properly saved
+  const localTime = utcToLocalWithoutDST(new Date(item.start));
+
   let step: TAddAppointmentStep = $state("email");
   let newAppointment: TAddAppointment = $state({
     locale: getDefaultAppointmentLocale(get(tenants).currentTenant),
-    dateTime: calendarItemToDate(item),
+    dateTime: localTime,
   });
   let isSubmitting = $state(false);
 
