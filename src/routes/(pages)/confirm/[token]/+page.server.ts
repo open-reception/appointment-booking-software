@@ -1,4 +1,5 @@
 import logger from "$lib/logger";
+import { removeAuthCookies } from "$lib/server/utils/cookies";
 import type { PageServerLoad } from "./$types";
 
 const log = logger.setContext(import.meta.filename);
@@ -12,6 +13,9 @@ type Success = {
   tenantId: string | null;
 };
 export const load: PageServerLoad = async (event) => {
+  // Remove any existing access token cookie
+  removeAuthCookies(event);
+
   const confirmation: Promise<Success | Error> = event
     .fetch("/api/auth/confirm", {
       method: "POST",

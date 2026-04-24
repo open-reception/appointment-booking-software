@@ -6,17 +6,13 @@ import { formSchema } from "./schema";
 import type { WebAuthnCredential } from "$lib/server/auth/webauthn-service";
 import type { TUser } from "$lib/types/user";
 import logger from "$lib/logger";
+import { removeAuthCookies } from "$lib/server/utils/cookies";
 
 const log = logger.setContext(import.meta.filename);
 
 export const load: PageServerLoad = async (event) => {
   // Remove any existing access token cookie
-  event.cookies.delete("access_token", {
-    path: "/",
-    httpOnly: true,
-    secure: true,
-    sameSite: "strict",
-  });
+  removeAuthCookies(event);
 };
 
 export const actions: Actions = {
