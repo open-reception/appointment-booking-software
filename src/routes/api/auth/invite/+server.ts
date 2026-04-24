@@ -1,13 +1,13 @@
+import { dev } from "$app/environment";
+import { UniversalLogger } from "$lib/logger";
+import { sendUserInviteEmail } from "$lib/server/email/email-service";
+import { registerOpenAPIRoute } from "$lib/server/openapi";
+import { InviteService } from "$lib/server/services/invite-service";
+import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
+import { NotFoundError, ValidationError } from "$lib/server/utils/errors";
 import { json } from "@sveltejs/kit";
 import { z } from "zod";
 import type { RequestHandler } from "./$types";
-import { registerOpenAPIRoute } from "$lib/server/openapi";
-import { UniversalLogger } from "$lib/logger";
-import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
-import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
-import { InviteService } from "$lib/server/services/invite-service";
-import { sendUserInviteEmail } from "$lib/server/email/email-service";
-import { env } from "$env/dynamic/private";
 
 const logger = new UniversalLogger().setContext("AuthInviteAPI");
 
@@ -201,7 +201,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     );
 
     // Generate registration URL with secure invite code
-    const registrationUrl = `${env.PUBLIC_APP_URL || "http://localhost:5173"}/confirm/${invitation.inviteCode}`;
+    const baseUrl = dev ? "http://localhost:5173" : `https://${tenant.domain}`;
+    const registrationUrl = `${baseUrl}/confirm/${invitation.inviteCode}`;
 
     // Send invitation email
     await sendUserInviteEmail(email, name, tenant, role, registrationUrl, language);
