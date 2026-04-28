@@ -1,7 +1,9 @@
-<script lang="js">
+<script lang="ts">
   import { m } from "$i18n/messages";
+  import type { Locale } from "$i18n/runtime";
+  import type { Snippet } from "svelte";
 
-  let { children, href } = $props();
+  let { children, href, locale }: { children: Snippet; href: string; locale?: Locale } = $props();
 </script>
 
 <div class="button-container">
@@ -10,7 +12,7 @@
 </div>
 <span class="html-only md">
   <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-  {m["emails.buttonAlternativeLink"]()}: <a {href}>{href}</a>
+  {m["emails.buttonAlternativeLink"]({}, { locale })}: <a {href}>{href}</a>
 </span>
 
 <svelte:head>

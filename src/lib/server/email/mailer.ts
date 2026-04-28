@@ -91,6 +91,7 @@ export async function sendEmail(
   subject: string,
   htmlContent: string,
   textContent: string,
+  tenantName?: string,
 ): Promise<void> {
   const transporter = createTransporter();
   logger.setContext("sendMail");
@@ -109,7 +110,7 @@ export async function sendEmail(
 
   const mailOptions: Mail.Options = {
     from: {
-      name: env.SMTP_FROM_NAME || "Open Reception",
+      name: tenantName || "OpenReception",
       address: from_address,
     },
     to: {

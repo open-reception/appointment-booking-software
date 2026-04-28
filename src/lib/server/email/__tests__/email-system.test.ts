@@ -71,7 +71,7 @@ describe("Email System", () => {
 
       expect(mockSendMail).toHaveBeenCalledWith({
         from: {
-          name: "Test App",
+          name: "OpenReception",
           address: "noreply@test.com",
         },
         to: {
@@ -291,7 +291,7 @@ describe("Email System", () => {
 
       expect(mockSendMail).toHaveBeenCalledWith({
         from: {
-          name: "Test App",
+          name: "Test Organization",
           address: "noreply@test.com",
         },
         to: {
@@ -358,7 +358,7 @@ describe("Email System", () => {
 
       expect(mockSendMail).toHaveBeenCalledWith({
         from: {
-          name: "Test App",
+          name: "Test Organization",
           address: "noreply@test.com",
         },
         to: {

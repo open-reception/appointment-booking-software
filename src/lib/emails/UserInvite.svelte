@@ -28,15 +28,17 @@
 </script>
 
 <EmailLayout>
-  <EmailText variant="md">{m["emails.greeting"]({ name: user.name })}</EmailText>
+  <EmailText variant="md">{m["emails.greeting"]({ name: user.name }, { locale })}</EmailText>
   <EmailText variant="md">
-    {m["emails.userInvite.introduction"]({ tenant: tenant.longName })}
+    {m["emails.userInvite.introduction"]({ tenant: tenant.longName }, { locale })}
   </EmailText>
-  <EmailButton href={confirmUrl}>{m["emails.userInvite.action"]()}</EmailButton>
+  <EmailButton href={confirmUrl} {locale}>
+    {m["emails.userInvite.action"]({}, { locale })}
+  </EmailButton>
   <EmailText variant="md">
-    {m["emails.userInvite.hint"]({ expirationMinutes })}
+    {m["emails.userInvite.hint"]({ expirationMinutes }, { locale })}
   </EmailText>
   <EmailText variant="md" color="text-light">
-    {m["emails.userInvite.reason"]()}
+    {m["emails.userInvite.reason"]({}, { locale })}
   </EmailText>
 </EmailLayout>

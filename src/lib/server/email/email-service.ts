@@ -95,7 +95,7 @@ export async function sendTemplatedEmail(
 
   try {
     const rendered = await templateEngine.renderTemplate(templateType, data);
-    await sendEmail(recipient, rendered.subject, rendered.html, rendered.text);
+    await sendEmail(recipient, rendered.subject, rendered.html, rendered.text, tenant.longName);
   } catch (error) {
     console.error(`Failed to send templated email (${templateType}):`, error);
     throw error;
@@ -153,7 +153,7 @@ export async function sendPinResetEmail(
   const html = renderOutputToHtml(emailRender);
   const text = htmlToText(html);
 
-  await sendEmail(recipient, subject, html, text);
+  await sendEmail(recipient, subject, html, text, tenant.longName);
 }
 
 /**
@@ -210,7 +210,7 @@ export async function sendAppointmentReminderEmail(
   const html = renderOutputToHtml(emailRender);
   const text = htmlToText(html);
 
-  await sendEmail(recipient, subject, html, text);
+  await sendEmail(recipient, subject, html, text, tenant.longName);
 }
 
 const getRecipient = async (user: SelectClient | SelectUser) => {
@@ -276,7 +276,7 @@ export async function sendAppointmentRejectedEmail(
   const html = renderOutputToHtml(emailRender);
   const text = htmlToText(html);
 
-  await sendEmail(recipient, subject, html, text);
+  await sendEmail(recipient, subject, html, text, tenant.longName);
 }
 
 /**
@@ -321,7 +321,7 @@ export async function sendAppointmentCreatedEmail(
   const html = renderOutputToHtml(emailRender);
   const text = htmlToText(html);
 
-  await sendEmail(recipient, subject, html, text);
+  await sendEmail(recipient, subject, html, text, tenant.longName);
 }
 
 /**
@@ -361,7 +361,7 @@ export async function sendAppointmentRequestEmail(
   const html = renderOutputToHtml(emailRender);
   const text = htmlToText(html);
 
-  await sendEmail(recipient, subject, html, text);
+  await sendEmail(recipient, subject, html, text, tenant.longName);
 }
 
 /**
@@ -456,7 +456,7 @@ export async function sendConfirmationEmail(
   const text = htmlToText(html);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await sendEmail(recipient as any, subject, html, text);
+  await sendEmail(recipient as any, subject, html, text, tenant.longName);
 }
 
 /**
@@ -478,19 +478,18 @@ export async function sendUserInviteEmail(
   registrationUrl: string,
   language: Language = "en",
 ): Promise<void> {
-  const recipient: EmailRecipient = {
-    email: userEmail,
-    name: userName,
-    language,
-  };
+  const { recipient, locale } = await getRecipient({ email: userEmail, name: userName, language });
 
   // Generate email
-  const subject = m["emails.userInvite.subject"]({
-    tenant: tenant.longName,
-  });
+  const subject = m["emails.userInvite.subject"](
+    {
+      tenant: tenant.longName,
+    },
+    { locale },
+  );
   const emailRender = render(UserInvite, {
     props: {
-      locale: language ?? "en",
+      locale,
       user: recipient as SelectUserEmail,
       tenant,
       confirmUrl: registrationUrl,
@@ -501,7 +500,7 @@ export async function sendUserInviteEmail(
   const text = htmlToText(html);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await sendEmail(recipient as any, subject, html, text);
+  await sendEmail(recipient as any, subject, html, text, tenant.longName);
 }
 
 /**
@@ -540,5 +539,5 @@ export async function sendAppointmentCancelledEmail(
   const text = htmlToText(html);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await sendEmail(recipient as any, subject, html, text);
+  await sendEmail(recipient as any, subject, html, text, tenant.longName);
 }
