@@ -228,8 +228,6 @@ export const GET: RequestHandler = async ({ params, locals }) => {
       throw new ValidationError("Tenant ID and appointment ID are required");
     }
 
-    // checkPermission(locals, tenantId, true);
-
     log.debug("Getting appointment by ID", {
       tenantId,
       appointmentId,

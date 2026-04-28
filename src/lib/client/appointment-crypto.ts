@@ -1247,6 +1247,26 @@ export class UnifiedAppointmentCrypto {
     return data.staffPublicKeys;
   }
 
+  async fetchStaffPublicKeysByStaff(tenantId: string): Promise<StaffPublicKey[]> {
+    const response = await fetch(
+      `/api/tenants/${tenantId}/appointments/staff-public-keys-by-staff`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.bookingAccessToken}`,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch staff public keys for staff: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.staffPublicKeys;
+  }
+
   private async bootstrapNewClientAccess(tenantId: string): Promise<void> {
     if (!this.tunnelId || !this.clientKeyPair) {
       throw new Error("Bootstrap requires generated client tunnel and key pair");

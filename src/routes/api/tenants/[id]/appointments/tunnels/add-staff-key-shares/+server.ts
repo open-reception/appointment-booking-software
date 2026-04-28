@@ -140,14 +140,12 @@ registerOpenAPIRoute("/tenants/{id}/appointments/tunnels/add-staff-key-shares", 
 
 const requestSchema = z.object({
   staffUserId: z.string().uuid("Invalid staff user ID format"),
-  keyShares: z
-    .array(
-      z.object({
-        tunnelId: z.string().uuid("Invalid tunnel ID format"),
-        encryptedTunnelKey: z.string().min(1, "Encrypted tunnel key cannot be empty"),
-      }),
-    )
-    .min(1, "At least one key share is required"),
+  keyShares: z.array(
+    z.object({
+      tunnelId: z.string().uuid("Invalid tunnel ID format"),
+      encryptedTunnelKey: z.string().min(1, "Encrypted tunnel key cannot be empty"),
+    }),
+  ),
 });
 
 export const POST: RequestHandler = async ({ params, locals, request }) => {

@@ -4,6 +4,7 @@ import { BackendError, InternalError, logError, ValidationError } from "$lib/ser
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
+import { checkPermission } from "$lib/server/utils/permissions";
 
 // Register OpenAPI documentation for GET
 registerOpenAPIRoute("/tenants/{id}/calendar", "GET", {
@@ -128,6 +129,8 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
     if (!tenantId) {
       throw new ValidationError("Tenant ID is required");
     }
+
+    checkPermission(locals, tenantId, false);
 
     // Parse query parameters for date range
     const startDateParam = url.searchParams.get("startDate");

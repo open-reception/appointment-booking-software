@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { GET } from "../+server";
 import { ScheduleService } from "$lib/server/services/schedule-service";
+import { checkPermission } from "$lib/server/utils/permissions";
 
 // Mock the ScheduleService
 vi.mock("$lib/server/services/schedule-service", () => ({
@@ -8,6 +9,9 @@ vi.mock("$lib/server/services/schedule-service", () => ({
     forTenant: vi.fn(),
   },
 }));
+
+// Mock checkPermission
+vi.mock("$lib/server/utils/permissions");
 
 // Mock logger
 vi.mock("$lib/logger", () => ({
@@ -35,6 +39,8 @@ describe("Calendar API", () => {
     mockGetSchedule.mockReset();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(ScheduleService.forTenant).mockResolvedValue(mockScheduleService as any);
+    // Mock checkPermission to succeed by default
+    vi.mocked(checkPermission).mockImplementation(() => {});
   });
 
   const createRequest = (tenantId: string, startDate?: string, endDate?: string) => {
@@ -45,7 +51,13 @@ describe("Calendar API", () => {
     return {
       params: { id: tenantId },
       url,
-      locals: {}, // Add locals object
+      locals: {
+        user: {
+          id: "user-123",
+          tenantId,
+          role: "GUEST",
+        },
+      },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
   };
@@ -143,7 +155,7 @@ describe("Calendar API", () => {
         startDate: "2024-01-01T00:00:00.000Z",
         endDate: "2024-01-02T00:00:00.000Z",
         timeZone: "UTC",
-        staffUserId: undefined,
+        staffUserId: "user-123",
       });
     });
 

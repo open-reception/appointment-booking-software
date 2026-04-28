@@ -5,6 +5,7 @@ import { BackendError, InternalError, logError, ValidationError } from "$lib/ser
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
+import { AppointmentService } from "$lib/server/services/appointment-service";
 
 // Register OpenAPI documentation
 registerOpenAPIRoute("/auth/register", "POST", {
@@ -153,6 +154,20 @@ export const POST: RequestHandler = async ({ params, cookies, request, url }) =>
       passkeyId: verificationResult.credentialID,
       counter: verificationResult.counter,
     });
+
+    // Set user to ACCESS_GRANTED, if no appointments exists
+    try {
+      const user = await UserService.getUserByEmail(body.email);
+      if (user.tenantId) {
+        const appointmentService = await AppointmentService.forTenant(user.tenantId);
+        const hasAppointments = await appointmentService.hasAppointments();
+        if (!hasAppointments) {
+          await UserService.updateUser(user.id, { confirmationState: "ACCESS_GRANTED" });
+        }
+      }
+    } catch {
+      // Silent fail for now
+    }
 
     return json(
       {

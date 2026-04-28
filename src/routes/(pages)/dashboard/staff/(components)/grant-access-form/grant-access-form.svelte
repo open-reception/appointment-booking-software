@@ -35,7 +35,7 @@
       step = "add-staff-key-shares";
 
       // For each tunnel: decrypt currentStaffEncryptedTunnelKey with current user private key
-      const allPublicKeys = await cryptoClient.fetchStaffPublicKeys(tenantId);
+      const allPublicKeys = await cryptoClient.fetchStaffPublicKeysByStaff(tenantId);
       const newUserPublicKeys = allPublicKeys.filter((x) => x.userId === entity.id);
 
       if (newUserPublicKeys.length === 0) {
