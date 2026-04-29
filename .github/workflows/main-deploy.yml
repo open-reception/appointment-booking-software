@@ -2,7 +2,7 @@ name: Main Branch Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test-build-deploy:

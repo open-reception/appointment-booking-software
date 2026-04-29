@@ -1,9 +1,8 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "v*"
+  release:
+    types: [created, published]
 
 permissions:
   contents: write
@@ -15,6 +14,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -27,7 +28,7 @@ jobs:
 
       - name: Update package.json version
         run: |
-          TAG_VERSION="${{ github.ref_name }}"
+          TAG_VERSION="${{ github.event.release.tag_name }}"
           VERSION="${TAG_VERSION#v}"
           npm version "$VERSION" --no-git-tag-version
 
@@ -63,34 +64,16 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker image
-        run: docker buildx build --platform linux/amd64,linux/arm64 -t openreception/open-reception:${{ github.ref_name }} .
+        run: docker buildx build --platform linux/amd64,linux/arm64 -t
+          openreception/open-reception:${{ github.ref_name }} .
 
       - name: Push Docker images
         run: npm run docker:build-and-push
 
-      - name: Create Release Archive
+      - name: Commit and push version update
         run: |
-          mkdir -p release-assets
-          tar -czf release-assets/open-reception-${{ github.ref_name }}.tar.gz build/
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: Release ${{ github.ref_name }}
-          generate_release_notes: true
-          body: |
-            ## Release ${{ github.ref_name }}
-
-            This release includes the latest version of Open Reception appointment booking software.
-
-            ### What's Changed
-            <!-- Release notes will be automatically generated above -->
-
-            ### Installation
-            Extract the archive and follow the deployment instructions in the README.
-
-            **Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.ref_name }}
-          files: |
-            release-assets/open-reception-${{ github.ref_name }}.tar.gz
-          draft: false
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "chore: bump version to ${{ github.event.release.tag_name }}"
+          git push
