@@ -71,6 +71,9 @@ jobs:
       - name: Build Docker image
         run: docker buildx build --platform linux/amd64,linux/arm64 -t
           openreception/open-reception:${{ github.ref_name }} .
+        env:
+          DATABASE_URL: "postgresql://test:test@localhost:5432/test"
+          JWT_SECRET: "build"
 
       - name: Push Docker images
         run: npm run docker:build-and-push
