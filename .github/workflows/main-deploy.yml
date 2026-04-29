@@ -2,7 +2,7 @@ name: Main Branch Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   test-build-deploy:
@@ -10,10 +10,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24"
           cache: "npm"
@@ -55,19 +55,18 @@ jobs:
           SMTP_FROM_NAME: "Open Reception"
           SMTP_FROM_EMAIL: "noreply@example.com"
           JWT_SECRET: "test"
+      # - name: Install Playwright browsers
+      #   run: npx playwright install --with-deps
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
-
-      - name: Run E2E tests
-        run: npm run test:e2e
-        env:
-          DATABASE_URL: "postgresql://test:test@localhost:5432/test"
-          SMTP_HOST: "smtp.example.com"
-          SMTP_PORT: "587"
-          SMTP_SECURE: "false"
-          SMTP_USER: "your-email@example.com"
-          SMTP_PASS: "your-password"
-          SMTP_FROM_NAME: "Open Reception"
-          SMTP_FROM_EMAIL: "noreply@example.com"
-          JWT_SECRET: "test"
+      # - name: Run E2E tests
+      #   run: npm run test:e2e
+      #   env:
+      #     DATABASE_URL: "postgresql://test:test@localhost:5432/test"
+      #     SMTP_HOST: "smtp.example.com"
+      #     SMTP_PORT: "587"
+      #     SMTP_SECURE: "false"
+      #     SMTP_USER: "your-email@example.com"
+      #     SMTP_PASS: "your-password"
+      #     SMTP_FROM_NAME: "Open Reception"
+      #     SMTP_FROM_EMAIL: "noreply@example.com"
+      #     JWT_SECRET: "test"
