@@ -11,7 +11,7 @@ if (!process.env.BUILDING && !env.DATABASE_URL) {
 }
 
 // Central database connection for tenant management
-const centralClient = postgres(env.DATABASE_URL);
+const centralClient = postgres(env.DATABASE_URL as string);
 export const centralDb = drizzle(centralClient, { schema: centralSchema });
 
 // Cache for tenant database connections
