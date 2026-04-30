@@ -14,11 +14,11 @@ export type BookingAccessScope =
   | typeof EXISTING_CLIENT_BOOKING_SCOPE
   | typeof NEW_CLIENT_BOOTSTRAP_SCOPE;
 
-if (!env.JWT_SECRET) {
+if (!process.env.BUILDING && !env.JWT_SECRET) {
   throw new Error("Mandatory ENV variable JWT_SECRET is missing!");
 }
 
-const JWT_SECRET = new TextEncoder().encode(env.JWT_SECRET);
+const JWT_SECRET = new TextEncoder().encode(env.JWT_SECRET as string);
 
 export interface BookingAccessTokenPayload {
   tenantId: string;
