@@ -10,7 +10,7 @@ export interface JWTTokens {
   refreshToken: string;
 }
 
-if (!env.JWT_SECRET) {
+if (!env.BUILDING && !env.JWT_SECRET) {
   throw Error("Mandatory ENV variable JWT_SECRET is missing!");
 }
 
