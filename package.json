@@ -1,7 +1,7 @@
 {
   "name": "open-reception",
   "private": true,
-  "version": "0.0.2",
+  "version": "1.0.0-rc",
   "type": "module",
   "description": "End-to-end encrypted appointment booking platform",
   "scripts": {
