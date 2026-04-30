@@ -6,7 +6,9 @@ import { env } from "$env/dynamic/private";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { eq } from "drizzle-orm";
 
-if (!env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
+if (!process.env.BUILDING && !env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is not set");
+}
 
 // Central database connection for tenant management
 const centralClient = postgres(env.DATABASE_URL);

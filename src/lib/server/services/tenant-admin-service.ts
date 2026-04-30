@@ -11,7 +11,9 @@ import { z } from "zod";
 import { ConflictError, NotFoundError, ValidationError } from "../utils/errors";
 import { redactDbUrl } from "../utils/url";
 
-if (!env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
+if (!process.env.BUILDING && !env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is not set");
+}
 
 const tenantCreationSchema = z.object({
   shortName: z

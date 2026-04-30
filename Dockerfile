@@ -15,7 +15,7 @@ ENV NODE_ENV=production
 
 # Copy source and build
 COPY . .
-RUN npm run build
+RUN BUILDING=true npm run build
 
 # Production stage
 FROM node:24-alpine AS production
