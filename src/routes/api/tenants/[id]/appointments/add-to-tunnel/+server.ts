@@ -1,17 +1,9 @@
 import { json, type RequestHandler } from "@sveltejs/kit";
 import { z } from "zod";
 import { logger } from "$lib/logger";
-import { getTenantDb } from "$lib/server/db";
-import { clientAppointmentTunnel, appointment, channel } from "$lib/server/db/tenant-schema.js";
+import { AppointmentService } from "$lib/server/services/appointment-service";
 import type { AppointmentResponse } from "$lib/types/appointment";
-import { and, eq } from "drizzle-orm";
-import {
-  ValidationError,
-  InternalError,
-  BackendError,
-  NotFoundError,
-  logError,
-} from "$lib/server/utils/errors";
+import { ValidationError, InternalError, BackendError, logError } from "$lib/server/utils/errors";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import {
   sendAppointmentCreatedEmail,
@@ -178,6 +170,18 @@ registerOpenAPIRoute("/tenants/{id}/appointments/add-to-tunnel", "POST", {
         },
       },
     },
+    "409": {
+      description: "Selected doctor is no longer available for this time slot",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+          example: {
+            error:
+              "Selected doctor is no longer available for this time slot. Please choose a different time.",
+          },
+        },
+      },
+    },
     "500": {
       description: "Internal server error",
       content: {
@@ -215,94 +219,31 @@ export const POST: RequestHandler = async ({ request, params }) => {
       appointmentDate: validatedData.appointmentDate,
     });
 
-    const db = await getTenantDb(tenantId);
+    const appointmentService = await AppointmentService.forTenant(tenantId);
+    const response: AppointmentResponse = await appointmentService.addAppointmentToTunnel({
+      emailHash: validatedData.emailHash,
+      tunnelId: validatedData.tunnelId,
+      channelId: validatedData.channelId,
+      agentId: validatedData.agentId,
+      appointmentDate: validatedData.appointmentDate,
+      appointmentTimeZone: validatedData.appointmentTimeZone,
+      duration: validatedData.duration,
+      clientEmail: validatedData.clientEmail || "",
+      clientLanguage: validatedData.clientLanguage,
+      encryptedAppointment: validatedData.encryptedAppointment,
+    });
 
-    // Check if tunnel exists and belongs to client
-    const tunnelResult = await db
-      .select({
-        id: clientAppointmentTunnel.id,
-      })
-      .from(clientAppointmentTunnel)
-      .where(eq(clientAppointmentTunnel.emailHash, validatedData.emailHash))
-      .limit(1);
-
-    if (tunnelResult.length === 0) {
-      logger.warn("Client tunnel not found", {
-        tenantId,
-        tunnelId: validatedData.tunnelId,
-      });
-      throw new NotFoundError("Tunnel not found or access denied");
-    }
-
-    // Get channel configuration to determine initial status
-    const channelResult = await db
-      .select({ requiresConfirmation: channel.requiresConfirmation })
-      .from(channel)
-      .where(and(eq(channel.id, validatedData.channelId), eq(channel.isPublic, true)))
-      .limit(1);
-
-    if (channelResult.length === 0) {
-      throw new NotFoundError("Active channel not found");
-    }
-
-    const initialStatus = channelResult[0].requiresConfirmation ? "NEW" : "CONFIRMED";
-
-    // Create encrypted appointment
-    const appointmentResult = await db
-      .insert(appointment)
-      .values({
-        tunnelId: validatedData.tunnelId,
-        channelId: validatedData.channelId,
-        agentId: validatedData.agentId,
-        appointmentDate: new Date(validatedData.appointmentDate),
-        timezone: validatedData.appointmentTimeZone,
-        duration: validatedData.duration,
-        encryptedPayload: validatedData.encryptedAppointment.encryptedPayload,
-        iv: validatedData.encryptedAppointment.iv,
-        authTag: validatedData.encryptedAppointment.authTag,
-        status: initialStatus,
-      })
-      .returning({
-        id: appointment.id,
-        tunnelId: appointment.tunnelId,
-        channelId: appointment.channelId,
-        agentId: appointment.agentId,
-        appointmentDate: appointment.appointmentDate,
-        timezone: appointment.timezone,
-        expiryDate: appointment.expiryDate,
-        status: appointment.status,
-        encryptedPayload: appointment.encryptedPayload,
-        duration: appointment.duration,
-        iv: appointment.iv,
-        authTag: appointment.authTag,
-        encryptedData: appointment.encryptedData,
-        dataKey: appointment.dataKey,
-        createdAt: appointment.createdAt,
-        updatedAt: appointment.updatedAt,
-      });
-
-    if (appointmentResult.length === 0) {
-      throw new InternalError("Failed to create appointment");
-    }
-
-    const result = appointmentResult[0];
-
-    const response: AppointmentResponse = {
-      id: result.id,
-      appointmentDate: result.appointmentDate.toISOString(),
-      appointmentTimeZone: result.timezone,
-      status: result.status,
-    };
+    const createdAppointment = await appointmentService.getAppointmentById(response.id);
 
     logger.info("Successfully added appointment to tunnel", {
       tenantId,
       tunnelId: validatedData.tunnelId,
-      appointmentId: result.id,
+      appointmentId: response.id,
     });
 
     // Send email notification to client
     try {
-      const requiresConfirmation = channelResult[0].requiresConfirmation || false;
+      const requiresConfirmation = response.requiresConfirmation || false;
 
       // Get tenant information
       const tenantService = await TenantAdminService.getTenantById(tenantId);
@@ -325,7 +266,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
           (await notificationService).createNotification({
             type: "APPOINTMENT_REQUESTED",
             channelId: validatedData.channelId,
-            metaData: { appointmentId: result.id },
+            metaData: { appointmentId: response.id },
           });
         }
         if (validatedData.clientEmail) {
@@ -336,17 +277,17 @@ export const POST: RequestHandler = async ({ request, params }) => {
           };
 
           if (requiresConfirmation) {
-            await sendAppointmentRequestEmail(clientData, tenant, result, channelTitle);
+            await sendAppointmentRequestEmail(clientData, tenant, createdAppointment, channelTitle);
             logger.debug("Appointment request email sent", {
               tunnelId: validatedData.tunnelId,
-              appointmentId: result.id,
+              appointmentId: response.id,
               tenantId,
             });
           } else {
-            await sendAppointmentCreatedEmail(clientData, tenant, result, channelTitle);
+            await sendAppointmentCreatedEmail(clientData, tenant, createdAppointment, channelTitle);
             logger.debug("Appointment confirmation email sent", {
               tunnelId: validatedData.tunnelId,
-              appointmentId: result.id,
+              appointmentId: response.id,
               tenantId,
             });
           }
@@ -354,7 +295,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
       }
     } catch (emailError) {
       logger.error("Failed to send appointment notification email", {
-        appointmentId: result.id,
+        appointmentId: response.id,
         tenantId,
         error: String(emailError),
       });

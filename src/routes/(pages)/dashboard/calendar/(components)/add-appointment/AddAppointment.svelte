@@ -3,6 +3,7 @@
   import { type AppointmentDataByStaff } from "$lib/client/appointment-crypto";
   import { CenterState } from "$lib/components/templates/empty-state";
   import Button from "$lib/components/ui/button/button.svelte";
+  import { ERRORS } from "$lib/errors";
   import { staffCrypto } from "$lib/stores/staff-crypto";
   import { tenants } from "$lib/stores/tenants";
   import type { TCalendarSlot } from "$lib/types/calendar";
@@ -30,6 +31,7 @@
   const localTime = utcToLocalWithoutDST(new Date(item.start));
 
   let step: TAddAppointmentStep = $state("email");
+  let submitErrorMessage = $state<string | null>(null);
   let newAppointment: TAddAppointment = $state({
     locale: getDefaultAppointmentLocale(get(tenants).currentTenant),
     dateTime: localTime,
@@ -94,10 +96,15 @@
           email: newAppointment.email,
         })
         .then(() => {
+          submitErrorMessage = null;
           step = "success";
           updateCalendar();
         })
-        .catch(() => {
+        .catch((error: unknown) => {
+          submitErrorMessage =
+            error instanceof Error && error.message === ERRORS.APPOINTMENTS.AGENT_NOT_AVAILABLE
+              ? m["calendar.addAppointment.steps.error.descriptionSlotUnavailable"]()
+              : m["calendar.addAppointment.steps.error.description"]();
           step = "error";
         })
         .finally(() => {
@@ -132,7 +139,7 @@
 {:else}
   <CenterState
     headline={m["calendar.addAppointment.steps.error.title"]()}
-    description={m["calendar.addAppointment.steps.error.description"]()}
+    description={submitErrorMessage || m["calendar.addAppointment.steps.error.description"]()}
     Icon={BanIcon}
     size="sm"
   />
