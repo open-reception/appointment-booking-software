@@ -3,8 +3,9 @@ import * as tenantSchema from "../db/tenant-schema";
 import { type SelectAppointment } from "../db/tenant-schema";
 import * as centralSchema from "../db/central-schema";
 import logger from "$lib/logger";
+import { ERRORS } from "$lib/errors";
 import { ValidationError, NotFoundError, InternalError, ConflictError } from "../utils/errors";
-import { and, eq, gte, lte, asc } from "drizzle-orm";
+import { and, asc, eq, gt, gte, lt, lte, ne, sql } from "drizzle-orm";
 import type { AppointmentResponse } from "$lib/types/appointment";
 import {
   sendAppointmentCreatedEmail,
@@ -84,6 +85,65 @@ export class AppointmentService {
     const db = await this.getDb();
     const result = await db.select().from(tenantSchema.appointment).limit(1);
     return result.length > 0;
+  }
+
+  private async ensureAgentIsAvailableForSlot(params: {
+    agentId: string;
+    appointmentDate: string;
+    duration: number;
+  }): Promise<void> {
+    const log = logger.setContext("AppointmentService");
+    const db = await this.getDb();
+
+    const slotStart = new Date(params.appointmentDate);
+    if (Number.isNaN(slotStart.getTime())) {
+      throw new ValidationError("Invalid appointment date");
+    }
+
+    const slotEnd = new Date(slotStart.getTime() + params.duration * 60_000);
+
+    const overlappingAppointment = await db
+      .select({ id: tenantSchema.appointment.id })
+      .from(tenantSchema.appointment)
+      .where(
+        and(
+          eq(tenantSchema.appointment.agentId, params.agentId),
+          ne(tenantSchema.appointment.status, "REJECTED"),
+          lt(tenantSchema.appointment.appointmentDate, slotEnd),
+          sql`${tenantSchema.appointment.appointmentDate} + (${tenantSchema.appointment.duration} * interval '1 minute') > ${slotStart.toISOString()}::timestamp`,
+        ),
+      )
+      .limit(1);
+
+    if (overlappingAppointment.length > 0) {
+      log.warn("Appointment creation blocked due to overlapping appointment", {
+        tenantId: this.tenantId,
+        agentId: params.agentId,
+        appointmentDate: params.appointmentDate,
+      });
+      throw new ConflictError(ERRORS.APPOINTMENTS.AGENT_NOT_AVAILABLE);
+    }
+
+    const overlappingAbsence = await db
+      .select({ id: tenantSchema.agentAbsence.id })
+      .from(tenantSchema.agentAbsence)
+      .where(
+        and(
+          eq(tenantSchema.agentAbsence.agentId, params.agentId),
+          lt(tenantSchema.agentAbsence.startDate, slotEnd),
+          gt(tenantSchema.agentAbsence.endDate, slotStart),
+        ),
+      )
+      .limit(1);
+
+    if (overlappingAbsence.length > 0) {
+      log.warn("Appointment creation blocked due to overlapping absence", {
+        tenantId: this.tenantId,
+        agentId: params.agentId,
+        appointmentDate: params.appointmentDate,
+      });
+      throw new ConflictError(ERRORS.APPOINTMENTS.AGENT_NOT_AVAILABLE);
+    }
   }
 
   /**
@@ -510,6 +570,7 @@ export class AppointmentService {
         iv: string;
         authTag: string;
       };
+      incomingTunnelId: string;
     },
     staffCreated = false,
   ): Promise<AppointmentResponse> {
@@ -530,7 +591,7 @@ export class AppointmentService {
       .where(eq(tenantSchema.clientAppointmentTunnel.emailHash, appointmentData.emailHash))
       .limit(1);
 
-    if (tunnelResult.length === 0) {
+    if (tunnelResult.length === 0 || tunnelResult[0].id !== appointmentData.incomingTunnelId) {
       log.warn("Client tunnel not found", {
         tenantId: this.tenantId,
         tunnelId: appointmentData.tunnelId,
@@ -554,6 +615,12 @@ export class AppointmentService {
     if (channelResult.length === 0) {
       throw new NotFoundError("Active channel not found");
     }
+
+    await this.ensureAgentIsAvailableForSlot({
+      agentId: appointmentData.agentId,
+      appointmentDate: appointmentData.appointmentDate,
+      duration: appointmentData.duration,
+    });
 
     const initialStatus =
       channelResult[0].requiresConfirmation && !staffCreated ? "NEW" : "CONFIRMED";
@@ -660,6 +727,12 @@ export class AppointmentService {
         "This email address is already registered. Please use the login option to book additional appointments.",
       );
     }
+
+    await this.ensureAgentIsAvailableForSlot({
+      agentId: clientData.agentId,
+      appointmentDate: clientData.appointmentDate,
+      duration: clientData.duration,
+    });
 
     // Transactional: Create tunnel and appointment
     const result = await db.transaction(async (tx) => {

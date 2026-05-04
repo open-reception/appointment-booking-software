@@ -269,10 +269,15 @@ registerOpenAPIRoute("/tenants/{id}/appointments/create-new-client", "POST", {
       },
     },
     "409": {
-      description: "No authorized users in tenant - cannot create client appointments",
+      description:
+        "Conflict while creating appointment (e.g. no authorized users in tenant or selected agent unavailable)",
       content: {
         "application/json": {
           schema: { $ref: "#/components/schemas/Error" },
+          example: {
+            error:
+              "Selected agent is no longer available for this time slot. Please choose a different time.",
+          },
         },
       },
     },
