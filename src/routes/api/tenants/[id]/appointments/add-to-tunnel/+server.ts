@@ -269,7 +269,6 @@ export const POST: RequestHandler = async ({ request, params }) => {
         agentId: appointment.agentId,
         appointmentDate: appointment.appointmentDate,
         timezone: appointment.timezone,
-        expiryDate: appointment.expiryDate,
         status: appointment.status,
         encryptedPayload: appointment.encryptedPayload,
         duration: appointment.duration,
