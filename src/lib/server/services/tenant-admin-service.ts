@@ -9,7 +9,7 @@ import logger from "$lib/logger";
 import { and, count, eq, ne, not, or } from "drizzle-orm";
 import { z } from "zod";
 import { ConflictError, NotFoundError, ValidationError } from "../utils/errors";
-import { redactDbUrl } from "../utils/url";
+import { isLinkValid, redactDbUrl } from "../utils/url";
 
 if (!process.env.BUILDING && !env.DATABASE_URL) {
   throw new Error("DATABASE_URL is not set");
@@ -223,7 +223,7 @@ export class TenantAdminService {
     updateData: Partial<
       Pick<
         InsertTenant,
-        "longName" | "shortName" | "descriptions" | "languages" | "logo" | "domain"
+        "longName" | "shortName" | "descriptions" | "languages" | "logo" | "domain" | "links"
       >
     >,
   ) {
@@ -235,6 +235,15 @@ export class TenantAdminService {
 
     if (updateData.shortName) {
       throw new ValidationError("Shortname cannot be changed");
+    }
+
+    // Check each link
+    if (updateData.links) {
+      for (const link of Object.values(updateData.links)) {
+        if (!isLinkValid(link)) {
+          throw new ValidationError("Links must start with http or https or be empty");
+        }
+      }
     }
 
     // Check if domain is already in use
