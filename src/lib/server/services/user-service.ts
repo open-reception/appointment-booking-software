@@ -462,6 +462,37 @@ export class UserService {
   }
 
   /**
+   * Get user by ID
+   */
+  static async getUserById(userId: string) {
+    const log = logger.setContext("UserService");
+    log.debug("Getting user by ID", { userId });
+
+    try {
+      const result = await centralDb
+        .select()
+        .from(centralSchema.user)
+        .where(eq(centralSchema.user.id, userId))
+        .limit(1);
+
+      if (!result[0]) {
+        log.warn("User not found by ID", { userId });
+        throw new NotFoundError(`No user account for ${userId}.`);
+      }
+
+      log.debug("User found by ID", {
+        userId: result[0].id,
+        confirmationState: result[0].confirmationState,
+      });
+      return result[0];
+    } catch (error) {
+      if (error instanceof NotFoundError) throw error;
+      log.error("Failed to get user by ID", { userId, error: String(error) });
+      throw error;
+    }
+  }
+
+  /**
    * Get admin by email
    */
   static async getUserByEmail(email: string) {

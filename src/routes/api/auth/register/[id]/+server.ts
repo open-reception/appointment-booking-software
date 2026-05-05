@@ -125,6 +125,11 @@ export const POST: RequestHandler = async ({ params, cookies, request, url }) =>
       throw new ValidationError("Invalid or missing WebAuthn challenge");
     }
 
+    const targetUser = await UserService.getUserById(userId);
+    if (targetUser.email !== body.email) {
+      throw new ValidationError("User mismatch");
+    }
+
     log.debug("Using challenge for verification", {
       challengeSource: body.challenge ? "request body" : "cookie",
       challengePreview: challengeFromSession.substring(0, 20) + "...",
