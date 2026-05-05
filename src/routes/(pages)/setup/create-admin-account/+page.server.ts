@@ -25,6 +25,13 @@ export const actions: Actions = {
       });
     }
 
+    if (await UserService.adminExists()) {
+      log.error("Create global admin forbidden. Admin already exists.", { errors: form.errors });
+      return fail(403, {
+        form: { ...form, data: { ...form.data, type: "passkey" } },
+      });
+    }
+
     // IMPORTANT: Verify passkey BEFORE creating user to avoid orphaned users
     let verificationResult:
       | { credentialID: string; credentialPublicKey: string; counter: number }
