@@ -270,7 +270,20 @@ export class TenantAdminService {
           updatedAt: new Date(),
         })
         .where(eq(centralSchema.tenant.id, this.tenantId))
-        .returning();
+        .returning({
+          id: centralSchema.tenant.id,
+          createdAt: centralSchema.tenant.createdAt,
+          updatedAt: centralSchema.tenant.updatedAt,
+          languages: centralSchema.tenant.languages,
+          defaultLanguage: centralSchema.tenant.defaultLanguage,
+          shortName: centralSchema.tenant.shortName,
+          longName: centralSchema.tenant.longName,
+          descriptions: centralSchema.tenant.descriptions || {},
+          domain: centralSchema.tenant.domain,
+          logo: centralSchema.tenant.logo,
+          setupState: centralSchema.tenant.setupState,
+          links: centralSchema.tenant.links,
+        });
 
       if (!result[0]) {
         log.warn("Tenant update failed: Tenant not found", { tenantId: this.tenantId });
