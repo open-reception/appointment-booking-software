@@ -106,6 +106,13 @@
       "when": 1775654963847,
       "tag": "0014_fluffy_ezekiel",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1777901096310,
+      "tag": "0015_loud_tarot",
+      "breakpoints": true
     }
   ]
 }

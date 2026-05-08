@@ -6,6 +6,7 @@ import { InviteService } from "./invite-service";
 import { SessionService } from "../auth/session-service";
 import { ClientPinResetService } from "./client-pin-reset-service";
 import { UniversalLogger } from "$lib/logger";
+import { AppointmentService } from "./appointment-service";
 
 const logger = new UniversalLogger().setContext("StartupService");
 const TWELVE_HOURS_IN_MS = 12 * 60 * 60 * 1000;
@@ -172,6 +173,13 @@ export class StartupService {
       for (const tenantData of tenants) {
         try {
           const pinResetService = await ClientPinResetService.forTenant(tenantData.id);
+          const appointmentService = await AppointmentService.forTenant(tenantData.id);
+          await appointmentService.cleanupExpiredAppointments();
+          logger.info("Cleaned up expired appointments for tenant", {
+            tenantId: tenantData.id,
+            shortName: tenantData.shortName,
+          });
+
           const deletedTokens = await pinResetService.cleanupExpiredTokens();
           logger.info(`Cleaned up ${deletedTokens} expired PIN reset tokens for tenant`, {
             tenantId: tenantData.id,
