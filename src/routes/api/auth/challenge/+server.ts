@@ -1,12 +1,21 @@
 import { json } from "@sveltejs/kit";
 import { WebAuthnService } from "$lib/server/auth/webauthn-service";
 import { UserService } from "$lib/server/services/user-service";
-import { BackendError, InternalError, logError, NotFoundError } from "$lib/server/utils/errors";
+import {
+  BackendError,
+  InternalError,
+  logError,
+  NotFoundError,
+  ValidationError,
+} from "$lib/server/utils/errors";
+import type { Cookies } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { UniversalLogger } from "$lib/logger";
 import { env } from "$env/dynamic/private";
 import { challengeThrottleService } from "$lib/server/services/challenge-throttle";
+import { verifyRegistrationBootstrapToken } from "$lib/server/auth/registration-bootstrap";
+import { normalizeEmail } from "$lib/utils";
 
 const logger = new UniversalLogger().setContext("AuthChallengeAPI");
 
@@ -27,6 +36,12 @@ registerOpenAPIRoute("/auth/challenge", "POST", {
               format: "email",
               description: "User's email address",
               example: "admin@example.com",
+            },
+            userId: {
+              type: "string",
+              format: "uuid",
+              description:
+                "Optional user ID for registration setup flows. If provided, it must match the confirmed account.",
             },
           },
           required: ["email"],
@@ -126,18 +141,67 @@ function getRpId(requestUrl: URL): string {
   return "localhost";
 }
 
+async function validateRegistrationBootstrapSession(input: {
+  cookies: Cookies;
+  userId: string;
+  userEmail: string;
+  requestEmail: string;
+  requestUserId?: string;
+}): Promise<void> {
+  const bootstrapPayload = await verifyRegistrationBootstrapToken(
+    input.cookies.get("webauthn-registration-bootstrap"),
+  );
+
+  const bootstrapIsValid =
+    !!bootstrapPayload &&
+    bootstrapPayload.userId === input.userId &&
+    bootstrapPayload.email === normalizeEmail(input.userEmail) &&
+    bootstrapPayload.email === normalizeEmail(input.requestEmail) &&
+    (!input.requestUserId || input.requestUserId === input.userId);
+
+  if (!bootstrapIsValid) {
+    logger.warn("Registration challenge rejected due to invalid bootstrap session", {
+      email: input.requestEmail,
+      requestUserId: input.requestUserId,
+      targetUserId: input.userId,
+      hasBootstrapCookie: !!input.cookies.get("webauthn-registration-bootstrap"),
+    });
+
+    throw new ValidationError("Invalid or missing registration bootstrap session");
+  }
+}
+
+function parseChallengeRequest(body: unknown): { requestEmail: string; requestUserId?: string } {
+  if (!body || typeof body !== "object") {
+    throw new ValidationError("Valid email is required");
+  }
+
+  const parsedBody = body as { email?: unknown; userId?: unknown };
+  const requestEmail =
+    typeof parsedBody.email === "string" ? normalizeEmail(parsedBody.email) : undefined;
+
+  if (!requestEmail) {
+    throw new ValidationError("Valid email is required");
+  }
+
+  const requestUserId = typeof parsedBody.userId === "string" ? parsedBody.userId : undefined;
+
+  return { requestEmail, requestUserId };
+}
+
 export const POST: RequestHandler = async ({ request, cookies, url }) => {
   try {
     const body = await request.json();
+    const { requestEmail, requestUserId } = parseChallengeRequest(body);
 
-    logger.debug("Generating WebAuthn challenge", { email: body.email });
+    logger.debug("Generating WebAuthn challenge", { email: requestEmail, requestUserId });
 
     // Check throttling for passkey challenges
-    const throttleResult = await challengeThrottleService.checkThrottle(body.email, "passkey");
+    const throttleResult = await challengeThrottleService.checkThrottle(requestEmail, "passkey");
 
     if (!throttleResult.allowed) {
       logger.warn("Passkey challenge throttled", {
-        email: body.email,
+        email: requestEmail,
         retryAfterMs: throttleResult.retryAfterMs,
         failedAttempts: throttleResult.failedAttempts,
       });
@@ -161,7 +225,7 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
     let isRegistration = false;
 
     try {
-      user = await UserService.getUserByEmail(body.email);
+      user = await UserService.getUserByEmail(requestEmail);
       const passkeys = await UserService.getUserPasskeys(user.id);
       if (passkeys.length === 0) {
         isRegistration = true; // User exists but has no passphrase - must register
@@ -171,18 +235,28 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
         // User doesn't exist yet - this is a registration flow
         isRegistration = true;
         logger.debug("User not found - generating challenge for registration", {
-          email: body.email,
+          email: requestEmail,
         });
       } else {
         throw error;
       }
     }
 
+    if (isRegistration && user) {
+      await validateRegistrationBootstrapSession({
+        cookies,
+        userId: user.id,
+        userEmail: user.email,
+        requestEmail,
+        requestUserId,
+      });
+    }
+
     // Generate challenge
     const challenge = WebAuthnService.generateChallenge();
 
     if (isRegistration) {
-      cookies.set("webauthn-registration-email", body.email, {
+      cookies.set("webauthn-registration-email", requestEmail, {
         httpOnly: true,
         secure: true,
         sameSite: "strict",
@@ -209,11 +283,10 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
       // Get user's registered passkeys for login
       const passkeys = await WebAuthnService.getUserPasskeys(user.id);
 
-      // Format passkeys for WebAuthn API
       allowCredentials = passkeys.map((passkey) => ({
         id: passkey.id,
         type: "public-key" as const,
-        transports: ["usb", "nfc", "ble", "internal"], // All possible transports
+        transports: ["usb", "nfc", "ble", "internal"],
       }));
 
       logger.debug("WebAuthn challenge generated for login", {
@@ -224,7 +297,7 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
       });
     } else {
       logger.debug("WebAuthn challenge generated for registration", {
-        email: body.email,
+        email: requestEmail,
         challenge: challenge.substring(0, 8) + "...",
       });
     }

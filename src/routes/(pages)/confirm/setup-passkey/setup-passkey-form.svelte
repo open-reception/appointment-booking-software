@@ -80,7 +80,7 @@
     const { KyberCrypto } = await import("$lib/crypto/utils");
     kyberKeyPair = KyberCrypto.generateKeyPair();
 
-    const challenge = await fetchChallenge($formData.email);
+    const challenge = await fetchChallenge($formData.email, $formData.userId);
 
     if (!challenge) {
       logger.error("Failed to fetch challenge", { email: $formData.email });
@@ -134,7 +134,7 @@
       // This is the only time we can retrieve the PRF output
       // Uses email as salt for multi-passkey support
       try {
-        const prfChallenge = await fetchChallenge($formData.email);
+        const prfChallenge = await fetchChallenge($formData.email, $formData.userId);
         if (!prfChallenge) {
           throw new Error("Failed to fetch PRF challenge");
         }

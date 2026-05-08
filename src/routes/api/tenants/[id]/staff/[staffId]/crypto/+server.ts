@@ -24,6 +24,7 @@ import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { centralDb } from "$lib/server/db";
 import { user } from "$lib/server/db/central-schema";
 import { eq } from "drizzle-orm";
+import { normalizeEmail } from "$lib/utils";
 
 const ML_KEM_768_PUBLIC_KEY_BYTES = 1184;
 const ML_KEM_768_PRIVATE_KEY_BYTES = 2400;
@@ -40,14 +41,6 @@ const hasDecodedByteLength = (value: string, expectedBytes: number): boolean => 
   } catch {
     return false;
   }
-};
-
-const normalizeEmail = (value?: string | null): string | undefined => {
-  if (!value) {
-    return undefined;
-  }
-
-  return value.trim().toLowerCase();
 };
 
 // Register OpenAPI documentation
@@ -192,7 +185,8 @@ export const POST: RequestHandler = async ({ params, locals, request, cookies })
     const isAuthenticated = locals.user && locals.user.id === staffId;
     const registrationEmail = normalizeEmail(cookies.get("webauthn-registration-email"));
     const requestEmail = normalizeEmail(email);
-    const isRegistration = !!registrationEmail && !!requestEmail && registrationEmail === requestEmail;
+    const isRegistration =
+      !!registrationEmail && !!requestEmail && registrationEmail === requestEmail;
 
     if (!isAuthenticated && !isRegistration) {
       log.warn("Unauthorized crypto key storage attempt", {

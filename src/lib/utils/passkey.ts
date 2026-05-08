@@ -1,4 +1,5 @@
 import logger from "$lib/logger";
+import { normalizeEmail } from "$lib/utils";
 
 type WebAuthnAllowCredential = {
   id: string;
@@ -46,13 +47,16 @@ export function base64ToArrayBuffer(base64: string) {
   return bytes.buffer;
 }
 
-export const fetchChallenge = async (email: string) => {
+export const fetchChallenge = async (email: string, userId?: string) => {
   const resp = await fetch("/api/auth/challenge", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({
+      email,
+      ...(userId ? { userId } : {}),
+    }),
   });
 
   let data;
@@ -94,11 +98,13 @@ export const fetchChallenge = async (email: string) => {
 export const getCredentialOptions = ({
   id,
   challenge,
+  userId,
   email,
   enablePRF = false,
 }: {
   id: string;
   challenge: string;
+  userId: ArrayBuffer;
   email: string;
   enablePRF?: boolean;
 }): {
@@ -114,7 +120,7 @@ export const getCredentialOptions = ({
         name: "Open Reception",
       },
       user: {
-        id: new Uint8Array(16),
+        id: userId,
         name: email,
         displayName: email,
       },
@@ -139,6 +145,12 @@ export const getCredentialOptions = ({
   return options;
 };
 
+const createWebAuthnUserId = async (email: string): Promise<ArrayBuffer> => {
+  const normalizedEmail = normalizeEmail(email) ?? "";
+  const emailBytes = new TextEncoder().encode(normalizedEmail);
+  return crypto.subtle.digest("SHA-256", emailBytes);
+};
+
 export type GeneratePasskeyResponse = {
   response: AuthenticatorAttestationResponse;
   id: string;
@@ -156,7 +168,8 @@ export const generatePasskey = async ({
   email: string;
   enablePRF?: boolean;
 }): Promise<GeneratePasskeyResponse> => {
-  const options = getCredentialOptions({ id, challenge, email, enablePRF });
+  const userId = await createWebAuthnUserId(email);
+  const options = getCredentialOptions({ id, challenge, userId, email, enablePRF });
   return (await navigator.credentials.create(options)) as GeneratePasskeyResponse;
 };
 

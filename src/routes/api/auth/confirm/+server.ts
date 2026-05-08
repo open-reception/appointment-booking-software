@@ -4,6 +4,7 @@ import { BackendError, InternalError, logError } from "$lib/server/utils/errors"
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
+import { generateRegistrationBootstrapToken } from "$lib/server/auth/registration-bootstrap";
 
 // Register OpenAPI documentation
 registerOpenAPIRoute("/auth/confirm", "POST", {
@@ -73,7 +74,7 @@ registerOpenAPIRoute("/auth/confirm", "POST", {
   },
 });
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, cookies }) => {
   const log = logger.setContext("API");
 
   try {
@@ -88,6 +89,21 @@ export const POST: RequestHandler = async ({ request }) => {
       email: confirmationResult.email,
       tenantId: confirmationResult.tenantId,
     };
+
+    const registrationBootstrapToken = await generateRegistrationBootstrapToken({
+      userId: confirmationResult.id,
+      email: confirmationResult.email,
+    });
+
+    if (registrationBootstrapToken) {
+      cookies.set("webauthn-registration-bootstrap", registrationBootstrapToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "strict",
+        path: "/",
+        maxAge: 60 * 15,
+      });
+    }
 
     // Include recovery passphrase if it exists (for WebAuthn-only users)
     if (confirmationResult.recoveryPassphrase) {

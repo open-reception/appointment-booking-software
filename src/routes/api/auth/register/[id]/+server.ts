@@ -6,6 +6,8 @@ import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 import { AppointmentService } from "$lib/server/services/appointment-service";
+import { verifyRegistrationBootstrapToken } from "$lib/server/auth/registration-bootstrap";
+import { normalizeEmail } from "$lib/utils";
 
 // Register OpenAPI documentation
 registerOpenAPIRoute("/auth/register", "POST", {
@@ -110,15 +112,27 @@ export const POST: RequestHandler = async ({ params, cookies, request, url }) =>
 
     // Add the passkey to the user account if provided
     // Validate that this registration was preceded by a challenge request
-    const registrationEmail = cookies.get("webauthn-registration-email");
+    const registrationEmail = normalizeEmail(cookies.get("webauthn-registration-email") || "");
+    const requestEmail = normalizeEmail(body.email);
+    const bootstrapPayload = await verifyRegistrationBootstrapToken(
+      cookies.get("webauthn-registration-bootstrap"),
+    );
 
     // Challenge can come from:
     // 1. Request body (for tenant admins with PRF - second challenge overwrites cookie)
     // 2. Cookie (for global admins without PRF - only one challenge)
     const challengeFromSession = body.challenge || cookies.get("webauthn-challenge");
 
-    if (!registrationEmail || registrationEmail !== body.email) {
+    if (!registrationEmail || registrationEmail !== requestEmail) {
       throw new ValidationError("Invalid or missing registration challenge cookie");
+    }
+
+    if (
+      !bootstrapPayload ||
+      bootstrapPayload.userId !== userId ||
+      bootstrapPayload.email !== requestEmail
+    ) {
+      throw new ValidationError("Invalid or missing registration bootstrap session");
     }
 
     if (!challengeFromSession) {
@@ -126,7 +140,7 @@ export const POST: RequestHandler = async ({ params, cookies, request, url }) =>
     }
 
     const targetUser = await UserService.getUserById(userId);
-    if (targetUser.email !== body.email) {
+    if (normalizeEmail(targetUser.email) !== requestEmail) {
       throw new ValidationError("User mismatch");
     }
 
