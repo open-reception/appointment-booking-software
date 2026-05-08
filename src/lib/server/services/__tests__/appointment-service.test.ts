@@ -47,7 +47,6 @@ const mockAppointment = {
   authTag: "auth-tag",
   createdAt: new Date(),
   updatedAt: new Date(),
-  expiryDate: null,
 };
 
 const mockClientTunnel = {
