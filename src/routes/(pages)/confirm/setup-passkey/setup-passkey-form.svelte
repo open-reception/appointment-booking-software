@@ -196,7 +196,14 @@
     if (tenantId && passkeyId && prfOutput && kyberKeyPair) {
       const crypto = new UnifiedAppointmentCrypto();
       return await crypto
-        .storeStaffKeyPair(tenantId, $formData.userId, passkeyId, prfOutput, kyberKeyPair)
+        .storeStaffKeyPair(
+          tenantId,
+          $formData.userId,
+          passkeyId,
+          prfOutput,
+          $formData.email,
+          kyberKeyPair,
+        )
         .then(() => {
           toast.success(m["setupPasskey.successKeyPairSaved"]());
         })

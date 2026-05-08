@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "staff_crypto_ua_idx" ON "staff_crypto" USING btree ("user_id","is_active");

@@ -1,5 +1,11 @@
 import logger from "$lib/logger";
 
+type WebAuthnAllowCredential = {
+  id: string;
+  type: "public-key";
+  transports?: AuthenticatorTransport[];
+};
+
 export const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
   try {
     const bytes = new Uint8Array(buffer);
@@ -81,6 +87,7 @@ export const fetchChallenge = async (email: string) => {
   return {
     id: data.rpId,
     challenge: data.challenge,
+    allowCredentials: data.allowCredentials,
   };
 };
 
@@ -252,11 +259,13 @@ export const getCredential = async ({
   challenge,
   email,
   enablePRF = false,
+  allowCredentials,
 }: {
   id: string;
   challenge: string;
   email: string;
   enablePRF?: boolean;
+  allowCredentials?: WebAuthnAllowCredential[];
 }): Promise<GetCredentialResponse> => {
   // Build WebAuthn options manually to support PRF
   const challengeBuffer = base64UrlToArrayBuffer(challenge);
@@ -265,6 +274,11 @@ export const getCredential = async ({
     challenge: challengeBuffer,
     rpId: id,
     userVerification: "preferred",
+    allowCredentials: allowCredentials?.map((credential) => ({
+      id: base64UrlToArrayBuffer(credential.id),
+      type: credential.type,
+      transports: credential.transports,
+    })),
   };
 
   // Add PRF extension if enabled
