@@ -306,7 +306,7 @@ describe("TenantAdminService", () => {
       const mockTenant = createMockTenant(tenantId);
       const updateData = {
         longName: "Updated Clinic Name",
-        description: ["Updated description"],
+        descriptions: { en: "Updated description" },
         logo: "logo data",
       };
 

@@ -421,7 +421,20 @@ export const PUT: RequestHandler = async ({ locals, params, request }) => {
 
     return json({
       message: "Tenant metadata updated successfully",
-      tenant: updatedTenant,
+      tenant: {
+        id: updatedTenant.id,
+        createdAt: updatedTenant.createdAt,
+        updatedAt: updatedTenant.updatedAt,
+        languages: updatedTenant.languages,
+        defaultLanguage: updatedTenant.defaultLanguage,
+        shortName: updatedTenant.shortName,
+        longName: updatedTenant.longName,
+        descriptions: updatedTenant.descriptions || {},
+        domain: updatedTenant.domain,
+        logo: updatedTenant.logo,
+        setupState: updatedTenant.setupState,
+        links: updatedTenant.links,
+      },
     });
   } catch (error) {
     logError(log)("Error updating tenant metadata", error, locals.user?.id, params.id);

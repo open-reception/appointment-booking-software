@@ -11,6 +11,20 @@ import { z } from "zod";
 import { ConflictError, NotFoundError, ValidationError } from "../utils/errors";
 import { isLinkValid, redactDbUrl } from "../utils/url";
 
+type UpdateTenantBody = Partial<
+  Pick<
+    InsertTenant,
+    | "longName"
+    | "shortName"
+    | "descriptions"
+    | "languages"
+    | "logo"
+    | "domain"
+    | "links"
+    | "defaultLanguage"
+  >
+>;
+
 if (!process.env.BUILDING && !env.DATABASE_URL) {
   throw new Error("DATABASE_URL is not set");
 }
@@ -219,27 +233,31 @@ export class TenantAdminService {
   /**
    * Update tenant data (longName, shortName, descriptions, languages, logo)
    */
-  async updateTenantData(
-    updateData: Partial<
-      Pick<
-        InsertTenant,
-        "longName" | "shortName" | "descriptions" | "languages" | "logo" | "domain" | "links"
-      >
-    >,
-  ) {
+
+  async updateTenantData(updateData: UpdateTenantBody) {
+    const filteredUpdateData: UpdateTenantBody = {
+      longName: updateData.longName,
+      descriptions: updateData.descriptions,
+      languages: updateData.languages,
+      defaultLanguage: updateData.defaultLanguage,
+      logo: updateData.logo,
+      links: updateData.links,
+      domain: updateData.domain,
+    };
+
     const log = logger.setContext("TenantAdminService");
     log.debug("Updating tenant data", {
       tenantId: this.tenantId,
-      updateFields: Object.keys(updateData),
+      updateFields: Object.keys(filteredUpdateData),
     });
 
-    if (updateData.shortName) {
+    if (filteredUpdateData.shortName) {
       throw new ValidationError("Shortname cannot be changed");
     }
 
     // Check each link
-    if (updateData.links) {
-      for (const link of Object.values(updateData.links)) {
+    if (filteredUpdateData.links) {
+      for (const link of Object.values(filteredUpdateData.links)) {
         if (!isLinkValid(link)) {
           throw new ValidationError("Links must start with http or https or be empty");
         }
@@ -247,13 +265,13 @@ export class TenantAdminService {
     }
 
     // Check if domain is already in use
-    if (updateData.domain) {
+    if (filteredUpdateData.domain) {
       const domainExists = await centralDb
         .select()
         .from(centralSchema.tenant)
         .where(
           and(
-            eq(centralSchema.tenant.domain, updateData.domain),
+            eq(centralSchema.tenant.domain, filteredUpdateData.domain),
             ne(centralSchema.tenant.id, this.tenantId),
           ),
         );
@@ -266,11 +284,24 @@ export class TenantAdminService {
       const result = await centralDb
         .update(centralSchema.tenant)
         .set({
-          ...updateData,
+          ...filteredUpdateData,
           updatedAt: new Date(),
         })
         .where(eq(centralSchema.tenant.id, this.tenantId))
-        .returning();
+        .returning({
+          id: centralSchema.tenant.id,
+          createdAt: centralSchema.tenant.createdAt,
+          updatedAt: centralSchema.tenant.updatedAt,
+          languages: centralSchema.tenant.languages,
+          defaultLanguage: centralSchema.tenant.defaultLanguage,
+          shortName: centralSchema.tenant.shortName,
+          longName: centralSchema.tenant.longName,
+          descriptions: centralSchema.tenant.descriptions || {},
+          domain: centralSchema.tenant.domain,
+          logo: centralSchema.tenant.logo,
+          setupState: centralSchema.tenant.setupState,
+          links: centralSchema.tenant.links,
+        });
 
       if (!result[0]) {
         log.warn("Tenant update failed: Tenant not found", { tenantId: this.tenantId });
@@ -279,7 +310,7 @@ export class TenantAdminService {
 
       log.debug("Tenant data updated successfully", {
         tenantId: this.tenantId,
-        updateFields: Object.keys(updateData),
+        updateFields: Object.keys(filteredUpdateData),
       });
 
       return result[0];
