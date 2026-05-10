@@ -12,7 +12,7 @@ import { challengeThrottle } from "$lib/server/db/central-schema";
 import { eq, lt, sql } from "drizzle-orm";
 import { logger } from "$lib/logger";
 
-export type ThrottleType = "pin" | "passkey";
+export type ThrottleType = "pin" | "passkey" | "passphrase";
 
 interface ThrottleResult {
   allowed: boolean;

@@ -43,6 +43,10 @@
 </script>
 
 <script lang="ts">
+  /**
+      Custom changes:
+      * Added derivedHref to prevent malicious js injection via href prop.
+  */
   let {
     class: className,
     variant = "default",
@@ -55,15 +59,29 @@
     isLoading,
     ...restProps
   }: ButtonProps = $props();
+
+  let derivedHref = $derived.by(() => {
+    if (
+      href &&
+      (href.startsWith("http://") ||
+        href.startsWith("https://") ||
+        href.startsWith("mailto:") ||
+        href.startsWith("tel:") ||
+        href.startsWith("/"))
+    ) {
+      return href;
+    }
+    return undefined;
+  });
 </script>
 
-{#if href}
+{#if derivedHref}
   <!-- eslint-disable svelte/no-navigation-without-resolve -->
   <a
     bind:this={ref}
     data-slot="button"
     class={cn(buttonVariants({ variant, size }), className)}
-    href={disabled ? undefined : href}
+    href={disabled ? undefined : derivedHref}
     aria-disabled={disabled}
     role={disabled ? "link" : undefined}
     tabindex={disabled ? -1 : undefined}

@@ -421,7 +421,20 @@ export const PUT: RequestHandler = async ({ locals, params, request }) => {
 
     return json({
       message: "Tenant metadata updated successfully",
-      tenant: updatedTenant,
+      tenant: {
+        id: updatedTenant.id,
+        createdAt: updatedTenant.createdAt,
+        updatedAt: updatedTenant.updatedAt,
+        languages: updatedTenant.languages,
+        defaultLanguage: updatedTenant.defaultLanguage,
+        shortName: updatedTenant.shortName,
+        longName: updatedTenant.longName,
+        descriptions: updatedTenant.descriptions || {},
+        domain: updatedTenant.domain,
+        logo: updatedTenant.logo,
+        setupState: updatedTenant.setupState,
+        links: updatedTenant.links,
+      },
     });
   } catch (error) {
     logError(log)("Error updating tenant metadata", error, locals.user?.id, params.id);
@@ -471,7 +484,20 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     });
 
     return json({
-      tenant: tenantData,
+      tenant: {
+        id: tenantData.id,
+        createdAt: tenantData.createdAt,
+        updatedAt: tenantData.updatedAt,
+        languages: tenantData.languages,
+        defaultLanguage: tenantData.defaultLanguage,
+        shortName: tenantData.shortName,
+        longName: tenantData.longName,
+        descriptions: tenantData.descriptions || {},
+        domain: tenantData.domain,
+        logo: tenantData.logo,
+        setupState: tenantData.setupState,
+        links: tenantData.links,
+      },
     });
   } catch (error) {
     logError(log)("Error getting tenant details", error, locals.user?.id, params.id);

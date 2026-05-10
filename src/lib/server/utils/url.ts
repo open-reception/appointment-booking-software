@@ -4,3 +4,9 @@ export const redactDbUrl = (input: string) => {
   url.password = "redacted-pw";
   return url.toString();
 };
+
+export const isLinkValid = (link: string | undefined) => {
+  return (
+    link?.startsWith("http://") || link?.startsWith("https://") || link === "" || link === undefined
+  );
+};

@@ -1,6 +1,10 @@
-# appointment-booking
+# OpenReception Appointment-booking platform
 
-End-to-end encrypted appointment booking platform
+End-to-end encrypted appointment booking platform to collect appointments for your organization. For details visit our [documentation](https://open-reception.org).
+
+## Production deployment
+
+Follow our [deployment guide](./docs/deployment.md) to deploy to you own server.
 
 ## Local development
 

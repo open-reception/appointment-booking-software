@@ -137,6 +137,32 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
       authMethod: body.passphrase ? "passphrase" : "webauthn",
     });
 
+    const throttleResult = await challengeThrottleService.checkThrottle(
+      body.email,
+      body.passphrase ? "passphrase" : "passkey",
+    );
+
+    if (!throttleResult.allowed) {
+      logger.warn("Login throttled", {
+        email: body.email,
+        retryAfterMs: throttleResult.retryAfterMs,
+        failedAttempts: throttleResult.failedAttempts,
+      });
+
+      return json(
+        {
+          error: "Too many failed attempts. Please try again later.",
+          retryAfterMs: throttleResult.retryAfterMs,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": Math.ceil(throttleResult.retryAfterMs / 1000).toString(),
+          },
+        },
+      );
+    }
+
     // Validate that either passphrase or credential is provided
     if (!body.passphrase && !body.credential) {
       return json(
@@ -222,8 +248,12 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
 
       const isPassphraseValid = await verifyPassphrase(user.passphraseHash, body.passphrase);
       if (!isPassphraseValid) {
+        await challengeThrottleService.recordFailedAttempt(body.email, "passphrase");
         return json({ error: "Invalid passphrase" }, { status: 401 });
       }
+
+      // Clear throttle on successful authentication
+      await challengeThrottleService.clearThrottle(body.email, "passphrase");
 
       logger.debug("Passphrase authentication successful", { userId: user.id });
     }
