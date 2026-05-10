@@ -201,7 +201,7 @@ describe("generateBaseUrl", () => {
       };
 
       const result = generateBaseUrl(requestUrl, tenant);
-      expect(result).toBe("https://new-tenant.old-tenant.example.com");
+      expect(result).toBe("https://new-tenant.example.com");
     });
 
     it("should replace existing subdomain with port", () => {
@@ -223,10 +223,10 @@ describe("generateBaseUrl", () => {
       };
 
       const result = generateBaseUrl(requestUrl, tenant);
-      expect(result).toBe("https://new-tenant.old-tenant.example.com:8443");
+      expect(result).toBe("https://new-tenant.example.com:8443");
     });
 
-    it("should handle complex subdomains (keep last two parts)", () => {
+    it("should strip existing subdomains and prefix with tenant subdomain on apex", () => {
       const requestUrl = new URL("https://admin.api.example.com");
       const tenant: SelectTenant = {
         id: "tenant-1",

@@ -412,7 +412,12 @@ export function generateBaseUrl(requestUrl: URL, tenant: SelectTenant | null): s
   // In production, handle tenant subdomains.
   // Exclude the system tenant when determining if we should use the tenant's domain for the URL, as the system tenant does not have a domain and should use the main domain.
   if (tenant?.domain && tenant.id !== "system") {
-    return `${protocol}//${tenant.domain}.${hostname}${port}`;
+    // Strip any existing subdomain from the request hostname so we don't duplicate it
+    // when prefixing the tenant's subdomain (e.g. request to acme.example.com → acme.example.com,
+    // not acme.acme.example.com).
+    const parts = hostname.split(".");
+    const apex = parts.length > 2 ? parts.slice(-2).join(".") : hostname;
+    return `${protocol}//${tenant.domain}.${apex}${port}`;
   }
 
   // For global admin or no tenant, use main domain
