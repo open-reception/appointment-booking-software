@@ -10,8 +10,8 @@ import { checkPermission } from "$lib/server/utils/permissions";
 registerOpenAPIRoute("/tenants/{id}/calendar", "GET", {
   summary: "Get tenant calendar",
   description:
-    "Retrieves the appointment calendar for a specific tenant within a date range. Shows available time slots, existing appointments, and agent availability. This is a public endpoint that doesn't require authentication.",
-  tags: ["Calendar", "Public"],
+    "Retrieves the appointment calendar for a specific tenant within a date range. Shows available time slots, existing appointments, and agent availability. This is a private endpoint that requires authentication.",
+  tags: ["Calendar", "Private"],
   parameters: [
     {
       name: "id",
