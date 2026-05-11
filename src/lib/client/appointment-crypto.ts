@@ -485,7 +485,7 @@ export class UnifiedAppointmentCrypto {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(isFirstAppointment && this.bookingAccessToken
+          ...(this.bookingAccessToken
             ? { Authorization: `Bearer ${this.bookingAccessToken}` }
             : {}),
         },

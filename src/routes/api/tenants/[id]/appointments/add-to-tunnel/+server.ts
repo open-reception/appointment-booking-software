@@ -6,12 +6,19 @@ import { clientAppointmentTunnel, appointment, channel } from "$lib/server/db/te
 import type { AppointmentResponse } from "$lib/types/appointment";
 import { and, eq } from "drizzle-orm";
 import {
+  AuthenticationError,
+  AuthorizationError,
   ValidationError,
   InternalError,
   BackendError,
   NotFoundError,
   logError,
 } from "$lib/server/utils/errors";
+import {
+  EXISTING_CLIENT_BOOKING_SCOPE,
+  consumeBookingAccessToken,
+  verifyBookingAccessToken,
+} from "$lib/server/auth/booking-access-token";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import {
   sendAppointmentCreatedEmail,
@@ -38,6 +45,51 @@ const requestSchema = z.object({
     authTag: z.string(),
   }),
 });
+
+type AddToTunnelRequest = z.infer<typeof requestSchema>;
+
+async function requireBootstrapBookingAccessToken(
+  request: Request,
+  tenantId: string,
+): Promise<NonNullable<Awaited<ReturnType<typeof verifyBookingAccessToken>>>> {
+  const authorizationHeader = request.headers.get("Authorization");
+  if (!authorizationHeader?.startsWith("Bearer ")) {
+    throw new AuthenticationError("Bootstrap booking access token is required");
+  }
+
+  const token = authorizationHeader.substring("Bearer ".length).trim();
+  if (!token) {
+    throw new AuthenticationError("Bootstrap booking access token is required");
+  }
+
+  const tokenPayload = await verifyBookingAccessToken(token);
+  if (!tokenPayload) {
+    throw new AuthenticationError("Invalid or expired booking access token");
+  }
+
+  if (tokenPayload.scope !== EXISTING_CLIENT_BOOKING_SCOPE) {
+    throw new AuthorizationError("Booking access token is not valid for new client bootstrap");
+  }
+
+  if (tokenPayload.tenantId !== tenantId) {
+    throw new AuthorizationError("Booking access token is not valid for this tenant");
+  }
+
+  return tokenPayload;
+}
+
+function validateBootstrapTokenBinding(
+  tokenPayload: NonNullable<Awaited<ReturnType<typeof verifyBookingAccessToken>>>,
+  requestData: AddToTunnelRequest,
+): void {
+  if (tokenPayload.tunnelId !== requestData.tunnelId) {
+    throw new AuthorizationError("Booking access token is not valid for this tunnel");
+  }
+
+  if (tokenPayload.emailHash && tokenPayload.emailHash !== requestData.emailHash) {
+    throw new AuthorizationError("Booking access token is not valid for this email hash");
+  }
+}
 
 // Register OpenAPI documentation for POST
 registerOpenAPIRoute("/tenants/{id}/appointments/add-to-tunnel", "POST", {
@@ -205,6 +257,10 @@ export const POST: RequestHandler = async ({ request, params }) => {
     const body = await request.json();
     const validatedData = requestSchema.parse(body);
 
+    const tokenPayload = await requireBootstrapBookingAccessToken(request, tenantId);
+
+    validateBootstrapTokenBinding(tokenPayload, validatedData);
+
     if (validatedData.salutation) {
       throw new ValidationError("Bees incoming");
     }
@@ -226,8 +282,8 @@ export const POST: RequestHandler = async ({ request, params }) => {
       .where(eq(clientAppointmentTunnel.emailHash, validatedData.emailHash))
       .limit(1);
 
-    if (tunnelResult.length === 0) {
-      logger.warn("Client tunnel not found", {
+    if (tunnelResult.length === 0 || tunnelResult[0].id !== validatedData.tunnelId) {
+      logger.warn("Client tunnel not found or access denied", {
         tenantId,
         tunnelId: validatedData.tunnelId,
       });
@@ -360,7 +416,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
       });
       // Don't throw - email failure shouldn't fail the appointment creation
     }
-
+    await consumeBookingAccessToken(tokenPayload);
     return json(response);
   } catch (error) {
     logError(logger)("Failed to add appointment to tunnel", error);
@@ -370,6 +426,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
     }
 
     if (error instanceof BackendError) {
+      logError(logger)(error.message, error);
       return error.toJson();
     }
 
