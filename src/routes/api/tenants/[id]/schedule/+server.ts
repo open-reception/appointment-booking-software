@@ -188,7 +188,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
       date: daySchedule.date,
       channels: Object.fromEntries(
         Object.entries(daySchedule.channels)
-          .filter(([_, channelData]) => channelData.channel.isPublic && !channelData.channel.pause) // Only include public and non-paused channels
+          .filter(([, channelData]) => channelData.channel.isPublic && !channelData.channel.pause) // Only include public and non-paused channels
           .map(([channelId, channelData]) => [
             channelId,
             {
