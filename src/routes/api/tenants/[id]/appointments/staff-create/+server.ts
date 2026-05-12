@@ -252,6 +252,18 @@ registerOpenAPIRoute("/tenants/{id}/appointments/staff-create", "POST", {
         },
       },
     },
+    "409": {
+      description: "Selected agent is no longer available for this time slot",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+          example: {
+            error:
+              "Selected agent is no longer available for this time slot. Please choose a different time.",
+          },
+        },
+      },
+    },
     "500": {
       description: "Internal server error",
       content: {

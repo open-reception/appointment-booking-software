@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "../+server";
 import type { RequestEvent } from "@sveltejs/kit";
 import { NotFoundError, ConflictError } from "$lib/server/utils/errors";
+import { ERRORS } from "$lib/errors";
 
 // Mock dependencies
 vi.mock("$lib/server/services/appointment-service", () => ({
@@ -247,6 +248,26 @@ describe("Create New Client API Route", () => {
         tenantId: mockTenantId,
         tunnelId: mockTunnelId,
       });
+    });
+
+    it("should return 409 when selected agent is double-booked", async () => {
+      const { AppointmentService } = await import("$lib/server/services/appointment-service");
+      const { verifyBookingAccessToken } = await import("$lib/server/auth/booking-access-token");
+
+      const mockService = {
+        createNewClientWithAppointment: vi
+          .fn()
+          .mockRejectedValue(new ConflictError(ERRORS.APPOINTMENTS.AGENT_NOT_AVAILABLE)),
+      };
+      vi.mocked(AppointmentService.forTenant).mockResolvedValue(mockService as any);
+      vi.mocked(verifyBookingAccessToken).mockResolvedValue(validTokenPayload as any);
+
+      const event = createMockRequestEvent();
+      const response = await POST(event);
+      const data = await response.json();
+
+      expect(response.status).toBe(409);
+      expect(data.error).toBe(ERRORS.APPOINTMENTS.AGENT_NOT_AVAILABLE);
     });
 
     it("should return 500 for service initialization errors", async () => {

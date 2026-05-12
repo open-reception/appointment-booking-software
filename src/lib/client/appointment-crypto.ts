@@ -153,6 +153,24 @@ export class UnifiedAppointmentCrypto {
   private aesCrypto: AESCrypto = new AESCrypto();
   private shamirSharing: ShamirSecretSharing = new ShamirSecretSharing();
 
+  private async getApiErrorMessage(response: Response, fallback: string): Promise<string> {
+    try {
+      const data = await response.json();
+      if (data && typeof data === "object") {
+        if (typeof data.error === "string" && data.error.length > 0) {
+          return data.error;
+        }
+        if (typeof data.message === "string" && data.message.length > 0) {
+          return data.message;
+        }
+      }
+    } catch {
+      // Ignore parse errors and use fallback
+    }
+
+    return fallback;
+  }
+
   // ===== CLIENT (PATIENT) METHODS =====
 
   /**
@@ -493,7 +511,8 @@ export class UnifiedAppointmentCrypto {
       });
 
       if (!response.ok) {
-        throw new Error("Appointment could not be created");
+        const message = await this.getApiErrorMessage(response, "Appointment could not be created");
+        throw new Error(message);
       }
 
       const result = await response.json();
@@ -623,7 +642,8 @@ export class UnifiedAppointmentCrypto {
       });
 
       if (!response.ok) {
-        throw new Error("Appointment could not be created");
+        const message = await this.getApiErrorMessage(response, "Appointment could not be created");
+        throw new Error(message);
       }
 
       const result = await response.json();

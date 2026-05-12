@@ -6,6 +6,7 @@
   import { Button } from "$lib/components/ui/button";
   import { Text } from "$lib/components/ui/typography";
   import { ROUTES } from "$lib/const/routes";
+  import { ERRORS } from "$lib/errors";
   import { publicStore } from "$lib/stores/public.js";
   import { toast } from "svelte-sonner";
 
@@ -41,11 +42,19 @@
           const isRequest = channel.requiresConfirmation;
           goto(resolve(ROUTES.APPOINTMENT_BOOKED), { state: { isRequest } });
         })
-        .catch(() => {
-          toast.error(m["public.steps.summary.error"]());
+        .catch((error: unknown) => {
+          if (error instanceof Error && error.message === ERRORS.APPOINTMENTS.AGENT_NOT_AVAILABLE) {
+            toast.error(m["public.steps.summary.errorSlotUnavailable"]());
+          } else {
+            toast.error(m["public.steps.summary.error"]());
+          }
+        })
+        .finally(() => {
           isSubmitting = false;
         });
+      return;
     }
+
     isSubmitting = false;
   };
 </script>
