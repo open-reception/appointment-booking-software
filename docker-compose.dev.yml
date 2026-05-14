@@ -40,6 +40,16 @@ services:
       - /tmp
       - /var/run/postgresql
 
+  maildev:
+    image: maildev/maildev
+    container_name: appointment-booking-maildev-dev
+    restart: unless-stopped
+    ports:
+      - "1080:1080"
+      - "1025:1025"
+    networks:
+      - appointment-booking-dev
+
 volumes:
   postgres_data_dev:
     driver: local

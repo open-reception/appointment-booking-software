@@ -62,18 +62,21 @@ export function createEmailRecipient(
  * @private
  */
 function createTransporter() {
-  if (!env.SMTP_HOST || !env.SMTP_PORT || !env.SMTP_USER || !env.SMTP_PASS) {
+  if (!env.SMTP_HOST || !env.SMTP_PORT) {
     throw new Error("SMTP configuration is incomplete. Please check your environment variables.");
   }
-  const config = {
+  const config: any = {
     host: env.SMTP_HOST,
     port: parseInt(env.SMTP_PORT),
     secure: env.SMTP_SECURE === "true",
-    auth: {
-      user: env.SMTP_USER,
-      pass: env.SMTP_PASS,
-    },
   };
+
+  if (env.SMTP_USER) {
+    config.auth = {
+      user: env.SMTP_USER,
+      pass: env.SMTP_PASS || "",
+    };
+  }
   return nodemailer.createTransport(config);
 }
 
