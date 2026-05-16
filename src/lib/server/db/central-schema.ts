@@ -242,6 +242,8 @@ export const userInvite = pgTable(
 export const challengeThrottle = pgTable("challenge_throttle", {
   /** Primary key - identifier (email hash for PIN challenges, email for passkey challenges) */
   id: text("id").primaryKey(),
+  /** Tenant ID for scoping throttles to single tenants to restrict global lock-out. Might be null for global throttles on administrative accounts */
+  tenantId: uuid("tenant_id").references(() => tenant.id, { onDelete: "cascade" }),
   /** Number of failed attempts */
   failedAttempts: integer("failed_attempts").default(0).notNull(),
   /** When the throttle was last updated */

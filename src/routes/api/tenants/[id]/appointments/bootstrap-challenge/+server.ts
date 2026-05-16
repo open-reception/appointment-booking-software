@@ -107,7 +107,11 @@ export const POST: RequestHandler = async ({ request, params }) => {
       emailHash: body.emailHash,
     });
 
-    const throttleResult = await challengeThrottleService.checkThrottle(binding, "passkey");
+    const throttleResult = await challengeThrottleService.checkThrottle(
+      binding,
+      "passkey",
+      tenantId,
+    );
     if (!throttleResult.allowed) {
       return json(
         {

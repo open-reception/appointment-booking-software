@@ -124,7 +124,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
     }
 
     if (storedChallenge.emailHash !== binding) {
-      await challengeThrottleService.recordFailedAttempt(binding, "passkey");
+      await challengeThrottleService.recordFailedAttempt(binding, "passkey", tenantId);
       throw new ValidationError("Invalid bootstrap challenge binding");
     }
 
@@ -136,11 +136,11 @@ export const POST: RequestHandler = async ({ request, params }) => {
     });
 
     if (!matchesPowDifficulty(digest, NEW_CLIENT_BOOTSTRAP_DIFFICULTY)) {
-      await challengeThrottleService.recordFailedAttempt(binding, "passkey");
+      await challengeThrottleService.recordFailedAttempt(binding, "passkey", tenantId);
       throw new ValidationError("Invalid bootstrap proof of work");
     }
 
-    await challengeThrottleService.clearThrottle(binding, "passkey");
+    await challengeThrottleService.clearThrottle(binding, "passkey", tenantId);
 
     const bookingAccessToken = await generateNewClientBootstrapToken({
       tenantId,
