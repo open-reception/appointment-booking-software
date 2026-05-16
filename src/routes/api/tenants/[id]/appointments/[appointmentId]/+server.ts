@@ -1,12 +1,6 @@
 import { json } from "@sveltejs/kit";
 import { AppointmentService } from "$lib/server/services/appointment-service";
-import {
-  BackendError,
-  InternalError,
-  logError,
-  NotFoundError,
-  ValidationError,
-} from "$lib/server/utils/errors";
+import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";

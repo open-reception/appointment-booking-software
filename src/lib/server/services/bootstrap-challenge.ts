@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-export const NEW_CLIENT_BOOTSTRAP_DIFFICULTY = 4;
+export const NEW_CLIENT_BOOTSTRAP_DIFFICULTY = 5;
 
 export function createBootstrapBinding(input: {
   tenantId: string;
