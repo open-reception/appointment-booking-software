@@ -213,9 +213,12 @@ export class StaffService {
           const deletedInvites = await tx
             .delete(userInvite)
             .where(
-              or(
-                eq(userInvite.createdUserId, staffId),
-                eq(userInvite.email, userToDelete[0].email),
+              and(
+                eq(userInvite.tenantId, tenantId),
+                or(
+                  eq(userInvite.createdUserId, staffId),
+                  eq(userInvite.email, userToDelete[0].email),
+                ),
               ),
             );
           logger.debug("Deleted user invites", {
