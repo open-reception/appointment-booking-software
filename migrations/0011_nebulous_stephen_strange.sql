@@ -1,0 +1,2 @@
+ALTER TABLE "challenge_throttle" ADD COLUMN "tenant_id" uuid;--> statement-breakpoint
+ALTER TABLE "challenge_throttle" ADD CONSTRAINT "challenge_throttle_tenant_id_tenant_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenant"("id") ON DELETE cascade ON UPDATE no action;
