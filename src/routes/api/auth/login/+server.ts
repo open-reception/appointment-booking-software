@@ -206,11 +206,11 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
             const tenantService = await TenantAdminService.getTenantById(user.tenantId);
             const tenant = tenantService.tenantData;
 
-            if (!tenant || tenant.shortName !== subdomain) {
+            if (!tenant || tenant.domain !== subdomain) {
               logger.warn("Login attempt from wrong subdomain", {
                 userId: user.id,
                 email: user.email,
-                expectedSubdomain: tenant?.shortName,
+                expectedSubdomain: tenant?.domain,
                 actualSubdomain: subdomain,
                 tenantId: user.tenantId,
               });
