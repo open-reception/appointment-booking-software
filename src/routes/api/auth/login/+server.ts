@@ -206,12 +206,12 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
             const tenantService = await TenantAdminService.getTenantById(user.tenantId);
             const tenant = tenantService.tenantData;
 
-            if (!tenant || tenant.domain !== subdomain) {
-              logger.warn("Login attempt from wrong subdomain", {
+            if (!tenant || tenant.domain !== hostname) {
+              logger.warn("Login attempt from wrong domain", {
                 userId: user.id,
                 email: user.email,
-                expectedSubdomain: tenant?.domain,
-                actualSubdomain: subdomain,
+                expectedDomain: tenant?.domain,
+                hostname: hostname,
                 tenantId: user.tenantId,
               });
               return json({ error: "Unknown user does for tenant" }, { status: 401 });
