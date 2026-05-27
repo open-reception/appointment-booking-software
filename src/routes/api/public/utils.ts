@@ -20,14 +20,14 @@ export const getTenantIdByDomain = async (
     return tenants[0].id || null;
   } else {
     // Get tenant ID by domain in production
-    const shortName = domain.replace("https://", "").split(".")[0];
+    const cleanDomain = domain.replace("https://", "");
     try {
       const tenants = await db
         .select({
           id: tenant.id,
         })
         .from(tenant)
-        .where(eq(tenant.shortName, shortName))
+        .where(eq(tenant.domain, cleanDomain))
         .limit(1);
       return tenants[0]?.id || null;
     } catch (error) {
