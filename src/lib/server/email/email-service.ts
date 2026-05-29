@@ -545,10 +545,8 @@ export async function sendAppointmentCancelledEmail(
 
 /**
  * Send notification email
- * @param {SelectClient | SelectUser} user - Database user object or client data
- * @param {SelectTenant} tenant - Tenant information for branding
- * @param {SelectAppointment} appointment - Cancelled appointment details
- * @param {string} [channelTitle] - Optional channel title/name
+ * @param {SelectUser} user - Database user object or client data
+ * @param {{ domain: string; longName: string }} tenant - Tenant information for branding
  * @throws {Error} When email sending fails
  * @returns {Promise<void>}
  */
