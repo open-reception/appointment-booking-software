@@ -14,6 +14,7 @@
     type: "date" | "datetime-local";
     defaultTime: TimeFields;
     value?: string;
+    onChanged?: (value: Date) => void;
   };
 
   let { id, type, defaultTime, value = $bindable(), ...restProps }: Props = $props();
@@ -23,6 +24,9 @@
 
   const updateValue = (newValue: DateValue) => {
     value = newValue.toDate(getLocalTimeZone()).toISOString();
+    if (restProps.onChanged) {
+      restProps.onChanged(new Date(value));
+    }
   };
 
   const onChangeDate = (dateValue: DateValue | undefined) => {

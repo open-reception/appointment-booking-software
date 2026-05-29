@@ -14,13 +14,15 @@
   import { reasons } from "../utils";
   import { formSchema } from "./schema";
   import { getDefaultStartTime, getDefaultEndTime } from "$lib/utils/datetime";
+  import { untrack } from "svelte";
 
   let { done }: { done: () => void } = $props();
 
   const agents = $derived($agentsStore.agents ?? []);
+  const initialAgent = untrack(() => (agents.length === 1 ? agents[0].id : ""));
   const form = superForm(
     {
-      agent: "",
+      agent: initialAgent,
       absenceType: "VACATION",
       startDate: getDefaultStartTime(),
       endDate: getDefaultEndTime(),
@@ -43,6 +45,7 @@
 
   let isSubmitting = $state(false);
   let isAllDay = $state(false);
+  let endDateTouched = $state(false);
 
   const { form: formData, enhance } = form;
 </script>
@@ -111,6 +114,9 @@
       label={m["absences.add.fields.isAllDay.label"]()}
       onCheckedChange={(v) => {
         isAllDay = v;
+        if (v) {
+          setTimeout(() => (endDateTouched = false), 100);
+        }
       }}
       class="mt-2 mb-1"
     />
@@ -123,6 +129,25 @@
             type={isAllDay ? "date" : "datetime-local"}
             bind:value={$formData.startDate}
             defaultTime={{ hour: 0, minute: 0, second: 0 }}
+            onChanged={() => {
+              if (!endDateTouched && $formData.endDate <= $formData.startDate) {
+                if (!isAllDay) {
+                  const startDate = new Date($formData.startDate);
+                  const endDate = new Date($formData.endDate);
+                  startDate.setHours(
+                    endDate.getHours(),
+                    endDate.getMinutes(),
+                    endDate.getSeconds(),
+                    endDate.getMilliseconds(),
+                  );
+                  $formData.endDate = startDate.toISOString();
+                } else {
+                  const startDate = new Date($formData.startDate);
+                  startDate.setHours(23, 59, 59, 999);
+                  $formData.endDate = startDate.toISOString();
+                }
+              }
+            }}
           />
         {/snippet}
       </Form.Control>
@@ -137,6 +162,7 @@
             type={isAllDay ? "date" : "datetime-local"}
             bind:value={$formData.endDate}
             defaultTime={{ hour: 23, minute: 59, second: 59 }}
+            onChanged={() => (endDateTouched = true)}
           />
         {/snippet}
       </Form.Control>
