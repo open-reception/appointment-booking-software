@@ -291,6 +291,7 @@ export class UserService {
             tenantId: string | null;
             role: "GLOBAL_ADMIN" | "TENANT_ADMIN" | "STAFF";
             email: string;
+            used?: boolean;
           }
         | undefined = undefined;
 
@@ -320,6 +321,7 @@ export class UserService {
             email: centralSchema.userInvite.email,
             name: centralSchema.userInvite.name,
             language: centralSchema.userInvite.language,
+            used: centralSchema.userInvite.used,
           })
           .from(centralSchema.userInvite)
           .where(
@@ -337,6 +339,26 @@ export class UserService {
           throw new NotFoundError("Invalid or timed-out token");
         } else {
           resultData = { ...inviteData[0], recoveryPassphrase: null };
+          if (resultData.used) {
+            log.warn("User invite was already confirmed.", {
+              email: resultData.email,
+              tenantId: resultData.tenantId,
+            });
+            return {
+              recoveryPassphrase: undefined,
+              isSetup: false,
+              id: resultData.id,
+              email: resultData.email,
+              name: resultData.name,
+              language: resultData.language,
+              tenantId: resultData.tenantId,
+            };
+          }
+          log.info("User confirmation successful via invite", {
+            email: resultData.email,
+            tenantId: resultData.tenantId,
+          });
+
           const userDataForDb: InsertUser = {
             name: resultData.name!,
             email: resultData.email,
