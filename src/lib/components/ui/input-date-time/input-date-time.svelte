@@ -4,7 +4,7 @@
   import { Input } from "$lib/components/ui/input/index.js";
   import * as Popover from "$lib/components/ui/popover/index.js";
   import { toInputDateTime } from "$lib/utils/datetime";
-  import type { DateValue } from "@internationalized/date";
+  import type { DateValue, TimeFields } from "@internationalized/date";
   import { getLocalTimeZone } from "@internationalized/date";
   import ChevronDownIcon from "@lucide/svelte/icons/chevron-down";
   import type { ChangeEventHandler, HTMLInputAttributes } from "svelte/elements";
@@ -12,10 +12,11 @@
   type Props = Omit<HTMLInputAttributes, "type" | "files"> & {
     id: string;
     type: "date" | "datetime-local";
+    defaultTime: TimeFields;
     value?: string;
   };
 
-  let { id, type, value = $bindable(), ...restProps }: Props = $props();
+  let { id, type, defaultTime, value = $bindable(), ...restProps }: Props = $props();
 
   let open = $state(false);
   let derivedValue = $derived(toInputDateTime(value));
@@ -55,8 +56,8 @@
   };
 
   $effect(() => {
-    if (type === "date" && derivedValue.hour !== 0) {
-      updateValue(derivedValue.copy().set({ hour: 0, minute: 0, second: 0, millisecond: 0 }));
+    if (type === "date" && ![0, 23].includes(derivedValue.hour)) {
+      updateValue(derivedValue.copy().set(defaultTime));
     }
   });
 </script>

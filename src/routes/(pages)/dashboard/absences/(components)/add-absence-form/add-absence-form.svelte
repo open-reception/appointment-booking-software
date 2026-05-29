@@ -122,6 +122,7 @@
             {...props}
             type={isAllDay ? "date" : "datetime-local"}
             bind:value={$formData.startDate}
+            defaultTime={{ hour: 0, minute: 0, second: 0 }}
           />
         {/snippet}
       </Form.Control>
@@ -135,6 +136,7 @@
             {...props}
             type={isAllDay ? "date" : "datetime-local"}
             bind:value={$formData.endDate}
+            defaultTime={{ hour: 23, minute: 59, second: 59 }}
           />
         {/snippet}
       </Form.Control>
