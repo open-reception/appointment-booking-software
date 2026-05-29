@@ -1034,6 +1034,12 @@
 			"hint": "Dieser Link ist nur {expirationMinutes} Minuten gültig und kann nur einmal verwendet werden.",
 			"reason": "Du erhältst diese E-Mail, weil jemand für Deine E-Mail Adresse ein Konto registriert hat."
 		},
+		"notification": {
+			"subject": "Aktivität in Deinem Terminbuchungsportal",
+			"introduction": "in Deinem Terminbuchungsportal gab es eine neue Aktivität. Bitte logge Dich ein, um die Details zu sehen.",
+			"action": "Dashboard öffnen",
+			"reason": "Du erhältst diese E-Mail, weil Du für einen Kanal Benachrichtigungen aktiviert hast."
+		},
 		"pinReset": {
 			"subject": "PIN erfolgreich geändert",
 			"introduction": "Sie haben erfolgreich Ihre PIN beim Terminbuchungsportal von {tenant} geändert und können sich ab sofort mit Ihrer PIN anmelden.",

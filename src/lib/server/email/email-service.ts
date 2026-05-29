@@ -24,6 +24,7 @@ import Confirmation from "$lib/emails/Confirmation.svelte";
 import PinReset from "$lib/emails/PinReset.svelte";
 import UserInvite from "$lib/emails/UserInvite.svelte";
 import { dev } from "$app/environment";
+import Notification from "$lib/emails/Notification.svelte";
 
 export type SelectClient = {
   email: string;
@@ -533,6 +534,37 @@ export async function sendAppointmentCancelledEmail(
       tenant,
       appointment: { ...appointment, agentName: "---" },
       address: await getAddressFromTenant(tenant.id),
+    },
+  });
+  const html = renderOutputToHtml(emailRender);
+  const text = htmlToText(html);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await sendEmail(recipient as any, subject, html, text, tenant.longName);
+}
+
+/**
+ * Send notification email
+ * @param {SelectClient | SelectUser} user - Database user object or client data
+ * @param {SelectTenant} tenant - Tenant information for branding
+ * @param {SelectAppointment} appointment - Cancelled appointment details
+ * @param {string} [channelTitle] - Optional channel title/name
+ * @throws {Error} When email sending fails
+ * @returns {Promise<void>}
+ */
+export async function sendNotificationEmail(
+  user: SelectUser,
+  tenant: { domain: string; longName: string },
+): Promise<void> {
+  // Create recipient directly for SelectClient type, use helper for SelectUser
+  const { recipient, locale } = await getRecipient(user);
+  // Generate email
+  const subject = m["emails.notification.subject"]();
+  const emailRender = render(Notification, {
+    props: {
+      locale,
+      user,
+      dashboardUrl: dev ? `http://localhost:5173/dashboard` : `https://${tenant.domain}/dashboard`,
     },
   });
   const html = renderOutputToHtml(emailRender);

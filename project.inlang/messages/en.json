@@ -1049,6 +1049,12 @@
 			"action": "Login",
 			"reason": "You are receiving this email because someone changed the PIN-Code for your account."
 		},
+		"notification": {
+			"subject": "Activity in your appointment booking platform",
+			"introduction": "There is new activity in your appointment booking platform. Please log in to view details.",
+			"action": "Open Dashboard",
+			"reason": "You are receiving this email because you have notifications enabled for a channel."
+		},
 		"userInvite": {
 			"subject": "Confirm your E-Mail Address",
 			"introduction": "welcome our appointment booking platform. Please confirm your e-mail address.",
