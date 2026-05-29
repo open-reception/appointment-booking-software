@@ -1039,13 +1039,6 @@
 			"introduction": "Sie haben erfolgreich Ihre PIN beim Terminbuchungsportal von {tenant} geändert und können sich ab sofort mit Ihrer PIN anmelden.",
 			"action": "Anmelden",
 			"reason": "Sie erhalten diese E-Mail, weil jemand für die PIN für Ihr Konto geändert hat."
-		},
-		"userInvite": {
-			"subject": "E-Mail Adresse bestätigen",
-			"introduction": "willkommen beim Terminbuchungsportal von {tenant}. Bitte bestätige Deine E-Mail Adresse.",
-			"action": "E-Mail Adresse bestätigen",
-			"hint": "Dieser Link ist nur {expirationMinutes} Minuten gültig und kann nur einmal verwendet werden.",
-			"reason": "Du erhältst diese E-Mail, weil jemand für Deine E-Mail Adresse ein Konto registriert hat."
 		}
 	},
 	"notifications": {

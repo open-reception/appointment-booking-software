@@ -1,6 +1,5 @@
-import { dev } from "$app/environment";
 import { UniversalLogger } from "$lib/logger";
-import { sendUserInviteEmail } from "$lib/server/email/email-service";
+import { sendConfirmationEmail } from "$lib/server/email/email-service";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { InviteService } from "$lib/server/services/invite-service";
 import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
@@ -128,7 +127,7 @@ registerOpenAPIRoute("/auth/invite", "POST", {
   },
 });
 
-export const POST: RequestHandler = async ({ request, locals }) => {
+export const POST: RequestHandler = async ({ request, locals, url }) => {
   try {
     // Verify user is authenticated
     if (!locals.user) {
@@ -200,12 +199,14 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       language,
     );
 
-    // Generate registration URL with secure invite code
-    const baseUrl = dev ? "http://localhost:5173" : `https://${tenant.domain}`;
-    const registrationUrl = `${baseUrl}/confirm/${invitation.inviteCode}`;
-
     // Send invitation email
-    await sendUserInviteEmail(email, name, tenant, role, registrationUrl, language);
+    await sendConfirmationEmail(
+      { id: invitation.id, email, language, name },
+      tenant,
+      invitation.inviteCode,
+      10, // 10 minutes expiration to match tokenValidUntil
+      url,
+    );
 
     logger.debug("User invitation sent successfully", {
       invitedEmail: email,

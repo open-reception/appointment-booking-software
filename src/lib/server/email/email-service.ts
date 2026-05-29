@@ -22,7 +22,6 @@ import { AgentService } from "../services/agent-service";
 import { TenantService } from "../db/tenant-service";
 import Confirmation from "$lib/emails/Confirmation.svelte";
 import PinReset from "$lib/emails/PinReset.svelte";
-import UserInvite from "$lib/emails/UserInvite.svelte";
 import { dev } from "$app/environment";
 
 export type SelectClient = {
@@ -450,50 +449,6 @@ export async function sendConfirmationEmail(
       user: user as SelectUserEmail,
       confirmUrl,
       expirationMinutes,
-    },
-  });
-  const html = renderOutputToHtml(emailRender);
-  const text = htmlToText(html);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await sendEmail(recipient as any, subject, html, text, tenant.longName);
-}
-
-/**
- * Send user invitation email for existing tenant
- * @param {string} userEmail - Email address of the invited user
- * @param {string} userName - Name of the invited user
- * @param {SelectTenant} tenant - Tenant information for branding
- * @param {string} role - Role to assign to the user (TENANT_ADMIN or STAFF) - for logging only
- * @param {string} registrationUrl - URL for user to register (contains secure invite code)
- * @param {Language} [language="en"] - Email language
- * @throws {Error} When email sending fails
- * @returns {Promise<void>}
- */
-export async function sendUserInviteEmail(
-  userEmail: string,
-  userName: string,
-  tenant: SelectTenant,
-  role: "TENANT_ADMIN" | "STAFF",
-  registrationUrl: string,
-  language: Language = "en",
-): Promise<void> {
-  const { recipient, locale } = await getRecipient({ email: userEmail, name: userName, language });
-
-  // Generate email
-  const subject = m["emails.userInvite.subject"](
-    {
-      tenant: tenant.longName,
-    },
-    { locale },
-  );
-  const emailRender = render(UserInvite, {
-    props: {
-      locale,
-      user: recipient as SelectUserEmail,
-      tenant,
-      confirmUrl: registrationUrl,
-      expirationMinutes: 30,
     },
   });
   const html = renderOutputToHtml(emailRender);

@@ -145,8 +145,8 @@ describe("UserService", () => {
 
       expect(mockCentralDb.update).toHaveBeenCalled();
       expect(mockUpdateBuilder.set).toHaveBeenCalledWith({
-        token: "018f-a1b2-c3d4-e5f6-789abcdef012",
-        tokenValidUntil: expect.any(Date),
+        inviteCode: "018f-a1b2-c3d4-e5f6-789abcdef012",
+        expiresAt: expect.any(Date),
       });
       expect(mockUpdateBuilder.where).toHaveBeenCalled();
       expect(mockUpdateBuilder.returning).toHaveBeenCalled();

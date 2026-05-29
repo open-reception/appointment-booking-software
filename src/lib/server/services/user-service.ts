@@ -219,9 +219,9 @@ export class UserService {
 
     try {
       const result = await centralDb
-        .update(centralSchema.user)
-        .set({ token, tokenValidUntil })
-        .where(eq(centralSchema.user.email, email))
+        .update(centralSchema.userInvite)
+        .set({ inviteCode: token, expiresAt: tokenValidUntil })
+        .where(eq(centralSchema.userInvite.email, email))
         .returning();
 
       if (result.length !== 1) {
