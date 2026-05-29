@@ -24,6 +24,11 @@
 			"success": "E-Mail was resent"
 		},
 		"confirm": {
+			"claim": {
+				"title": "Claim your account",
+				"description": "Click to claim your new account",
+				"action": "Claim account"
+			},
 			"success": {
 				"title": "Good job!",
 				"description": "You’ve secured this instance.",

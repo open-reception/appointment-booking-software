@@ -23,6 +23,11 @@
 			"success": "E-Mail wurde gesendet"
 		},
 		"confirm": {
+			"claim": {
+				"title": "Konto einrichten",
+				"description": "Klicken Sie, um Ihr neues Konto einzurichten.",
+				"action": "Konto einrichten"
+			},
 			"success": {
 				"title": "Gute Arbeit!",
 				"description": "Du hast Dir diese Instanz gesichert.",

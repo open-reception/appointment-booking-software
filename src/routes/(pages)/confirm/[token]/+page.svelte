@@ -1,16 +1,18 @@
 <script lang="ts">
+  import { enhance } from "$app/forms";
+  import { goto } from "$app/navigation";
+  import { resolve } from "$app/paths";
   import { m } from "$i18n/messages.js";
   import { CenteredCard } from "$lib/components/layouts";
   import { CenterState } from "$lib/components/templates/empty-state";
   import { Button } from "$lib/components/ui/button";
   import { PageWithClaim } from "$lib/components/ui/page";
-  import Ban from "@lucide/svelte/icons/ban";
-  import Check from "@lucide/svelte/icons/check";
   import { ROUTES } from "$lib/const/routes";
-  import { goto } from "$app/navigation";
-  import { resolve } from "$app/paths";
+  import { Ban, Check, Drum } from "@lucide/svelte";
+  import type { Error, Success } from "./types.js";
 
-  const { data } = $props();
+  let isSubmitting = $state(false);
+  let confirmation: Error | Success | undefined = $state();
 </script>
 
 <svelte:head>
@@ -20,8 +22,14 @@
 <PageWithClaim isWithLanguageSwitch>
   <CenteredCard.Root>
     <CenteredCard.Main>
-      {#if data.confirmation.success}
-        {#if data.confirmation.isSetup}
+      {#if !confirmation}
+        <CenterState
+          Icon={Drum}
+          headline={m["setup.confirm.claim.title"]()}
+          description={m["setup.confirm.claim.description"]()}
+        />
+      {:else if confirmation.success}
+        {#if confirmation.isSetup}
           <CenterState
             Icon={Check}
             headline={m["setup.confirm.success.title"]()}
@@ -43,8 +51,32 @@
       {/if}
     </CenteredCard.Main>
     <CenteredCard.Action>
-      {#if data.confirmation.success}
-        {#if data.confirmation.isSetup}
+      {#if !confirmation}
+        <form
+          method="POST"
+          use:enhance={() => {
+            isSubmitting = true;
+            return async ({ result, update }) => {
+              isSubmitting = false;
+              if (result.type === "success" && result.data?.confirmation) {
+                confirmation = result.data.confirmation as Success | Error;
+              }
+              await update();
+            };
+          }}
+        >
+          <Button
+            size="lg"
+            class="w-full"
+            type="submit"
+            disabled={isSubmitting}
+            isLoading={isSubmitting}
+          >
+            {m["setup.confirm.claim.action"]()}
+          </Button>
+        </form>
+      {:else if confirmation.success}
+        {#if confirmation.isSetup}
           <CenteredCard.ActionHint>
             {m["setup.confirm.success.hint"]()}
           </CenteredCard.ActionHint>
@@ -55,14 +87,17 @@
           <Button
             size="lg"
             class="w-full"
-            onclick={() =>
-              goto(resolve(ROUTES.SETUP_PASSKEY), {
-                state: {
-                  id: data.confirmation.id,
-                  email: data.confirmation.email,
-                  tenantId: data.confirmation.tenantId,
-                },
-              })}
+            onclick={() => {
+              if (confirmation?.success) {
+                goto(resolve(ROUTES.SETUP_PASSKEY), {
+                  state: {
+                    id: confirmation.id,
+                    email: confirmation.email,
+                    tenantId: confirmation.tenantId,
+                  },
+                });
+              }
+            }}
           >
             {m["confirm.success.action"]()}
           </Button>
