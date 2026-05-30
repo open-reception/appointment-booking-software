@@ -122,8 +122,6 @@ export const user = pgTable(
     lastLoginAt: timestamp("last_login_at"),
     isActive: boolean("is_active").default(true),
     confirmationState: confirmationStateEnum("confirmation_state").default("INVITED"),
-    token: text("token"),
-    tokenValidUntil: timestamp("token_valid_until"),
     /** Hashed passphrase for password authentication (optional, alternative to WebAuthn) */
     passphraseHash: text("passphrase_hash"),
     /** Recovery passphrase for WebAuthn-only users (stored in plain text, shown only once) */

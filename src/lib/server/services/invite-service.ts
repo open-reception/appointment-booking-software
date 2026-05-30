@@ -33,7 +33,7 @@ export class InviteService {
         tenantId,
         invitedBy,
         language,
-        expiresAt: sql`timezone('utc', now()) + interval '30 minutes'`,
+        expiresAt: sql`timezone('utc', now()) + interval '10 minutes'`,
         used: false,
       };
 

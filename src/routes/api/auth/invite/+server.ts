@@ -212,6 +212,7 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
       invitedEmail: email,
       tenantId,
       role,
+      language,
     });
 
     return json({
