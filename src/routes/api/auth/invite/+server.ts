@@ -1,3 +1,4 @@
+import { dev } from "$app/environment";
 import { UniversalLogger } from "$lib/logger";
 import { sendConfirmationEmail } from "$lib/server/email/email-service";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
@@ -205,7 +206,7 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
       tenant,
       invitation.inviteCode,
       10, // 10 minutes expiration to match tokenValidUntil
-      url,
+      dev ? url : new URL(`https://${tenant.domain}`),
     );
 
     logger.debug("User invitation sent successfully", {

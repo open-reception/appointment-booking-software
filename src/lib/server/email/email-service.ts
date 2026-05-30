@@ -433,7 +433,7 @@ export async function sendConfirmationEmail(
   tenant: SelectTenant,
   confirmationCode: string,
   expirationMinutes: number = 15,
-  requestUrl?: URL,
+  requestUrl: URL,
 ): Promise<void> {
   // Generate appropriate base URL if request URL is provided
   const baseUrl = requestUrl ? generateBaseUrl(requestUrl, tenant) : "http://localhost:5173";

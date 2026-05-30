@@ -124,7 +124,7 @@ describe("UserService", () => {
         .mockReturnValueOnce(mockInviteInsertBuilder)
         .mockReturnValueOnce(mockInsertBuilder);
 
-      const result = await UserService.createUser(adminData);
+      const result = await UserService.createUser(adminData, new URL("http://localhost:5173"));
 
       expect(mockCentralDb.insert).toHaveBeenCalled();
       expect(mockInsertBuilder.values).toHaveBeenCalledWith({
@@ -158,7 +158,7 @@ describe("UserService", () => {
 
       mockCentralDb.update.mockReturnValue(mockUpdateBuilder);
 
-      await UserService.resendConfirmationEmail(email);
+      await UserService.resendConfirmationEmail(email, new URL("http://localhost:5173"));
 
       expect(mockCentralDb.update).toHaveBeenCalled();
       expect(mockUpdateBuilder.set).toHaveBeenCalledWith({
@@ -180,7 +180,9 @@ describe("UserService", () => {
 
       mockCentralDb.update.mockReturnValue(mockUpdateBuilder);
 
-      await expect(UserService.resendConfirmationEmail(email)).rejects.toThrow(NotFoundError);
+      await expect(
+        UserService.resendConfirmationEmail(email, new URL("http://localhost:5173")),
+      ).rejects.toThrow(NotFoundError);
     });
   });
 
