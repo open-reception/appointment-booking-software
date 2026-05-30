@@ -99,7 +99,7 @@ export class UserService {
   /**
    * Create a new user
    */
-  static async createUser(userData: UserCreation, requestUrl?: URL) {
+  static async createUser(userData: UserCreation, requestUrl: URL) {
     const log = logger.setContext("UserService");
     log.debug("Creating new user account", {
       email: userData.email,
@@ -208,9 +208,9 @@ export class UserService {
   /**
    * Resend the confirmation email for a user
    * @param email - Email of the user to confirm
-   * @param requestUrl - Optional request URL for generating correct baseUrl
+   * @param requestUrl - request URL for generating correct baseUrl
    */
-  static async resendConfirmationEmail(email: string, requestUrl?: URL): Promise<void> {
+  static async resendConfirmationEmail(email: string, requestUrl: URL): Promise<void> {
     const log = logger.setContext("UserService");
     log.debug("Resending confirmation email", { email });
 

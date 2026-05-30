@@ -467,7 +467,13 @@ describe("Email System", () => {
       const confirmationCode = "ABC123";
       const expirationMinutes = 15;
 
-      await sendConfirmationEmail(staffUser, mockTenant, confirmationCode, expirationMinutes);
+      await sendConfirmationEmail(
+        staffUser,
+        mockTenant,
+        confirmationCode,
+        expirationMinutes,
+        new URL("https://example.com"),
+      );
 
       expect(mockSendMail).toHaveBeenCalled();
     });
@@ -506,7 +512,13 @@ describe("Email System", () => {
       const confirmationCode = "XYZ789";
       const expirationMinutes = 10;
 
-      await sendConfirmationEmail(staffUser, mockTenant, confirmationCode, expirationMinutes);
+      await sendConfirmationEmail(
+        staffUser,
+        mockTenant,
+        confirmationCode,
+        expirationMinutes,
+        new URL("https://example.com"),
+      );
 
       expect(mockSendMail).toHaveBeenCalled();
     });
