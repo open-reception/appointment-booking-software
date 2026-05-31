@@ -1,14 +1,17 @@
-import { getTenantDb } from "../db";
+import { centralDb, getTenantDb } from "../db";
 import {
   notification,
   channelStaff,
   notificationTypes,
   type NotificationType,
 } from "../db/tenant-schema";
-import { eq, and, desc } from "drizzle-orm";
+import { user } from "$lib/server/db/central-schema";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import logger from "$lib/logger";
 import { z } from "zod";
 import { ValidationError, NotFoundError } from "../utils/errors";
+import { sendNotificationEmail } from "../email/email-service";
+import { TenantAdminService } from "./tenant-admin-service";
 
 const notificationCreationSchema = z.object({
   channelId: z.uuid({ message: "Invalid UUID format" }),
@@ -104,6 +107,30 @@ export class NotificationService {
         .insert(notification)
         .values(notificationsToCreate)
         .returning({ id: notification.id });
+
+      // Send e-mail notifications
+      if (request.type === "APPOINTMENT_REQUESTED") {
+        const userAccounts = await centralDb
+          .select()
+          .from(user)
+          .where(
+            inArray(
+              user.id,
+              notificationsToCreate.map((n) => n.staffId),
+            ),
+          );
+        if (userAccounts.length > 0) {
+          const adminService = await TenantAdminService.getTenantById(this.tenantId);
+          const tenant = adminService.tenantData;
+          if (tenant) {
+            await Promise.all(
+              userAccounts.map((staff) =>
+                sendNotificationEmail(staff, { domain: tenant.domain, longName: tenant.longName }),
+              ),
+            );
+          }
+        }
+      }
 
       log.info("Created notifications for channel", {
         channelId: request.channelId,
