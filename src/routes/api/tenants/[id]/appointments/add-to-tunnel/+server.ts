@@ -381,7 +381,9 @@ export const POST: RequestHandler = async ({ request, params }) => {
           (await notificationService).createNotification({
             type: "APPOINTMENT_REQUESTED",
             channelId: validatedData.channelId,
-            metaData: { appointmentId: result.id },
+            metaData: {
+              appointmentId: result.id,
+            },
           });
         }
         if (validatedData.clientEmail) {
