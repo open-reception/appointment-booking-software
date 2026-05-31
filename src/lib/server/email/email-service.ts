@@ -147,7 +147,7 @@ export async function sendPinResetEmail(
       locale,
       user,
       tenant,
-      loginUrl: generateBaseUrl(requestUrl, tenant) ?? "http://localhost:5173",
+      loginUrl: generateBaseUrl(requestUrl),
     },
   });
   const html = renderOutputToHtml(emailRender);
@@ -399,23 +399,10 @@ export async function sendAppointmentUpdatedEmail(
  * @param {SelectTenant | null} tenant - Tenant information (null for global admin)
  * @returns {string} The appropriate base URL
  */
-export function generateBaseUrl(requestUrl: URL, tenant: SelectTenant | null): string {
-  const protocol = requestUrl.protocol;
-  const port = requestUrl.port ? `:${requestUrl.port}` : "";
-  const hostname = requestUrl.hostname;
-
-  // In development, always use the original hostname regardless of tenant
-  if (hostname === "localhost" || hostname.startsWith("127.") || hostname.startsWith("192.168.")) {
-    return `${protocol}//${hostname}${port}`;
-  }
-
-  // In production, handle tenant subdomains.
-  // Exclude the system tenant when determining if we should use the tenant's domain for the URL, as the system tenant does not have a domain and should use the main domain.
-  if (tenant?.domain && tenant.id !== "system") {
-    return `${protocol}//${tenant.domain}.${hostname}${port}`;
-  }
-
-  // For global admin or no tenant, use main domain
+export function generateBaseUrl(url: URL): string {
+  const protocol = url.protocol;
+  const port = url.port ? `:${url.port}` : "";
+  const hostname = url.hostname;
   return `${protocol}//${hostname}${port}`;
 }
 
@@ -437,7 +424,7 @@ export async function sendConfirmationEmail(
   requestUrl: URL,
 ): Promise<void> {
   // Generate appropriate base URL if request URL is provided
-  const baseUrl = requestUrl ? generateBaseUrl(requestUrl, tenant) : "http://localhost:5173";
+  const baseUrl = generateBaseUrl(requestUrl);
   const confirmUrl = `${baseUrl}/confirm/${confirmationCode}`;
   const recipient = user;
   // Generate email
