@@ -1,7 +1,7 @@
 {
   "name": "open-reception",
   "private": true,
-  "version": "1.0.9",
+  "version": "1.1.0-rc-1",
   "type": "module",
   "description": "End-to-end encrypted appointment booking platform",
   "scripts": {
@@ -29,7 +29,9 @@
     "docker:build": "docker buildx build --platform linux/amd64,linux/arm64 -t openreception/open-reception:latest .",
     "docker:build:tag": "docker tag openreception/open-reception:latest openreception/open-reception:$npm_package_version",
     "docker:push": "docker push openreception/open-reception:$npm_package_version && docker push openreception/open-reception:latest",
+    "docker:push:prerelease": "docker push openreception/open-reception:$npm_package_version",
     "docker:build-and-push": "npm run docker:build && npm run docker:build:tag && npm run docker:push",
+    "docker:build-and-push-prerelease": "npm run docker:build && npm run docker:build:tag && npm run docker:push:prerelease",
     "docker:prod:up": "docker compose -f docker-compose.prod.yml up -d",
     "docker:prod:down": "docker compose -f docker-compose.prod.yml down",
     "docker:prod:logs": "docker compose -f docker-compose.prod.yml logs -f",
