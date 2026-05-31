@@ -126,7 +126,6 @@ export class UserService {
       name: userData.name,
       role: userData.role!,
       tenantId: userData.tenantId!,
-      invitedBy: "system",
       expiresAt: addMinutes(new Date(), 10),
       inviteCode: uuidv7(),
     };
@@ -341,7 +340,9 @@ export class UserService {
         .where(
           and(
             eq(centralSchema.user.email, matchingInvite.email),
-            eq(centralSchema.user.tenantId, matchingInvite.tenantId),
+            matchingInvite.tenantId
+              ? eq(centralSchema.user.tenantId, matchingInvite.tenantId)
+              : undefined,
           ),
         )
         .limit(1);
@@ -354,7 +355,6 @@ export class UserService {
           role: resultData.role,
           tenantId: resultData.tenantId,
           language: resultData.language || "de",
-          recoveryPassphrase: "warum landet der hier",
           confirmationState: "CONFIRMED",
           isActive: true,
         };

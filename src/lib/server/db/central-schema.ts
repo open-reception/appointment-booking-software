@@ -204,13 +204,9 @@ export const userInvite = pgTable(
     /** Role to assign to user when they register */
     role: userRoleEnum("role").notNull(),
     /** Tenant the user is being invited to */
-    tenantId: uuid("tenant_id")
-      .notNull()
-      .references(() => tenant.id, { onDelete: "cascade" }),
+    tenantId: uuid("tenant_id").references(() => tenant.id, { onDelete: "cascade" }),
     /** User who sent the invitation */
-    invitedBy: uuid("invited_by")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
+    invitedBy: uuid("invited_by").references(() => user.id, { onDelete: "cascade" }),
     /** Language preference for the invitation */
     language: text("language").notNull().default("de"),
     /** Whether the invitation has been used */
