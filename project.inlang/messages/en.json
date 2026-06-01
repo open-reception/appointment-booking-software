@@ -1043,24 +1043,17 @@
 			"hint": "This link is only valid for {expirationMinutes} minutes and can only be used once.",
 			"reason": "You are receiving this email because someone registered an account with your e-mail address."
 		},
-		"pinReset": {
-			"subject": "PIN successfully changed",
-			"introduction": "you've successfully changed your PIN on the {tenant} appointment booking platform. You can now log-in with your new PIN.",
-			"action": "Login",
-			"reason": "You are receiving this email because someone changed the PIN-Code for your account."
-		},
 		"notification": {
 			"subject": "Activity in your appointment booking platform",
 			"introduction": "There is new activity in your appointment booking platform. Please log in to view details.",
 			"action": "Open Dashboard",
 			"reason": "You are receiving this email because you have notifications enabled for a channel."
 		},
-		"userInvite": {
-			"subject": "Confirm your E-Mail Address",
-			"introduction": "welcome our appointment booking platform. Please confirm your e-mail address.",
-			"action": "Confirm E-Mail Address",
-			"hint": "This link is only valid for {expirationMinutes} minutes and can only be used once.",
-			"reason": "You are receiving this email because someone registered an account with your e-mail address."
+		"pinReset": {
+			"subject": "PIN successfully changed",
+			"introduction": "you've successfully changed your PIN on the {tenant} appointment booking platform. You can now log-in with your new PIN.",
+			"action": "Login",
+			"reason": "You are receiving this email because someone changed the PIN-Code for your account."
 		}
 	},
 	"notifications": {

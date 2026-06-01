@@ -198,12 +198,12 @@
         {/snippet}
       </Form.Control>
       <Form.FieldErrors />
-      <Form.Description>
+      <Text style="xs" color="medium" class="mt-1 ml-1 leading-none">
         {m["login.or"]()}
-        <Button variant="link" size="sm" onclick={onToggle} class="text-inherit">
+        <Button variant="link" size="xs" onclick={onToggle} class="text-inherit">
           {m["login.usePasskey"]()}
         </Button>
-      </Form.Description>
+      </Text>
     </Form.Field>
   {/if}
   {#if $formData.type === "passkey"}
@@ -240,7 +240,7 @@
       <Passkey.State state={$passkeyLoading} onclick={onSetPasskey} />
       <Text style="xs" color="medium" class="mt-1 ml-1 leading-none">
         {m["login.or"]()}
-        <Button variant="link" size="sm" onclick={onToggle} class="text-inherit">
+        <Button variant="link" size="xs" onclick={onToggle} class="text-inherit">
           {m["login.usePassphrase"]()}
         </Button>.
       </Text>

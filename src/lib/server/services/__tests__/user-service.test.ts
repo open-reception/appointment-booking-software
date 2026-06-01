@@ -10,6 +10,7 @@ vi.mock("../../db", () => ({
     update: vi.fn(),
     delete: vi.fn(),
     transaction: vi.fn(),
+    limit: vi.fn(),
   },
 }));
 
@@ -89,16 +90,24 @@ describe("UserService", () => {
         name: "Test Admin",
         email: "test@example.com",
         language: "de" as const,
+        role: "GLOBAL_ADMIN" as const,
+      };
+
+      const mockCreatedAdminInvite = {
+        id: "invite-123",
+        tenantId: "018f-a1b2-c3d4-a5f6-789abcdef019",
+        inviteCode: "018f-a1b2-c3d4-e5f6-789abcdef012",
+        used: false,
+        expiresAt: new Date("2024-01-01T12:10:00Z"),
       };
 
       const mockCreatedAdmin = {
         id: "018f-a1b2-c3d4-e5f6-789abcdef012",
         name: "Test Admin",
         email: "test@example.com",
-        token: "018f-a1b2-c3d4-e5f6-789abcdef012",
-        tokenValidUntil: new Date("2024-01-01T12:10:00Z"),
-        confirmationState: "INVITED" as const,
-        isActive: false,
+        confirmationState: "ACCESS_GRANTED" as const,
+        role: "GLOBAL_ADMIN" as const,
+        isActive: true,
       };
 
       const mockInsertBuilder = {
@@ -106,17 +115,25 @@ describe("UserService", () => {
         returning: vi.fn().mockResolvedValue([mockCreatedAdmin]),
       };
 
-      mockCentralDb.insert.mockReturnValue(mockInsertBuilder);
+      const mockInviteInsertBuilder = {
+        values: vi.fn().mockReturnThis(),
+        returning: vi.fn().mockResolvedValue([mockCreatedAdminInvite]),
+      };
 
-      const result = await UserService.createUser(adminData);
+      mockCentralDb.insert
+        .mockReturnValueOnce(mockInviteInsertBuilder)
+        .mockReturnValueOnce(mockInsertBuilder);
+
+      const result = await UserService.createUser(adminData, new URL("http://localhost:5173"));
 
       expect(mockCentralDb.insert).toHaveBeenCalled();
       expect(mockInsertBuilder.values).toHaveBeenCalledWith({
         ...adminData,
-        token: "018f-a1b2-c3d4-e5f6-789abcdef012",
-        tokenValidUntil: expect.any(Date),
-        confirmationState: "INVITED" as const,
-        isActive: false,
+        confirmationState: "ACCESS_GRANTED" as const,
+        isActive: true,
+        role: "GLOBAL_ADMIN" as const,
+        tenantId: undefined,
+        recoveryPassphrase: expect.any(String),
       });
       expect(result).toEqual(mockCreatedAdmin);
     });
@@ -141,12 +158,12 @@ describe("UserService", () => {
 
       mockCentralDb.update.mockReturnValue(mockUpdateBuilder);
 
-      await UserService.resendConfirmationEmail(email);
+      await UserService.resendConfirmationEmail(email, new URL("http://localhost:5173"));
 
       expect(mockCentralDb.update).toHaveBeenCalled();
       expect(mockUpdateBuilder.set).toHaveBeenCalledWith({
-        token: "018f-a1b2-c3d4-e5f6-789abcdef012",
-        tokenValidUntil: expect.any(Date),
+        inviteCode: "018f-a1b2-c3d4-e5f6-789abcdef012",
+        expiresAt: expect.any(Date),
       });
       expect(mockUpdateBuilder.where).toHaveBeenCalled();
       expect(mockUpdateBuilder.returning).toHaveBeenCalled();
@@ -163,7 +180,9 @@ describe("UserService", () => {
 
       mockCentralDb.update.mockReturnValue(mockUpdateBuilder);
 
-      await expect(UserService.resendConfirmationEmail(email)).rejects.toThrow(NotFoundError);
+      await expect(
+        UserService.resendConfirmationEmail(email, new URL("http://localhost:5173")),
+      ).rejects.toThrow(NotFoundError);
     });
   });
 
@@ -176,6 +195,20 @@ describe("UserService", () => {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
         limit: vi.fn().mockResolvedValue([{ id: "user-123", recoveryPassphrase: "recovery-123" }]),
+      };
+
+      const mockUserInviteBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([
+          {
+            id: "invite-123",
+            tenantId: "tenant-123",
+            inviteCode: token,
+            used: false,
+            expiresAt: new Date("2024-01-01T12:10:00Z"),
+          },
+        ]),
       };
 
       const mockCountSelectBuilder = {
@@ -195,6 +228,7 @@ describe("UserService", () => {
 
       // First call for user lookup, second call for tenant admin count, third for total count
       mockCentralDb.select
+        .mockReturnValueOnce(mockUserInviteBuilder)
         .mockReturnValueOnce(mockSelectBuilder)
         .mockReturnValueOnce(mockCountSelectBuilder)
         .mockReturnValueOnce(mockTotalCountSelectBuilder);
@@ -202,7 +236,7 @@ describe("UserService", () => {
 
       const result = await UserService.confirm(token);
 
-      expect(mockCentralDb.select).toHaveBeenCalledTimes(3);
+      expect(mockCentralDb.select).toHaveBeenCalledTimes(4);
       expect(mockCentralDb.update).toHaveBeenCalled();
       expect(mockUpdateBuilder.set).toHaveBeenCalledWith({
         confirmationState: "ACCESS_GRANTED" as const,
