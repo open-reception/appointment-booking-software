@@ -16,7 +16,7 @@ import { checkPermission } from "$lib/server/utils/permissions";
 registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "GET", {
   summary: "Get appointment by ID",
   description:
-    "Retrieves a specific appointment by its ID. Accessible to dashboard users. Required for notification previews.",
+    "Retrieves a specific appointment by its ID. Accessible to dashboard users. Required for notification previews. Only returns a subset of appointment data.",
   tags: ["Appointments"],
   parameters: [
     {
@@ -248,8 +248,14 @@ export const GET: RequestHandler = async ({ params, locals }) => {
       requestedBy: locals.user?.id,
     });
 
+    // Stripping data, because we only us this for notification previews
     return json({
-      appointment,
+      appointment: {
+        id: appointment.id,
+        appointmentDate: appointment.appointmentDate,
+        channelId: appointment.channelId,
+        agentId: appointment.agentId,
+      },
     });
   } catch (error) {
     logError(log)("Error getting appointment", error, locals.user?.id, params.id);
