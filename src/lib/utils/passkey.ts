@@ -256,10 +256,8 @@ export const getPRFOutputAfterRegistration = async ({
     return prfOutput;
   } else {
     // Convert ArrayBufferView to ArrayBuffer
-    return prfOutput.buffer.slice(
-      prfOutput.byteOffset,
-      prfOutput.byteOffset + prfOutput.byteLength,
-    ) as ArrayBuffer;
+    // Fixes 1Password login; types seem to be incorrect
+    return new Uint8Array(prfOutput as unknown as Array<number>).buffer;
   }
 };
 
@@ -334,10 +332,8 @@ export const getCredential = async ({
       if (prfResult instanceof ArrayBuffer) {
         prfOutput = prfResult;
       } else {
-        prfOutput = prfResult.buffer.slice(
-          prfResult.byteOffset,
-          prfResult.byteOffset + prfResult.byteLength,
-        ) as ArrayBuffer;
+        // Fixes 1Password login; types seem to be incorrect
+        prfOutput = new Uint8Array(prfOutput as unknown as Array<number>).buffer;
       }
     }
   }
