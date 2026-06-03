@@ -13,11 +13,11 @@ export const load: PageServerLoad = async (event) => {
     })
     .then(async (resp) => {
       return resp.status < 400;
+    })
+    .finally(() => {
+      removeAuthCookies(event);
+      auth.reset();
     });
-
-  removeAuthCookies(event);
-
-  auth.reset();
 
   return { streaming: { success } };
 };
