@@ -20,6 +20,7 @@ import { InviteService } from "./invite-service";
 import type { PgTransaction } from "drizzle-orm/pg-core";
 import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
 import { AppointmentService } from "./appointment-service";
+import { dev } from "$app/environment";
 
 export type InsertUser = InferInsertModel<typeof centralSchema.user>;
 export type InsertUserInvite = InferInsertModel<typeof centralSchema.userInvite>;
@@ -227,29 +228,27 @@ export class UserService {
     const tokenValidUntil = addMinutes(new Date(), 10);
 
     try {
-      const result = await centralDb
+      const [user] = await centralDb
         .update(centralSchema.userInvite)
         .set({ inviteCode: token, expiresAt: tokenValidUntil })
         .where(eq(centralSchema.userInvite.email, email))
         .returning();
 
-      if (result.length !== 1) {
+      if (!user) {
         log.warn("Failed to resend confirmation email: User not found", { email });
         throw new NotFoundError(`Could not resend confirmation mail for unknown user ${email}`);
       }
 
-      const user = result[0];
-      log.debug("Confirmation email resent successfully", { email, tokenValidUntil });
-
       // Send confirmation email with new token - use tenant-specific branding if available
       try {
         const tenant = await getTenantForUser(user);
+        const linkUrl = dev ? requestUrl : new URL(`https://${tenant.domain}`);
         await sendConfirmationEmail(
           user,
           tenant,
           token,
           10, // 10 minutes expiration to match tokenValidUntil
-          requestUrl,
+          linkUrl,
         );
         log.debug("Confirmation email sent successfully", {
           userId: user.id,
