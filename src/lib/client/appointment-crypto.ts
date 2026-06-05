@@ -959,7 +959,7 @@ export class UnifiedAppointmentCrypto {
       throw new Error(
         "PRF output not available in session. " +
           "This passkey may not support the PRF extension. " +
-          "Please use a modern authenticator (YubiKey 5.2.3+, Titan Gen2, Windows Hello, Touch ID, or Android).",
+          "Please use a modern authenticator (https://open-reception.org/getting-started/#passkeys).",
       );
     }
 

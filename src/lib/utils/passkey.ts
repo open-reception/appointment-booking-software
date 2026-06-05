@@ -246,7 +246,7 @@ export const getPRFOutputAfterRegistration = async ({
   if (!prfResults || !prfResults.results || !prfResults.results.first) {
     throw new Error(
       "PRF extension not supported by this passkey. " +
-        "Please use a modern authenticator (YubiKey 5.2.3+, Titan Gen2, Windows Hello, Touch ID, or Android)",
+        "Please use a modern authenticator (https://open-reception.org/getting-started/#passkeys)",
     );
   }
 
