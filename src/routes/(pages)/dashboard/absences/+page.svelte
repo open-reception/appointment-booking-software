@@ -36,20 +36,34 @@
 
   const renderDescription = (item: TAbsence) => {
     const startDate = toDisplayDateTime(new Date(item.startDate));
-    const fullDay = toDisplayDateTime(new Date(item.startDate), {
+    const fullStartDay = toDisplayDateTime(new Date(item.startDate), {
       year: "numeric",
       month: "long",
       day: "numeric",
       timeZone: getLocalTimeZone(),
     });
     const endDate = toDisplayDateTime(new Date(item.endDate));
+    const fullEndDay = toDisplayDateTime(new Date(item.endDate), {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      timeZone: getLocalTimeZone(),
+    });
     const reason = reasons.find((r) => r.value === item.absenceType);
     const isAllDay =
       new Date(item.startDate).getHours() === 0 &&
       new Date(item.startDate).getMinutes() === 0 &&
       new Date(item.endDate).getHours() === 23 &&
       new Date(item.endDate).getMinutes() === 59;
-    return `${reason?.label}: ${isAllDay ? fullDay : `${startDate} - ${endDate}`}`;
+    const isSameDay =
+      new Date(item.startDate).toDateString() === new Date(item.endDate).toDateString();
+    if (isSameDay && isAllDay) {
+      return `${reason?.label}: ${fullStartDay}`;
+    } else if (isAllDay) {
+      return `${reason?.label}: ${fullStartDay} - ${fullEndDay}`;
+    } else {
+      return `${reason?.label}: ${startDate} - ${endDate}`;
+    }
   };
 </script>
 
