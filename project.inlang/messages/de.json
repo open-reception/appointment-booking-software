@@ -125,9 +125,16 @@
 		"errorGettingPrfOutput": "Fehler beim Abrufen der Sicherheitsdaten vom Passkey. Bitte verwenden Sie einen modernen Authentifikator, der die PRF-Erweiterung unterstützt."
 	},
 	"logout": {
-		"title": "Erfolgreich abgemeldet",
-		"description": "Du wurdest abgemeldet.",
-		"success": "Erfolgreich abgemeldet",
+		"title": "Abmelden",
+		"success": {
+			"title": "Du wurdest abgemeldet.",
+			"description": "Du wurdest abgemeldet."
+		},
+		"error": {
+			"title": "Abmelden fehlgeschlagen",
+			"description": "Du konntest nicht abgemeldet werden."
+		},
+		"retry": "Erneut versuchen",
 		"action": "Zur Anmeldung"
 	},
 	"passkey": {

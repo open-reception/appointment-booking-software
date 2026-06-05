@@ -133,9 +133,16 @@
 		}
 	},
 	"logout": {
-		"title": "Logout complete",
-		"description": "You are logged-out.",
-		"success": "Logout successful",
+		"title": "Logout",
+		"success": {
+			"title": "You are logged out.",
+			"description": "You are logged-out."
+		},
+		"error": {
+			"title": "Logout failed",
+			"description": "You could not be logged out."
+		},
+		"retry": "Retry",
 		"action": "Go to Login"
 	},
 	"passkey": {

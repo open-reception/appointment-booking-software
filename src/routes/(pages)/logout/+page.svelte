@@ -8,15 +8,41 @@
   import { ROUTES } from "$lib/const/routes.js";
   import { auth } from "$lib/stores/auth.js";
   import { staffCrypto } from "$lib/stores/staff-crypto.js";
+  import { TriangleAlert } from "@lucide/svelte";
   import Check from "@lucide/svelte/icons/check";
   import { onMount } from "svelte";
 
-  const { data } = $props();
+  let success: boolean | undefined = $state();
 
   onMount(() => {
-    auth.reset();
-    staffCrypto.clear();
+    logout();
   });
+
+  const logout = async () => {
+    success = undefined;
+    fetch("/api/auth/logout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "same-origin",
+    })
+      .then(async (resp) => {
+        if (resp.status === 200 || resp.status === 401) {
+          success = true;
+        } else {
+          throw new Error(resp.statusText);
+        }
+      })
+      .catch((error) => {
+        console.log("Logout failed:", error);
+        success = false;
+      })
+      .finally(() => {
+        auth.reset();
+        staffCrypto.clear();
+      });
+  };
 </script>
 
 <svelte:head>
@@ -29,24 +55,42 @@
   {/snippet}
   <CenteredCard.Root>
     <CenteredCard.Main>
-      {#await data.streaming.success}
+      {#if success === undefined}
         <CenterLoadingState />
-      {:then}
+      {:else if success === true}
         <CenterState
           Icon={Check}
-          headline={m["logout.title"]()}
-          description={m["logout.description"]()}
+          headline={m["logout.success.title"]()}
+          description={m["logout.success.description"]()}
         />
-      {/await}
+      {:else}
+        <CenterState
+          Icon={TriangleAlert}
+          headline={m["logout.error.title"]()}
+          description={m["logout.error.description"]()}
+        />
+      {/if}
     </CenteredCard.Main>
     <CenteredCard.Action>
-      {#await data.streaming.success}
+      {#if success === undefined}
         <Skeleton class="h-10 w-full" />
-      {:then}
+      {:else}
+        {#if success === false}
+          <Button
+            size="lg"
+            class="w-full"
+            variant="outline"
+            onclick={logout}
+            isLoading={success === undefined}
+            disabled={success === undefined}
+          >
+            {m["logout.retry"]()}
+          </Button>
+        {/if}
         <Button size="lg" class="w-full" href={ROUTES.LOGIN}>
           {m["logout.action"]()}
         </Button>
-      {/await}
+      {/if}
     </CenteredCard.Action>
   </CenteredCard.Root>
 </PageWithClaim>
