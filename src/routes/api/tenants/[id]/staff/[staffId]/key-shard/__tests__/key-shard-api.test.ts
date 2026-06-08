@@ -7,15 +7,15 @@ import type { RequestEvent } from "@sveltejs/kit";
 vi.mock("$lib/logger", () => {
   const mockLogger = {
     setContext: vi.fn(() => ({
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-      debug: vi.fn(),
+      info: vi.fn(() => undefined),
+      warn: vi.fn(() => undefined),
+      error: vi.fn(() => undefined),
+      debug: vi.fn(() => undefined),
     })),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
+    info: vi.fn(() => undefined),
+    warn: vi.fn(() => undefined),
+    error: vi.fn(() => undefined),
+    debug: vi.fn(() => undefined),
   };
 
   return {
@@ -24,20 +24,25 @@ vi.mock("$lib/logger", () => {
   };
 });
 
+// Create a mock service object that will be returned by the StaffCryptoService constructor
+const mockStaffCryptoService = {
+  getStaffCryptoForPasskey: vi.fn(),
+};
+
 vi.mock("$lib/server/services/staff-crypto.service", () => ({
-  StaffCryptoService: vi.fn(() => ({
-    getStaffCryptoForPasskey: vi.fn(),
-  })),
+  StaffCryptoService: vi.fn(function () {
+    return mockStaffCryptoService;
+  }),
 }));
 
 vi.mock("$lib/server/auth/webauthn-service", () => ({
   WebAuthnService: {
-    getMostRecentPasskey: vi.fn(),
+    getMostRecentPasskey: vi.fn(async () => undefined),
   },
 }));
 
 vi.mock("$lib/server/utils/permissions", () => ({
-  checkPermission: vi.fn(),
+  checkPermission: vi.fn(() => true),
 }));
 
 vi.mock("$lib/server/utils/errors", () => {
@@ -82,9 +87,7 @@ vi.mock("$lib/server/utils/errors", () => {
   };
 });
 
-import { StaffCryptoService } from "$lib/server/services/staff-crypto.service";
 import { WebAuthnService } from "$lib/server/auth/webauthn-service";
-import { checkPermission } from "$lib/server/utils/permissions";
 
 describe("Staff Key Shard API Route", () => {
   const mockTenantId = "123e4567-e89b-12d3-a456-426614174000";
@@ -92,14 +95,10 @@ describe("Staff Key Shard API Route", () => {
   const mockPasskeyId = "passkey-abc-123";
   const mockUserId = mockStaffId; // Same user accessing their own key shard
 
-  const mockStaffCryptoService = {
-    getStaffCryptoForPasskey: vi.fn(),
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
-    (StaffCryptoService as any).mockImplementation(() => mockStaffCryptoService);
-    (checkPermission as any).mockImplementation(() => true);
+    // Reset the mock implementations to defaults
+    mockStaffCryptoService.getStaffCryptoForPasskey.mockClear();
   });
 
   function createMockRequestEvent(overrides: Partial<RequestEvent> = {}): RequestEvent {
