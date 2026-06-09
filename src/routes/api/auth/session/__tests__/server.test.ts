@@ -7,10 +7,11 @@ import { mockCookies } from "$lib/tests/const";
 // Mock the logger
 vi.mock("$lib/logger", () => ({
   UniversalLogger: class {
-    setContext = vi.fn().mockReturnThis();
+    setContext = vi.fn(() => this);
     warn = vi.fn();
     error = vi.fn();
     info = vi.fn();
+    debug = vi.fn();
   },
 }));
 
