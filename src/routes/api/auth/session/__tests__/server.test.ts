@@ -6,12 +6,13 @@ import { mockCookies } from "$lib/tests/const";
 
 // Mock the logger
 vi.mock("$lib/logger", () => ({
-  UniversalLogger: vi.fn(() => ({
-    setContext: vi.fn(() => ({
-      error: vi.fn(),
-      debug: vi.fn(),
-    })),
-  })),
+  UniversalLogger: class {
+    setContext = vi.fn(() => this);
+    warn = vi.fn();
+    error = vi.fn();
+    info = vi.fn();
+    debug = vi.fn();
+  },
 }));
 
 // Mock OpenAPI registration

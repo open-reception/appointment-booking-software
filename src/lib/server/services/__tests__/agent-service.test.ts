@@ -174,6 +174,7 @@ describe("AgentService", () => {
       const insertChain = {
         values: vi.fn(() => ({
           returning: vi.fn().mockResolvedValue([mockAgent]),
+          onConflictDoNothing: vi.fn(),
         })),
       };
       mockDb.insert.mockReturnValue(insertChain);
@@ -209,6 +210,7 @@ describe("AgentService", () => {
       const insertChain = {
         values: vi.fn(() => ({
           returning: vi.fn().mockRejectedValue(new Error("DB error")),
+          onConflictDoNothing: vi.fn(),
         })),
       };
       mockDb.insert.mockReturnValue(insertChain);
@@ -233,6 +235,13 @@ describe("AgentService", () => {
         from: vi.fn(() => ({
           where: vi.fn(() => ({
             limit: vi.fn().mockResolvedValue([mockAgent]),
+            orderBy: vi.fn(),
+          })),
+          orderBy: vi.fn(),
+          innerJoin: vi.fn(() => ({
+            where: vi.fn(() => ({
+              orderBy: vi.fn(),
+            })),
           })),
         })),
       };
@@ -249,6 +258,13 @@ describe("AgentService", () => {
         from: vi.fn(() => ({
           where: vi.fn(() => ({
             limit: vi.fn().mockResolvedValue([]),
+            orderBy: vi.fn(),
+          })),
+          orderBy: vi.fn(),
+          innerJoin: vi.fn(() => ({
+            where: vi.fn(() => ({
+              orderBy: vi.fn(),
+            })),
           })),
         })),
       };
@@ -264,6 +280,13 @@ describe("AgentService", () => {
         from: vi.fn(() => ({
           where: vi.fn(() => ({
             limit: vi.fn().mockRejectedValue(new Error("DB error")),
+            orderBy: vi.fn(),
+          })),
+          orderBy: vi.fn(),
+          innerJoin: vi.fn(() => ({
+            where: vi.fn(() => ({
+              orderBy: vi.fn(),
+            })),
           })),
         })),
       };
@@ -285,7 +308,14 @@ describe("AgentService", () => {
       const selectChain = {
         from: vi.fn(() => ({
           where: vi.fn(() => ({
+            limit: vi.fn(),
             orderBy: vi.fn().mockResolvedValue(agents),
+          })),
+          orderBy: vi.fn(),
+          innerJoin: vi.fn(() => ({
+            where: vi.fn(() => ({
+              orderBy: vi.fn(),
+            })),
           })),
         })),
       };
@@ -301,7 +331,14 @@ describe("AgentService", () => {
       const selectChain = {
         from: vi.fn(() => ({
           where: vi.fn(() => ({
+            limit: vi.fn(),
             orderBy: vi.fn().mockResolvedValue([]),
+          })),
+          orderBy: vi.fn(),
+          innerJoin: vi.fn(() => ({
+            where: vi.fn(() => ({
+              orderBy: vi.fn(),
+            })),
           })),
         })),
       };
@@ -317,7 +354,14 @@ describe("AgentService", () => {
       const selectChain = {
         from: vi.fn(() => ({
           where: vi.fn(() => ({
+            limit: vi.fn(),
             orderBy: vi.fn().mockRejectedValue(new Error("DB error")),
+          })),
+          orderBy: vi.fn(),
+          innerJoin: vi.fn(() => ({
+            where: vi.fn(() => ({
+              orderBy: vi.fn(),
+            })),
           })),
         })),
       };
@@ -490,6 +534,11 @@ describe("AgentService", () => {
               orderBy: vi.fn().mockResolvedValue(agents),
             })),
           })),
+          where: vi.fn(() => ({
+            limit: vi.fn(),
+            orderBy: vi.fn(),
+          })),
+          orderBy: vi.fn(),
         })),
       };
       mockDb.select.mockReturnValue(selectChain);
@@ -507,6 +556,11 @@ describe("AgentService", () => {
               orderBy: vi.fn().mockResolvedValue([]),
             })),
           })),
+          where: vi.fn(() => ({
+            limit: vi.fn(),
+            orderBy: vi.fn(),
+          })),
+          orderBy: vi.fn(),
         })),
       };
       mockDb.select.mockReturnValue(selectChain);
@@ -524,6 +578,11 @@ describe("AgentService", () => {
               orderBy: vi.fn().mockRejectedValue(new Error("DB error")),
             })),
           })),
+          where: vi.fn(() => ({
+            limit: vi.fn(),
+            orderBy: vi.fn(),
+          })),
+          orderBy: vi.fn(),
         })),
       };
       mockDb.select.mockReturnValue(selectChain);
@@ -542,6 +601,7 @@ describe("AgentService", () => {
     it("should assign agent to channel successfully", async () => {
       const insertChain = {
         values: vi.fn(() => ({
+          returning: vi.fn(),
           onConflictDoNothing: vi.fn().mockResolvedValue([]),
         })),
       };
@@ -558,6 +618,7 @@ describe("AgentService", () => {
     it("should handle database error", async () => {
       const insertChain = {
         values: vi.fn(() => ({
+          returning: vi.fn(),
           onConflictDoNothing: vi.fn().mockRejectedValue(new Error("DB error")),
         })),
       };
@@ -629,6 +690,13 @@ describe("AgentService", () => {
           from: vi.fn(() => ({
             where: vi.fn(() => ({
               limit: vi.fn().mockResolvedValue([mockAgent]),
+              orderBy: vi.fn(),
+            })),
+            orderBy: vi.fn(),
+            innerJoin: vi.fn(() => ({
+              where: vi.fn(() => ({
+                orderBy: vi.fn(),
+              })),
             })),
           })),
         };
@@ -637,6 +705,12 @@ describe("AgentService", () => {
         const selectChainForOverlap = {
           from: vi.fn(() => ({
             where: vi.fn().mockResolvedValue([]),
+            orderBy: vi.fn(),
+            innerJoin: vi.fn(() => ({
+              where: vi.fn(() => ({
+                orderBy: vi.fn(),
+              })),
+            })),
           })),
         };
 
@@ -649,6 +723,7 @@ describe("AgentService", () => {
         const insertChain = {
           values: vi.fn(() => ({
             returning: vi.fn().mockResolvedValue([mockAbsence]),
+            onConflictDoNothing: vi.fn(),
           })),
         };
         mockDb.insert.mockReturnValue(insertChain);
@@ -702,6 +777,13 @@ describe("AgentService", () => {
           from: vi.fn(() => ({
             where: vi.fn(() => ({
               limit: vi.fn().mockResolvedValue([]),
+              orderBy: vi.fn(),
+            })),
+            orderBy: vi.fn(),
+            innerJoin: vi.fn(() => ({
+              where: vi.fn(() => ({
+                orderBy: vi.fn(),
+              })),
             })),
           })),
         };
@@ -724,6 +806,12 @@ describe("AgentService", () => {
             where: vi.fn(() => ({
               limit: vi.fn().mockResolvedValue([mockAgent]),
             })),
+            orderBy: vi.fn(),
+            innerJoin: vi.fn(() => ({
+              where: vi.fn(() => ({
+                orderBy: vi.fn(),
+              })),
+            })),
           })),
         };
 
@@ -731,6 +819,12 @@ describe("AgentService", () => {
         const selectChainForOverlap = {
           from: vi.fn(() => ({
             where: vi.fn().mockResolvedValue([mockAbsence]),
+            orderBy: vi.fn(),
+            innerJoin: vi.fn(() => ({
+              where: vi.fn(() => ({
+                orderBy: vi.fn(),
+              })),
+            })),
           })),
         };
 
@@ -750,6 +844,13 @@ describe("AgentService", () => {
           from: vi.fn(() => ({
             where: vi.fn(() => ({
               limit: vi.fn().mockResolvedValue([mockAbsence]),
+              orderBy: vi.fn(),
+            })),
+            orderBy: vi.fn(),
+            innerJoin: vi.fn(() => ({
+              where: vi.fn(() => ({
+                orderBy: vi.fn(),
+              })),
             })),
           })),
         };
@@ -765,6 +866,13 @@ describe("AgentService", () => {
           from: vi.fn(() => ({
             where: vi.fn(() => ({
               limit: vi.fn().mockResolvedValue([]),
+              orderBy: vi.fn(),
+            })),
+            orderBy: vi.fn(),
+            innerJoin: vi.fn(() => ({
+              where: vi.fn(() => ({
+                orderBy: vi.fn(),
+              })),
             })),
           })),
         };
@@ -825,6 +933,13 @@ describe("AgentService", () => {
           from: vi.fn(() => ({
             where: vi.fn(() => ({
               limit: vi.fn().mockResolvedValue([mockAbsence]),
+              orderBy: vi.fn(),
+            })),
+            orderBy: vi.fn(),
+            innerJoin: vi.fn(() => ({
+              where: vi.fn(() => ({
+                orderBy: vi.fn(),
+              })),
             })),
           })),
         };
@@ -863,6 +978,13 @@ describe("AgentService", () => {
           from: vi.fn(() => ({
             where: vi.fn(() => ({
               limit: vi.fn().mockResolvedValue([]),
+              orderBy: vi.fn(),
+            })),
+            orderBy: vi.fn(),
+            innerJoin: vi.fn(() => ({
+              where: vi.fn(() => ({
+                orderBy: vi.fn(),
+              })),
             })),
           })),
         };
@@ -883,6 +1005,13 @@ describe("AgentService", () => {
           from: vi.fn(() => ({
             where: vi.fn(() => ({
               limit: vi.fn().mockResolvedValue([mockAbsence]),
+              orderBy: vi.fn(),
+            })),
+            orderBy: vi.fn(),
+            innerJoin: vi.fn(() => ({
+              where: vi.fn(() => ({
+                orderBy: vi.fn(),
+              })),
             })),
           })),
         };

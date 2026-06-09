@@ -59,12 +59,12 @@ vi.mock("$lib/server/auth/jwt-utils", () => ({
 
 // Mock universal logger
 vi.mock("$lib/logger", () => ({
-  UniversalLogger: vi.fn(() => ({
-    setContext: vi.fn().mockReturnThis(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-  })),
+  UniversalLogger: class {
+    setContext = vi.fn().mockReturnThis();
+    warn = vi.fn();
+    error = vi.fn();
+    info = vi.fn();
+  },
 }));
 
 // Mock openapi

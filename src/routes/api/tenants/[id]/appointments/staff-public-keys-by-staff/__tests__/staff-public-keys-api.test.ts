@@ -129,19 +129,15 @@ describe("GET /api/tenants/[id]/appointments/staff-public-keys-by-staff", () => 
 
       vi.mocked(checkPermission).mockImplementationOnce(() => {});
 
-      const mockService = {
-        getStaffPublicKeys: vi.fn().mockResolvedValueOnce(mockStaffPublicKeys),
-      };
-
-      vi.mocked(StaffCryptoService).mockImplementationOnce(
-        () => mockService as unknown as StaffCryptoService,
-      );
+      const mockGetStaffPublicKeys = vi
+        .mocked(StaffCryptoService.prototype.getStaffPublicKeys)
+        .mockResolvedValueOnce(mockStaffPublicKeys);
 
       const event = createMockRequestEvent(mockTenantId, locals);
       await GET(event);
 
-      expect(mockService.getStaffPublicKeys).toHaveBeenCalledWith(mockTenantId);
-      expect(mockService.getStaffPublicKeys).toHaveBeenCalledOnce();
+      expect(mockGetStaffPublicKeys).toHaveBeenCalledWith(mockTenantId);
+      expect(mockGetStaffPublicKeys).toHaveBeenCalledOnce();
     });
 
     it("should call checkPermission with tenant ID and false flag", async () => {
