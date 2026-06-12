@@ -25,7 +25,7 @@
   import { Funnel } from "@lucide/svelte";
   import { onMount } from "svelte";
   import AddAppointment from "./(components)/add-appointment/AddAppointment.svelte";
-  import AppointmentDetail from "./(components)/AppointmentDetail.svelte";
+  import Appointment from "./(components)/Appointment.svelte";
   import CalendarDay from "./(components)/CalendarDay.svelte";
   import CalendarFilters from "./(components)/CalendarFilters.svelte";
   import CalendarHeader from "./(components)/CalendarHeader.svelte";
@@ -239,7 +239,7 @@
     description={channel ? getCurrentTranlslation(channel.names) : undefined}
     triggerHidden={true}
   >
-    <AppointmentDetail {tenantId} item={curItem} {updateCalendar} close={closeAppointmentDetail} />
+    <Appointment {tenantId} item={curItem} {updateCalendar} close={closeAppointmentDetail} />
   </ResponsiveDialog>
 {/if}
 

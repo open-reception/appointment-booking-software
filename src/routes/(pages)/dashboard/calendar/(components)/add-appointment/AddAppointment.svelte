@@ -4,11 +4,8 @@
   import { CenterState } from "$lib/components/templates/empty-state";
   import Button from "$lib/components/ui/button/button.svelte";
   import { staffCrypto } from "$lib/stores/staff-crypto";
-  import { tenants } from "$lib/stores/tenants";
   import type { TCalendarSlot } from "$lib/types/calendar";
-  import { getDefaultAppointmentLocale } from "$lib/utils/localizations";
   import { BanIcon, Check } from "@lucide/svelte";
-  import { get } from "svelte/store";
   import { ClientDataForm } from "./client-data-form";
   import { SearchClientForm } from "./search-client-form";
   import SelectAgent from "./SelectAgent.svelte";
@@ -31,7 +28,6 @@
 
   let step: TAddAppointmentStep = $state("email");
   let newAppointment: TAddAppointment = $state({
-    locale: getDefaultAppointmentLocale(get(tenants).currentTenant),
     dateTime: localTime,
   });
   let isSubmitting = $state(false);
@@ -105,13 +101,9 @@
         });
     }
   };
-
-  const onChangeLocale = (locale: string) => {
-    newAppointment = { ...newAppointment, locale };
-  };
 </script>
 
-<Summary {step} {newAppointment} {onChangeLocale} />
+<Summary {step} {newAppointment} />
 {#if step === "email"}
   <SearchClientForm {tenantId} {newAppointment} {proceed} />
 {:else if step === "agent" && item.availableAgents}

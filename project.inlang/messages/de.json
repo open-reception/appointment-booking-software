@@ -80,7 +80,9 @@
 		"domain": "Domain",
 		"phone": "Telefonnummer",
 		"pin": "PIN",
-		"pinHint": "Speichere Deine PIN an einem sicheren Ort, z.B. in einem Passwort-Manager."
+		"pinHint": "Speichere Deine PIN an einem sicheren Ort, z.B. in einem Passwort-Manager.",
+		"locale": "Sprache",
+		"localePlaceholder": "Sprache wählen"
 	},
 	"login": {
 		"or": "Oder",
