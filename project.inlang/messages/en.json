@@ -96,7 +96,9 @@
 		"domain": "Domain",
 		"phone": "Phone Number",
 		"pin": "PIN",
-		"pinHint": "Save your PIN in a secure place, like a password-manager."
+		"pinHint": "Save your PIN in a secure place, like a password-manager.",
+		"locale": "Language",
+		"localePlaceholder": "Select Language"
 	},
 	"login": {
 		"or": "Or",
