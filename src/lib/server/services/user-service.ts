@@ -13,6 +13,7 @@ import {
   hashPassphrase,
   validatePassphraseStrength,
 } from "../utils/passphrase";
+import { env } from "$env/dynamic/private";
 import { sendConfirmationEmail } from "../email/email-service";
 import type { SelectTenant } from "../db/central-schema";
 import { TenantAdminService } from "./tenant-admin-service";
@@ -182,16 +183,23 @@ export class UserService {
         hasRecoveryPassphrase: !!insertedUser.recoveryPassphrase,
       });
 
+      if (!env.MANAGEMENT_DOMAIN) {
+        throw new InternalError(`MANAGEMENT_DOMAIN is missing`);
+      }
+
       // Send confirmation email to user (token is used as confirmation code)
       try {
         if (insertedUser?.email && inviteResult?.inviteCode) {
           const tenant = await getTenantForUser(insertedUser);
+          const linkUrl = dev
+            ? requestUrl
+            : new URL(`https://${tenant.id === "system" ? env.MANAGEMENT_DOMAIN : tenant.domain}`);
           await sendConfirmationEmail(
             insertedUser,
             tenant,
             inviteResult.inviteCode,
             10, // 10 minutes expiration to match tokenValidUntil
-            requestUrl,
+            linkUrl,
           );
           log.debug("Confirmation email sent successfully", {
             userId: insertedUser.id,
@@ -239,10 +247,16 @@ export class UserService {
         throw new NotFoundError(`Could not resend confirmation mail for unknown user ${email}`);
       }
 
+      if (!env.MANAGEMENT_DOMAIN) {
+        throw new InternalError(`MANAGEMENT_DOMAIN is missing`);
+      }
+
       // Send confirmation email with new token - use tenant-specific branding if available
       try {
         const tenant = await getTenantForUser(user);
-        const linkUrl = dev ? requestUrl : new URL(`https://${tenant.domain}`);
+        const linkUrl = dev
+          ? requestUrl
+          : new URL(`https://${tenant.id === "system" ? env.MANAGEMENT_DOMAIN : tenant.domain}`);
         await sendConfirmationEmail(
           user,
           tenant,

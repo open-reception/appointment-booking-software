@@ -42,6 +42,7 @@ jobs:
           SMTP_FROM_NAME: "Open Reception"
           SMTP_FROM_EMAIL: "noreply@example.com"
           JWT_SECRET: "test"
+          MANAGEMENT_DOMAIN: "example.com"
 
       - name: Build application
         run: npm run build
@@ -55,6 +56,7 @@ jobs:
           SMTP_FROM_NAME: "Open Reception"
           SMTP_FROM_EMAIL: "noreply@example.com"
           JWT_SECRET: "test"
+          MANAGEMENT_DOMAIN: "example.com"
       # - name: Install Playwright browsers
       #   run: npx playwright install --with-deps
 
@@ -70,3 +72,4 @@ jobs:
       #     SMTP_FROM_NAME: "Open Reception"
       #     SMTP_FROM_EMAIL: "noreply@example.com"
       #     JWT_SECRET: "test"
+      #     MANAGEMENT_DOMAIN: "example.com"

@@ -61,6 +61,7 @@ services:
       - smtp_from_name
       - smtp_from_email
       - jwt_secret
+      - management_domain
     depends_on:
       postgres:
         condition: service_healthy
@@ -93,6 +94,7 @@ services:
         export SMTP_FROM_NAME=$$(cat /run/secrets/smtp_from_name)
         export SMTP_FROM_EMAIL=$$(cat /run/secrets/smtp_from_email)
         export JWT_SECRET=$$(cat /run/secrets/jwt_secret)
+        export MANAGEMENT_DOMAIN=$$(cat /run/secrets/management_domain)
         exec node build/index.js
       "
     read_only: true
