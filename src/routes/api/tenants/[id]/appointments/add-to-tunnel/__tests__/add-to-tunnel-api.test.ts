@@ -4,6 +4,7 @@ import { POST } from "../+server";
 import type { RequestEvent } from "@sveltejs/kit";
 import { ConflictError } from "$lib/server/utils/errors";
 import { ERRORS } from "$lib/errors";
+import { verifyBookingAccessToken } from "$lib/server/auth/booking-access-token";
 
 vi.mock("$lib/server/services/appointment-service", () => ({
   AppointmentService: {
@@ -18,6 +19,14 @@ vi.mock("$lib/logger", () => ({
     warn: vi.fn(),
     error: vi.fn(),
   },
+  UniversalLogger: vi.fn(() => ({
+    setContext: vi.fn(() => ({
+      debug: vi.fn(),
+      error: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
+    })),
+  })),
 }));
 
 vi.mock("$lib/server/email/email-service", () => ({
@@ -36,6 +45,11 @@ vi.mock("$lib/server/services/notification-service", () => ({
   NotificationService: {
     forTenant: vi.fn(),
   },
+}));
+
+vi.mock("$lib/server/auth/booking-access-token", () => ({
+  EXISTING_CLIENT_BOOKING_SCOPE: "appointments:new-client-bootstrap",
+  verifyBookingAccessToken: vi.fn(),
 }));
 
 import { AppointmentService } from "$lib/server/services/appointment-service";
@@ -67,9 +81,47 @@ describe("POST /api/tenants/[id]/appointments/add-to-tunnel", () => {
       params: { id: tenantId },
       request: {
         json: vi.fn().mockResolvedValue(body),
+        headers: new Headers({ Authorization: "Bearer valid-bootstrap-token" }),
       } as any,
     } as RequestEvent;
   }
+
+  const mockTenantId = "123e4567-e89b-12d3-a456-426614174000";
+  const mockTunnelId = "tunnel-123";
+  const mockChannelId = "channel-456";
+
+  const validRequestBody = {
+    tunnelId: mockTunnelId,
+    channelId: mockChannelId,
+    agentId: "agent-123", // Missing field added
+    appointmentDate: "2024-12-25T14:30:00.000Z",
+    appointmentTimeZone: "Europe/Berlin",
+    duration: 10,
+    emailHash: "test-email-hash",
+    clientEmail: "test@example.com",
+    clientLanguage: "de",
+    clientPublicKey: "test-public-key",
+    privateKeyShare: "test-private-key-share",
+    encryptedAppointment: {
+      encryptedPayload: "encrypted-data",
+      iv: "iv-data",
+      authTag: "auth-tag-data",
+    },
+    staffKeyShares: [
+      {
+        userId: "staff-123",
+        encryptedTunnelKey: "encrypted-tunnel-key",
+      },
+    ],
+    clientEncryptedTunnelKey: "client-encrypted-tunnel-key",
+  };
+  const validTokenPayload = {
+    tenantId: mockTenantId,
+    tunnelId: mockTunnelId,
+    clientPublicKey: validRequestBody.clientPublicKey,
+    emailHash: validRequestBody.emailHash,
+    scope: "appointments:new-client-bootstrap",
+  };
 
   it("should return 409 when selected agent is already occupied", async () => {
     const mockService = {
@@ -80,6 +132,7 @@ describe("POST /api/tenants/[id]/appointments/add-to-tunnel", () => {
     };
 
     vi.mocked(AppointmentService.forTenant).mockResolvedValue(mockService as any);
+    vi.mocked(verifyBookingAccessToken).mockResolvedValue(validTokenPayload as any);
 
     const event = createMockRequestEvent();
     const response = await POST(event);
