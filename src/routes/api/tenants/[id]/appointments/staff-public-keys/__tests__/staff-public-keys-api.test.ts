@@ -13,9 +13,11 @@ vi.mock("$lib/logger", () => ({
 }));
 
 vi.mock("$lib/server/services/staff-crypto.service", () => ({
-  StaffCryptoService: vi.fn(() => ({
-    getStaffPublicKeys: vi.fn(),
-  })),
+  StaffCryptoService: vi.fn(function () {
+    return {
+      getStaffPublicKeys: vi.fn(),
+    };
+  }),
 }));
 
 vi.mock("$lib/server/auth/booking-access-token", () => ({
@@ -34,7 +36,9 @@ describe("Staff Public Keys API", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (StaffCryptoService as any).mockImplementation(() => serviceMock);
+    (StaffCryptoService as any).mockImplementation(function () {
+      return serviceMock;
+    });
   });
 
   function createEvent(authorization?: string): RequestEvent {

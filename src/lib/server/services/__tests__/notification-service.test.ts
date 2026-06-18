@@ -13,14 +13,12 @@ vi.mock("../../db", () => ({
 }));
 
 vi.mock("$lib/logger", () => ({
-  UniversalLogger: vi.fn(() => ({
-    setContext: vi.fn(() => ({
-      debug: vi.fn(),
-      error: vi.fn(),
-      warn: vi.fn(),
-      info: vi.fn(),
-    })),
-  })),
+  UniversalLogger: class {
+    setContext = vi.fn().mockReturnThis();
+    warn = vi.fn();
+    error = vi.fn();
+    info = vi.fn();
+  },
   default: {
     setContext: vi.fn(() => ({
       debug: vi.fn(),
@@ -245,6 +243,7 @@ describe("NotificationService", () => {
       const selectChain = {
         from: vi.fn(() => ({
           where: vi.fn(() => ({
+            limit: vi.fn(),
             orderBy: vi.fn().mockResolvedValue(mockNotifications),
           })),
         })),
@@ -261,6 +260,7 @@ describe("NotificationService", () => {
       const selectChain = {
         from: vi.fn(() => ({
           where: vi.fn(() => ({
+            limit: vi.fn(),
             orderBy: vi.fn().mockResolvedValue([]),
           })),
         })),
@@ -276,6 +276,7 @@ describe("NotificationService", () => {
       const selectChain = {
         from: vi.fn(() => ({
           where: vi.fn(() => ({
+            limit: vi.fn(),
             orderBy: vi.fn().mockRejectedValue(new Error("DB error")),
           })),
         })),
@@ -298,6 +299,7 @@ describe("NotificationService", () => {
         from: vi.fn(() => ({
           where: vi.fn(() => ({
             limit: vi.fn().mockResolvedValue([{ id: "notification-123" }]),
+            orderBy: vi.fn(),
           })),
         })),
       };
@@ -313,6 +315,7 @@ describe("NotificationService", () => {
         from: vi.fn(() => ({
           where: vi.fn(() => ({
             limit: vi.fn().mockResolvedValue([]),
+            orderBy: vi.fn(),
           })),
         })),
       };
@@ -328,6 +331,7 @@ describe("NotificationService", () => {
         from: vi.fn(() => ({
           where: vi.fn(() => ({
             limit: vi.fn().mockRejectedValue(new Error("DB error")),
+            orderBy: vi.fn(),
           })),
         })),
       };
@@ -372,6 +376,7 @@ describe("NotificationService", () => {
         from: vi.fn(() => ({
           where: vi.fn(() => ({
             limit: vi.fn().mockResolvedValue([mockNotification]),
+            orderBy: vi.fn(),
           })),
         })),
       };
@@ -428,6 +433,7 @@ describe("NotificationService", () => {
         from: vi.fn(() => ({
           where: vi.fn(() => ({
             limit: vi.fn().mockResolvedValue([mockNotification]),
+            orderBy: vi.fn(),
           })),
         })),
       };

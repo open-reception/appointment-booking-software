@@ -81,7 +81,7 @@
     "typescript-eslint": "^8.34.1",
     "vaul-svelte": "^1.0.0-next.7",
     "vite": "^6.4.2",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.9"
   },
   "dependencies": {
     "@noble/hashes": "^1.8.0",
@@ -97,7 +97,7 @@
     "drizzle-orm": "^0.45.2",
     "jose": "^6.0.11",
     "mode-watcher": "^1.0.8",
-    "nodemailer": "^8.0.9",
+    "nodemailer": "^9.0.1",
     "postgres": "^3.4.7",
     "secrets.js-34r7h": "^2.0.2",
     "uuidv7": "^1.0.2",
