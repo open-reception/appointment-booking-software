@@ -1,12 +1,17 @@
 <script lang="ts">
   import { m } from "$i18n/messages.js";
+  import { CheckboxWithLabel } from "$lib/components/ui/checkbox-with-label";
   import * as Form from "$lib/components/ui/form";
   import { Input } from "$lib/components/ui/input";
+  import * as Select from "$lib/components/ui/select";
+  import { languageSwitchLocales } from "$lib/const/locales";
+  import { tenants } from "$lib/stores/tenants";
+  import { getDefaultAppointmentLocale } from "$lib/utils/localizations";
+  import { get } from "svelte/store";
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from ".";
   import type { TAddAppointment } from "../types";
-  import { CheckboxWithLabel } from "$lib/components/ui/checkbox-with-label";
 
   let {
     newAppointment,
@@ -16,9 +21,14 @@
     proceed: (data: TAddAppointment) => void;
   } = $props();
 
+  let languages = $derived($tenants.currentTenant?.languages);
   const form = superForm(
-    // eslint-disable-next-line no-constant-condition
-    { name: "", phone: true ? "" : undefined, shareEmail: false },
+    {
+      locale: getDefaultAppointmentLocale(get(tenants).currentTenant),
+      name: "",
+      phone: "" as string | undefined,
+      shareEmail: false,
+    },
     {
       validators: zodClient(formSchema),
       onSubmit: async ({ cancel }) => {
@@ -31,6 +41,7 @@
           cancel();
           proceed({
             ...newAppointment,
+            locale: $formData.locale,
             name: $formData.name,
             phone: $formData.phone,
             shareEmail: $formData.shareEmail,
@@ -44,6 +55,29 @@
 </script>
 
 <Form.Root {enhance} class="w-full">
+  <Form.Field {form} name="locale">
+    <Form.Control>
+      {#snippet children({ props })}
+        <Form.Label>{m["form.locale"]()}</Form.Label>
+        <Select.Root type="single" {...props} bind:value={$formData.locale}>
+          <Select.Trigger class="w-full">
+            {@const locale = $formData.locale
+              ? languageSwitchLocales[$formData.locale as keyof typeof languageSwitchLocales]
+              : undefined}
+            {locale ? locale.label : m["form.localePlaceholder"]()}
+          </Select.Trigger>
+          <Select.Content>
+            {#each languages as language (language)}
+              <Select.Item value={language}>
+                {languageSwitchLocales[language as keyof typeof languageSwitchLocales].label}
+              </Select.Item>
+            {/each}
+          </Select.Content>
+        </Select.Root>
+      {/snippet}
+    </Form.Control>
+    <Form.FieldErrors />
+  </Form.Field>
   <Form.Field {form} name="name">
     <Form.Control>
       {#snippet children({ props })}

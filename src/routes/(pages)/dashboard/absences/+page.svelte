@@ -21,6 +21,7 @@
   import { DeleteAbsenceForm } from "./(components)/delete-absence-form";
   import EditAbsenceForm from "./(components)/edit-absence-form/edit-absence-form.svelte";
   import { reasons } from "./(components)/utils";
+  import { getLocalTimeZone } from "@internationalized/date";
 
   const { data } = $props();
   const agents = $derived($agentsStore.agents ?? []);
@@ -35,9 +36,34 @@
 
   const renderDescription = (item: TAbsence) => {
     const startDate = toDisplayDateTime(new Date(item.startDate));
+    const fullStartDay = toDisplayDateTime(new Date(item.startDate), {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      timeZone: getLocalTimeZone(),
+    });
     const endDate = toDisplayDateTime(new Date(item.endDate));
+    const fullEndDay = toDisplayDateTime(new Date(item.endDate), {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      timeZone: getLocalTimeZone(),
+    });
     const reason = reasons.find((r) => r.value === item.absenceType);
-    return `${reason?.label}: ${startDate === endDate ? startDate : `${startDate} - ${endDate}`}`;
+    const isAllDay =
+      new Date(item.startDate).getHours() === 0 &&
+      new Date(item.startDate).getMinutes() === 0 &&
+      new Date(item.endDate).getHours() === 23 &&
+      new Date(item.endDate).getMinutes() === 59;
+    const isSameDay =
+      new Date(item.startDate).toDateString() === new Date(item.endDate).toDateString();
+    if (isSameDay && isAllDay) {
+      return `${reason?.label}: ${fullStartDay}`;
+    } else if (isAllDay) {
+      return `${reason?.label}: ${fullStartDay} - ${fullEndDay}`;
+    } else {
+      return `${reason?.label}: ${startDate} - ${endDate}`;
+    }
   };
 </script>
 

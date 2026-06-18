@@ -11,3 +11,13 @@ export type WithoutChild<T> = T extends { child?: any } ? Omit<T, "child"> : T;
 export type WithoutChildren<T> = T extends { children?: any } ? Omit<T, "children"> : T;
 export type WithoutChildrenOrChild<T> = WithoutChildren<WithoutChild<T>>;
 export type WithElementRef<T, U extends HTMLElement = HTMLElement> = T & { ref?: U | null };
+
+export function normalizeEmail(value: string): string;
+export function normalizeEmail(value?: string | null): string | undefined;
+export function normalizeEmail(value?: string | null): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  return value.trim().toLowerCase();
+}

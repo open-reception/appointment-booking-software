@@ -2,7 +2,6 @@
   import { m } from "$i18n/messages";
   import { setLocale } from "$i18n/runtime";
   import type { SupportedLocale } from "$lib/const/locales";
-  import { type SelectTenant } from "$lib/server/db/central-schema";
   import type { SelectUserEmail } from "$lib/server/email/email-service";
   import EmailButton from "./components/EmailButton.svelte";
   import EmailLayout from "./components/EmailLayout.svelte";
@@ -11,15 +10,11 @@
   let {
     locale,
     user,
-    tenant,
-    confirmUrl,
-    expirationMinutes,
+    dashboardUrl,
   }: {
     locale: SupportedLocale;
     user: SelectUserEmail;
-    tenant: SelectTenant;
-    confirmUrl: string;
-    expirationMinutes: number;
+    dashboardUrl: string;
   } = $props();
 
   $effect(() => {
@@ -28,17 +23,12 @@
 </script>
 
 <EmailLayout>
-  <EmailText variant="md">{m["emails.greeting"]({ name: user.name }, { locale })}</EmailText>
+  <EmailText variant="md">{m["emails.greeting"]({ name: user.name })}</EmailText>
   <EmailText variant="md">
-    {m["emails.userInvite.introduction"]({ tenant: tenant.longName }, { locale })}
+    {m["emails.notification.introduction"]()}
   </EmailText>
-  <EmailButton href={confirmUrl} {locale}>
-    {m["emails.userInvite.action"]({}, { locale })}
-  </EmailButton>
-  <EmailText variant="md">
-    {m["emails.userInvite.hint"]({ expirationMinutes }, { locale })}
-  </EmailText>
+  <EmailButton href={dashboardUrl}>{m["emails.notification.action"]()}</EmailButton>
   <EmailText variant="md" color="text-light">
-    {m["emails.userInvite.reason"]({}, { locale })}
+    {m["emails.notification.reason"]()}
   </EmailText>
 </EmailLayout>

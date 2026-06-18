@@ -9,10 +9,10 @@
 
 import { centralDb } from "$lib/server/db";
 import { challengeThrottle } from "$lib/server/db/central-schema";
-import { eq, lt, sql } from "drizzle-orm";
+import { eq, lt, sql, and } from "drizzle-orm";
 import { logger } from "$lib/logger";
 
-export type ThrottleType = "pin" | "passkey";
+export type ThrottleType = "pin" | "passkey" | "passphrase";
 
 interface ThrottleResult {
   allowed: boolean;
@@ -51,15 +51,25 @@ class ChallengeThrottleService {
    * Check if a challenge request should be throttled
    * @param identifier - Email hash for PIN challenges, email for passkey challenges
    * @param type - Type of challenge (pin or passkey)
+   * @param tenantId - Tenant ID for scoping the throttle check
    */
-  async checkThrottle(identifier: string, type: ThrottleType): Promise<ThrottleResult> {
+  async checkThrottle(
+    identifier: string,
+    type: ThrottleType,
+    tenantId?: string,
+  ): Promise<ThrottleResult> {
     const now = new Date();
 
     // Get throttle record from central DB
     const records = await centralDb
       .select()
       .from(challengeThrottle)
-      .where(eq(challengeThrottle.id, identifier))
+      .where(
+        and(
+          eq(challengeThrottle.id, identifier),
+          tenantId ? eq(challengeThrottle.tenantId, tenantId) : undefined,
+        ),
+      )
       .limit(1);
 
     if (records.length === 0) {
@@ -72,7 +82,14 @@ class ChallengeThrottleService {
     // Check if throttle has expired
     if (now > record.resetAt) {
       // Throttle expired, clean up and allow
-      await centralDb.delete(challengeThrottle).where(eq(challengeThrottle.id, identifier));
+      await centralDb
+        .delete(challengeThrottle)
+        .where(
+          and(
+            eq(challengeThrottle.id, identifier),
+            tenantId ? eq(challengeThrottle.tenantId, tenantId) : undefined,
+          ),
+        );
       return { allowed: true, retryAfterMs: 0, failedAttempts: 0 };
     }
 
@@ -104,8 +121,13 @@ class ChallengeThrottleService {
    * Record a failed challenge attempt
    * @param identifier - Email hash for PIN challenges, email for passkey challenges
    * @param type - Type of challenge (pin or passkey)
+   * @param tenantId - Tenant ID for scoping the throttle record
    */
-  async recordFailedAttempt(identifier: string, type: ThrottleType): Promise<void> {
+  async recordFailedAttempt(
+    identifier: string,
+    type: ThrottleType,
+    tenantId?: string,
+  ): Promise<void> {
     const now = new Date();
 
     const resetAt = new Date(now.getTime() + THROTTLE_RESET_DURATION_MS);
@@ -116,6 +138,7 @@ class ChallengeThrottleService {
         failedAttempts: 1,
         lastAttemptAt: now,
         resetAt,
+        tenantId: tenantId,
       })
       .onConflictDoUpdate({
         target: challengeThrottle.id,
@@ -135,9 +158,17 @@ class ChallengeThrottleService {
    * Clear throttle for successful authentication
    * @param identifier - Email hash for PIN challenges, email for passkey challenges
    * @param type - Type of challenge (pin or passkey)
+   * @param tenantId - Tenant ID for scoping the throttle clearance
    */
-  async clearThrottle(identifier: string, type: ThrottleType): Promise<void> {
-    await centralDb.delete(challengeThrottle).where(eq(challengeThrottle.id, identifier));
+  async clearThrottle(identifier: string, type: ThrottleType, tenantId?: string): Promise<void> {
+    await centralDb
+      .delete(challengeThrottle)
+      .where(
+        and(
+          eq(challengeThrottle.id, identifier),
+          tenantId ? eq(challengeThrottle.tenantId, tenantId) : undefined,
+        ),
+      );
 
     logger.debug(`Cleared ${type} challenge throttle`, {
       identifier: identifier.slice(0, 8),

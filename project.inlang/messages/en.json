@@ -24,6 +24,11 @@
 			"success": "E-Mail was resent"
 		},
 		"confirm": {
+			"claim": {
+				"title": "Claim your account",
+				"description": "Click to claim your new account",
+				"action": "Claim account"
+			},
 			"success": {
 				"title": "Good job!",
 				"description": "You’ve secured this instance.",
@@ -91,7 +96,9 @@
 		"domain": "Domain",
 		"phone": "Phone Number",
 		"pin": "PIN",
-		"pinHint": "Save your PIN in a secure place, like a password-manager."
+		"pinHint": "Save your PIN in a secure place, like a password-manager.",
+		"locale": "Language",
+		"localePlaceholder": "Select Language"
 	},
 	"login": {
 		"or": "Or",
@@ -128,9 +135,16 @@
 		}
 	},
 	"logout": {
-		"title": "Logout complete",
-		"description": "You are logged-out.",
-		"success": "Logout successful",
+		"title": "Logout",
+		"success": {
+			"title": "You are logged out.",
+			"description": "You are logged-out."
+		},
+		"error": {
+			"title": "Logout failed",
+			"description": "You could not be logged out."
+		},
+		"retry": "Retry",
 		"action": "Go to Login"
 	},
 	"passkey": {
@@ -1038,18 +1052,17 @@
 			"hint": "This link is only valid for {expirationMinutes} minutes and can only be used once.",
 			"reason": "You are receiving this email because someone registered an account with your e-mail address."
 		},
+		"notification": {
+			"subject": "Activity in your appointment booking platform",
+			"introduction": "There is new activity in your appointment booking platform. Please log in to view details.",
+			"action": "Open Dashboard",
+			"reason": "You are receiving this email because you have notifications enabled for a channel."
+		},
 		"pinReset": {
 			"subject": "PIN successfully changed",
 			"introduction": "you've successfully changed your PIN on the {tenant} appointment booking platform. You can now log-in with your new PIN.",
 			"action": "Login",
 			"reason": "You are receiving this email because someone changed the PIN-Code for your account."
-		},
-		"userInvite": {
-			"subject": "Confirm your E-Mail Address",
-			"introduction": "welcome our appointment booking platform. Please confirm your e-mail address.",
-			"action": "Confirm E-Mail Address",
-			"hint": "This link is only valid for {expirationMinutes} minutes and can only be used once.",
-			"reason": "You are receiving this email because someone registered an account with your e-mail address."
 		}
 	},
 	"notifications": {

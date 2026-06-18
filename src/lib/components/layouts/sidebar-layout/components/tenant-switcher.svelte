@@ -70,7 +70,7 @@
                     {activeTenant.shortName}
                   </Text>
                   <Text style="xs" class="truncate">
-                    {activeTenant.shortName}.{window.location.hostname}
+                    {activeTenant.domain}
                   </Text>
                 {:else}
                   <Text style="md" class="truncate font-medium">

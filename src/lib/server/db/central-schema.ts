@@ -120,8 +120,6 @@ export const user = pgTable(
     lastLoginAt: timestamp("last_login_at"),
     isActive: boolean("is_active").default(true),
     confirmationState: confirmationStateEnum("confirmation_state").default("INVITED"),
-    token: text("token"),
-    tokenValidUntil: timestamp("token_valid_until"),
     /** Hashed passphrase for password authentication (optional, alternative to WebAuthn) */
     passphraseHash: text("passphrase_hash"),
     /** Recovery passphrase for WebAuthn-only users (stored in plain text, shown only once) */
@@ -204,13 +202,9 @@ export const userInvite = pgTable(
     /** Role to assign to user when they register */
     role: userRoleEnum("role").notNull(),
     /** Tenant the user is being invited to */
-    tenantId: uuid("tenant_id")
-      .notNull()
-      .references(() => tenant.id, { onDelete: "cascade" }),
+    tenantId: uuid("tenant_id").references(() => tenant.id, { onDelete: "cascade" }),
     /** User who sent the invitation */
-    invitedBy: uuid("invited_by")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
+    invitedBy: uuid("invited_by").references(() => user.id, { onDelete: "cascade" }),
     /** Language preference for the invitation */
     language: text("language").notNull().default("de"),
     /** Whether the invitation has been used */
@@ -240,6 +234,8 @@ export const userInvite = pgTable(
 export const challengeThrottle = pgTable("challenge_throttle", {
   /** Primary key - identifier (email hash for PIN challenges, email for passkey challenges) */
   id: text("id").primaryKey(),
+  /** Tenant ID for scoping throttles to single tenants to restrict global lock-out. Might be null for global throttles on administrative accounts */
+  tenantId: uuid("tenant_id").references(() => tenant.id, { onDelete: "cascade" }),
   /** Number of failed attempts */
   failedAttempts: integer("failed_attempts").default(0).notNull(),
   /** When the throttle was last updated */

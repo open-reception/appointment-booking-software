@@ -1,4 +1,11 @@
 import logger from "$lib/logger";
+import { normalizeEmail } from "$lib/utils";
+
+type WebAuthnAllowCredential = {
+  id: string;
+  type: "public-key";
+  transports?: AuthenticatorTransport[];
+};
 
 export const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
   try {
@@ -40,13 +47,16 @@ export function base64ToArrayBuffer(base64: string) {
   return bytes.buffer;
 }
 
-export const fetchChallenge = async (email: string) => {
+export const fetchChallenge = async (email: string, userId?: string) => {
   const resp = await fetch("/api/auth/challenge", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({
+      email,
+      ...(userId ? { userId } : {}),
+    }),
   });
 
   let data;
@@ -81,17 +91,20 @@ export const fetchChallenge = async (email: string) => {
   return {
     id: data.rpId,
     challenge: data.challenge,
+    allowCredentials: data.allowCredentials,
   };
 };
 
 export const getCredentialOptions = ({
   id,
   challenge,
+  userId,
   email,
   enablePRF = false,
 }: {
   id: string;
   challenge: string;
+  userId: ArrayBuffer;
   email: string;
   enablePRF?: boolean;
 }): {
@@ -107,7 +120,7 @@ export const getCredentialOptions = ({
         name: "Open Reception",
       },
       user: {
-        id: new Uint8Array(16),
+        id: userId,
         name: email,
         displayName: email,
       },
@@ -132,6 +145,12 @@ export const getCredentialOptions = ({
   return options;
 };
 
+const createWebAuthnUserId = async (email: string): Promise<ArrayBuffer> => {
+  const normalizedEmail = normalizeEmail(email) ?? "";
+  const emailBytes = new TextEncoder().encode(normalizedEmail);
+  return crypto.subtle.digest("SHA-256", emailBytes);
+};
+
 export type GeneratePasskeyResponse = {
   response: AuthenticatorAttestationResponse;
   id: string;
@@ -149,7 +168,8 @@ export const generatePasskey = async ({
   email: string;
   enablePRF?: boolean;
 }): Promise<GeneratePasskeyResponse> => {
-  const options = getCredentialOptions({ id, challenge, email, enablePRF });
+  const userId = await createWebAuthnUserId(email);
+  const options = getCredentialOptions({ id, challenge, userId, email, enablePRF });
   return (await navigator.credentials.create(options)) as GeneratePasskeyResponse;
 };
 
@@ -226,7 +246,7 @@ export const getPRFOutputAfterRegistration = async ({
   if (!prfResults || !prfResults.results || !prfResults.results.first) {
     throw new Error(
       "PRF extension not supported by this passkey. " +
-        "Please use a modern authenticator (YubiKey 5.2.3+, Titan Gen2, Windows Hello, Touch ID, or Android)",
+        "Please use a modern authenticator (https://open-reception.org/getting-started/#passkeys)",
     );
   }
 
@@ -236,6 +256,7 @@ export const getPRFOutputAfterRegistration = async ({
     return prfOutput;
   } else {
     // Convert ArrayBufferView to ArrayBuffer
+    console.log("⚠️ Detected non-ArrayBuffer PRF output, trying to convert manually");
     return prfOutput.buffer.slice(
       prfOutput.byteOffset,
       prfOutput.byteOffset + prfOutput.byteLength,
@@ -252,11 +273,13 @@ export const getCredential = async ({
   challenge,
   email,
   enablePRF = false,
+  allowCredentials,
 }: {
   id: string;
   challenge: string;
   email: string;
   enablePRF?: boolean;
+  allowCredentials?: WebAuthnAllowCredential[];
 }): Promise<GetCredentialResponse> => {
   // Build WebAuthn options manually to support PRF
   const challengeBuffer = base64UrlToArrayBuffer(challenge);
@@ -265,6 +288,11 @@ export const getCredential = async ({
     challenge: challengeBuffer,
     rpId: id,
     userVerification: "preferred",
+    allowCredentials: allowCredentials?.map((credential) => ({
+      id: base64UrlToArrayBuffer(credential.id),
+      type: credential.type,
+      transports: credential.transports,
+    })),
   };
 
   // Add PRF extension if enabled
@@ -307,6 +335,7 @@ export const getCredential = async ({
       if (prfResult instanceof ArrayBuffer) {
         prfOutput = prfResult;
       } else {
+        console.log("⚠️ Detected non-ArrayBuffer PRF output, trying to convert manually");
         prfOutput = prfResult.buffer.slice(
           prfResult.byteOffset,
           prfResult.byteOffset + prfResult.byteLength,

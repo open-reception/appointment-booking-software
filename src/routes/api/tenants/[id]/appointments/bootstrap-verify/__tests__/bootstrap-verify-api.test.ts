@@ -2,7 +2,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RequestEvent } from "@sveltejs/kit";
 import { POST } from "../+server";
-import { createBootstrapPowDigest } from "$lib/server/services/bootstrap-challenge";
+import {
+  createBootstrapPowDigest,
+  NEW_CLIENT_BOOTSTRAP_DIFFICULTY,
+} from "$lib/server/services/bootstrap-challenge";
 
 vi.mock("$lib/logger", () => ({
   logger: {
@@ -70,7 +73,7 @@ describe("Bootstrap Verify API", () => {
         counter,
       });
 
-      if (digest.startsWith("0000")) {
+      if (digest.startsWith("0".repeat(NEW_CLIENT_BOOTSTRAP_DIFFICULTY))) {
         return counter;
       }
     }

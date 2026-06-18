@@ -187,24 +187,26 @@ export const GET: RequestHandler = async ({ params, url }) => {
     const clientSchedule = schedule.schedule.map((daySchedule) => ({
       date: daySchedule.date,
       channels: Object.fromEntries(
-        Object.entries(daySchedule.channels).map(([channelId, channelData]) => [
-          channelId,
-          {
-            channel: {
-              id: channelData.channel.id,
-              names: channelData.channel.names,
-              descriptions: channelData.channel.descriptions,
-              requiresConfirmation: channelData.channel.requiresConfirmation,
-              pause: channelData.channel.pause,
+        Object.entries(daySchedule.channels)
+          .filter(([, channelData]) => channelData.channel.isPublic && !channelData.channel.pause) // Only include public and non-paused channels
+          .map(([channelId, channelData]) => [
+            channelId,
+            {
+              channel: {
+                id: channelData.channel.id,
+                names: channelData.channel.names,
+                descriptions: channelData.channel.descriptions,
+                requiresConfirmation: channelData.channel.requiresConfirmation,
+                pause: channelData.channel.pause,
+              },
+              availableSlots: channelData.availableSlots.map((slot) => ({
+                from: slot.from,
+                to: slot.to,
+                duration: slot.duration,
+                availableAgents: slot.availableAgents,
+              })),
             },
-            availableSlots: channelData.availableSlots.map((slot) => ({
-              from: slot.from,
-              to: slot.to,
-              duration: slot.duration,
-              availableAgents: slot.availableAgents,
-            })),
-          },
-        ]),
+          ]),
       ),
     }));
 

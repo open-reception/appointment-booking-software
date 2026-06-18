@@ -23,6 +23,11 @@
 			"success": "E-Mail wurde gesendet"
 		},
 		"confirm": {
+			"claim": {
+				"title": "Konto einrichten",
+				"description": "Klicken Sie, um Ihr neues Konto einzurichten.",
+				"action": "Konto einrichten"
+			},
 			"success": {
 				"title": "Gute Arbeit!",
 				"description": "Du hast Dir diese Instanz gesichert.",
@@ -75,7 +80,9 @@
 		"domain": "Domain",
 		"phone": "Telefonnummer",
 		"pin": "PIN",
-		"pinHint": "Speichere Deine PIN an einem sicheren Ort, z.B. in einem Passwort-Manager."
+		"pinHint": "Speichere Deine PIN an einem sicheren Ort, z.B. in einem Passwort-Manager.",
+		"locale": "Sprache",
+		"localePlaceholder": "Sprache wählen"
 	},
 	"login": {
 		"or": "Oder",
@@ -120,9 +127,16 @@
 		"errorGettingPrfOutput": "Fehler beim Abrufen der Sicherheitsdaten vom Passkey. Bitte verwenden Sie einen modernen Authentifikator, der die PRF-Erweiterung unterstützt."
 	},
 	"logout": {
-		"title": "Erfolgreich abgemeldet",
-		"description": "Du wurdest abgemeldet.",
-		"success": "Erfolgreich abgemeldet",
+		"title": "Abmelden",
+		"success": {
+			"title": "Du wurdest abgemeldet.",
+			"description": "Du wurdest abgemeldet."
+		},
+		"error": {
+			"title": "Abmelden fehlgeschlagen",
+			"description": "Du konntest nicht abgemeldet werden."
+		},
+		"retry": "Erneut versuchen",
 		"action": "Zur Anmeldung"
 	},
 	"passkey": {
@@ -1029,18 +1043,17 @@
 			"hint": "Dieser Link ist nur {expirationMinutes} Minuten gültig und kann nur einmal verwendet werden.",
 			"reason": "Du erhältst diese E-Mail, weil jemand für Deine E-Mail Adresse ein Konto registriert hat."
 		},
+		"notification": {
+			"subject": "Aktivität in Deinem Terminbuchungsportal",
+			"introduction": "in Deinem Terminbuchungsportal gab es eine neue Aktivität. Bitte logge Dich ein, um die Details zu sehen.",
+			"action": "Dashboard öffnen",
+			"reason": "Du erhältst diese E-Mail, weil Du für einen Kanal Benachrichtigungen aktiviert hast."
+		},
 		"pinReset": {
 			"subject": "PIN erfolgreich geändert",
 			"introduction": "Sie haben erfolgreich Ihre PIN beim Terminbuchungsportal von {tenant} geändert und können sich ab sofort mit Ihrer PIN anmelden.",
 			"action": "Anmelden",
 			"reason": "Sie erhalten diese E-Mail, weil jemand für die PIN für Ihr Konto geändert hat."
-		},
-		"userInvite": {
-			"subject": "E-Mail Adresse bestätigen",
-			"introduction": "willkommen beim Terminbuchungsportal von {tenant}. Bitte bestätige Deine E-Mail Adresse.",
-			"action": "E-Mail Adresse bestätigen",
-			"hint": "Dieser Link ist nur {expirationMinutes} Minuten gültig und kann nur einmal verwendet werden.",
-			"reason": "Du erhältst diese E-Mail, weil jemand für Deine E-Mail Adresse ein Konto registriert hat."
 		}
 	},
 	"notifications": {

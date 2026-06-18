@@ -9,6 +9,7 @@ import {
   text,
   time,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -287,24 +288,28 @@ export type SelectNotification = InferSelectModel<typeof notification>;
  * Enables end-to-end encryption for appointments in tenant database
  * @table staffCrypto
  */
-export const staffCrypto = pgTable("staff_crypto", {
-  /** Primary key - unique identifier */
-  id: uuid("id").primaryKey().defaultRandom(),
-  /** Foreign key to central user table */
-  userId: uuid("user_id").notNull(),
-  /** ML-KEM-768 (Kyber) public key for this staff member (Base64 encoded) */
-  publicKey: text("public_key").notNull(),
-  /** Database-stored shard of the private key (Base64 encoded) */
-  privateKeyShare: text("private_key_share").notNull(),
-  /** Associated passkey ID for key derivation */
-  passkeyId: text("passkey_id").notNull(),
-  /** Timestamp when the key was created */
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  /** Timestamp when the key was last updated */
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  /** Whether this key is currently active */
-  isActive: boolean("is_active").default(true).notNull(),
-});
+export const staffCrypto = pgTable(
+  "staff_crypto",
+  {
+    /** Primary key - unique identifier */
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** Foreign key to central user table */
+    userId: uuid("user_id").notNull(),
+    /** ML-KEM-768 (Kyber) public key for this staff member (Base64 encoded) */
+    publicKey: text("public_key").notNull(),
+    /** Database-stored shard of the private key (Base64 encoded) */
+    privateKeyShare: text("private_key_share").notNull(),
+    /** Associated passkey ID for key derivation */
+    passkeyId: text("passkey_id").notNull(),
+    /** Timestamp when the key was created */
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    /** Timestamp when the key was last updated */
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    /** Whether this key is currently active */
+    isActive: boolean("is_active").default(true).notNull(),
+  },
+  (table) => [uniqueIndex("staff_crypto_ua_idx").on(table.userId, table.isActive)],
+);
 
 /**
  * ClientAppointmentTunnels table - represents encrypted appointment tunnels for clients

@@ -20,8 +20,6 @@ const mockUser: SelectUser = {
   lastLoginAt: new Date(),
   isActive: true,
   confirmationState: "ACCESS_GRANTED" as const,
-  token: null,
-  tokenValidUntil: null,
   passphraseHash: null,
   recoveryPassphrase: null,
   language: "de",

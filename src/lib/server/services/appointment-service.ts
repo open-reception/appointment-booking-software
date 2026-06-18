@@ -1021,13 +1021,13 @@ export class AppointmentService {
       });
 
       // Record failed attempt for throttling
-      await challengeThrottleService.recordFailedAttempt(emailHash, "pin");
+      await challengeThrottleService.recordFailedAttempt(emailHash, "pin", this.tenantId);
 
       throw new ValidationError("Invalid challenge response");
     }
 
     // Clear throttle on successful verification
-    await challengeThrottleService.clearThrottle(emailHash, "pin");
+    await challengeThrottleService.clearThrottle(emailHash, "pin", this.tenantId);
 
     const db = await this.getDb();
 

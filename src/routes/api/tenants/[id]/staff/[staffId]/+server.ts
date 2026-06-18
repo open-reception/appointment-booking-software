@@ -1,7 +1,13 @@
 import type { RequestHandler } from "@sveltejs/kit";
 import { json } from "@sveltejs/kit";
 import { logger } from "$lib/logger";
-import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
+import {
+  AuthorizationError,
+  BackendError,
+  InternalError,
+  logError,
+  ValidationError,
+} from "$lib/server/utils/errors";
 import { ERRORS } from "$lib/errors";
 import { checkPermission } from "$lib/server/utils/permissions";
 import { StaffService } from "$lib/server/services/staff-service";
@@ -309,6 +315,10 @@ export const PUT: RequestHandler = async ({ params, locals, request }) => {
     }
 
     const updateData = validation.data;
+
+    if (updateData.role === "GLOBAL_ADMIN") {
+      throw new AuthorizationError("Cannot assign GLOBAL_ADMIN role to a staff member");
+    }
 
     const updatedUser = await StaffService.updateStaffMember(
       tenantId,

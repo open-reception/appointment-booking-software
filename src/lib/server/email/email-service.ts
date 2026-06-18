@@ -22,8 +22,8 @@ import { AgentService } from "../services/agent-service";
 import { TenantService } from "../db/tenant-service";
 import Confirmation from "$lib/emails/Confirmation.svelte";
 import PinReset from "$lib/emails/PinReset.svelte";
-import UserInvite from "$lib/emails/UserInvite.svelte";
 import { dev } from "$app/environment";
+import Notification from "$lib/emails/Notification.svelte";
 
 export type SelectClient = {
   email: string;
@@ -147,7 +147,7 @@ export async function sendPinResetEmail(
       locale,
       user,
       tenant,
-      loginUrl: generateBaseUrl(requestUrl, tenant) ?? "http://localhost:5173",
+      loginUrl: generateBaseUrl(requestUrl),
     },
   });
   const html = renderOutputToHtml(emailRender);
@@ -399,23 +399,10 @@ export async function sendAppointmentUpdatedEmail(
  * @param {SelectTenant | null} tenant - Tenant information (null for global admin)
  * @returns {string} The appropriate base URL
  */
-export function generateBaseUrl(requestUrl: URL, tenant: SelectTenant | null): string {
-  const protocol = requestUrl.protocol;
-  const port = requestUrl.port ? `:${requestUrl.port}` : "";
-  const hostname = requestUrl.hostname;
-
-  // In development, always use the original hostname regardless of tenant
-  if (hostname === "localhost" || hostname.startsWith("127.") || hostname.startsWith("192.168.")) {
-    return `${protocol}//${hostname}${port}`;
-  }
-
-  // In production, handle tenant subdomains.
-  // Exclude the system tenant when determining if we should use the tenant's domain for the URL, as the system tenant does not have a domain and should use the main domain.
-  if (tenant?.domain && tenant.id !== "system") {
-    return `${protocol}//${tenant.domain}.${hostname}${port}`;
-  }
-
-  // For global admin or no tenant, use main domain
+export function generateBaseUrl(url: URL): string {
+  const protocol = url.protocol;
+  const port = url.port ? `:${url.port}` : "";
+  const hostname = url.hostname;
   return `${protocol}//${hostname}${port}`;
 }
 
@@ -434,10 +421,10 @@ export async function sendConfirmationEmail(
   tenant: SelectTenant,
   confirmationCode: string,
   expirationMinutes: number = 15,
-  requestUrl?: URL,
+  requestUrl: URL,
 ): Promise<void> {
   // Generate appropriate base URL if request URL is provided
-  const baseUrl = requestUrl ? generateBaseUrl(requestUrl, tenant) : "http://localhost:5173";
+  const baseUrl = generateBaseUrl(requestUrl);
   const confirmUrl = `${baseUrl}/confirm/${confirmationCode}`;
   const recipient = user;
   // Generate email
@@ -450,50 +437,6 @@ export async function sendConfirmationEmail(
       user: user as SelectUserEmail,
       confirmUrl,
       expirationMinutes,
-    },
-  });
-  const html = renderOutputToHtml(emailRender);
-  const text = htmlToText(html);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await sendEmail(recipient as any, subject, html, text, tenant.longName);
-}
-
-/**
- * Send user invitation email for existing tenant
- * @param {string} userEmail - Email address of the invited user
- * @param {string} userName - Name of the invited user
- * @param {SelectTenant} tenant - Tenant information for branding
- * @param {string} role - Role to assign to the user (TENANT_ADMIN or STAFF) - for logging only
- * @param {string} registrationUrl - URL for user to register (contains secure invite code)
- * @param {Language} [language="en"] - Email language
- * @throws {Error} When email sending fails
- * @returns {Promise<void>}
- */
-export async function sendUserInviteEmail(
-  userEmail: string,
-  userName: string,
-  tenant: SelectTenant,
-  role: "TENANT_ADMIN" | "STAFF",
-  registrationUrl: string,
-  language: Language = "en",
-): Promise<void> {
-  const { recipient, locale } = await getRecipient({ email: userEmail, name: userName, language });
-
-  // Generate email
-  const subject = m["emails.userInvite.subject"](
-    {
-      tenant: tenant.longName,
-    },
-    { locale },
-  );
-  const emailRender = render(UserInvite, {
-    props: {
-      locale,
-      user: recipient as SelectUserEmail,
-      tenant,
-      confirmUrl: registrationUrl,
-      expirationMinutes: 30,
     },
   });
   const html = renderOutputToHtml(emailRender);
@@ -533,6 +476,35 @@ export async function sendAppointmentCancelledEmail(
       tenant,
       appointment: { ...appointment, agentName: "---" },
       address: await getAddressFromTenant(tenant.id),
+    },
+  });
+  const html = renderOutputToHtml(emailRender);
+  const text = htmlToText(html);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await sendEmail(recipient as any, subject, html, text, tenant.longName);
+}
+
+/**
+ * Send notification email
+ * @param {SelectUser} user - Database user object or client data
+ * @param {{ domain: string; longName: string }} tenant - Tenant information for branding
+ * @throws {Error} When email sending fails
+ * @returns {Promise<void>}
+ */
+export async function sendNotificationEmail(
+  user: SelectUser,
+  tenant: { domain: string; longName: string },
+): Promise<void> {
+  // Create recipient directly for SelectClient type, use helper for SelectUser
+  const { recipient, locale } = await getRecipient(user);
+  // Generate email
+  const subject = m["emails.notification.subject"]();
+  const emailRender = render(Notification, {
+    props: {
+      locale,
+      user,
+      dashboardUrl: dev ? `http://localhost:5173/dashboard` : `https://${tenant.domain}/dashboard`,
     },
   });
   const html = renderOutputToHtml(emailRender);

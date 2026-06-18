@@ -17,7 +17,7 @@ vi.mock("$lib/server/services/invite-service", () => ({
 }));
 
 vi.mock("$lib/server/email/email-service", () => ({
-  sendUserInviteEmail: vi.fn(),
+  sendConfirmationEmail: vi.fn(),
 }));
 
 vi.mock("$env/dynamic/private", () => ({
@@ -28,7 +28,7 @@ vi.mock("$env/dynamic/private", () => ({
 
 import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
 import { InviteService } from "$lib/server/services/invite-service";
-import { sendUserInviteEmail } from "$lib/server/email/email-service";
+import { sendConfirmationEmail } from "$lib/server/email/email-service";
 import { mockCookies } from "$lib/tests/const";
 
 describe("POST /api/auth/invite", () => {
@@ -88,7 +88,7 @@ describe("POST /api/auth/invite", () => {
     vi.mocked(TenantAdminService.getTenantById).mockResolvedValue(mockTenantService as any);
     vi.mocked(InviteService.hasPendingInvite).mockResolvedValue(false);
     vi.mocked(InviteService.createInvite).mockResolvedValue(mockInvitation as any);
-    vi.mocked(sendUserInviteEmail).mockResolvedValue();
+    vi.mocked(sendConfirmationEmail).mockResolvedValue();
   });
 
   it("should reject unauthenticated requests", async () => {
@@ -142,7 +142,7 @@ describe("POST /api/auth/invite", () => {
       "admin-id",
       "en",
     );
-    expect(vi.mocked(sendUserInviteEmail)).toHaveBeenCalled();
+    expect(vi.mocked(sendConfirmationEmail)).toHaveBeenCalled();
   });
 
   it("should allow tenant admin to invite to their own tenant", async () => {
@@ -176,13 +176,22 @@ describe("POST /api/auth/invite", () => {
       "admin-id",
       "en",
     );
-    expect(vi.mocked(sendUserInviteEmail)).toHaveBeenCalledWith(
-      "user@example.com",
-      "Test User",
-      mockTenant,
-      "STAFF",
-      expect.stringContaining("invite-code-123"),
-      "en",
+    expect(vi.mocked(sendConfirmationEmail)).toHaveBeenCalledWith(
+      { email: "user@example.com", id: "invite-123", language: "en", name: "Test User" },
+      {
+        createdAt: expect.any(Date),
+        databaseUrl: "postgresql://test",
+        description: "A test corporation",
+        id: "12345678-1234-4234-8234-123456789012",
+        longName: "Test Corporation GmbH",
+        logo: null,
+        setupState: "NEW",
+        shortName: "testcorp",
+        updatedAt: expect.any(Date),
+      },
+      "invite-code-123",
+      10,
+      expect.any(URL),
     );
   });
 
@@ -209,7 +218,7 @@ describe("POST /api/auth/invite", () => {
     expect(response.status).toBe(403);
     expect(data.error).toBe("Insufficient permissions");
     expect(vi.mocked(InviteService.createInvite)).not.toHaveBeenCalled();
-    expect(vi.mocked(sendUserInviteEmail)).not.toHaveBeenCalled();
+    expect(vi.mocked(sendConfirmationEmail)).not.toHaveBeenCalled();
   });
 
   it("should reject staff members from inviting", async () => {
@@ -235,7 +244,7 @@ describe("POST /api/auth/invite", () => {
     expect(response.status).toBe(403);
     expect(data.error).toBe("Insufficient permissions");
     expect(vi.mocked(InviteService.createInvite)).not.toHaveBeenCalled();
-    expect(vi.mocked(sendUserInviteEmail)).not.toHaveBeenCalled();
+    expect(vi.mocked(sendConfirmationEmail)).not.toHaveBeenCalled();
   });
 
   it("should validate request data", async () => {
@@ -261,7 +270,7 @@ describe("POST /api/auth/invite", () => {
     expect(response.status).toBe(400);
     expect(data.error).toBe("Invalid request data");
     expect(vi.mocked(InviteService.createInvite)).not.toHaveBeenCalled();
-    expect(vi.mocked(sendUserInviteEmail)).not.toHaveBeenCalled();
+    expect(vi.mocked(sendConfirmationEmail)).not.toHaveBeenCalled();
   });
 
   it("should reject if user already has pending invitation", async () => {
@@ -294,6 +303,6 @@ describe("POST /api/auth/invite", () => {
       "12345678-1234-4234-8234-123456789012",
     );
     expect(vi.mocked(InviteService.createInvite)).not.toHaveBeenCalled();
-    expect(vi.mocked(sendUserInviteEmail)).not.toHaveBeenCalled();
+    expect(vi.mocked(sendConfirmationEmail)).not.toHaveBeenCalled();
   });
 });

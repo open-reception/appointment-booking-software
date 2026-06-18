@@ -51,7 +51,7 @@ async function registerStaffPasskey(userId, tenantId, email) {
   if (!extensionResults.prf?.enabled) {
     throw new Error(
       "PRF extension not supported. Please use a modern authenticator " +
-        "(YubiKey 5.2.3+, Titan Gen2, Windows Hello, Touch ID, or Android)",
+        "(https://open-reception.org/getting-started/#passkeys)",
     );
   }
 

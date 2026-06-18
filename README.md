@@ -8,6 +8,7 @@ Follow our [deployment guide](./docs/deployment.md) to deploy to you own server.
 
 ## Local development
 
+- Ensure you have Node 24 installed (either manually, or optionally by running `nvm install` and `nvm use`).
 - Create your own local `.env` file. You can base it on [.env.example](./.env.example)
 - `npm install`
 - `npm run docker:dev:up`

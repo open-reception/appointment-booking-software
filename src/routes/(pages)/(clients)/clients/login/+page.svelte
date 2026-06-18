@@ -47,6 +47,8 @@
     >
       {m["login.action"]()}
     </Form.Button>
-    <Button href={resolve(ROUTES.LOGIN)} variant="link">{m["clients.login.altAction"]()}</Button>
+    <Button href={resolve(ROUTES.DASHBOARD.MAIN)} variant="link">
+      {m["clients.login.altAction"]()}
+    </Button>
   </CenteredCard.Action>
 </CenteredCard.Root>

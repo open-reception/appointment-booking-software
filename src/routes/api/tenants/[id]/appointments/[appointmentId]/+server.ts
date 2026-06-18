@@ -13,11 +13,10 @@ import logger from "$lib/logger";
 import { checkPermission } from "$lib/server/utils/permissions";
 
 // Register OpenAPI documentation for GET
-/* No longer used?
 registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "GET", {
   summary: "Get appointment by ID",
   description:
-    "Retrieves a specific appointment by its ID. Accessible to staff and tenant admins and also clients.",
+    "Retrieves a specific appointment by its ID. Accessible to dashboard users. Required for notification previews. Only returns a subset of appointment data.",
   tags: ["Appointments"],
   parameters: [
     {
@@ -131,7 +130,7 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "GET", {
       },
     },
   },
-});*/
+});
 
 // Register OpenAPI documentation for DELETE
 registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "DELETE", {
@@ -223,6 +222,8 @@ export const GET: RequestHandler = async ({ params, locals }) => {
       throw new ValidationError("Tenant ID and appointment ID are required");
     }
 
+    checkPermission(locals, tenantId, true);
+
     log.debug("Getting appointment by ID", {
       tenantId,
       appointmentId,
@@ -242,8 +243,14 @@ export const GET: RequestHandler = async ({ params, locals }) => {
       requestedBy: locals.user?.id,
     });
 
+    // Stripping data, because we only us this for notification previews
     return json({
-      appointment,
+      appointment: {
+        id: appointment.id,
+        appointmentDate: appointment.appointmentDate,
+        channelId: appointment.channelId,
+        agentId: appointment.agentId,
+      },
     });
   } catch (error) {
     logError(log)("Error getting appointment", error, locals.user?.id, params.id);

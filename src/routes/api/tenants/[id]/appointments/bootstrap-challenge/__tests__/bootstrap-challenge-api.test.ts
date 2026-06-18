@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RequestEvent } from "@sveltejs/kit";
 import { POST } from "../+server";
+import { NEW_CLIENT_BOOTSTRAP_DIFFICULTY } from "$lib/server/services/bootstrap-challenge";
 
 vi.mock("$lib/logger", () => ({
   logger: {
@@ -60,7 +61,7 @@ describe("Bootstrap Challenge API", () => {
     expect(response.status).toBe(200);
     expect(data.challengeId).toBeTypeOf("string");
     expect(data.nonce).toBeTypeOf("string");
-    expect(data.difficulty).toBe(4);
+    expect(data.difficulty).toBe(NEW_CLIENT_BOOTSTRAP_DIFFICULTY);
     expect(challengeStore.store).toHaveBeenCalledOnce();
   });
 

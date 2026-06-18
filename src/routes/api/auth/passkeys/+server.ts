@@ -1,9 +1,10 @@
 import { json } from "@sveltejs/kit";
 import { UserService } from "$lib/server/services/user-service";
 import { WebAuthnService } from "$lib/server/auth/webauthn-service";
-import { NotFoundError, ValidationError } from "$lib/server/utils/errors";
+import { AuthenticationError, BackendError, ValidationError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
+import { checkPermission } from "$lib/server/utils/permissions";
 import logger from "$lib/logger";
 
 // Register OpenAPI documentation
@@ -18,12 +19,6 @@ registerOpenAPIRoute("/auth/passkeys", "POST", {
         schema: {
           type: "object",
           properties: {
-            userId: {
-              type: "string",
-              format: "uuid",
-              description: "User ID to add the passkey to",
-              example: "01234567-89ab-cdef-0123-456789abcdef",
-            },
             passkey: {
               type: "object",
               description: "WebAuthn passkey data",
@@ -40,7 +35,7 @@ registerOpenAPIRoute("/auth/passkeys", "POST", {
               required: ["id", "publicKey"],
             },
           },
-          required: ["userId", "passkey"],
+          required: ["passkey"],
         },
       },
     },
@@ -74,15 +69,6 @@ registerOpenAPIRoute("/auth/passkeys", "POST", {
         },
       },
     },
-    "404": {
-      description: "User not found",
-      content: {
-        "application/json": {
-          schema: { $ref: "#/components/schemas/Error" },
-          example: { error: "User not found" },
-        },
-      },
-    },
     "500": {
       description: "Internal server error",
       content: {
@@ -95,41 +81,54 @@ registerOpenAPIRoute("/auth/passkeys", "POST", {
   },
 });
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals, cookies, url }) => {
   const log = logger.setContext("API");
 
   try {
     const body = await request.json();
 
-    // Validate required fields
-    if (!body.userId || !body.passkey) {
-      return json({ error: "userId and passkey are required" }, { status: 400 });
+    if (!locals.user) {
+      throw new AuthenticationError();
+    }
+    checkPermission(locals, locals.user.tenantId, false, false);
+
+    const challenge = cookies.get("webauthn-challenge");
+    if (!challenge) {
+      throw new ValidationError("Missing registration challenge");
     }
 
-    if (!body.passkey.id || !body.passkey.publicKey) {
-      return json({ error: "Passkey must include id and publicKey" }, { status: 400 });
+    // Validate required fields
+    if (!body.passkey) {
+      throw new ValidationError("passkey is required");
+    } else if (!body.passkey.id || !body.passkey.publicKey) {
+      throw new ValidationError("Passkey must include id and publicKey");
     }
 
     log.debug("Adding additional passkey to user", {
-      userId: body.userId,
+      userId: locals.user.id,
       passkeyId: body.passkey.id,
       deviceName: body.passkey.deviceName,
     });
 
-    // Extract counter from WebAuthn credential
-    const counter = WebAuthnService.extractCounterFromCredential(body.passkey);
+    const verified = await WebAuthnService.verifyRegistration(
+      body.passkey.id,
+      body.passkey.attestationObject,
+      body.passkey.clientDataJSON,
+      challenge,
+      url,
+    );
 
     // Add the passkey using the UserService
-    await UserService.addAdditionalPasskey(body.userId, {
-      id: body.passkey.id,
-      userId: body.userId,
-      publicKey: body.passkey.publicKey,
-      counter,
+    await UserService.addAdditionalPasskey(locals.user.id, {
+      id: verified.credentialID,
+      userId: locals.user.id,
+      publicKey: verified.credentialPublicKey,
+      counter: verified.counter,
       deviceName: body.passkey.deviceName || "Unknown Device",
     });
 
     log.debug("Additional passkey added successfully", {
-      userId: body.userId,
+      userId: locals.user.id,
       passkeyId: body.passkey.id,
     });
 
@@ -143,17 +142,13 @@ export const POST: RequestHandler = async ({ request }) => {
   } catch (error) {
     log.error("Add passkey error:", JSON.stringify(error || "?"));
 
-    if (error instanceof NotFoundError) {
-      return json({ error: "User not found" }, { status: 404 });
-    }
-
-    if (error instanceof ValidationError) {
-      return json({ error: error.message }, { status: 400 });
-    }
-
     // Handle unique constraint violation (passkey already exists)
     if (error instanceof Error && error.message.includes("unique constraint")) {
       return json({ error: "This passkey is already registered" }, { status: 409 });
+    }
+
+    if (error instanceof BackendError) {
+      return error.toJson();
     }
 
     return json({ error: "Internal server error" }, { status: 500 });

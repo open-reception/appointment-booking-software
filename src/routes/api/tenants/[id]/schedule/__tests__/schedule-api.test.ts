@@ -65,6 +65,7 @@ describe("Schedule API Route", () => {
                   descriptions: { en: "Support Channel", de: "Support Kanal" },
                   pause: false,
                   requiresConfirmation: false,
+                  isPublic: true,
                 },
                 appointments: [
                   { id: "appointment-1", appointmentDate: "2024-01-01T10:00:00.000Z" },

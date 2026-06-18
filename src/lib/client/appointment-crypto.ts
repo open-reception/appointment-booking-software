@@ -485,7 +485,7 @@ export class UnifiedAppointmentCrypto {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(isFirstAppointment && this.bookingAccessToken
+          ...(this.bookingAccessToken
             ? { Authorization: `Bearer ${this.bookingAccessToken}` }
             : {}),
         },
@@ -959,7 +959,7 @@ export class UnifiedAppointmentCrypto {
       throw new Error(
         "PRF output not available in session. " +
           "This passkey may not support the PRF extension. " +
-          "Please use a modern authenticator (YubiKey 5.2.3+, Titan Gen2, Windows Hello, Touch ID, or Android).",
+          "Please use a modern authenticator (https://open-reception.org/getting-started/#passkeys).",
       );
     }
 
@@ -994,6 +994,7 @@ export class UnifiedAppointmentCrypto {
     staffId: string,
     passkeyId: string,
     prfOutput: ArrayBuffer,
+    email: string,
     keyPair: { publicKey: Uint8Array; privateKey: Uint8Array },
   ): Promise<void> {
     // Derive passkey-based shard from PRF output
@@ -1013,6 +1014,7 @@ export class UnifiedAppointmentCrypto {
         passkeyId,
         publicKey: this.uint8ArrayToBase64(keyPair.publicKey),
         privateKeyShare: this.uint8ArrayToBase64(dbShard),
+        email,
       }),
     });
 

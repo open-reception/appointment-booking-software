@@ -139,7 +139,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
     const { emailHash } = requestSchema.parse(body);
 
     // Check throttling
-    const throttleResult = await challengeThrottleService.checkThrottle(emailHash, "pin");
+    const throttleResult = await challengeThrottleService.checkThrottle(emailHash, "pin", tenantId);
 
     if (!throttleResult.allowed) {
       logger.warn("PIN challenge throttled", {

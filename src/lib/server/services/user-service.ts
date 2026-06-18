@@ -22,6 +22,7 @@ import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
 import { AppointmentService } from "./appointment-service";
 
 export type InsertUser = InferInsertModel<typeof centralSchema.user>;
+export type InsertUserInvite = InferInsertModel<typeof centralSchema.userInvite>;
 export type InsertUserPasskey = InferInsertModel<typeof centralSchema.userPasskey>;
 export type UserTransaction = PgTransaction<
   PostgresJsQueryResultHKT,
@@ -45,10 +46,8 @@ const userCreationSchema = z.object({
   name: z.string().min(5),
   email: z.email(),
   role: z.enum(["GLOBAL_ADMIN", "TENANT_ADMIN", "STAFF"]).optional(),
-  tenantId: z.string().uuid().optional(),
+  tenantId: z.uuid().optional(),
   passphrase: z.string().min(12).optional(),
-  token: z.uuidv7().optional(),
-  tokenValidUntil: z.date().optional(),
   language: z.enum(["de", "en"]).optional().default("de"),
   confirmationState: z.enum(["INVITED", "CONFIRMED", "ACCESS_GRANTED"]).optional(),
   // Note: passphraseHash and recoveryPassphrase are handled internally, not via user input
@@ -99,7 +98,7 @@ export class UserService {
   /**
    * Create a new user
    */
-  static async createUser(userData: UserCreation, requestUrl?: URL) {
+  static async createUser(userData: UserCreation, requestUrl: URL) {
     const log = logger.setContext("UserService");
     log.debug("Creating new user account", {
       email: userData.email,
@@ -122,8 +121,14 @@ export class UserService {
       throw new ValidationError("Passphrase must be at least 12 characters long");
     }
 
-    userData.token = uuidv7();
-    userData.tokenValidUntil = addMinutes(new Date(), 10);
+    const userInviteForDb: InsertUserInvite = {
+      email: userData.email,
+      name: userData.name,
+      role: userData.role!,
+      tenantId: userData.tenantId!,
+      expiresAt: addMinutes(new Date(), 10),
+      inviteCode: uuidv7(),
+    };
 
     // Prepare user data for database
     const userDataForDb: InsertUser = {
@@ -131,8 +136,6 @@ export class UserService {
       email: userData.email,
       role: userData.role,
       tenantId: userData.tenantId,
-      token: userData.token,
-      tokenValidUntil: userData.tokenValidUntil,
       language: userData.language || "de",
       confirmationState: userData.confirmationState || "INVITED",
       isActive: false,
@@ -162,43 +165,49 @@ export class UserService {
     }
 
     try {
-      const result = await centralDb.insert(centralSchema.user).values(userDataForDb).returning();
+      const [inviteResult] = await centralDb
+        .insert(centralSchema.userInvite)
+        .values(userInviteForDb)
+        .returning();
+      const [insertedUser] = await centralDb
+        .insert(centralSchema.user)
+        .values(userDataForDb)
+        .returning();
 
       log.debug("User account created successfully", {
-        userId: result[0].id,
-        email: result[0].email,
-        tokenValidUntil: result[0].tokenValidUntil,
-        hasPassphrase: !!result[0].passphraseHash,
-        hasRecoveryPassphrase: !!result[0].recoveryPassphrase,
+        userId: insertedUser.id,
+        email: insertedUser.email,
+        hasPassphrase: !!insertedUser.passphraseHash,
+        hasRecoveryPassphrase: !!insertedUser.recoveryPassphrase,
       });
 
       // Send confirmation email to user (token is used as confirmation code)
       try {
-        if (result[0].email && result[0].token) {
-          const tenant = await getTenantForUser(result[0]);
+        if (insertedUser?.email && inviteResult?.inviteCode) {
+          const tenant = await getTenantForUser(insertedUser);
           await sendConfirmationEmail(
-            result[0],
+            insertedUser,
             tenant,
-            result[0].token,
+            inviteResult.inviteCode,
             10, // 10 minutes expiration to match tokenValidUntil
             requestUrl,
           );
           log.debug("Confirmation email sent successfully", {
-            userId: result[0].id,
-            email: result[0].email,
-            tenantId: result[0].tenantId,
+            userId: insertedUser.id,
+            email: insertedUser.email,
+            tenantId: insertedUser.tenantId,
           });
         }
       } catch (emailError) {
         log.warn("Failed to send confirmation email", {
-          userId: result[0].id,
-          email: result[0].email,
+          userId: insertedUser?.id,
+          email: insertedUser?.email,
           error: String(emailError),
         });
         // Don't throw - user creation succeeded, email is just a bonus
       }
 
-      return result[0];
+      return insertedUser;
     } catch (error) {
       log.error("Failed to create user account", { email: userData.email, error: String(error) });
       throw error;
@@ -208,9 +217,9 @@ export class UserService {
   /**
    * Resend the confirmation email for a user
    * @param email - Email of the user to confirm
-   * @param requestUrl - Optional request URL for generating correct baseUrl
+   * @param requestUrl - request URL for generating correct baseUrl
    */
-  static async resendConfirmationEmail(email: string, requestUrl?: URL): Promise<void> {
+  static async resendConfirmationEmail(email: string, requestUrl: URL): Promise<void> {
     const log = logger.setContext("UserService");
     log.debug("Resending confirmation email", { email });
 
@@ -219,9 +228,9 @@ export class UserService {
 
     try {
       const result = await centralDb
-        .update(centralSchema.user)
-        .set({ token, tokenValidUntil })
-        .where(eq(centralSchema.user.email, email))
+        .update(centralSchema.userInvite)
+        .set({ inviteCode: token, expiresAt: tokenValidUntil })
+        .where(eq(centralSchema.userInvite.email, email))
         .returning();
 
       if (result.length !== 1) {
@@ -294,7 +303,32 @@ export class UserService {
           }
         | undefined = undefined;
 
-      const userData = await centralDb
+      const [matchingInvite] = await centralDb
+        .select({
+          id: centralSchema.userInvite.id,
+          email: centralSchema.userInvite.email,
+          tenantId: centralSchema.userInvite.tenantId,
+          role: centralSchema.userInvite.role,
+          name: centralSchema.userInvite.name,
+          language: centralSchema.userInvite.language,
+        })
+        .from(centralSchema.userInvite)
+        .where(
+          and(
+            eq(centralSchema.userInvite.inviteCode, linkToken),
+            gt(centralSchema.userInvite.expiresAt, sql`timezone('utc', now())`),
+          ),
+        )
+        .limit(1);
+
+      if (!matchingInvite) {
+        log.warn("User confirmation failed: Invalid or expired invite code", {
+          token: linkToken.substring(0, 8) + "...",
+        });
+        throw new NotFoundError("Invalid or expired invite code");
+      }
+
+      const [userData] = await centralDb
         .select({
           id: centralSchema.user.id,
           recoveryPassphrase: centralSchema.user.recoveryPassphrase,
@@ -305,64 +339,38 @@ export class UserService {
         .from(centralSchema.user)
         .where(
           and(
-            eq(centralSchema.user.token, linkToken),
-            gt(centralSchema.user.tokenValidUntil, sql`timezone('utc', now())`),
+            eq(centralSchema.user.email, matchingInvite.email),
+            matchingInvite.tenantId
+              ? eq(centralSchema.user.tenantId, matchingInvite.tenantId)
+              : undefined,
           ),
         )
         .limit(1);
 
-      if (userData.length === 0) {
-        const inviteData = await centralDb
-          .select({
-            id: centralSchema.userInvite.id,
-            tenantId: centralSchema.userInvite.tenantId,
-            role: centralSchema.userInvite.role,
-            email: centralSchema.userInvite.email,
-            name: centralSchema.userInvite.name,
-            language: centralSchema.userInvite.language,
-          })
-          .from(centralSchema.userInvite)
-          .where(
-            and(
-              eq(centralSchema.userInvite.inviteCode, linkToken),
-              gt(centralSchema.userInvite.expiresAt, sql`timezone('utc', now())`),
-            ),
-          )
-          .limit(1);
+      if (!userData) {
+        resultData = { ...matchingInvite, recoveryPassphrase: null };
+        const userDataForDb: InsertUser = {
+          name: resultData.name!,
+          email: resultData.email,
+          role: resultData.role,
+          tenantId: resultData.tenantId,
+          language: resultData.language || "de",
+          confirmationState: "CONFIRMED",
+          isActive: true,
+        };
+        const retVal = await centralDb.insert(centralSchema.user).values(userDataForDb).returning();
+        resultData.id = retVal[0].id;
 
-        if (inviteData.length === 0) {
-          log.warn("User confirmation failed: Invalid or expired token", {
-            token: linkToken.substring(0, 8) + "...",
-          });
-          throw new NotFoundError("Invalid or timed-out token");
-        } else {
-          resultData = { ...inviteData[0], recoveryPassphrase: null };
-          const userDataForDb: InsertUser = {
-            name: resultData.name!,
-            email: resultData.email,
-            role: resultData.role,
-            tenantId: resultData.tenantId,
-            language: resultData.language || "de",
-            confirmationState: "CONFIRMED",
-            isActive: true,
-          };
-          const retVal = await centralDb
-            .insert(centralSchema.user)
-            .values(userDataForDb)
-            .returning();
-          resultData.id = retVal[0].id;
+        await InviteService.markInviteAsUsed(linkToken, resultData.id);
+        log.debug("Invitation marked as used", {
+          inviteCode: linkToken,
+          userId: resultData.id,
+        });
 
-          await InviteService.markInviteAsUsed(linkToken, resultData.id);
-          log.debug("Invitation marked as used", {
-            inviteCode: linkToken,
-            userId: resultData.id,
-          });
-
-          const adminService = await TenantAdminService.getTenantById(resultData.tenantId!);
-          adminService.validateSetupState();
-        }
+        const adminService = await TenantAdminService.getTenantById(resultData.tenantId!);
+        adminService.validateSetupState();
       } else {
-        resultData = userData[0];
+        resultData = userData;
       }
 
       // Check if this is the first tenant admin for the tenant
@@ -457,6 +465,37 @@ export class UserService {
     } catch (error) {
       if (error instanceof NotFoundError || error instanceof ValidationError) throw error;
       log.error("Failed to add additional passkey", { userId, error: String(error) });
+      throw error;
+    }
+  }
+
+  /**
+   * Get user by ID
+   */
+  static async getUserById(userId: string) {
+    const log = logger.setContext("UserService");
+    log.debug("Getting user by ID", { userId });
+
+    try {
+      const result = await centralDb
+        .select()
+        .from(centralSchema.user)
+        .where(eq(centralSchema.user.id, userId))
+        .limit(1);
+
+      if (!result[0]) {
+        log.warn("User not found by ID", { userId });
+        throw new NotFoundError(`No user account for ${userId}.`);
+      }
+
+      log.debug("User found by ID", {
+        userId: result[0].id,
+        confirmationState: result[0].confirmationState,
+      });
+      return result[0];
+    } catch (error) {
+      if (error instanceof NotFoundError) throw error;
+      log.error("Failed to get user by ID", { userId, error: String(error) });
       throw error;
     }
   }

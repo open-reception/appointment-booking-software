@@ -2,7 +2,16 @@ import { m } from "$i18n/messages";
 import { z } from "zod";
 
 const optionalUrl = (errorMessage: string) =>
-  z.union([z.literal(""), z.url({ message: errorMessage })]).optional();
+  z
+    .union([
+      z.literal(""),
+      z
+        .url({ message: errorMessage })
+        .refine((url) => url.startsWith("http://") || url.startsWith("https://"), {
+          message: errorMessage,
+        }),
+    ])
+    .optional();
 
 export const formSchema = z
   .object({
