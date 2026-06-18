@@ -1,0 +1,1 @@
+ALTER TABLE "appointment" DROP COLUMN "expiry_date";

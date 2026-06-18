@@ -107,8 +107,6 @@ export const tenantConfig = pgTable(
   }),
 );
 
-// TODO: Filter in API für bestimmte Rollen
-
 export const user = pgTable(
   "user",
   {

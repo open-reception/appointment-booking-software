@@ -53,7 +53,6 @@ describe("Appointment Confirm API Route", () => {
     tunnelId: "tunnel-123",
     channelId: "channel-123",
     appointmentDate: "2024-01-01T10:00:00.000Z",
-    expiryDate: null,
     status: "CONFIRMED",
     encryptedData: null,
     dataKey: null,
