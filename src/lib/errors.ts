@@ -45,4 +45,8 @@ export const ERRORS = {
     OPEN_APPOINTMENTS_CONFLICT:
       "Agent has open appointments and cannot be deleted. Please reassign or cancel these appointments first.",
   },
+  APPOINTMENTS: {
+    AGENT_NOT_AVAILABLE:
+      "Selected agent is no longer available for this time slot. Please choose a different time.",
+  },
 };

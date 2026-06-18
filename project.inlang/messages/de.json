@@ -915,7 +915,8 @@
 					"action": "Termin anfragen",
 					"hint": "Dieser Termin muss manuell bestätigt werden. Sie erhalten per E-Mail informiert."
 				},
-				"error": "Buchung fehlgeschlagen. Bitte erneut versuchen."
+				"error": "Buchung fehlgeschlagen. Bitte erneut versuchen.",
+				"errorSlotUnavailable": "Der Termin ist nicht mehr verfügbar. Bitte wählen Sie einen anderen Termin."
 			},
 			"complete": {
 				"book": {
@@ -995,7 +996,8 @@
 				},
 				"error": {
 					"title": "Fehler beim Hinzufügen des Termins",
-					"description": "Das Hinzufügen des Termins ist fehlgeschlagen. Bitte versuchen Sie es erneut."
+					"description": "Das Hinzufügen des Termins ist fehlgeschlagen. Bitte versuchen Sie es erneut.",
+					"descriptionSlotUnavailable": "Die ausgewählte Person ist für diesen Zeitpunkt nicht mehr verfügbar. Bitte wählen Sie einen anderen Termin."
 				},
 				"success": {
 					"title": "Termin hinzugefügt",

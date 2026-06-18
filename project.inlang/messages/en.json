@@ -924,7 +924,8 @@
 					"action": "Request appointment",
 					"hint": "This appointment will have to be manually confirmed. You will receive an E-Mail once it's confirmed."
 				},
-				"error": "Operation failed. Please retry."
+				"error": "Operation failed. Please retry.",
+				"errorSlotUnavailable": "The selected appointment is no longer available. Please choose a different appointment."
 			},
 			"complete": {
 				"book": {
@@ -1004,7 +1005,8 @@
 				},
 				"error": {
 					"title": "Error adding Appointment",
-					"description": "Adding an appointment failed. Please try again."
+					"description": "Adding an appointment failed. Please try again.",
+					"descriptionSlotUnavailable": "The selected agent is no longer available for this time slot. Please choose a different appointment."
 				},
 				"success": {
 					"title": "Appointment added",
