@@ -18,8 +18,7 @@ import { NotificationService } from "./notification-service";
 import { challengeStore } from "./challenge-store";
 import { challengeThrottleService } from "./challenge-throttle";
 import { timingSafeEqual } from "node:crypto";
-
-const CUTOFF_DAYS = 90;
+import { TenantService } from "../db/tenant-service";
 
 export interface ClientTunnelData {
   tunnelId: string;
@@ -80,12 +79,16 @@ export class AppointmentService {
     }
   }
 
-  async cleanupExpiredAppointments(): Promise<void> {
+  async cleanupExpiredAppointments(tenantId: string): Promise<void> {
     const log = logger.setContext("AppointmentService");
     const db = await this.getDb();
 
+    const tenant = new TenantService(tenantId);
+    const config = await tenant.getConfig();
+
+    const cutOffDays = typeof config.autoDeleteDays === "number" ? config.autoDeleteDays : 90;
     const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - CUTOFF_DAYS);
+    cutoffDate.setDate(cutoffDate.getDate() - cutOffDays);
 
     const deletedAppointments = await db
       .delete(tenantSchema.appointment)

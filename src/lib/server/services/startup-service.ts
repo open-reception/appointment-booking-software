@@ -174,7 +174,7 @@ export class StartupService {
         try {
           const pinResetService = await ClientPinResetService.forTenant(tenantData.id);
           const appointmentService = await AppointmentService.forTenant(tenantData.id);
-          await appointmentService.cleanupExpiredAppointments();
+          await appointmentService.cleanupExpiredAppointments(tenantData.id);
           logger.info("Cleaned up expired appointments for tenant", {
             tenantId: tenantData.id,
             shortName: tenantData.shortName,
