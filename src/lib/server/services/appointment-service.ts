@@ -4,7 +4,7 @@ import { type SelectAppointment } from "../db/tenant-schema";
 import * as centralSchema from "../db/central-schema";
 import logger from "$lib/logger";
 import { ValidationError, NotFoundError, InternalError, ConflictError } from "../utils/errors";
-import { and, eq, gte, lte, asc } from "drizzle-orm";
+import { and, eq, gte, lte, lt, asc } from "drizzle-orm";
 import type { AppointmentResponse } from "$lib/types/appointment";
 import {
   sendAppointmentCreatedEmail,
@@ -18,6 +18,7 @@ import { NotificationService } from "./notification-service";
 import { challengeStore } from "./challenge-store";
 import { challengeThrottleService } from "./challenge-throttle";
 import { timingSafeEqual } from "node:crypto";
+import { TenantService } from "../db/tenant-service";
 
 export interface ClientTunnelData {
   tunnelId: string;
@@ -76,6 +77,29 @@ export class AppointmentService {
       log.error("Failed to create appointment service", { tenantId, error: String(error) });
       throw error;
     }
+  }
+
+  async cleanupExpiredAppointments(tenantId: string): Promise<void> {
+    const log = logger.setContext("AppointmentService");
+    const db = await this.getDb();
+
+    const tenant = new TenantService(tenantId);
+    const config = await tenant.getConfig();
+
+    const cutOffDays = typeof config.autoDeleteDays === "number" ? config.autoDeleteDays : 90;
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - cutOffDays);
+
+    const deletedAppointments = await db
+      .delete(tenantSchema.appointment)
+      .where(lt(tenantSchema.appointment.appointmentDate, cutoffDate))
+      .returning({ id: tenantSchema.appointment.id });
+
+    log.info("Expired appointments cleaned up", {
+      tenantId: this.tenantId,
+      deletedCount: deletedAppointments.length,
+      cutoffDate: cutoffDate.toISOString(),
+    });
   }
 
   async hasAppointments(): Promise<boolean> {
@@ -738,7 +762,6 @@ export class AppointmentService {
           encryptedPayload: tenantSchema.appointment.encryptedPayload,
           iv: tenantSchema.appointment.iv,
           authTag: tenantSchema.appointment.authTag,
-          expiryDate: tenantSchema.appointment.expiryDate,
           createdAt: tenantSchema.appointment.createdAt,
           updatedAt: tenantSchema.appointment.updatedAt,
         });
