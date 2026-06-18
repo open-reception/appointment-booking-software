@@ -13,14 +13,12 @@ vi.mock("../../db", () => ({
 }));
 
 vi.mock("$lib/logger", () => ({
-  UniversalLogger: vi.fn(() => ({
-    setContext: vi.fn(() => ({
-      debug: vi.fn(),
-      error: vi.fn(),
-      warn: vi.fn(),
-      info: vi.fn(),
-    })),
-  })),
+  UniversalLogger: class {
+    setContext = vi.fn().mockReturnThis();
+    warn = vi.fn();
+    error = vi.fn();
+    info = vi.fn();
+  },
   default: {
     setContext: vi.fn(() => ({
       debug: vi.fn(),

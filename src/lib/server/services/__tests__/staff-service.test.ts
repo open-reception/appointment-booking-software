@@ -47,7 +47,6 @@ const mockStaffMember = {
 describe("StaffService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.resetAllMocks();
   });
 
   describe("getStaffMembers", () => {
@@ -347,7 +346,9 @@ describe("StaffService", () => {
       const mockStaffCryptoService = {
         getStaffPublicKey: vi.fn().mockResolvedValue("mock-public-key"),
       };
-      vi.mocked(StaffCryptoService).mockImplementation(() => mockStaffCryptoService as any);
+      vi.mocked(StaffCryptoService).mockImplementation(function () {
+        return mockStaffCryptoService as any;
+      } as any);
 
       const result = await StaffService.getStaffPublicKey("tenant-123", "staff-123");
 
