@@ -1,7 +1,6 @@
 import type { InferSelectModel } from "drizzle-orm";
 import {
   boolean,
-  date,
   integer,
   json,
   pgEnum,
