@@ -431,7 +431,6 @@ describe("ScheduleService", () => {
           agentId: "agent1",
           appointmentDate: "2024-01-01T09:00:00.000Z", // 09:00 UTC
           duration: 60,
-          expiryDate: "2024-01-01",
           status: "NEW",
         },
       ];
@@ -508,7 +507,6 @@ describe("ScheduleService", () => {
           agentId: "agent1",
           appointmentDate: "2024-01-01T10:00:00.000Z", // 10:00 UTC
           duration: 60,
-          expiryDate: "2024-01-01",
           status: "CONFIRMED",
         },
         {
@@ -518,7 +516,6 @@ describe("ScheduleService", () => {
           agentId: "agent1",
           appointmentDate: "2024-01-01T14:00:00.000Z", // 14:00 UTC
           duration: 60,
-          expiryDate: "2024-01-01",
           status: "NEW",
         },
       ];
@@ -691,7 +688,6 @@ describe("ScheduleService", () => {
           agentId: "agent1",
           appointmentDate: "2024-01-01T09:00:00.000Z",
           duration: 60,
-          expiryDate: "2024-01-01",
           status: "CONFIRMED",
         },
       ];
@@ -796,7 +792,6 @@ describe("ScheduleService", () => {
           agentId: "agent1",
           appointmentDate: "2024-01-01T10:00:00.000Z",
           duration: 60,
-          expiryDate: "2024-01-01",
           status: "CONFIRMED",
         },
       ];

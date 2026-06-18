@@ -79,11 +79,6 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}/confirm", "PUT"
                     format: "date-time",
                     description: "Appointment date and time",
                   },
-                  expiryDate: {
-                    type: "string",
-                    format: "date",
-                    description: "Data expiry date (nullable)",
-                  },
                   status: {
                     type: "string",
                     enum: ["CONFIRMED"],

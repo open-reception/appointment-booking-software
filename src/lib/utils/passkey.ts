@@ -246,7 +246,7 @@ export const getPRFOutputAfterRegistration = async ({
   if (!prfResults || !prfResults.results || !prfResults.results.first) {
     throw new Error(
       "PRF extension not supported by this passkey. " +
-        "Please use a modern authenticator (YubiKey 5.2.3+, Titan Gen2, Windows Hello, Touch ID, or Android)",
+        "Please use a modern authenticator (https://open-reception.org/getting-started/#passkeys)",
     );
   }
 
@@ -256,6 +256,7 @@ export const getPRFOutputAfterRegistration = async ({
     return prfOutput;
   } else {
     // Convert ArrayBufferView to ArrayBuffer
+    console.log("⚠️ Detected non-ArrayBuffer PRF output, trying to convert manually");
     return prfOutput.buffer.slice(
       prfOutput.byteOffset,
       prfOutput.byteOffset + prfOutput.byteLength,
@@ -334,6 +335,7 @@ export const getCredential = async ({
       if (prfResult instanceof ArrayBuffer) {
         prfOutput = prfResult;
       } else {
+        console.log("⚠️ Detected non-ArrayBuffer PRF output, trying to convert manually");
         prfOutput = prfResult.buffer.slice(
           prfResult.byteOffset,
           prfResult.byteOffset + prfResult.byteLength,

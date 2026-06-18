@@ -1,10 +1,10 @@
 <script lang="ts">
   import { m } from "$i18n/messages";
+  import { AppointmentDetails } from "$lib/components/ui/appointment-details";
   import { Button } from "$lib/components/ui/button";
   import { Text } from "$lib/components/ui/typography";
+  import { type SupportedLocale } from "$lib/const/locales";
   import { type CurAppointmentItem } from "$lib/stores/calendar";
-  import { toDisplayDateTime } from "$lib/utils/datetime";
-  import { Calendar, Mail, Phone, User } from "@lucide/svelte";
   import { toast } from "svelte-sonner";
   import { cancelAppointment, confirmAppointment, denyAppointment } from "./utils";
 
@@ -87,42 +87,30 @@
 
 {#if item.appointment.appointment}
   <div class="flex flex-col items-start gap-2">
-    <div class="flex gap-2 p-1">
-      <User class="size-4 " />
-      <Text style="sm">
-        {item.decrypted.name}
-      </Text>
-    </div>
-    {#if item.decrypted.email || item.decrypted.phone}
-      <div class="flex flex-col items-start gap-2">
-        {#if item.decrypted.email}
-          <Button
-            class="h-auto w-auto justify-start gap-2 rounded-sm p-1"
-            variant="link"
-            href={`mailto:${item.decrypted.email}`}
-          >
-            <Mail class="size-4 " />
-            {item.decrypted.email}
-          </Button>
-        {/if}
-        {#if item.decrypted.phone}
-          <Button
-            class="h-auto w-auto justify-start gap-2 rounded-sm p-1"
-            variant="link"
-            href={`tel:${item.decrypted.phone}`}
-          >
-            <Phone class="size-4 " />
-            {item.decrypted.phone}
-          </Button>
-        {/if}
-      </div>
-    {/if}
-    <div class="flex gap-2 p-1">
-      <Calendar class="size-4 " />
-      <Text style="sm">
-        {toDisplayDateTime(item.appointment.appointment.dateTime)}
-      </Text>
-    </div>
+    <AppointmentDetails
+      items={[
+        {
+          type: "client-name",
+          value: item.decrypted.name,
+        },
+        {
+          type: "client-locale",
+          value: item.decrypted.locale as SupportedLocale,
+        },
+        {
+          type: "client-email",
+          value: item.decrypted.email,
+        },
+        {
+          type: "client-phone",
+          value: item.decrypted.phone,
+        },
+        {
+          type: "date",
+          value: item.appointment.appointment.dateTime,
+        },
+      ]}
+    />
     <div class="mt-5 flex w-full flex-col gap-4">
       <Text style="xs" class="text-muted-foreground text-center">
         {m["calendar.notificationHint"]()}

@@ -80,7 +80,9 @@
 		"domain": "Domain",
 		"phone": "Telefonnummer",
 		"pin": "PIN",
-		"pinHint": "Speichere Deine PIN an einem sicheren Ort, z.B. in einem Passwort-Manager."
+		"pinHint": "Speichere Deine PIN an einem sicheren Ort, z.B. in einem Passwort-Manager.",
+		"locale": "Sprache",
+		"localePlaceholder": "Sprache wählen"
 	},
 	"login": {
 		"or": "Oder",
@@ -125,9 +127,16 @@
 		"errorGettingPrfOutput": "Fehler beim Abrufen der Sicherheitsdaten vom Passkey. Bitte verwenden Sie einen modernen Authentifikator, der die PRF-Erweiterung unterstützt."
 	},
 	"logout": {
-		"title": "Erfolgreich abgemeldet",
-		"description": "Du wurdest abgemeldet.",
-		"success": "Erfolgreich abgemeldet",
+		"title": "Abmelden",
+		"success": {
+			"title": "Du wurdest abgemeldet.",
+			"description": "Du wurdest abgemeldet."
+		},
+		"error": {
+			"title": "Abmelden fehlgeschlagen",
+			"description": "Du konntest nicht abgemeldet werden."
+		},
+		"retry": "Erneut versuchen",
 		"action": "Zur Anmeldung"
 	},
 	"passkey": {
@@ -906,7 +915,8 @@
 					"action": "Termin anfragen",
 					"hint": "Dieser Termin muss manuell bestätigt werden. Sie erhalten per E-Mail informiert."
 				},
-				"error": "Buchung fehlgeschlagen. Bitte erneut versuchen."
+				"error": "Buchung fehlgeschlagen. Bitte erneut versuchen.",
+				"errorSlotUnavailable": "Der Termin ist nicht mehr verfügbar. Bitte wählen Sie einen anderen Termin."
 			},
 			"complete": {
 				"book": {
@@ -986,7 +996,8 @@
 				},
 				"error": {
 					"title": "Fehler beim Hinzufügen des Termins",
-					"description": "Das Hinzufügen des Termins ist fehlgeschlagen. Bitte versuchen Sie es erneut."
+					"description": "Das Hinzufügen des Termins ist fehlgeschlagen. Bitte versuchen Sie es erneut.",
+					"descriptionSlotUnavailable": "Die ausgewählte Person ist für diesen Zeitpunkt nicht mehr verfügbar. Bitte wählen Sie einen anderen Termin."
 				},
 				"success": {
 					"title": "Termin hinzugefügt",

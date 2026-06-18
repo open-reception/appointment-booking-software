@@ -128,7 +128,8 @@
     {/each}
   </div>
 
-  {#if curTimeIndicator && toCalendarDate($clock).toString() === today(getLocalTimeZone()).toString() && latestEndHour * hourSize + hourSize / 2 > curTimeIndicator.hour * hourSize}
+  <!-- Current Time Indicator -->
+  {#if curTimeIndicator && toCalendarDate($clock).toString() === today(getLocalTimeZone()).toString() && latestEndHour * hourSize + hourSize / 2 > curTimeIndicator.hour * hourSize && earliestStartHour * hourSize - hourSize * 2 < curTimeIndicator.hour * hourSize}
     {@const top =
       focusAdjustment +
       curTimeIndicator.hour * hourSize +

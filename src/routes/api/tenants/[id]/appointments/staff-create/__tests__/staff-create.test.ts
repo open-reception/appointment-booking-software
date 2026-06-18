@@ -22,6 +22,8 @@ vi.mock("$lib/server/utils/permissions", () => ({
 import { AppointmentService } from "$lib/server/services/appointment-service";
 import { ClientPinResetService } from "$lib/server/services/client-pin-reset-service";
 import { checkPermission } from "$lib/server/utils/permissions";
+import { ERRORS } from "$lib/errors";
+import { ConflictError } from "$lib/server/utils/errors";
 
 describe("POST /api/tenants/[id]/appointments/staff-create", () => {
   const tenantId = "12345678-1234-4234-8234-123456789012";
@@ -284,6 +286,97 @@ describe("POST /api/tenants/[id]/appointments/staff-create", () => {
       expect(result.status).toBe(400);
       const data = await result.json();
       expect(data.error).toBeDefined();
+    });
+
+    it("should return 409 for double-booking on existing client tunnel", async () => {
+      mockAppointmentService.getClientTunnels.mockResolvedValue([
+        {
+          id: "tunnel-789",
+          emailHash,
+          clientPublicKey: "existing-public-key",
+        },
+      ]);
+
+      mockAppointmentService.addAppointmentToTunnel.mockRejectedValue(
+        new ConflictError(ERRORS.APPOINTMENTS.AGENT_NOT_AVAILABLE),
+      );
+
+      const request = new Request("http://localhost/api", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientEmail: "existing@example.com",
+          emailHash,
+          appointmentDate: "2026-01-15T14:00:00.000Z",
+          appointmentTimeZone: "Europe/Berlin",
+          duration: 30,
+          channelId: "channel-123",
+          agentId: "agent-123",
+          encryptedAppointment: {
+            encryptedPayload: "encrypted-payload",
+            iv: "iv",
+            authTag: "auth-tag",
+          },
+        }),
+      });
+
+      const result = await POST({
+        params: { id: tenantId },
+        request,
+        locals: { user: { id: "staff-123", role: "STAFF" } } as any,
+      } as any);
+
+      expect(result.status).toBe(409);
+      const data = await result.json();
+      expect(data.error).toBe(ERRORS.APPOINTMENTS.AGENT_NOT_AVAILABLE);
+    });
+
+    it("should return 409 for double-booking when creating a new client appointment", async () => {
+      mockAppointmentService.getClientTunnels.mockResolvedValue([]);
+
+      mockAppointmentService.createNewClientWithAppointment.mockRejectedValue(
+        new ConflictError(ERRORS.APPOINTMENTS.AGENT_NOT_AVAILABLE),
+      );
+
+      const request = new Request("http://localhost/api", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientEmail: "test@example.com",
+          emailHash,
+          appointmentDate: "2026-01-15T14:00:00.000Z",
+          appointmentTimeZone: "Europe/Berlin",
+          duration: 30,
+          channelId: "channel-123",
+          agentId: "agent-123",
+          tunnelId: "tunnel-123",
+          clientPublicKey: "public-key",
+          privateKeyShare: "private-key-share",
+          clientEncryptedTunnelKey: "encrypted-tunnel-key",
+          staffKeyShares: [
+            {
+              userId: "staff-123",
+              encryptedTunnelKey: "encrypted-for-staff",
+            },
+          ],
+          encryptedAppointment: {
+            encryptedPayload: "encrypted-payload",
+            iv: "iv",
+            authTag: "auth-tag",
+          },
+          sendEmail: false,
+        }),
+      });
+
+      const result = await POST({
+        params: { id: tenantId },
+        request,
+        locals: { user: { id: "staff-123", role: "STAFF" } } as any,
+      } as any);
+
+      expect(result.status).toBe(409);
+      const data = await result.json();
+      expect(data.error).toBe(ERRORS.APPOINTMENTS.AGENT_NOT_AVAILABLE);
     });
 
     it("should return 400 for new client with missing crypto data", async () => {

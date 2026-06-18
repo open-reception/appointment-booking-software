@@ -1,7 +1,6 @@
 import type { InferSelectModel } from "drizzle-orm";
 import {
   boolean,
-  date,
   integer,
   json,
   pgEnum,
@@ -174,8 +173,6 @@ export const appointment = pgTable("appointment", {
   duration: integer("duration").notNull(),
   /** Timezone of client booking appointment */
   timezone: text("timezone").notNull(),
-  /** When appointment data expires and can be auto-deleted */
-  expiryDate: date("expiry_date"),
   /** Current status of the appointment - defaults depend on channel's requiresConfirmation setting */
   status: appointmentStatusEnum("status").notNull(),
   /** Encrypted appointment data (name, email, phone) - Legacy field */

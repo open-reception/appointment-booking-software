@@ -96,7 +96,9 @@
 		"domain": "Domain",
 		"phone": "Phone Number",
 		"pin": "PIN",
-		"pinHint": "Save your PIN in a secure place, like a password-manager."
+		"pinHint": "Save your PIN in a secure place, like a password-manager.",
+		"locale": "Language",
+		"localePlaceholder": "Select Language"
 	},
 	"login": {
 		"or": "Or",
@@ -133,9 +135,16 @@
 		}
 	},
 	"logout": {
-		"title": "Logout complete",
-		"description": "You are logged-out.",
-		"success": "Logout successful",
+		"title": "Logout",
+		"success": {
+			"title": "You are logged out.",
+			"description": "You are logged-out."
+		},
+		"error": {
+			"title": "Logout failed",
+			"description": "You could not be logged out."
+		},
+		"retry": "Retry",
 		"action": "Go to Login"
 	},
 	"passkey": {
@@ -915,7 +924,8 @@
 					"action": "Request appointment",
 					"hint": "This appointment will have to be manually confirmed. You will receive an E-Mail once it's confirmed."
 				},
-				"error": "Operation failed. Please retry."
+				"error": "Operation failed. Please retry.",
+				"errorSlotUnavailable": "The selected appointment is no longer available. Please choose a different appointment."
 			},
 			"complete": {
 				"book": {
@@ -995,7 +1005,8 @@
 				},
 				"error": {
 					"title": "Error adding Appointment",
-					"description": "Adding an appointment failed. Please try again."
+					"description": "Adding an appointment failed. Please try again.",
+					"descriptionSlotUnavailable": "The selected agent is no longer available for this time slot. Please choose a different appointment."
 				},
 				"success": {
 					"title": "Appointment added",

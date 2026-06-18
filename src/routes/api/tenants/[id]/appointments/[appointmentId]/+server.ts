@@ -53,11 +53,6 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "GET", {
                     format: "date-time",
                     description: "Appointment date and time",
                   },
-                  expiryDate: {
-                    type: "string",
-                    format: "date",
-                    description: "Data expiry date (nullable)",
-                  },
                   status: {
                     type: "string",
                     enum: ["NEW", "CONFIRMED", "HELD", "REJECTED", "NO_SHOW"],
