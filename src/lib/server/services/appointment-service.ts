@@ -570,7 +570,7 @@ export class AppointmentService {
         iv: string;
         authTag: string;
       };
-      incomingTunnelId: string;
+      incomingTunnelId?: string;
     },
     staffCreated = false,
   ): Promise<AppointmentResponse> {

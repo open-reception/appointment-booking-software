@@ -333,6 +333,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
         clientEmail: validatedData.clientEmail || "",
         clientLanguage: validatedData.clientLanguage,
         encryptedAppointment: validatedData.encryptedAppointment,
+        incomingTunnelId: validatedData.tunnelId,
       };
 
       result = await appointmentService.addAppointmentToTunnel(appointmentData, true);
