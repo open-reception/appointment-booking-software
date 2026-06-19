@@ -251,21 +251,31 @@ export const getPRFOutputAfterRegistration = async ({
   }
 
   // PRF output is BufferSource, ensure we return ArrayBuffer
-  const prfOutput = prfResults.results.first;
-  if (prfOutput instanceof ArrayBuffer) {
-    return prfOutput;
-  } else {
-    // Convert ArrayBufferView to ArrayBuffer
-    console.log("⚠️ Detected non-ArrayBuffer PRF output, trying to convert manually");
-    return prfOutput.buffer.slice(
-      prfOutput.byteOffset,
-      prfOutput.byteOffset + prfOutput.byteLength,
-    ) as ArrayBuffer;
+  return getPrfOutput(prfResults.results);
+};
+
+const getPrfOutput = (results: AuthenticationExtensionsPRFValues): ArrayBuffer => {
+  const first = prfResultsToArrayBuffer(results.first);
+  return first.buffer;
+};
+
+const prfResultsToArrayBuffer = (result: BufferSource): Uint8Array<ArrayBuffer> => {
+  if (result instanceof ArrayBuffer) {
+    return new Uint8Array(result);
   }
+
+  if (ArrayBuffer.isView(result)) {
+    return new Uint8Array(result.buffer as ArrayBuffer, result.byteOffset, result.byteLength);
+  }
+  if (Array.isArray(result)) {
+    console.log("⚠️ Detected non-ArrayBuffer PRF output, trying to convert manually");
+    return Uint8Array.from(result as number[]);
+  }
+  throw Error("PRF result is not convertible");
 };
 
 export type GetCredentialResponse = PublicKeyCredential & {
-  prfOutput?: ArrayBuffer; // PRF output if enablePRF was true
+  prfOutput?: ArrayBuffer;
 };
 
 export const getCredential = async ({
@@ -320,27 +330,9 @@ export const getCredential = async ({
 
   // Extract PRF output if it was enabled
   if (enablePRF) {
-    const extensionResults = credential.getClientExtensionResults() as {
-      prf?: {
-        enabled?: boolean;
-        results?: {
-          first?: BufferSource;
-        };
-      };
-    };
-
-    if (extensionResults.prf?.results?.first) {
-      const prfResult = extensionResults.prf.results.first;
-      // Convert BufferSource to ArrayBuffer
-      if (prfResult instanceof ArrayBuffer) {
-        prfOutput = prfResult;
-      } else {
-        console.log("⚠️ Detected non-ArrayBuffer PRF output, trying to convert manually");
-        prfOutput = prfResult.buffer.slice(
-          prfResult.byteOffset,
-          prfResult.byteOffset + prfResult.byteLength,
-        ) as ArrayBuffer;
-      }
+    const extensionResults = credential.getClientExtensionResults();
+    if (extensionResults.prf?.results) {
+      prfOutput = getPrfOutput(extensionResults.prf.results);
     }
   }
 
