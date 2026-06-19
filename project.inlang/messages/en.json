@@ -1022,7 +1022,7 @@
 		"buttonAlternativeLink": "Button not working? Open this URL into your browser",
 		"appointmentBooked": {
 			"subject": "{channel} at {tenant} booked successfully",
-			"introduction": "your appointment for has been booked.",
+			"introduction": "your appointment has been booked.",
 			"action": "Cancel appointment",
 			"reason": "You are receiving this email because someone booked an appointment with your e-mail address."
 		},
