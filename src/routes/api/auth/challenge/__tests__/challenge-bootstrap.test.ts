@@ -6,6 +6,7 @@ vi.mock("$env/dynamic/private", () => ({
   env: {
     JWT_SECRET: "test-jwt-secret-for-registration-bootstrap-unit-tests-minimum-32-chars",
     NODE_ENV: "test",
+    MANAGEMENT_DOMAIN: "example.com",
   },
 }));
 

@@ -70,6 +70,7 @@ jobs:
           SMTP_FROM_NAME: "Open Reception"
           SMTP_FROM_EMAIL: "noreply@example.com"
           JWT_SECRET: "test"
+          MANAGEMENT_DOMAIN: "example.com"
 
   build:
     runs-on: ubuntu-latest
@@ -99,3 +100,4 @@ jobs:
           SMTP_FROM_NAME: "Open Reception"
           SMTP_FROM_EMAIL: "noreply@example.com"
           JWT_SECRET: "test"
+          MANAGEMENT_DOMAIN: "example.com"

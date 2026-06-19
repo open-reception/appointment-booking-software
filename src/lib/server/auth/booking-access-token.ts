@@ -14,6 +14,10 @@ export type BookingAccessScope =
   | typeof EXISTING_CLIENT_BOOKING_SCOPE
   | typeof NEW_CLIENT_BOOTSTRAP_SCOPE;
 
+if (!process.env.BUILDING && !env.MANAGEMENT_DOMAIN) {
+  throw new Error("Mandatory ENV variable MANAGEMENT_DOMAIN is missing!");
+}
+
 if (!process.env.BUILDING && !env.JWT_SECRET) {
   throw new Error("Mandatory ENV variable JWT_SECRET is missing!");
 }

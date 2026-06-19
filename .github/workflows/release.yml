@@ -50,12 +50,14 @@ jobs:
           SMTP_FROM_NAME: "Open Reception"
           SMTP_FROM_EMAIL: "noreply@example.com"
           JWT_SECRET: "test"
+          MANAGEMENT_DOMAIN: "example.com"
 
       - name: Build application
         run: npm run build
         env:
           DATABASE_URL: "postgresql://test:test@localhost:5432/test"
           JWT_SECRET: "build"
+          MANAGEMENT_DOMAIN: "example.com"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
