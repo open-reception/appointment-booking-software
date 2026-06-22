@@ -1,3 +1,9 @@
+<!--
+
+    Custom changes:
+    * usage of `weekStartsOn={getWeekStartsOn()}`
+
+-->
 <script lang="ts">
   import { Calendar as CalendarPrimitive } from "bits-ui";
   import * as Calendar from "./index.js";
@@ -5,6 +11,7 @@
   import type { ButtonVariant } from "../button/button.svelte";
   import { isEqualMonth, type DateValue } from "@internationalized/date";
   import type { Snippet } from "svelte";
+  import { getWeekStartsOn } from "$lib/utils/datetime.js";
 
   let {
     ref = $bindable(null),
@@ -56,6 +63,7 @@ get along, so we shut typescript up by casting `value` to `never`.
   {locale}
   {monthFormat}
   {yearFormat}
+  weekStartsOn={getWeekStartsOn()}
   {...restProps}
 >
   {#snippet children({ months, weekdays })}

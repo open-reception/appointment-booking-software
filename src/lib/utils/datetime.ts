@@ -184,3 +184,11 @@ export const utcToLocal = (utcDate: Date): Date => {
   const currentOffsetMs = utcDate.getTimezoneOffset() * 60 * 1000;
   return new Date(utcDate.getTime() - currentOffsetMs);
 };
+
+export const getWeekStartsOn = (): 0 | 1 | 2 | 3 | 4 | 5 | 6 => {
+  const locale = new Intl.Locale(navigator.language);
+  // @ts-expect-error weekInfo is available in modern browsers
+  const weekInfo = locale.weekInfo ?? (locale as Locale).getWeekInfo();
+  const firstDay = weekInfo?.firstDay ?? 1;
+  return (firstDay % 7) as 0 | 1 | 2 | 3 | 4 | 5 | 6;
+};
