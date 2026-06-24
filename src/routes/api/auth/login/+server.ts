@@ -185,22 +185,9 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
     // Production-only: Validate subdomain for non-global admins
     if (env.NODE_ENV === "production") {
       const hostname = url.hostname;
-      const hostParts = hostname.split(".");
-      const hasSubdomain = hostParts.length > 2;
-      const subdomain = hasSubdomain ? hostParts[0] : null;
 
       // Global admins can login from anywhere
       if (user.role !== "GLOBAL_ADMIN") {
-        if (!hasSubdomain || !subdomain) {
-          logger.warn("Login attempt from non-subdomain by non-global admin", {
-            userId: user.id,
-            email: user.email,
-            hostname,
-            role: user.role,
-          });
-          return json({ error: "Unknown user does for tenant" }, { status: 401 });
-        }
-
         if (user.tenantId) {
           try {
             const tenantService = await TenantAdminService.getTenantById(user.tenantId);
@@ -217,19 +204,19 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
               return json({ error: "Unknown user does for tenant" }, { status: 401 });
             }
           } catch (error) {
-            logger.error("Failed to validate tenant for subdomain login", {
+            logger.error("Failed to validate tenant for hostname login", {
               userId: user.id,
               tenantId: user.tenantId,
-              subdomain,
+              hostname,
               error: String(error),
             });
             return json({ error: "Unknown user does for tenant" }, { status: 401 });
           }
         } else {
-          logger.warn("Login attempt from subdomain by user without matching tenant", {
+          logger.warn("Login attempt from hostname by user without matching tenant", {
             userId: user.id,
             email: user.email,
-            subdomain,
+            hostname,
             role: user.role,
           });
           return json({ error: "Unknown user does for tenant" }, { status: 401 });
