@@ -7,11 +7,21 @@
   import { staffCrypto } from "$lib/stores/staff-crypto";
   import { notifications } from "$lib/stores/notifications";
   import { staff } from "$lib/stores/staff";
+  import { QueryClient, QueryClientProvider } from "@tanstack/svelte-query";
+  import { browser } from "$app/environment";
 
   let { data, children }: LayoutProps = $props();
 
   let intervalSession: ReturnType<typeof setInterval> | null = null;
   let intervalData: ReturnType<typeof setInterval> | null = null;
+
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        enabled: browser,
+      },
+    },
+  });
 
   onMount(() => {
     if (data?.user) {
@@ -76,4 +86,6 @@
   };
 </script>
 
-{@render children()}
+<QueryClientProvider client={queryClient}>
+  {@render children()}
+</QueryClientProvider>

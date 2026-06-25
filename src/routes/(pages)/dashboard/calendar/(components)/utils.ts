@@ -10,14 +10,26 @@ import { localToUTCWithoutDST } from "$lib/utils/datetime";
 import { getLocalTimeZone, type CalendarDate } from "@internationalized/date";
 import { get } from "svelte/store";
 
-export const fetchCalendar = async (opts: { tenant: string; startDate: CalendarDate }) => {
+export const fetchCalendar = async (opts: { tenant: string; selectedDate: CalendarDate }) => {
   if (!browser) return;
 
   const localStartDate = new Date(
-    Date.UTC(opts.startDate.year, opts.startDate.month - 1, opts.startDate.day, 0, 0, 0, 0),
+    opts.selectedDate.year,
+    opts.selectedDate.month - 1,
+    1,
+    0,
+    0,
+    0,
+    0,
   );
   const localEndDate = new Date(
-    Date.UTC(opts.startDate.year, opts.startDate.month - 1, opts.startDate.day, 23, 59, 59, 999),
+    opts.selectedDate.year,
+    opts.selectedDate.month,
+    0,
+    23,
+    59,
+    59,
+    999,
   );
 
   const params = new URLSearchParams({

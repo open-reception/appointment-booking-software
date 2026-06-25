@@ -1,32 +1,53 @@
 <script lang="ts">
   import { m } from "$i18n/messages";
   import { getLocale } from "$i18n/runtime";
-  import { Button } from "$lib/components/ui/button";
+  import { Button, buttonVariants } from "$lib/components/ui/button";
   import { CalendarDate, getLocalTimeZone, today } from "@internationalized/date";
   import { ChevronLeft, ChevronRight } from "@lucide/svelte";
+  import * as Popover from "$lib/components/ui/popover/index.js";
+  import { cn } from "$lib/utils";
+  import CalendarMonth from "./CalendarMonth.svelte";
+  import type { TAppointmentFilter } from "$lib/types/calendar";
+  import type { OnChangeFn } from "vaul-svelte";
 
   let {
-    startDate = $bindable(),
+    selectedDate = $bindable(),
+    shownAppointments,
+    shownChannels,
+    shownAgents,
   }: {
-    startDate: CalendarDate;
+    selectedDate: CalendarDate;
+    shownAppointments: TAppointmentFilter;
+    shownChannels: string[];
+    shownAgents: string[];
   } = $props();
 
+  let open = $state(false);
+
   const prev = () => {
-    const nextDate = new CalendarDate(startDate.year, startDate.month, startDate.day).subtract({
+    const nextDate = new CalendarDate(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+    ).subtract({
       days: 1,
     });
-    startDate = nextDate;
+    selectedDate = nextDate;
   };
 
   const next = () => {
-    const nextDate = new CalendarDate(startDate.year, startDate.month, startDate.day).add({
+    const nextDate = new CalendarDate(selectedDate.year, selectedDate.month, selectedDate.day).add({
       days: 1,
     });
-    startDate = nextDate;
+    selectedDate = nextDate;
   };
 
   const setToToday = () => {
-    startDate = today(getLocalTimeZone());
+    selectedDate = today(getLocalTimeZone());
+  };
+
+  const onSelectDay: OnChangeFn<unknown> = () => {
+    open = false;
   };
 </script>
 
@@ -37,15 +58,28 @@
     <Button size="sm" variant="ghost" class="h-6 p-1!" onclick={prev}>
       <ChevronLeft />
     </Button>
-    <div>
-      {Intl.DateTimeFormat(getLocale(), {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        weekday: "short",
-        timeZone: getLocalTimeZone().toString(),
-      }).format(startDate.toDate(getLocalTimeZone()))}
-    </div>
+    <Popover.Root bind:open>
+      <Popover.Trigger
+        class={cn(buttonVariants({ variant: "ghost" }), "h-auto py-1 leading-none font-normal")}
+      >
+        {Intl.DateTimeFormat(getLocale(), {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          weekday: "short",
+          timeZone: getLocalTimeZone().toString(),
+        }).format(selectedDate.toDate(getLocalTimeZone()))}
+      </Popover.Trigger>
+      <Popover.Content class="w-64">
+        <CalendarMonth
+          bind:selectedDate
+          {shownAppointments}
+          {shownAgents}
+          {shownChannels}
+          {onSelectDay}
+        />
+      </Popover.Content>
+    </Popover.Root>
     <Button size="sm" variant="ghost" class="h-6 p-1!" onclick={next}>
       <ChevronRight />
     </Button>
@@ -54,7 +88,7 @@
     size="sm"
     variant="outline"
     onclick={setToToday}
-    disabled={startDate.toString() === today(getLocalTimeZone()).toString()}
+    disabled={selectedDate.toString() === today(getLocalTimeZone()).toString()}
     class="-order-1 ml-auto min-[500px]:order-0"
   >
     {m["calendar.today"]()}

@@ -14,14 +14,17 @@
   import { sidebar as sidebarStore } from "$lib/stores/sidebar";
   import type { TAppointmentFilter } from "$lib/types/calendar";
   import { cn } from "$lib/utils";
-  import { PanelRightClose, ZoomIn, ZoomOut } from "@lucide/svelte";
+  import { CalendarDate } from "@internationalized/date";
+  import { FunnelX, PanelRightClose, ZoomIn, ZoomOut } from "@lucide/svelte";
   import { type ComponentProps } from "svelte";
+  import CalendarMonth from "./CalendarMonth.svelte";
 
   let {
     shownAppointments = $bindable(),
     shownChannels = $bindable(),
     shownAgents = $bindable(),
     scale = $bindable(),
+    selectedDate = $bindable(),
     ref = $bindable(null),
     ...restProps
   }: ComponentProps<typeof Sidebar.Root> & {
@@ -29,6 +32,7 @@
     shownChannels: string[];
     shownAgents: string[];
     scale: number;
+    selectedDate: CalendarDate;
   } = $props();
 
   const appointmentStates: { value: TAppointmentFilter; label: string }[] = [
@@ -48,6 +52,12 @@
     if (currentIndex === -1) return;
     const nextIndex = currentIndex + direction;
     scale = zoomSteps[nextIndex];
+  };
+
+  const clearFilters = () => {
+    shownAppointments = "all";
+    shownChannels = [];
+    shownAgents = [];
   };
 </script>
 
@@ -92,64 +102,89 @@
   </Sidebar.Header>
   <Sidebar.Content>
     <HorizontalPagePadding class="my-3">
-      <Text style="sm">{m["calendar.shownAppointments.title"]()}</Text>
-      <RadioGroup.Root bind:value={shownAppointments} class="mt-2 mb-1">
-        {#each appointmentStates as state (state.value)}
-          <div class="flex items-center space-x-2">
-            <RadioGroup.Item value={state.value} id={state.value} />
-            <Label for={state.value}>
-              {state.label}
-            </Label>
+      <div class="flex flex-col gap-4">
+        <div>
+          <div class="flex items-center justify-between">
+            <Text style="sm">{m["calendar.shownAppointments.title"]()}</Text>
+            <Button
+              variant="ghost"
+              size="sm"
+              class="h-auto px-2 py-1"
+              onclick={clearFilters}
+              disabled={shownAppointments === "all" &&
+                shownChannels.length === 0 &&
+                shownAgents.length === 0}
+            >
+              <FunnelX />
+              <span class="sr-only">Reset</span>
+            </Button>
           </div>
-        {/each}
-      </RadioGroup.Root>
+          <RadioGroup.Root bind:value={shownAppointments} class="mt-2 mb-1">
+            {#each appointmentStates as state (state.value)}
+              <div class="flex items-center space-x-2">
+                <RadioGroup.Item value={state.value} id={state.value} />
+                <Label for={state.value}>
+                  {state.label}
+                </Label>
+              </div>
+            {/each}
+          </RadioGroup.Root>
+        </div>
+        {#if channels.length > 1}
+          <div>
+            <Text style="sm">{m["channels.title"]()}</Text>
+            {#each channels as channel (channel.id)}
+              {@const locale = getLocale()}
+              {@const name = channel.names[locale] || Object.values(channel.names)[0]}
+              <div>
+                <CheckboxWithLabel
+                  value={shownChannels.includes(channel.id)}
+                  label={name}
+                  onCheckedChange={(v) => {
+                    if (v) {
+                      shownChannels = [...shownChannels, channel.id];
+                    } else {
+                      shownChannels = shownChannels.filter((id) => id !== channel.id);
+                    }
+                  }}
+                  class="mt-2 mb-1"
+                />
+              </div>
+            {/each}
+          </div>
+        {/if}
+        {#if agents.length > 1}
+          <div>
+            <Text style="sm">{m["agents.title"]()}</Text>
+            {#each agents as agent (agent.id)}
+              <div>
+                <CheckboxWithLabel
+                  value={shownAgents.includes(agent.id)}
+                  label={agent.name}
+                  onCheckedChange={(v) => {
+                    if (v) {
+                      shownAgents = [...shownAgents, agent.id];
+                    } else {
+                      shownAgents = shownAgents.filter((id) => id !== agent.id);
+                    }
+                  }}
+                  class="mt-2 mb-1"
+                />
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </div>
     </HorizontalPagePadding>
-    <Sidebar.Separator class="mx-0" />
-    <HorizontalPagePadding class="flex flex-col gap-4">
-      {#if channels.length > 1}
-        <div>
-          <Text style="sm">{m["channels.title"]()}</Text>
-          {#each channels as channel (channel.id)}
-            {@const locale = getLocale()}
-            {@const name = channel.names[locale] || Object.values(channel.names)[0]}
-            <div>
-              <CheckboxWithLabel
-                value={shownChannels.includes(channel.id)}
-                label={name}
-                onCheckedChange={(v) => {
-                  if (v) {
-                    shownChannels = [...shownChannels, channel.id];
-                  } else {
-                    shownChannels = shownChannels.filter((id) => id !== channel.id);
-                  }
-                }}
-                class="mt-2 mb-1"
-              />
-            </div>
-          {/each}
-        </div>
-      {/if}
-      {#if agents.length > 1}
-        <div>
-          <Text style="sm">{m["agents.title"]()}</Text>
-          {#each agents as agent (agent.id)}
-            <div>
-              <CheckboxWithLabel
-                value={shownAgents.includes(agent.id)}
-                label={agent.name}
-                onCheckedChange={(v) => {
-                  if (v) {
-                    shownAgents = [...shownAgents, agent.id];
-                  } else {
-                    shownAgents = shownAgents.filter((id) => id !== agent.id);
-                  }
-                }}
-                class="mt-2 mb-1"
-              />
-            </div>
-          {/each}
-        </div>
-      {/if}
+    <Sidebar.Separator class="mx-0 my-1" />
+    <HorizontalPagePadding class="pt-2">
+      <CalendarMonth
+        bind:selectedDate
+        {shownAppointments}
+        {shownAgents}
+        {shownChannels}
+        onSelectDay={() => sidebarStore.setCalendarExpanded(!sidebar.isCalendarExpanded)}
+      />
     </HorizontalPagePadding>
   </Sidebar.Content>
 </Sidebar.Root>
