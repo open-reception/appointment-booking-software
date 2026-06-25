@@ -94,7 +94,7 @@
 
   <!-- Day content area -->
   <div class="absolute top-0 right-0 bottom-0 left-16">
-    {#each processedItems as item (item.id)}
+    {#each processedItems as item, index (`${item.id}-${index}`)}
       {@const top =
         (item.startMinutes / 60) * hourSize + focusAdjustment - earliestStartHour * hourSize}
       {@const height = item.duration * scale}
