@@ -140,7 +140,7 @@ export const getCredentialOptions = ({
     options.publicKey.extensions = {
       prf: {
         eval: {
-          first: new TextEncoder().encode("ein-fortlaufender-32-byte-salt-"),
+          first: crypto.getRandomValues(new Uint8Array(32)),
         },
       },
     };
