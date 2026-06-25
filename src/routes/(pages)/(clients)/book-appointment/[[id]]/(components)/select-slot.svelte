@@ -4,6 +4,7 @@
   import { getLocale } from "$i18n/runtime";
   import { Button } from "$lib/components/ui/button";
   import * as Calendar from "$lib/components/ui/calendar";
+  import Day from "$lib/components/ui/calendar-custom/day.svelte";
   import * as Card from "$lib/components/ui/card";
   import { ScrollArea } from "$lib/components/ui/scroll-area";
   import { Text } from "$lib/components/ui/typography";
@@ -28,6 +29,7 @@
   import type { DateMatcher } from "bits-ui";
   import type { OnChangeFn } from "vaul-svelte";
   import { fetchSchedule } from "./utils";
+  import { debounce } from "$lib/utils";
 
   const {
     channel,
@@ -80,6 +82,14 @@
       }
     });
   };
+
+  const debouncedPlaceholderChange = debounce((placeholder: DateValue | undefined) => {
+    if (!placeholder) return;
+    if (placeholder.year === year && placeholder.month === month) return;
+    year = placeholder.year;
+    month = placeholder.month;
+    schedule = undefined;
+  }, 300);
 
   const setToToday = () => {
     if (browser) {
@@ -189,21 +199,19 @@
       <Calendar.Calendar
         type="single"
         locale={getLocale()}
-        calendarLabel="Select a date"
+        calendarLabel={m["public.steps.slot.selectDate"]()}
         bind:value={selectedDate}
         {isDateUnavailable}
-        class="rounded-lg p-0 [&_td]:grow [&_td_*]:mx-auto [&_th]:grow"
+        class="min-h-80 rounded-lg p-0 [&_td]:grow [&_td_*]:mx-auto [&_th]:grow"
         preventDeselect={true}
         disableDaysOutsideMonth={true}
         onValueChange={onSelectDay}
-        onPlaceholderChange={(placeholder) => {
-          if (!placeholder) return;
-          if (placeholder.year === year && placeholder.month === month) return;
-          year = placeholder.year;
-          month = placeholder.month;
-          schedule = undefined;
-        }}
-      />
+        onPlaceholderChange={debouncedPlaceholderChange}
+      >
+        {#snippet day({ day, outsideMonth })}
+          <Day {day} {outsideMonth} />
+        {/snippet}
+      </Calendar.Calendar>
       <div class="flex grow items-center justify-center p-4 px-6">
         {#if slots === null}
           <Text style="md" class="text-muted-foreground text-center">

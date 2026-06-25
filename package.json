@@ -88,6 +88,7 @@
     "@noble/post-quantum": "^0.4.1",
     "@simplewebauthn/server": "^11.0.0",
     "@sveltejs/adapter-node": "^5.5.1",
+    "@tanstack/svelte-query": "^6.1.34",
     "argon2": "^0.43.0",
     "argon2-browser": "^1.18.0",
     "cropperjs": "^2.0.1",

@@ -12,7 +12,7 @@
   import { calendarStore } from "$lib/stores/calendar";
   import { channels as channelsStore } from "$lib/stores/channels";
   import { sidebar } from "$lib/stores/sidebar";
-  import type { TAppointmentFilter, TCalendar, TCalendarItem } from "$lib/types/calendar";
+  import type { TAppointmentFilter, TCalendarItem } from "$lib/types/calendar";
   import { timeUTCToLocalWithoutOffset, utcToLocalWithoutDST } from "$lib/utils/datetime";
   import { getCurrentTranlslation } from "$lib/utils/localizations";
   import {
@@ -22,31 +22,35 @@
     today,
     type CalendarDate,
   } from "@internationalized/date";
-  import { Funnel } from "@lucide/svelte";
+  import { SlidersHorizontal } from "@lucide/svelte";
   import { onMount } from "svelte";
   import AddAppointment from "./(components)/add-appointment/AddAppointment.svelte";
   import Appointment from "./(components)/Appointment.svelte";
   import CalendarDay from "./(components)/CalendarDay.svelte";
   import CalendarFilters from "./(components)/CalendarFilters.svelte";
   import CalendarHeader from "./(components)/CalendarHeader.svelte";
-  import { fetchCalendar, openAppointmentById } from "./(components)/utils";
+  import { openAppointmentById } from "./(components)/utils";
+  import { createQuery, useQueryClient } from "@tanstack/svelte-query";
+  import { calendarMonthQuery } from "./(components)/queries";
 
   const convertDate = (dateStr: string) => {
     const zonedDateTime = parseAbsoluteToLocal(dateStr);
     return toCalendarDate(zonedDateTime);
   };
 
+  const queryClient = useQueryClient();
   const tenantId = $derived($auth.user?.tenantId);
   const curEmptySlot = $derived($calendarStore.curEmptySlot);
   const curItem = $derived($calendarStore.curItem);
   const channels = $derived($channelsStore.channels);
   const agents = $derived($agentsStore.agents);
-  let startDate: CalendarDate = $state(
+  let selectedDate: CalendarDate = $state(
     "date" in page.state
       ? convertDate(history?.state["sveltekit:states"].date)
       : today(getLocalTimeZone()),
   );
-  let calender: TCalendar | undefined = $state();
+  const query = createQuery(() => calendarMonthQuery(tenantId as string, selectedDate));
+  const calendar = $derived(query.data);
   let shownAppointments: TAppointmentFilter = $state("all");
   let shownChannels: string[] = $state([]);
   let shownAgents: string[] = $state([]);
@@ -70,7 +74,10 @@
   let scale = $state(1);
 
   $effect(() => {
-    updateCalendar();
+    const getMonth = (x: string | undefined) => (x ? new Date(x).getMonth() + 1 : undefined);
+    if (!calendar || getMonth(calendar?.period.startDate) !== getMonth(selectedDate.toString())) {
+      updateCalendar();
+    }
   });
 
   $effect(() => {
@@ -100,8 +107,8 @@
       "appointmentId" in page.state
     ) {
       const date = convertDate(page.state.date as string);
-      if (date.toString() !== startDate.toString()) {
-        startDate = date;
+      if (date.toString() !== selectedDate.toString()) {
+        selectedDate = date;
         replaceState("", { appointmentId: page.state.appointmentId });
       } else {
         if (items) {
@@ -115,8 +122,9 @@
 
   const updateCalendar = async () => {
     if (tenantId) {
-      calender = undefined;
-      calender = await fetchCalendar({ startDate, tenant: tenantId });
+      queryClient.invalidateQueries({
+        queryKey: ["calendar"],
+      });
     }
   };
 
@@ -125,8 +133,8 @@
   };
 
   let items: TCalendarItem[] | undefined = $derived.by(() => {
-    if (!calender) return undefined;
-    const dayEntry = calender.calendar.find((d) => d.date === startDate.toString());
+    if (!calendar) return undefined;
+    const dayEntry = calendar.calendar.find((d) => d.date === selectedDate.toString());
     if (!dayEntry) return [];
     return Object.keys(dayEntry.channels).reduce<TCalendarItem[]>((allItems, channelId) => {
       const channelData = dayEntry.channels[channelId];
@@ -203,10 +211,10 @@
 <SidebarLayout breakcrumbs={[{ label: m["nav.calendar"](), href: ROUTES.DASHBOARD.CALENDAR }]}>
   <MaxPageWidth maxWidth="xl">
     <div class="flex flex-col gap-10">
-      <CalendarHeader bind:startDate />
+      <CalendarHeader bind:selectedDate {shownAppointments} {shownAgents} {shownChannels} />
       <div>
         <CalendarDay
-          day={startDate}
+          day={selectedDate}
           {items}
           earliestStartHour={hours.from}
           latestEndHour={hours.to}
@@ -222,11 +230,17 @@
       onclick={() => sidebar.setCalendarExpanded(!$sidebar.isCalendarExpanded)}
       class="lg:hidden"
     >
-      <Funnel />
+      <SlidersHorizontal />
     </Button>
   {/snippet}
   {#snippet sidebarRight()}
-    <CalendarFilters bind:shownAppointments bind:shownChannels bind:shownAgents bind:scale />
+    <CalendarFilters
+      bind:shownAppointments
+      bind:shownChannels
+      bind:shownAgents
+      bind:scale
+      bind:selectedDate
+    />
   {/snippet}
 </SidebarLayout>
 

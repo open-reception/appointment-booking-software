@@ -184,3 +184,47 @@ export const utcToLocal = (utcDate: Date): Date => {
   const currentOffsetMs = utcDate.getTimezoneOffset() * 60 * 1000;
   return new Date(utcDate.getTime() - currentOffsetMs);
 };
+
+const sundayStartLocales = new Set([
+  "en-US",
+  "en-CA",
+  "ja",
+  "ja-JP",
+  "ko",
+  "ko-KR",
+  "zh",
+  "zh-TW",
+  "zh-CN",
+  "he",
+  "he-IL",
+  "ar-SA",
+  "th",
+  "th-TH",
+  "pt-BR",
+]);
+
+const saturdayStartLocales = new Set([
+  "ar",
+  "ar-AE",
+  "ar-EG",
+  "ar-BH",
+  "ar-DZ",
+  "ar-IQ",
+  "ar-JO",
+  "ar-KW",
+  "ar-LY",
+  "ar-MA",
+  "ar-OM",
+  "ar-QA",
+  "ar-SY",
+  "ar-YE",
+  "fa",
+  "fa-IR",
+]);
+
+export const getWeekStartsOn = (): 0 | 1 | 2 | 3 | 4 | 5 | 6 => {
+  const locale = navigator.language;
+  if (saturdayStartLocales.has(locale)) return 6;
+  if (sundayStartLocales.has(locale)) return 0;
+  return 1;
+};

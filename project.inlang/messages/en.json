@@ -950,7 +950,12 @@
 	},
 	"calendar": {
 		"title": "Calendar",
+		"selectDate": "Select a date",
 		"today": "Today",
+		"thisMonth": "Current month",
+		"addThreeMonths": "+3",
+		"addSixMonths": "+6",
+		"addOneYear": "+12",
 		"loading": "Loading calendar",
 		"decrypting": "decrypting...",
 		"decryptingError": "Unable to decrypt data. Please reload/log-in again",

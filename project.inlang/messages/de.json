@@ -357,6 +357,7 @@
 			"weekdays": "Wochentage"
 		}
 	},
+	"cancel": "Abbrechen",
 	"actions": "Aktionen",
 	"edit": "Editieren",
 	"pause": "Deaktivieren",
@@ -941,7 +942,12 @@
 	},
 	"calendar": {
 		"title": "Kalender",
+		"selectDate": "Datum auswählen",
 		"today": "Heute",
+		"thisMonth": "Aktueller Monat",
+		"addThreeMonths": "+3",
+		"addSixMonths": "+6",
+		"addOneYear": "+12",
 		"loading": "Kalender wird geladen",
 		"decrypting": "wird entschlüsselt...",
 		"decryptingError": "Entschlüsselung fehlgeschlagen. Bitte neu laden/anmelden.",

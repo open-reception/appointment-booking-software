@@ -21,3 +21,11 @@ export function normalizeEmail(value?: string | null): string | undefined {
 
   return value.trim().toLowerCase();
 }
+
+export const debounce = <T extends (...args: never[]) => void>(fn: T, ms: number): T => {
+  let timeout: ReturnType<typeof setTimeout>;
+  return ((...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), ms);
+  }) as T;
+};

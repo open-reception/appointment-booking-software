@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
+  import { resolve } from "$app/paths";
   import { m } from "$i18n/messages";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import * as Sidebar from "$lib/components/ui/sidebar";
@@ -8,19 +9,26 @@
   import { ROUTES } from "$lib/const/routes";
   import { auth } from "$lib/stores/auth";
   import { tenants } from "$lib/stores/tenants";
+  import { cn } from "$lib/utils";
+  import { PlugZap } from "@lucide/svelte";
   import ChevronsUpDownIcon from "@lucide/svelte/icons/chevrons-up-down";
   import EllipsisIcon from "@lucide/svelte/icons/ellipsis";
-  import UnplugIcon from "@lucide/svelte/icons/unplug";
   import UnknownTenantIcon from "@lucide/svelte/icons/landmark";
   import Loader from "@lucide/svelte/icons/loader-2";
-  import { cn } from "$lib/utils";
-  import { resolve } from "$app/paths";
+  import UnplugIcon from "@lucide/svelte/icons/unplug";
 
   const sidebar = useSidebar();
 
   const maxTenantsToShow = 5;
   let activeTenantId = $derived($auth.user?.tenantId);
   let activeTenant = $derived($tenants.tenants.find((t) => t.id === activeTenantId));
+  let tenantList = $derived(
+    $tenants.tenants.sort((a, b) => {
+      if (a.id === activeTenantId) return -1;
+      if (b.id === activeTenantId) return 1;
+      return 0;
+    }),
+  );
 </script>
 
 <Sidebar.Menu>
@@ -95,27 +103,32 @@
             <DropdownMenu.Label class="text-muted-foreground text-xs">
               {m["nav.tenants"]()}
             </DropdownMenu.Label>
-            {#each $tenants?.tenants.slice(0, maxTenantsToShow) as tenant (tenant.id)}
+            {#each tenantList.slice(0, maxTenantsToShow) as tenant (tenant.id)}
               <DropdownMenu.Item
                 onSelect={() => tenants.setCurrentTenant(tenant.id)}
-                class="gap-2 p-2"
+                class="justify-between gap-2 p-2"
               >
-                <div class="flex size-6 items-center justify-center rounded-md border">
-                  {#if tenant.logo}
-                    <img
-                      src={tenant.logo}
-                      alt={tenant.shortName}
-                      class="border-dark h-full w-full rounded-sm border object-cover object-center"
-                      loading="lazy"
-                    />
-                  {:else}
-                    <UnknownTenantIcon class="size-3.5 shrink-0" />
-                  {/if}
+                <div class="flex items-center gap-2">
+                  <div class="flex size-6 items-center justify-center rounded-md border">
+                    {#if tenant.logo}
+                      <img
+                        src={tenant.logo}
+                        alt={tenant.shortName}
+                        class="border-dark h-full w-full rounded-sm border object-cover object-center"
+                        loading="lazy"
+                      />
+                    {:else}
+                      <UnknownTenantIcon class="size-3.5 shrink-0" />
+                    {/if}
+                  </div>
+                  {tenant.shortName}
                 </div>
-                {tenant.shortName}
+                {#if tenant.id === activeTenantId}
+                  <PlugZap />
+                {/if}
               </DropdownMenu.Item>
             {/each}
-            {#if $tenants?.tenants.length > maxTenantsToShow}
+            {#if tenantList.length > maxTenantsToShow}
               <DropdownMenu.Separator />
               <DropdownMenu.Item
                 class="gap-2 p-2"
