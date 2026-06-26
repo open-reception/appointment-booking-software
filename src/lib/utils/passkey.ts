@@ -138,7 +138,11 @@ export const getCredentialOptions = ({
   // Enable PRF extension for zero-knowledge key derivation
   if (enablePRF) {
     options.publicKey.extensions = {
-      prf: {},
+      prf: {
+        eval: {
+          first: crypto.getRandomValues(new Uint8Array(32)),
+        },
+      },
     };
   }
 
