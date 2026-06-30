@@ -2,7 +2,6 @@
   import { replaceState } from "$app/navigation";
   import { page } from "$app/state";
   import { m } from "$i18n/messages";
-  import { MaxPageWidth } from "$lib/components/layouts/max-page-width";
   import { SidebarLayout } from "$lib/components/layouts/sidebar-layout";
   import { Button } from "$lib/components/ui/button";
   import { ResponsiveDialog } from "$lib/components/ui/responsive-dialog";
@@ -12,31 +11,24 @@
   import { calendarStore } from "$lib/stores/calendar";
   import { channels as channelsStore } from "$lib/stores/channels";
   import { sidebar } from "$lib/stores/sidebar";
-  import type { TAppointmentFilter, TCalendarItem } from "$lib/types/calendar";
-  import { timeUTCToLocalWithoutOffset, utcToLocalWithoutDST } from "$lib/utils/datetime";
+  import type { TAppointmentFilter } from "$lib/types/calendar";
+  import { timeUTCToLocalWithoutOffset } from "$lib/utils/datetime";
   import { getCurrentTranlslation } from "$lib/utils/localizations";
-  import {
-    getLocalTimeZone,
-    parseAbsoluteToLocal,
-    toCalendarDate,
-    today,
-    type CalendarDate,
-  } from "@internationalized/date";
+  import { getLocalTimeZone, today, type CalendarDate } from "@internationalized/date";
   import { SlidersHorizontal } from "@lucide/svelte";
+  import { createQuery, useQueryClient } from "@tanstack/svelte-query";
   import { onMount } from "svelte";
   import AddAppointment from "./(components)/add-appointment/AddAppointment.svelte";
   import Appointment from "./(components)/Appointment.svelte";
   import CalendarDay from "./(components)/CalendarDay.svelte";
   import CalendarFilters from "./(components)/CalendarFilters.svelte";
   import CalendarHeader from "./(components)/CalendarHeader.svelte";
-  import { openAppointmentById } from "./(components)/utils";
-  import { createQuery, useQueryClient } from "@tanstack/svelte-query";
+  import CalendarLegend from "./(components)/CalendarLegend.svelte";
+  import CalendarLines from "./(components)/CalendarLines.svelte";
+  import CalendarWeek from "./(components)/CalendarWeek.svelte";
   import { calendarMonthQuery } from "./(components)/queries";
-
-  const convertDate = (dateStr: string) => {
-    const zonedDateTime = parseAbsoluteToLocal(dateStr);
-    return toCalendarDate(zonedDateTime);
-  };
+  import { convertDate, openAppointmentById } from "./(components)/utils";
+  import type { CalendarView } from "./types";
 
   const queryClient = useQueryClient();
   const tenantId = $derived($auth.user?.tenantId);
@@ -54,6 +46,7 @@
   let shownAppointments: TAppointmentFilter = $state("all");
   let shownChannels: string[] = $state([]);
   let shownAgents: string[] = $state([]);
+  let view: CalendarView = $state(page.data.calendarView);
   let hours = $derived.by(() => {
     const from = channels
       .map((c) => c.slotTemplates.map((t) => t.from))
@@ -71,7 +64,7 @@
       });
     return { from: Math.min(...from), to: Math.max(...to) };
   });
-  let scale = $state(1);
+  let scale = $state(page.data.calendarZoom);
 
   $effect(() => {
     const getMonth = (x: string | undefined) => (x ? new Date(x).getMonth() + 1 : undefined);
@@ -81,21 +74,18 @@
   });
 
   $effect(() => {
-    if (items && history.state["sveltekit:states"]?.appointmentId) {
+    if (calendar && history.state["sveltekit:states"]?.appointmentId) {
       // Wait 100ms to ensure that the calendar items are rendered
       setTimeout(() => {
-        openAppointmentById(items, history.state["sveltekit:states"].appointmentId, () => {
-          replaceState("", {});
-        });
+        openAppointmentById(
+          calendar,
+          channels,
+          history.state["sveltekit:states"].appointmentId,
+          () => {
+            replaceState("", {});
+          },
+        );
       }, 100);
-    }
-  });
-
-  onMount(() => {
-    if (history.state["sveltekit:states"]?.date) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { date, ...rest } = history.state["sveltekit:states"];
-      replaceState("", rest);
     }
   });
 
@@ -111,12 +101,25 @@
         selectedDate = date;
         replaceState("", { appointmentId: page.state.appointmentId });
       } else {
-        if (items) {
-          openAppointmentById(items, history.state["sveltekit:states"].appointmentId, () => {
-            replaceState("", {});
-          });
+        if (calendar) {
+          openAppointmentById(
+            calendar,
+            channels,
+            history.state["sveltekit:states"].appointmentId,
+            () => {
+              replaceState("", {});
+            },
+          );
         }
       }
+    }
+  });
+
+  onMount(() => {
+    if (history.state["sveltekit:states"]?.date) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { date, ...rest } = history.state["sveltekit:states"];
+      replaceState("", rest);
     }
   });
 
@@ -131,77 +134,6 @@
   const closeAppointmentDetail = () => {
     $calendarStore.curItem = null;
   };
-
-  let items: TCalendarItem[] | undefined = $derived.by(() => {
-    if (!calendar) return undefined;
-    const dayEntry = calendar.calendar.find((d) => d.date === selectedDate.toString());
-    if (!dayEntry) return [];
-    return Object.keys(dayEntry.channels).reduce<TCalendarItem[]>((allItems, channelId) => {
-      const channelData = dayEntry.channels[channelId];
-      const channelItems: TCalendarItem[] = [];
-
-      // Available slots
-      if (["all", "available"].includes(shownAppointments)) {
-        if (shownChannels.length === 0 || shownChannels.includes(channelId)) {
-          channelData.availableSlots.forEach((slot) => {
-            const isSlotInPast = utcToLocalWithoutDST(new Date(slot.to)) < new Date();
-            if (!isSlotInPast) {
-              if (
-                shownAgents.length === 0 ||
-                shownAgents.some((id) => slot.availableAgents.map((a) => a.id).includes(id))
-              ) {
-                channelItems.push({
-                  id: `${channelId}-${slot.from}`,
-                  date: dayEntry.date,
-                  start: slot.from,
-                  duration: slot.duration,
-                  channelId,
-                  color: channelData.channel.color,
-                  column: 0,
-                  status: "available",
-                  availableAgents: slot.availableAgents,
-                });
-              }
-            }
-          });
-        }
-      }
-
-      // Appointments
-      if (["all", "booked", "reserved"].includes(shownAppointments)) {
-        channelData.appointments.forEach((appointment) => {
-          const status = appointment.status === "CONFIRMED" ? "booked" : "reserved";
-          if (shownAppointments === "all" || shownAppointments === status) {
-            if (shownChannels.length === 0 || shownChannels.includes(channelId)) {
-              if (shownAgents.length === 0 || shownAgents.includes(appointment.agentId)) {
-                channelItems.push({
-                  id: appointment.id,
-                  date: dayEntry.date,
-                  start: new Date(appointment.appointmentDate).toISOString(),
-                  duration: appointment.duration,
-                  channelId,
-                  color: channelData.channel.color,
-                  column: 0,
-                  status,
-                  appointment: {
-                    dateTime: new Date(appointment.appointmentDate),
-                    encryptedPayload: appointment.encryptedPayload,
-                    tunnelId: appointment.tunnelId,
-                    agentId: appointment.agentId,
-                    staffKeyShare: appointment.staffKeyShare,
-                    iv: appointment.iv || undefined,
-                    authTag: appointment.authTag || undefined,
-                  },
-                });
-              }
-            }
-          }
-        });
-      }
-
-      return [...allItems, ...channelItems];
-    }, []);
-  });
 </script>
 
 <svelte:head>
@@ -209,20 +141,54 @@
 </svelte:head>
 
 <SidebarLayout breakcrumbs={[{ label: m["nav.calendar"](), href: ROUTES.DASHBOARD.CALENDAR }]}>
-  <MaxPageWidth maxWidth="xl">
-    <div class="flex flex-col gap-10">
-      <CalendarHeader bind:selectedDate {shownAppointments} {shownAgents} {shownChannels} />
-      <div>
-        <CalendarDay
+  <div class="flex flex-col gap-10">
+    <CalendarHeader bind:selectedDate {view} {shownAppointments} {shownAgents} {shownChannels} />
+    <div
+      class="flex transition-all duration-200"
+      style:min-height={`${(hours.to * 30 + 60) * scale}px`}
+    >
+      {#if view === "day"}
+        <CalendarLegend
           day={selectedDate}
-          {items}
+          isLoading={calendar === undefined}
           earliestStartHour={hours.from}
           latestEndHour={hours.to}
           bind:scale
         />
-      </div>
+        <CalendarDay
+          day={selectedDate}
+          {selectedDate}
+          {calendar}
+          {shownAppointments}
+          {shownAgents}
+          {shownChannels}
+          earliestStartHour={hours.from}
+          latestEndHour={hours.to}
+          bind:scale
+        />
+        <CalendarLines
+          day={selectedDate}
+          earliestStartHour={hours.from}
+          latestEndHour={hours.to}
+          isLoading={calendar === undefined}
+          bind:scale
+        />
+      {:else}
+        <CalendarWeek
+          day={selectedDate}
+          {selectedDate}
+          {calendar}
+          {shownAppointments}
+          {shownAgents}
+          {shownChannels}
+          {view}
+          earliestStartHour={hours.from}
+          latestEndHour={hours.to}
+          bind:scale
+        />
+      {/if}
     </div>
-  </MaxPageWidth>
+  </div>
   {#snippet headerRight()}
     <Button
       size="sm"
@@ -239,6 +205,7 @@
       bind:shownChannels
       bind:shownAgents
       bind:scale
+      bind:view
       bind:selectedDate
     />
   {/snippet}

@@ -2,16 +2,27 @@ import { browser } from "$app/environment";
 import { goto } from "$app/navigation";
 import { resolve } from "$app/paths";
 import { ROUTES } from "$lib/const/routes";
+import type { AppointmentWithKeyShare } from "$lib/server/services/schedule-service";
 import { auth } from "$lib/stores/auth";
 import { calendarStore } from "$lib/stores/calendar";
 import { staffCrypto } from "$lib/stores/staff-crypto";
-import type { TCalendar, TCalendarItem } from "$lib/types/calendar";
-import { localToUTCWithoutDST } from "$lib/utils/datetime";
-import { getLocalTimeZone, type CalendarDate } from "@internationalized/date";
+import type { AppointmentStatus, TCalendar, TCalendarItem } from "$lib/types/calendar";
+import type { TChannel } from "$lib/types/channel";
+import { getWeekStartsOn, localToUTCWithoutDST } from "$lib/utils/datetime";
+import {
+  getLocalTimeZone,
+  parseAbsoluteToLocal,
+  toCalendarDate,
+  type CalendarDate,
+} from "@internationalized/date";
 import { get } from "svelte/store";
+
+export const CALENDAR_ZOOM_STEPS = [1, 2, 3, 4];
 
 export const fetchCalendar = async (opts: { tenant: string; selectedDate: CalendarDate }) => {
   if (!browser) return;
+
+  const weekStartsOn = getWeekStartsOn();
 
   const localStartDate = new Date(
     opts.selectedDate.year,
@@ -22,6 +33,11 @@ export const fetchCalendar = async (opts: { tenant: string; selectedDate: Calend
     0,
     0,
   );
+  // Roll back to the start of the week
+  while (localStartDate.getDay() !== weekStartsOn) {
+    localStartDate.setDate(localStartDate.getDate() - 1);
+  }
+
   const localEndDate = new Date(
     opts.selectedDate.year,
     opts.selectedDate.month,
@@ -31,6 +47,11 @@ export const fetchCalendar = async (opts: { tenant: string; selectedDate: Calend
     59,
     999,
   );
+  // Roll forward to the end of the week
+  const weekEndDay = (weekStartsOn + 6) % 7;
+  while (localEndDate.getDay() !== weekEndDay) {
+    localEndDate.setDate(localEndDate.getDate() + 1);
+  }
 
   const params = new URLSearchParams({
     startDate: localStartDate.toISOString(),
@@ -249,29 +270,57 @@ export const confirmAppointment = async (opts: {
 };
 
 export const openAppointmentById = async (
-  appointments: TCalendarItem[],
+  calendar: TCalendar,
+  channels: TChannel[],
   appointmentId: string,
   callback: () => void,
 ) => {
-  const appointment = appointments?.find((i) => i.id === appointmentId);
+  const allAppointments: AppointmentWithKeyShare[] = calendar.calendar.reduce((all, item) => {
+    return [...all, ...Object.values(item.channels).flatMap((it) => it.appointments)];
+  }, [] as AppointmentWithKeyShare[]);
+  const appointment = allAppointments?.find((i) => i.id === appointmentId);
   const staffCryptoStore = get(staffCrypto);
   if (
     staffCryptoStore.crypto &&
-    appointment?.appointment?.encryptedPayload &&
-    appointment.appointment.iv &&
-    appointment.appointment.authTag &&
-    appointment.appointment.staffKeyShare
+    appointment?.encryptedPayload &&
+    appointment.iv &&
+    appointment.authTag &&
+    appointment.staffKeyShare
   ) {
     const decrypted = await staffCryptoStore.crypto.decryptStaffAppointment({
       encryptedAppointment: {
-        encryptedPayload: appointment.appointment.encryptedPayload,
-        iv: appointment.appointment.iv,
-        authTag: appointment.appointment.authTag,
+        encryptedPayload: appointment.encryptedPayload,
+        iv: appointment.iv,
+        authTag: appointment.authTag,
       },
-      staffKeyShare: appointment.appointment.staffKeyShare,
+      staffKeyShare: appointment.staffKeyShare,
     });
-    calendarStore.setCurItem({ appointment, decrypted });
+    const channel = channels.find((it) => it.id === appointment.channelId);
+    const curCalendarItem: TCalendarItem = {
+      date: appointment.appointmentDate.toString(),
+      id: appointment.id,
+      duration: appointment.duration,
+      status: appointment.status as AppointmentStatus,
+      start: "08:00",
+      channelId: appointment.channelId,
+      color: channel?.color || "",
+      appointment: {
+        ...appointment,
+        encryptedPayload: appointment.encryptedPayload,
+        iv: appointment.iv,
+        authTag: appointment.authTag,
+        dateTime: new Date(appointment.appointmentDate),
+      },
+      // TODO: get proper values
+      column: 0,
+    };
+    calendarStore.setCurItem({ appointment: curCalendarItem, decrypted });
   }
 
   callback();
+};
+
+export const convertDate = (dateStr: string) => {
+  const zonedDateTime = parseAbsoluteToLocal(dateStr);
+  return toCalendarDate(zonedDateTime);
 };

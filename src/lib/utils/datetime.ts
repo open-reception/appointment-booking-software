@@ -1,6 +1,7 @@
 import { getLocale } from "$i18n/runtime";
 import type { TCalendarSlot } from "$lib/types/calendar";
 import {
+  CalendarDate,
   getLocalTimeZone,
   parseAbsoluteToLocal,
   toCalendarDateTime,
@@ -227,4 +228,23 @@ export const getWeekStartsOn = (): 0 | 1 | 2 | 3 | 4 | 5 | 6 => {
   if (saturdayStartLocales.has(locale)) return 6;
   if (sundayStartLocales.has(locale)) return 0;
   return 1;
+};
+
+export const getWeekDays = (day: CalendarDate, skipWeekend = false): CalendarDate[] => {
+  const jsDay = day.toDate("UTC").getDay();
+  const weekStartsOn = getWeekStartsOn();
+  let offset = jsDay - weekStartsOn;
+  if (offset < 0) offset += 7;
+
+  const weekStart = day.subtract({ days: offset });
+  const days = Array.from({ length: 7 }, (_, i) => weekStart.add({ days: i }));
+
+  if (skipWeekend) {
+    return days.filter((d) => {
+      const dow = d.toDate("UTC").getDay();
+      return dow !== 0 && dow !== 6;
+    });
+  }
+
+  return days;
 };

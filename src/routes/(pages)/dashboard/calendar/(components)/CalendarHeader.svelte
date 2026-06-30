@@ -9,20 +9,24 @@
   import CalendarMonth from "./CalendarMonth.svelte";
   import type { TAppointmentFilter } from "$lib/types/calendar";
   import type { OnChangeFn } from "vaul-svelte";
+  import type { CalendarView } from "../types";
 
   let {
     selectedDate = $bindable(),
+    view,
     shownAppointments,
     shownChannels,
     shownAgents,
   }: {
     selectedDate: CalendarDate;
+    view: CalendarView;
     shownAppointments: TAppointmentFilter;
     shownChannels: string[];
     shownAgents: string[];
   } = $props();
 
   let open = $state(false);
+  let isWeekView = $derived(view !== "day");
 
   const prev = () => {
     const nextDate = new CalendarDate(
@@ -30,14 +34,14 @@
       selectedDate.month,
       selectedDate.day,
     ).subtract({
-      days: 1,
+      days: isWeekView ? 7 : 1,
     });
     selectedDate = nextDate;
   };
 
   const next = () => {
     const nextDate = new CalendarDate(selectedDate.year, selectedDate.month, selectedDate.day).add({
-      days: 1,
+      days: isWeekView ? 7 : 1,
     });
     selectedDate = nextDate;
   };
@@ -48,6 +52,24 @@
 
   const onSelectDay: OnChangeFn<unknown> = () => {
     open = false;
+  };
+
+  const getISOWeek = (date: CalendarDate): { week: number; year: number } => {
+    // Convert to a Thursday of the same ISO week
+    const dayOfWeek = date.toDate("UTC").getUTCDay() || 7; // Mon=1 ... Sun=7
+    const thursday = date.add({ days: 4 - dayOfWeek });
+
+    // The ISO year is the year of that Thursday
+    const year = thursday.year;
+
+    // Day of year for that Thursday
+    const jan1 = new CalendarDate(year, 1, 1);
+    const dayOfYear =
+      (thursday.toDate("UTC").getTime() - jan1.toDate("UTC").getTime()) / 86_400_000 + 1;
+
+    const week = Math.ceil(dayOfYear / 7);
+
+    return { week, year };
   };
 </script>
 
@@ -62,13 +84,18 @@
       <Popover.Trigger
         class={cn(buttonVariants({ variant: "ghost" }), "h-auto py-1 leading-none font-normal")}
       >
-        {Intl.DateTimeFormat(getLocale(), {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-          weekday: "short",
-          timeZone: getLocalTimeZone().toString(),
-        }).format(selectedDate.toDate(getLocalTimeZone()))}
+        {#if isWeekView}
+          {@const week = getISOWeek(selectedDate)}
+          {m["calendar.calendarWeek"](week)}
+        {:else}
+          {Intl.DateTimeFormat(getLocale(), {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            weekday: "short",
+            timeZone: getLocalTimeZone().toString(),
+          }).format(selectedDate.toDate(getLocalTimeZone()))}
+        {/if}
       </Popover.Trigger>
       <Popover.Content class="w-64">
         <CalendarMonth

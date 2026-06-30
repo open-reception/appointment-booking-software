@@ -13,6 +13,7 @@
   import { toDisplayDateTime } from "$lib/utils/datetime";
   import { getCurrentTranlslation } from "$lib/utils/localizations";
   import { getLocalTimeZone } from "@internationalized/date";
+  import { useQueryClient } from "@tanstack/svelte-query";
   import { onMount } from "svelte";
 
   let {
@@ -23,6 +24,7 @@
     closePopover: () => void;
   } = $props();
 
+  const queryClient = useQueryClient();
   const channels = $derived($channelsStore.channels);
   let appointment: TAppointment | undefined = $state();
 
@@ -57,6 +59,9 @@
   onclick={() => {
     if (appointment) {
       closePopover();
+      queryClient.invalidateQueries({
+        queryKey: ["calendar"],
+      });
       if (page.url.pathname === ROUTES.DASHBOARD.CALENDAR) {
         goto(resolve(ROUTES.DASHBOARD.CALENDAR), {
           state: {
