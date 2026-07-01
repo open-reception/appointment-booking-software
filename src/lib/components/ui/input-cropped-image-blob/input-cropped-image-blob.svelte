@@ -305,58 +305,82 @@
     </div>
     <Text style="xs">{m["components.inputCroppedImageBlob.crop.description"]()}</Text>
     <div class="flex flex-col gap-0.5">
-      <div class="flex flex-wrap gap-0.5">
-        <Button
-          type="button"
-          variant="outline"
-          size="xs"
-          onclick={() => handleButtonAction("zoom-in")}
-        >
-          <ZoomIn class="size-3" />
-          {m["components.inputCroppedImageBlob.crop.zoomIn"]()}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="xs"
-          onclick={() => handleButtonAction("zoom-out")}
-        >
-          <ZoomOut class="size-3" />
-          {m["components.inputCroppedImageBlob.crop.zoomOut"]()}
-        </Button>
-      </div>
-      <div class="flex flex-wrap gap-0.5">
-        <Button
-          type="button"
-          variant="outline"
-          size="xs"
-          onclick={() => handleButtonAction("left")}
-        >
-          <MoveLeft class="size-3" />
-          {m["components.inputCroppedImageBlob.crop.moveLeft"]()}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="xs"
-          onclick={() => handleButtonAction("right")}
-        >
-          <MoveRight class="size-3" />
-          {m["components.inputCroppedImageBlob.crop.moveRight"]()}
-        </Button>
-        <Button type="button" variant="outline" size="xs" onclick={() => handleButtonAction("up")}>
-          <MoveUp class="size-3" />
-          {m["components.inputCroppedImageBlob.crop.moveUp"]()}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="xs"
-          onclick={() => handleButtonAction("down")}
-        >
-          <MoveDown class="size-3" />
-          {m["components.inputCroppedImageBlob.crop.moveDown"]()}
-        </Button>
+      <div class="flex items-center justify-center">
+        <div class="flex flex-1 flex-col gap-3 p-4 pt-0">
+          <!-- 2. Scale Controls (Horizontal Zoom) -->
+          <div class="grid h-11 w-full max-w-52 grid-cols-2 gap-2 self-center">
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              class="rounded-lg"
+              onclick={() => handleButtonAction("zoom-in")}
+            >
+              <ZoomIn class="size-4" />
+              {m["components.inputCroppedImageBlob.crop.zoomIn"]()}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              class="rounded-lg"
+              onclick={() => handleButtonAction("zoom-out")}
+            >
+              <ZoomOut class="size-4" />
+              {m["components.inputCroppedImageBlob.crop.zoomOut"]()}
+            </Button>
+          </div>
+
+          <div class="grid h-24 w-full max-w-47 grid-cols-3 grid-rows-2 gap-2 self-center">
+            <!-- Row 1 -->
+            <div></div>
+            <Button
+              type="button"
+              variant="outline"
+              class="rounded-lg border border-gray-400 active:bg-gray-200"
+              size="xs"
+              onclick={() => handleButtonAction("up")}
+            >
+              <MoveUp class="size-4 text-gray-600" />
+            </Button>
+
+            <div></div>
+
+            <!-- Row 2 -->
+            <Button
+              type="button"
+              variant="outline"
+              class="rounded-lg border border-gray-400 active:bg-gray-200"
+              size="xs"
+              onclick={() => handleButtonAction("left")}
+            >
+              <MoveLeft class="size-4 text-gray-600" />
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              class="rounded-lg border border-gray-400 active:bg-gray-200"
+              size="xs"
+              onclick={() => handleButtonAction("down")}
+            >
+              <MoveDown class="size-4 text-gray-600" />
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              class="rounded-lg border border-gray-400 active:bg-gray-200"
+              size="xs"
+              onclick={() => handleButtonAction("right")}
+            >
+              <MoveRight class="size-4 text-gray-600" />
+            </Button>
+          </div>
+
+          <!-- Divider Line -->
+          <div class="my-1 border-t border-gray-200"></div>
+        </div>
       </div>
     </div>
 
