@@ -952,6 +952,18 @@
 		"title": "Calendar",
 		"selectDate": "Select a date",
 		"today": "Today",
+		"zoomOptions": {
+			"title": "Calendar zoom options",
+			"zoomIn": "zoom-in",
+			"zoomOut": "zoom-out"
+		},
+		"viewOptions": {
+			"title": "Calendar view options",
+			"day": "Day",
+			"week": "Week",
+			"week-workdays": "Week (without weekend)"
+		},
+		"calendarWeek": "CW {week}, {year}",
 		"thisMonth": "Current month",
 		"addThreeMonths": "+3",
 		"addSixMonths": "+6",

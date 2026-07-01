@@ -1,49 +1,115 @@
 <script lang="ts">
-  import { m } from "$i18n/messages";
-  import { getLocale } from "$i18n/runtime";
-  import { Separator } from "$lib/components/ui/separator";
-  import { Text } from "$lib/components/ui/typography";
-  import { clock } from "$lib/stores/time";
-  import { type TCalendarItem } from "$lib/types/calendar";
+  import { type TAppointmentFilter, type TCalendar, type TCalendarItem } from "$lib/types/calendar";
   import { cn } from "$lib/utils";
-  import {
-    CalendarDate,
-    getLocalTimeZone,
-    toCalendarDate,
-    toCalendarDateTime,
-    today,
-  } from "@internationalized/date";
-  import Loader from "@lucide/svelte/icons/loader-2";
-  import { tv } from "tailwind-variants";
-  import { positionItems } from "./utils";
-  import AppointmentPreview from "./AppointmentPreview.svelte";
   import { getContrastColor } from "$lib/utils/color";
+  import { toDisplayDateTime, utcToLocalWithoutDST } from "$lib/utils/datetime";
+  import { CalendarDate, getLocalTimeZone, toCalendarDate, today } from "@internationalized/date";
+  import { tv } from "tailwind-variants";
+  import AppointmentPreview from "./AppointmentPreview.svelte";
   import SlotPreview from "./SlotPreview.svelte";
+  import { positionItems } from "./utils";
+  import { Text } from "$lib/components/ui/typography";
+  import { Separator } from "$lib/components/ui/separator";
 
   let {
     day = $bindable(),
-    items,
+    selectedDate,
+    calendar,
+    shownAppointments,
+    shownChannels,
+    shownAgents,
     earliestStartHour,
     latestEndHour,
     scale = $bindable(),
+    isWeekView,
   }: {
     day: CalendarDate;
-    items: TCalendarItem[] | undefined;
+    selectedDate: CalendarDate;
+    calendar: TCalendar | undefined;
+    shownAppointments: TAppointmentFilter;
+    shownChannels: string[];
+    shownAgents: string[];
     earliestStartHour: number;
     latestEndHour: number;
     scale: number;
+    isWeekView?: boolean;
   } = $props();
 
+  let items: TCalendarItem[] | undefined = $derived.by(() => {
+    if (!calendar) return undefined;
+    const dayEntry = calendar.calendar.find((d) => d.date === day.toString());
+    if (!dayEntry) return [];
+    return Object.keys(dayEntry.channels).reduce<TCalendarItem[]>((allItems, channelId) => {
+      const channelData = dayEntry.channels[channelId];
+      const channelItems: TCalendarItem[] = [];
+
+      // Available slots
+      if (["all", "available"].includes(shownAppointments)) {
+        if (shownChannels.length === 0 || shownChannels.includes(channelId)) {
+          channelData.availableSlots.forEach((slot) => {
+            const isSlotInPast = utcToLocalWithoutDST(new Date(slot.to)) < new Date();
+            if (!isSlotInPast) {
+              if (
+                shownAgents.length === 0 ||
+                shownAgents.some((id) => slot.availableAgents.map((a) => a.id).includes(id))
+              ) {
+                channelItems.push({
+                  id: `${channelId}-${slot.from}`,
+                  date: dayEntry.date,
+                  start: slot.from,
+                  duration: slot.duration,
+                  channelId,
+                  color: channelData.channel.color,
+                  column: 0,
+                  status: "available",
+                  availableAgents: slot.availableAgents,
+                });
+              }
+            }
+          });
+        }
+      }
+
+      // Appointments
+      if (["all", "booked", "reserved"].includes(shownAppointments)) {
+        channelData.appointments.forEach((appointment) => {
+          const status = appointment.status === "CONFIRMED" ? "booked" : "reserved";
+          if (shownAppointments === "all" || shownAppointments === status) {
+            if (shownChannels.length === 0 || shownChannels.includes(channelId)) {
+              if (shownAgents.length === 0 || shownAgents.includes(appointment.agentId)) {
+                channelItems.push({
+                  id: appointment.id,
+                  date: dayEntry.date,
+                  start: new Date(appointment.appointmentDate).toISOString(),
+                  duration: appointment.duration,
+                  channelId,
+                  color: channelData.channel.color,
+                  column: 0,
+                  status,
+                  appointment: {
+                    dateTime: new Date(appointment.appointmentDate),
+                    encryptedPayload: appointment.encryptedPayload,
+                    tunnelId: appointment.tunnelId,
+                    agentId: appointment.agentId,
+                    staffKeyShare: appointment.staffKeyShare,
+                    iv: appointment.iv || undefined,
+                    authTag: appointment.authTag || undefined,
+                  },
+                });
+              }
+            }
+          }
+        });
+      }
+
+      return [...allItems, ...channelItems];
+    }, []);
+  });
   // Process items to handle overlaps
   let processedItems = $derived(positionItems(items));
 
   const hourSize = $derived(60 * scale);
-  const hours = Array.from({ length: 25 }, (_, i) => i);
-  const shownHours = $derived(hours.slice(0, latestEndHour + 1).slice(earliestStartHour));
   const focusAdjustment = $derived(30 * scale);
-  const curTimeIndicator = $derived(
-    today(getLocalTimeZone()).toString() === day.toString() ? $clock : undefined,
-  );
 
   const slotVariants = tv({
     base: "",
@@ -59,41 +125,29 @@
 </script>
 
 <div class="relative flex w-full flex-col">
-  <div
-    class="relative flex w-full items-start justify-between transition-all duration-200"
-    style:height={`${focusAdjustment}px`}
-  >
-    <Separator class="bg-secondary absolute top-0 right-0 left-16 h-px w-auto!" />
-  </div>
-
-  <!-- Hour markers -->
-  {#each shownHours as hour (`hour-${hour}`)}
-    <div
-      class="relative flex w-full items-start justify-between transition-all duration-200 select-none"
-      style:height={`${hourSize}px`}
+  {#if isWeekView && items}
+    {@const isSelected = selectedDate.toString() === day.toString()}
+    {@const isToday = toCalendarDate(day).toString() === today(getLocalTimeZone()).toString()}
+    <Text
+      style="xs"
+      class={cn(
+        "absolute -top-5 left-1 z-20",
+        isSelected && "bg-primary text-secondary rounded-sm px-1",
+        isToday && "rounded-sm border-2 border-red-500/50 px-1",
+      )}
     >
-      <Text style="xs" class="text-muted-foreground -mt-2 w-16 shrink-0">
-        {Intl.DateTimeFormat(getLocale(), {
-          hour: "2-digit",
-          minute: "2-digit",
-          timeZone: getLocalTimeZone().toString(),
-        }).format(toCalendarDateTime(day).set({ hour }).toDate(getLocalTimeZone()))}
-      </Text>
-      <Separator class="bg-muted-foreground h-px w-auto! grow" />
-      <Separator class="bg-secondary absolute top-1/2 right-0 left-16 h-px w-auto!" />
-    </div>
-  {/each}
-
-  <!-- Loading state -->
-  {#if items === undefined}
-    <div class="absolute top-0 left-0 -mt-5">
-      <Loader class="size-4 animate-spin" strokeWidth={1} />
-      <span class="sr-only">{m["calendar.loading"]()}</span>
-    </div>
+      {toDisplayDateTime(day.toDate(getLocalTimeZone()), {
+        day: "numeric",
+        weekday: "short",
+      })}
+    </Text>
+    <Separator
+      orientation="vertical"
+      class="bg-muted-foreground absolute top-0 bottom-0 left-0 z-10 transition-all duration-200"
+      style={{ height: `${(latestEndHour * 30 + 30) * scale + 20}px`, marginTop: "-10px" }}
+    />
   {/if}
-
-  <!-- Day content area -->
-  <div class="absolute top-0 right-0 bottom-0 left-16">
+  <div class="absolute top-0 right-0 bottom-0 left-0 z-10">
     {#each processedItems as item, index (`${item.id}-${index}`)}
       {@const top =
         (item.startMinutes / 60) * hourSize + focusAdjustment - earliestStartHour * hourSize}
@@ -119,7 +173,7 @@
           )}
         >
           {#if ["booked", "reserved"].includes(item.status)}
-            <AppointmentPreview {item} />
+            <AppointmentPreview {item} {scale} />
           {:else if item.status === "available"}
             <SlotPreview {item} />
           {/if}
@@ -127,26 +181,4 @@
       </div>
     {/each}
   </div>
-
-  <!-- Current Time Indicator -->
-  {#if curTimeIndicator && toCalendarDate($clock).toString() === today(getLocalTimeZone()).toString() && latestEndHour * hourSize + hourSize / 2 > curTimeIndicator.hour * hourSize && earliestStartHour * hourSize - hourSize * 2 < curTimeIndicator.hour * hourSize}
-    {@const top =
-      focusAdjustment +
-      curTimeIndicator.hour * hourSize +
-      (curTimeIndicator.minute / 60) * hourSize -
-      earliestStartHour * hourSize}
-    <div
-      class="pointer-events-none absolute right-0 left-0 z-10 flex h-1 items-center transition-all duration-200 select-none"
-      style:top={`${top}px`}
-    >
-      <Text style="xs" class="z-10 -ml-1 rounded-full bg-red-500 px-1 text-white">
-        {Intl.DateTimeFormat(getLocale(), {
-          hour: "2-digit",
-          minute: "2-digit",
-          timeZone: getLocalTimeZone().toString(),
-        }).format(toCalendarDateTime($clock).toDate(getLocalTimeZone()))}
-      </Text>
-      <div class="absolute right-0 left-0 h-px bg-red-500"></div>
-    </div>
-  {/if}
 </div>

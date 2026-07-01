@@ -8,11 +8,14 @@
   import { calendarStore } from "$lib/stores/calendar";
   import { Button } from "$lib/components/ui/button";
   import { m } from "$i18n/messages";
+  import { cn } from "$lib/utils";
 
   let {
     item,
+    scale,
   }: {
     item: TCalendarItem;
+    scale: number;
   } = $props();
 
   let decrypted = $state<AppointmentData | undefined>();
@@ -101,13 +104,16 @@
 {:else if decrypted === undefined}
   <div class="flex h-full items-center gap-1 px-1">
     <Loader2Icon class="h-3/4 max-h-4 w-auto animate-spin" />
-    <Text style="xs" class="leading-none text-(--channel-color-contrast)"
-      >{m["calendar.decrypting"]()}</Text
-    >
+    <Text style="xs" class="leading-none text-(--channel-color-contrast)">
+      {m["calendar.decrypting"]()}
+    </Text>
   </div>
 {:else if decrypted}
   <Button
-    class="m-0 h-full w-full cursor-pointer justify-start rounded-none px-1 leading-none text-(--channel-color-contrast) hover:bg-transparent! hover:text-(--channel-color-contrast) focus:ring-1"
+    class={cn(
+      "m-0 h-full w-full cursor-pointer items-start justify-start rounded-none px-px py-px text-left leading-none break-all whitespace-pre-line text-(--channel-color-contrast) hover:bg-transparent! hover:text-(--channel-color-contrast) focus:ring-1",
+      scale === 1 ? "text-xs" : "",
+    )}
     variant="ghost"
     onclick={setCalendarItem}
   >

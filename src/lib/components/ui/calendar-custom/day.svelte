@@ -19,17 +19,20 @@
 </script>
 
 <Calendar.Day
-  class="relative data-outside-month:bg-transparent! data-outside-month:hover:bg-transparent data-today:rounded-sm data-today:border-2 data-today:border-red-500/50!"
+  class="relative data-today:rounded-sm data-today:border-2 data-today:border-red-500/50!"
 >
-  {#if !outsideMonth}
-    <div class="py-1">
-      <div class={cn(isDateEmpty && isDateEmpty(day) && "text-muted-foreground")}>
-        {day.day}
-      </div>
-      {#if isDateHighlighted && isDateHighlighted(day)}
-        <span class="absolute bottom-0 left-1/2 h-1 w-1 -translate-1/2 rounded-full bg-green-500"
-        ></span>
-      {/if}
+  <div class="py-1">
+    <div
+      class={cn(
+        isDateEmpty && isDateEmpty(day) && "text-muted-foreground",
+        outsideMonth && "text-muted-foreground",
+      )}
+    >
+      {day.day}
     </div>
-  {/if}
+    {#if isDateHighlighted && isDateHighlighted(day)}
+      <span class="absolute bottom-0 left-1/2 h-1 w-1 -translate-1/2 rounded-full bg-green-500"
+      ></span>
+    {/if}
+  </div>
 </Calendar.Day>

@@ -944,6 +944,18 @@
 		"title": "Kalender",
 		"selectDate": "Datum auswählen",
 		"today": "Heute",
+		"zoomOptions": {
+			"title": "Kalender Zoom-Optionen",
+			"zoomIn": "Hinein-zoomen",
+			"zoomOut": "Heraus-zoomen"
+		},
+		"viewOptions": {
+			"title": "Kalender Ansicht",
+			"day": "Tagesansicht",
+			"week": "Wochenansicht",
+			"week-workdays": "Wochenansicht (ohne Wochenende)"
+		},
+		"calendarWeek": "KW {week}, {year}",
 		"thisMonth": "Aktueller Monat",
 		"addThreeMonths": "+3",
 		"addSixMonths": "+6",
