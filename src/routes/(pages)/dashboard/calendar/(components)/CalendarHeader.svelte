@@ -2,18 +2,23 @@
   import { m } from "$i18n/messages";
   import { getLocale } from "$i18n/runtime";
   import { Button, buttonVariants } from "$lib/components/ui/button";
-  import { CalendarDate, getLocalTimeZone, today } from "@internationalized/date";
+  import {
+    CalendarDate,
+    getLocalTimeZone,
+    isWeekend,
+    today,
+    type DateValue,
+  } from "@internationalized/date";
   import { ChevronLeft, ChevronRight } from "@lucide/svelte";
   import * as Popover from "$lib/components/ui/popover/index.js";
   import { cn } from "$lib/utils";
   import CalendarMonth from "./CalendarMonth.svelte";
   import type { TAppointmentFilter } from "$lib/types/calendar";
-  import type { OnChangeFn } from "vaul-svelte";
   import type { CalendarView } from "../types";
 
   let {
     selectedDate = $bindable(),
-    view,
+    view = $bindable(),
     shownAppointments,
     shownChannels,
     shownAgents,
@@ -50,8 +55,11 @@
     selectedDate = today(getLocalTimeZone());
   };
 
-  const onSelectDay: OnChangeFn<unknown> = () => {
+  const onSelectDay = (v: DateValue | undefined) => {
     open = false;
+    if (view === "week-workdays" && v && isWeekend(v, getLocale())) {
+      view = "week";
+    }
   };
 
   const getISOWeek = (date: CalendarDate): { week: number; year: number } => {
@@ -76,7 +84,7 @@
 <div
   class="flex flex-col items-start justify-between gap-2 min-[500px]:flex-row min-[500px]:items-center"
 >
-  <div class="-ml-1 flex w-87.5 items-center justify-between gap-5">
+  <div class={cn("-ml-1 flex items-center justify-between gap-5", isWeekView ? "w-60" : "w-75")}>
     <Button size="sm" variant="ghost" class="h-6 p-1!" onclick={prev}>
       <ChevronLeft />
     </Button>

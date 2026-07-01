@@ -67,13 +67,6 @@
   let scale = $state(page.data.calendarZoom);
 
   $effect(() => {
-    const getMonth = (x: string | undefined) => (x ? new Date(x).getMonth() + 1 : undefined);
-    if (!calendar || getMonth(calendar?.period.startDate) !== getMonth(selectedDate.toString())) {
-      updateCalendar();
-    }
-  });
-
-  $effect(() => {
     if (calendar && history.state["sveltekit:states"]?.appointmentId) {
       // Wait 100ms to ensure that the calendar items are rendered
       setTimeout(() => {
@@ -96,21 +89,24 @@
       "date" in page.state &&
       "appointmentId" in page.state
     ) {
+      shownAppointments = "all";
+
+      // navigate to date
       const date = convertDate(page.state.date as string);
       if (date.toString() !== selectedDate.toString()) {
         selectedDate = date;
-        replaceState("", { appointmentId: page.state.appointmentId });
-      } else {
-        if (calendar) {
-          openAppointmentById(
-            calendar,
-            channels,
-            history.state["sveltekit:states"].appointmentId,
-            () => {
-              replaceState("", {});
-            },
-          );
-        }
+      }
+
+      // open appointment
+      if (calendar) {
+        openAppointmentById(
+          calendar,
+          channels,
+          history.state["sveltekit:states"].appointmentId,
+          () => {
+            replaceState("", {});
+          },
+        );
       }
     }
   });
@@ -142,7 +138,7 @@
 
 <SidebarLayout breakcrumbs={[{ label: m["nav.calendar"](), href: ROUTES.DASHBOARD.CALENDAR }]}>
   <div class="flex flex-col gap-10">
-    <CalendarHeader bind:selectedDate {view} {shownAppointments} {shownAgents} {shownChannels} />
+    <CalendarHeader bind:selectedDate bind:view {shownAppointments} {shownAgents} {shownChannels} />
     <div
       class="flex transition-all duration-200"
       style:min-height={`${(hours.to * 30 + 60) * scale}px`}

@@ -126,7 +126,7 @@
 
 <div class="relative flex w-full flex-col">
   {#if isWeekView && items}
-    {@const isSelected = selectedDate.toString() === items[0]?.date}
+    {@const isSelected = selectedDate.toString() === day.toString()}
     {@const isToday = toCalendarDate(day).toString() === today(getLocalTimeZone()).toString()}
     <Text
       style="xs"
@@ -136,7 +136,10 @@
         isToday && "rounded-sm border-2 border-red-500/50 px-1",
       )}
     >
-      {toDisplayDateTime(day.toDate(getLocalTimeZone()), { weekday: "short" })}
+      {toDisplayDateTime(day.toDate(getLocalTimeZone()), {
+        day: "numeric",
+        weekday: "short",
+      })}
     </Text>
     <Separator
       orientation="vertical"

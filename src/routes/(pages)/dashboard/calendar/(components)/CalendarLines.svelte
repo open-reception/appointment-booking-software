@@ -17,14 +17,12 @@
     latestEndHour,
     scale = $bindable(),
     isLoading,
-    isWeekView,
   }: {
     day: CalendarDate;
     earliestStartHour: number;
     latestEndHour: number;
     scale: number;
     isLoading: boolean;
-    isWeekView?: boolean;
   } = $props();
 
   const hourSize = $derived(60 * scale);
@@ -73,15 +71,13 @@
         class="relative z-0 flex w-full items-start justify-between transition-all duration-200 select-none"
         style:height={`${hourSize}px`}
       >
-        {#if !isWeekView}
-          <Text style="xs" class="text-muted-foreground -mt-2 w-16 shrink-0">
-            {Intl.DateTimeFormat(getLocale(), {
-              hour: "2-digit",
-              minute: "2-digit",
-              timeZone: getLocalTimeZone().toString(),
-            }).format(toCalendarDateTime(day).set({ hour }).toDate(getLocalTimeZone()))}
-          </Text>
-        {/if}
+        <Text style="xs" class="text-muted-foreground -mt-2 w-16 shrink-0">
+          {Intl.DateTimeFormat(getLocale(), {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: getLocalTimeZone().toString(),
+          }).format(toCalendarDateTime(day).set({ hour }).toDate(getLocalTimeZone()))}
+        </Text>
         <Separator class="bg-muted-foreground -z-10 -ml-0.5 h-px w-auto! grow" />
         <Separator class="bg-secondary absolute top-1/2 right-0 left-16 h-px w-auto!" />
       </div>
