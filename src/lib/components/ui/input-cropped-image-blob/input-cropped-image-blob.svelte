@@ -66,6 +66,12 @@
   let previewUrl = $state<string | null>(null);
   let dialogOpen = $state(false);
 
+  const clearFileInput = () => {
+    if (fileInput) {
+      fileInput.value = "";
+    }
+  };
+
   const handleFileSelect = async (
     event: Event & { currentTarget: EventTarget & HTMLInputElement },
   ) => {
@@ -250,7 +256,10 @@
       <Button
         size="xs"
         class="absolute top-1 right-1 cursor-pointer rounded-sm !px-1 py-1"
-        onclick={() => (value = "")}
+        onclick={() => {
+          value = "";
+          clearFileInput();
+        }}
       >
         <Trash />
         <span class="sr-only">{m["components.inputCroppedImageBlob.remove"]()}</span>
@@ -271,7 +280,12 @@
   <Input type="text" bind:value hidden {...restProps} />
 </div>
 
-<Dialog bind:open={dialogOpen}>
+<Dialog
+  bind:open={dialogOpen}
+  onOpenChangeComplete={() => {
+    if (!dialogOpen) clearFileInput();
+  }}
+>
   <DialogContent class="sm:max-w-[425px]">
     <DialogHeader>
       <DialogTitle>
