@@ -329,6 +329,7 @@ export class UserService {
         .where(
           and(
             eq(centralSchema.userInvite.inviteCode, linkToken),
+            eq(centralSchema.userInvite.used, false),
             gt(centralSchema.userInvite.expiresAt, sql`timezone('utc', now())`),
           ),
         )
@@ -374,17 +375,18 @@ export class UserService {
         const retVal = await centralDb.insert(centralSchema.user).values(userDataForDb).returning();
         resultData.id = retVal[0].id;
 
-        await InviteService.markInviteAsUsed(linkToken, resultData.id);
-        log.debug("Invitation marked as used", {
-          inviteCode: linkToken,
-          userId: resultData.id,
-        });
-
         const adminService = await TenantAdminService.getTenantById(resultData.tenantId!);
         adminService.validateSetupState();
       } else {
         resultData = userData;
       }
+
+      // Mark the invite as used no matter what the user confirmation state is, to prevent re-use of the token
+      await InviteService.markInviteAsUsed(linkToken, resultData.id);
+      log.debug("Invitation marked as used", {
+        inviteCode: linkToken,
+        userId: resultData.id,
+      });
 
       // Check if this is the first tenant admin for the tenant
       const numberOfUsers = await centralDb
