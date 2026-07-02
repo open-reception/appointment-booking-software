@@ -852,11 +852,7 @@ describe("AppointmentService", () => {
       );
 
       expect(challengeStore.consume).toHaveBeenCalledWith("challenge-123", "tenant-123");
-      expect(challengeThrottleService.clearThrottle).toHaveBeenCalledWith(
-        "email-hash-123",
-        "pin",
-        "tenant-123",
-      );
+      expect(challengeThrottleService.clearThrottle).toHaveBeenCalledWith("email-hash-123", "pin");
     });
 
     it("should throw NotFoundError when challenge is not found", async () => {
@@ -925,7 +921,6 @@ describe("AppointmentService", () => {
       expect(challengeThrottleService.recordFailedAttempt).toHaveBeenCalledWith(
         "email-hash-123",
         "pin",
-        "tenant-123",
       );
     });
 
