@@ -66,6 +66,12 @@
   let previewUrl = $state<string | null>(null);
   let dialogOpen = $state(false);
 
+  const clearFileInput = () => {
+    if (fileInput) {
+      fileInput.value = "";
+    }
+  };
+
   const handleFileSelect = async (
     event: Event & { currentTarget: EventTarget & HTMLInputElement },
   ) => {
@@ -250,7 +256,10 @@
       <Button
         size="xs"
         class="absolute top-1 right-1 cursor-pointer rounded-sm !px-1 py-1"
-        onclick={() => (value = "")}
+        onclick={() => {
+          value = "";
+          clearFileInput();
+        }}
       >
         <Trash />
         <span class="sr-only">{m["components.inputCroppedImageBlob.remove"]()}</span>
@@ -271,7 +280,12 @@
   <Input type="text" bind:value hidden {...restProps} />
 </div>
 
-<Dialog bind:open={dialogOpen}>
+<Dialog
+  bind:open={dialogOpen}
+  onOpenChangeComplete={() => {
+    if (!dialogOpen) clearFileInput();
+  }}
+>
   <DialogContent class="sm:max-w-[425px]">
     <DialogHeader>
       <DialogTitle>
@@ -291,58 +305,80 @@
     </div>
     <Text style="xs">{m["components.inputCroppedImageBlob.crop.description"]()}</Text>
     <div class="flex flex-col gap-0.5">
-      <div class="flex flex-wrap gap-0.5">
-        <Button
-          type="button"
-          variant="outline"
-          size="xs"
-          onclick={() => handleButtonAction("zoom-in")}
-        >
-          <ZoomIn class="size-3" />
-          {m["components.inputCroppedImageBlob.crop.zoomIn"]()}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="xs"
-          onclick={() => handleButtonAction("zoom-out")}
-        >
-          <ZoomOut class="size-3" />
-          {m["components.inputCroppedImageBlob.crop.zoomOut"]()}
-        </Button>
-      </div>
-      <div class="flex flex-wrap gap-0.5">
-        <Button
-          type="button"
-          variant="outline"
-          size="xs"
-          onclick={() => handleButtonAction("left")}
-        >
-          <MoveLeft class="size-3" />
-          {m["components.inputCroppedImageBlob.crop.moveLeft"]()}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="xs"
-          onclick={() => handleButtonAction("right")}
-        >
-          <MoveRight class="size-3" />
-          {m["components.inputCroppedImageBlob.crop.moveRight"]()}
-        </Button>
-        <Button type="button" variant="outline" size="xs" onclick={() => handleButtonAction("up")}>
-          <MoveUp class="size-3" />
-          {m["components.inputCroppedImageBlob.crop.moveUp"]()}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="xs"
-          onclick={() => handleButtonAction("down")}
-        >
-          <MoveDown class="size-3" />
-          {m["components.inputCroppedImageBlob.crop.moveDown"]()}
-        </Button>
+      <div class="flex items-center justify-center">
+        <div class="flex flex-1 flex-col gap-3 px-4 pt-0 pb-6">
+          <!-- 2. Scale Controls (Horizontal Zoom) -->
+          <div class="grid h-11 w-full max-w-52 grid-cols-2 gap-2 self-center">
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              class="rounded-lg"
+              onclick={() => handleButtonAction("zoom-in")}
+            >
+              <ZoomIn class="size-4" />
+              {m["components.inputCroppedImageBlob.crop.zoomIn"]()}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              class="rounded-lg"
+              onclick={() => handleButtonAction("zoom-out")}
+            >
+              <ZoomOut class="size-4" />
+              {m["components.inputCroppedImageBlob.crop.zoomOut"]()}
+            </Button>
+          </div>
+
+          <div class="grid h-24 w-full max-w-47 grid-cols-3 grid-rows-2 gap-2 self-center">
+            <!-- Row 1: Up-Arrow -->
+            <Button
+              type="button"
+              variant="outline"
+              class="col-start-2 rounded-lg border border-gray-400 active:bg-gray-200"
+              size="xs"
+              onclick={() => handleButtonAction("up")}
+            >
+              <MoveUp class="size-4 text-gray-600" />
+              <span class="sr-only">{m["components.inputCroppedImageBlob.crop.moveUp"]()}</span>
+            </Button>
+
+            <!-- Row 2: Left-Arrow, Down-Arrow, Right-Arrow -->
+            <Button
+              type="button"
+              variant="outline"
+              class="col-start-1 rounded-lg border border-gray-400 active:bg-gray-200"
+              size="xs"
+              onclick={() => handleButtonAction("left")}
+            >
+              <MoveLeft class="size-4 text-gray-600" />
+              <span class="sr-only">{m["components.inputCroppedImageBlob.crop.moveLeft"]()}</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              class="rounded-lg border border-gray-400 active:bg-gray-200"
+              size="xs"
+              onclick={() => handleButtonAction("down")}
+            >
+              <MoveDown class="size-4 text-gray-600" />
+              <span class="sr-only">{m["components.inputCroppedImageBlob.crop.moveDown"]()}</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              class="rounded-lg border border-gray-400 active:bg-gray-200"
+              size="xs"
+              onclick={() => handleButtonAction("right")}
+            >
+              <MoveRight class="size-4 text-gray-600" />
+              <span class="sr-only">{m["components.inputCroppedImageBlob.crop.moveRight"]()}</span>
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
 
