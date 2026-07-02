@@ -186,6 +186,7 @@
                 <CheckboxWithLabel
                   value={shownChannels.includes(channel.id)}
                   label={name}
+                  color={channel.color}
                   onCheckedChange={(v) => {
                     if (v) {
                       shownChannels = [...shownChannels, channel.id];
