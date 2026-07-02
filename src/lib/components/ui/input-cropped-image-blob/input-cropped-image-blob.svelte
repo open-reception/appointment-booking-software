@@ -306,7 +306,7 @@
     <Text style="xs">{m["components.inputCroppedImageBlob.crop.description"]()}</Text>
     <div class="flex flex-col gap-0.5">
       <div class="flex items-center justify-center">
-        <div class="flex flex-1 flex-col gap-3 p-4 pt-0">
+        <div class="flex flex-1 flex-col gap-3 px-4 pt-0 pb-6">
           <!-- 2. Scale Controls (Horizontal Zoom) -->
           <div class="grid h-11 w-full max-w-52 grid-cols-2 gap-2 self-center">
             <Button
@@ -332,29 +332,28 @@
           </div>
 
           <div class="grid h-24 w-full max-w-47 grid-cols-3 grid-rows-2 gap-2 self-center">
-            <!-- Row 1 -->
-            <div></div>
+            <!-- Row 1: Up-Arrow -->
             <Button
               type="button"
               variant="outline"
-              class="rounded-lg border border-gray-400 active:bg-gray-200"
+              class="col-start-2 rounded-lg border border-gray-400 active:bg-gray-200"
               size="xs"
               onclick={() => handleButtonAction("up")}
             >
               <MoveUp class="size-4 text-gray-600" />
+              <span class="sr-only">{m["components.inputCroppedImageBlob.crop.moveUp"]()}</span>
             </Button>
 
-            <div></div>
-
-            <!-- Row 2 -->
+            <!-- Row 2: Left-Arrow, Down-Arrow, Right-Arrow -->
             <Button
               type="button"
               variant="outline"
-              class="rounded-lg border border-gray-400 active:bg-gray-200"
+              class="col-start-1 rounded-lg border border-gray-400 active:bg-gray-200"
               size="xs"
               onclick={() => handleButtonAction("left")}
             >
               <MoveLeft class="size-4 text-gray-600" />
+              <span class="sr-only">{m["components.inputCroppedImageBlob.crop.moveLeft"]()}</span>
             </Button>
 
             <Button
@@ -365,6 +364,7 @@
               onclick={() => handleButtonAction("down")}
             >
               <MoveDown class="size-4 text-gray-600" />
+              <span class="sr-only">{m["components.inputCroppedImageBlob.crop.moveDown"]()}</span>
             </Button>
 
             <Button
@@ -375,11 +375,9 @@
               onclick={() => handleButtonAction("right")}
             >
               <MoveRight class="size-4 text-gray-600" />
+              <span class="sr-only">{m["components.inputCroppedImageBlob.crop.moveRight"]()}</span>
             </Button>
           </div>
-
-          <!-- Divider Line -->
-          <div class="my-1 border-t border-gray-200"></div>
         </div>
       </div>
     </div>
