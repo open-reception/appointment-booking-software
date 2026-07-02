@@ -1,43 +1,5 @@
 import { m } from "$i18n/messages";
 
-export const weekdays = [
-  {
-    day: m["components.slotTemplate.weekdays_long.monday"](),
-    short: m["components.slotTemplate.weekdays_short.monday"](),
-    bit: 1,
-  },
-  {
-    day: m["components.slotTemplate.weekdays_long.tuesday"](),
-    short: m["components.slotTemplate.weekdays_short.tuesday"](),
-    bit: 2,
-  },
-  {
-    day: m["components.slotTemplate.weekdays_long.wednesday"](),
-    short: m["components.slotTemplate.weekdays_short.wednesday"](),
-    bit: 4,
-  },
-  {
-    day: m["components.slotTemplate.weekdays_long.thursday"](),
-    short: m["components.slotTemplate.weekdays_short.thursday"](),
-    bit: 8,
-  },
-  {
-    day: m["components.slotTemplate.weekdays_long.friday"](),
-    short: m["components.slotTemplate.weekdays_short.friday"](),
-    bit: 16,
-  },
-  {
-    day: m["components.slotTemplate.weekdays_long.saturday"](),
-    short: m["components.slotTemplate.weekdays_short.saturday"](),
-    bit: 32,
-  },
-  {
-    day: m["components.slotTemplate.weekdays_long.sunday"](),
-    short: m["components.slotTemplate.weekdays_short.sunday"](),
-    bit: 64,
-  },
-];
-
 export const durations = {
   5: { label: m["components.slotTemplate.every_n_minutes"]({ minutes: 5 }) },
   10: { label: m["components.slotTemplate.every_n_minutes"]({ minutes: 10 }) },

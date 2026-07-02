@@ -588,6 +588,9 @@
 			"title": "Abwesenheit hinzufügen",
 			"description": "Markiere Akteure als abwesend, damit sie keine Termine entgegennehmen können.",
 			"fields": {
+				"type": {
+					"title": "Art der Abwesenheit"
+				},
 				"agent": {
 					"title": "Akteur:in",
 					"placeholder": "Akteur:in auswählen"
@@ -646,6 +649,16 @@
 			"education": "Fortbildung",
 			"off.site": "Außer Haus",
 			"other": "Andere"
+		},
+		"types": {
+			"ONE_TIME": {
+				"title": "Einmalig",
+				"description": "für Urlaub etc."
+			},
+			"ONGOING": {
+				"title": "Dauerhaft",
+				"description": "jede Woche"
+			}
 		}
 	},
 	"settings": {

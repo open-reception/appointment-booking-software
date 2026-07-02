@@ -5,14 +5,19 @@
   import * as Select from "$lib/components/ui/select";
   import type { TNewSlotTemplate, TSlotTemplate } from "$lib/types/channel";
   import { cn } from "$lib/utils";
-  import { timeLocalWithoutOffsetToUTC, timeUTCToLocalWithoutOffset } from "$lib/utils/datetime";
+  import {
+    timeLocalWithoutOffsetToUTC,
+    timeUTCToLocalWithoutOffset,
+    toWeekdaysLabel,
+    weekdays,
+  } from "$lib/utils/datetime";
   import { Trash } from "@lucide/svelte/icons";
   import type { FsSuperForm } from "formsnap";
   import type { HTMLAttributes } from "svelte/elements";
   import { Button } from "../button";
   import { Input } from "../input";
   import { Text } from "../typography";
-  import { durations, times, weekdays } from "./utils";
+  import { durations, times } from "./utils";
 
   let {
     form,
@@ -36,32 +41,6 @@
   const toSelectedWeekdays = (bitmap: number | undefined) => {
     if (!bitmap) return [];
     return weekdays.filter(({ bit }) => (bitmap & bit) === bit).map(({ bit }) => `${bit}`);
-  };
-
-  const toWeekdaysLabel = (bitmap: number | undefined) => {
-    if (!bitmap) return m["components.slotTemplate.empty_weekdays"]();
-
-    switch (bitmap) {
-      case 0:
-        return m["components.slotTemplate.empty_weekdays"]();
-      case 127:
-        return `${weekdays[0].short}-${weekdays[6].short}`;
-      case 63:
-        return `${weekdays[0].short}-${weekdays[5].short}`;
-      case 31:
-        return `${weekdays[0].short}-${weekdays[4].short}`;
-      case 15:
-        return `${weekdays[0].short}-${weekdays[3].short}`;
-      case 7:
-        return `${weekdays[0].short}-${weekdays[2].short}`;
-      case 3:
-        return `${weekdays[0].short}-${weekdays[1].short}`;
-      default:
-        return weekdays
-          .filter(({ bit }) => (bitmap & bit) === bit)
-          .map(({ short }) => `${short}`)
-          .join(", ");
-    }
   };
 
   const getSelectedDuration = () => {

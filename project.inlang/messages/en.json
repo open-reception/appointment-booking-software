@@ -596,6 +596,9 @@
 			"title": "Add Absence",
 			"description": "Absences are a way to mark you agents as being unavailbale.",
 			"fields": {
+				"type": {
+					"title": "Type of Absence"
+				},
 				"agent": {
 					"title": "Agent",
 					"placeholder": "Select agent"
@@ -654,6 +657,16 @@
 			"education": "Training/Education",
 			"off.site": "Off-Site",
 			"other": "Other"
+		},
+		"types": {
+			"ONE_TIME": {
+				"title": "One-Time",
+				"description": "for vacation etc."
+			},
+			"ONGOING": {
+				"title": "Ongoing",
+				"description": "every week"
+			}
 		}
 	},
 	"settings": {

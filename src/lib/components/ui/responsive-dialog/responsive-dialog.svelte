@@ -109,8 +109,8 @@
           </Dialog.Description>
         {/if}
       </Dialog.Header>
-      <ScrollArea class="-mx-1 max-h-[75vh]">
-        <div class="px-1 pt-2">
+      <ScrollArea class="-mx-1 max-h-[75vh] overflow-hidden">
+        <div class="px-1 pt-2 pb-3">
           {@render children?.()}
         </div>
       </ScrollArea>

@@ -1,3 +1,4 @@
+import { m } from "$i18n/messages";
 import { getLocale } from "$i18n/runtime";
 import type { TCalendarSlot } from "$lib/types/calendar";
 import {
@@ -248,3 +249,67 @@ export const getWeekDays = (day: CalendarDate, skipWeekend = false): CalendarDat
 
   return days;
 };
+
+export const toWeekdaysLabel = (bitmap: number | undefined) => {
+  if (!bitmap) return m["components.slotTemplate.empty_weekdays"]();
+
+  switch (bitmap) {
+    case 0:
+      return m["components.slotTemplate.empty_weekdays"]();
+    case 127:
+      return `${weekdays[0].short}-${weekdays[6].short}`;
+    case 63:
+      return `${weekdays[0].short}-${weekdays[5].short}`;
+    case 31:
+      return `${weekdays[0].short}-${weekdays[4].short}`;
+    case 15:
+      return `${weekdays[0].short}-${weekdays[3].short}`;
+    case 7:
+      return `${weekdays[0].short}-${weekdays[2].short}`;
+    case 3:
+      return `${weekdays[0].short}-${weekdays[1].short}`;
+    default:
+      return weekdays
+        .filter(({ bit }) => (bitmap & bit) === bit)
+        .map(({ short }) => `${short}`)
+        .join(", ");
+  }
+};
+
+export const weekdays = [
+  {
+    day: m["components.slotTemplate.weekdays_long.monday"](),
+    short: m["components.slotTemplate.weekdays_short.monday"](),
+    bit: 1,
+  },
+  {
+    day: m["components.slotTemplate.weekdays_long.tuesday"](),
+    short: m["components.slotTemplate.weekdays_short.tuesday"](),
+    bit: 2,
+  },
+  {
+    day: m["components.slotTemplate.weekdays_long.wednesday"](),
+    short: m["components.slotTemplate.weekdays_short.wednesday"](),
+    bit: 4,
+  },
+  {
+    day: m["components.slotTemplate.weekdays_long.thursday"](),
+    short: m["components.slotTemplate.weekdays_short.thursday"](),
+    bit: 8,
+  },
+  {
+    day: m["components.slotTemplate.weekdays_long.friday"](),
+    short: m["components.slotTemplate.weekdays_short.friday"](),
+    bit: 16,
+  },
+  {
+    day: m["components.slotTemplate.weekdays_long.saturday"](),
+    short: m["components.slotTemplate.weekdays_short.saturday"](),
+    bit: 32,
+  },
+  {
+    day: m["components.slotTemplate.weekdays_long.sunday"](),
+    short: m["components.slotTemplate.weekdays_short.sunday"](),
+    bit: 64,
+  },
+];
