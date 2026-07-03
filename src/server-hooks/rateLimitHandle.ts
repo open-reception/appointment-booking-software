@@ -1,4 +1,4 @@
-import { type Handle } from "@sveltejs/kit";
+import { type Handle, type RequestEvent } from "@sveltejs/kit";
 
 /** In-memory store for rate limiting records per client IP */
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
@@ -12,25 +12,20 @@ export const RATE_LIMIT_MAX_REQUESTS = 20;
  * Extracts the client IP address from request headers
  *
  * Checks headers in order of preference:
- * 1. x-forwarded-for (takes first IP from comma-separated list)
- * 2. x-real-ip
- * 3. Returns 'unknown' if no IP found
+ * 1. Returns IP
+ * 2. Returns 'unknown' if no IP found
  *
- * @param {Request} request - The incoming HTTP request
+ * @param {RequestEvent} event - The incoming HTTP request event
  * @returns {string} The client IP address or 'unknown'
  */
-function getClientIP(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0].trim();
+function getClientIP(event: RequestEvent): string {
+  try {
+    return event.getClientAddress();
+  } catch {
+    // Thrown by adapter-node if behind a proxy without XFF_DEPTH configured,
+    // or if the platform can't determine an address.
+    return "unknown";
   }
-
-  const realIP = request.headers.get("x-real-ip");
-  if (realIP) {
-    return realIP;
-  }
-
-  return "unknown";
 }
 
 /**
@@ -83,8 +78,7 @@ setInterval(() => {
  * @returns {Promise<Response>} The response with applied headers and rate limiting
  */
 export const rateLimitHandle: Handle = async ({ event, resolve }) => {
-  const { request } = event;
-  const clientIP = getClientIP(request);
+  const clientIP = getClientIP(event);
 
   if (isRateLimited(clientIP)) {
     return new Response("Too Many Requests", {
