@@ -28,11 +28,9 @@
       {@render childrenProp({ errors, errorProps })}
     {:else}
       <Text style="xs">
-        <!-- {#each errors as error, index (error + index)}
+        {#each errors as error, index (error + index)}
           <div {...errorProps} class={cn(errorClasses)}>{error}</div>
-        {/each} -->
-
-        <div {...errorProps} class={cn(errorClasses)}>{errors?.[0]}</div>
+        {/each}
       </Text>
     {/if}
   {/snippet}
