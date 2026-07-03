@@ -655,7 +655,7 @@
 				"title": "Einmalig",
 				"description": "für Urlaub etc."
 			},
-			"ONGOING": {
+			"REGULAR": {
 				"title": "Dauerhaft",
 				"description": "jede Woche"
 			}

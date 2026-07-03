@@ -98,7 +98,7 @@
             bind:value={$formData.type}
             options={Object.values(types)}
             onValueChange={(v) => {
-              if (v === "ONGOING") {
+              if (v === "REGULAR") {
                 isAllDay = true;
               } else {
                 $formData.weekdays = 0;
@@ -168,9 +168,9 @@
           setTimeout(() => (endDateTouched = false), 100);
         }
       }}
-      class={cn("mt-2 mb-1", $formData.type === "ONGOING" ? "hidden" : "")}
+      class={cn("mt-2 mb-1", $formData.type === "REGULAR" ? "hidden" : "")}
     />
-    <div class={cn($formData.type === "ONGOING" ? "grid grid-cols-2 gap-2" : "")}>
+    <div class={cn($formData.type === "REGULAR" ? "grid grid-cols-2 gap-2" : "")}>
       <Form.Field {form} name="startDate">
         <Form.Control>
           {#snippet children({ props })}
@@ -220,7 +220,7 @@
         <Form.FieldErrors />
       </Form.Field>
     </div>
-    {#if $formData.type === "ONGOING"}
+    {#if $formData.type === "REGULAR"}
       <Form.Field {form} name="weekdays">
         <Form.Control>
           {#snippet children({ props })}

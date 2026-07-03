@@ -663,8 +663,8 @@
 				"title": "One-Time",
 				"description": "for vacation etc."
 			},
-			"ONGOING": {
-				"title": "Ongoing",
+			"REGULAR": {
+				"title": "Regular",
 				"description": "every week"
 			}
 		}

@@ -17,10 +17,10 @@ export const types = {
     title: m["absences.types.ONE_TIME.title"](),
     description: m["absences.types.ONE_TIME.description"](),
   },
-  ONGOING: {
+  REGULAR: {
     icon: RefreshCw,
-    value: "ONGOING",
-    title: m["absences.types.ONGOING.title"](),
-    description: m["absences.types.ONGOING.description"](),
+    value: "REGULAR",
+    title: m["absences.types.REGULAR.title"](),
+    description: m["absences.types.REGULAR.description"](),
   },
 };
