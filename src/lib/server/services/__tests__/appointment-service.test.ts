@@ -258,7 +258,12 @@ describe("AppointmentService", () => {
           select: vi.fn().mockReturnValue({
             from: vi.fn().mockReturnValue({
               where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([{ requiresConfirmation: true }]),
+                limit: vi
+                  .fn()
+                  .mockResolvedValueOnce([]) // Overlap-Appointment-Check → kein Konflikt
+                  .mockResolvedValueOnce([])
+                  .mockResolvedValueOnce([{ requiresConfirmation: true }]),
+                for: vi.fn().mockResolvedValue([{ id: "channel-456" }]),
               }),
             }),
           }),
@@ -365,7 +370,12 @@ describe("AppointmentService", () => {
           select: vi.fn().mockReturnValue({
             from: vi.fn().mockReturnValue({
               where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([]), // Channel not found
+                limit: vi
+                  .fn()
+                  .mockResolvedValueOnce([])
+                  .mockResolvedValueOnce([])
+                  .mockResolvedValueOnce([]), // Channel not found
+                for: vi.fn().mockResolvedValue([{ id: "channel-456" }]),
               }),
             }),
           }),
@@ -431,7 +441,12 @@ describe("AppointmentService", () => {
           select: vi.fn().mockReturnValue({
             from: vi.fn().mockReturnValue({
               where: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue([{ id: "channel-456" }]), // Channel found
+                limit: vi
+                  .fn()
+                  .mockResolvedValueOnce([]) // Overlap-Appointment-Check → kein Konflikt
+                  .mockResolvedValueOnce([])
+                  .mockResolvedValueOnce([{ id: "channel-456" }]), // Channel found
+                for: vi.fn().mockResolvedValue([{ id: "channel-456" }]),
               }),
             }),
           }),
