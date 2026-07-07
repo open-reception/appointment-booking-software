@@ -25,6 +25,7 @@ import { centralDb } from "$lib/server/db";
 import { user } from "$lib/server/db/central-schema";
 import { eq } from "drizzle-orm";
 import { normalizeEmail } from "$lib/utils";
+import { verifyRegistrationBootstrapToken } from "$lib/server/auth/registration-bootstrap";
 
 const ML_KEM_768_PUBLIC_KEY_BYTES = 1184;
 const ML_KEM_768_PRIVATE_KEY_BYTES = 2400;
@@ -84,13 +85,8 @@ registerOpenAPIRoute("/tenants/{id}/staff/{staffId}/crypto", "POST", {
               type: "string",
               description: "Base64-encoded database shard of private key",
             },
-            email: {
-              type: "string",
-              format: "email",
-              description: "Email address for cookie validation during registration",
-            },
           },
-          required: ["passkeyId", "publicKey", "privateKeyShare", "email"],
+          required: ["passkeyId", "publicKey", "privateKeyShare"],
         },
       },
     },
@@ -157,7 +153,6 @@ const requestSchema = z.object({
       (value) => hasDecodedByteLength(value, ML_KEM_768_PRIVATE_KEY_BYTES),
       `Private key share must decode to ${ML_KEM_768_PRIVATE_KEY_BYTES} bytes (ML-KEM-768)`,
     ),
-  email: z.email("Valid email is required").optional(), // Required for cookie validation
 });
 
 export const POST: RequestHandler = async ({ params, locals, request, cookies }) => {
@@ -179,42 +174,36 @@ export const POST: RequestHandler = async ({ params, locals, request, cookies })
       );
     }
 
-    const { passkeyId, publicKey, privateKeyShare, email } = validation.data;
+    const { passkeyId, publicKey, privateKeyShare } = validation.data;
 
     // Authentication: Accept either active session OR registration cookie
     const isAuthenticated = locals.user && locals.user.id === staffId;
-    const registrationEmail = normalizeEmail(cookies.get("webauthn-registration-email"));
-    const requestEmail = normalizeEmail(email);
-    const isRegistration =
-      !!registrationEmail && !!requestEmail && registrationEmail === requestEmail;
-
-    if (!isAuthenticated && !isRegistration) {
-      log.warn("Unauthorized crypto key storage attempt", {
-        tenantId,
-        staffId,
-        requesterId: locals.user?.id,
-        hasRegistrationCookie: !!registrationEmail,
-        emailsMatch: registrationEmail === requestEmail,
-      });
-      throw new AuthorizationError();
-    }
 
     // For authenticated users, verify tenant access
     if (isAuthenticated) {
       checkPermission(locals, tenantId, false);
     } else {
+      const bootstrapPayload = await verifyRegistrationBootstrapToken(
+        cookies.get("webauthn-registration-bootstrap"),
+      );
+      if (!bootstrapPayload) {
+        throw new AuthorizationError();
+      }
+      if (bootstrapPayload.userId !== staffId) {
+        throw new AuthorizationError();
+      }
+
       const staffUser = await centralDb
-        .select({ id: user.id })
+        .select({ id: user.id, email: user.email, tenantId: user.tenantId })
         .from(user)
         .where(eq(user.id, staffId))
         .limit(1);
 
-      if (staffUser.length === 0) {
-        log.warn("Rejected registration crypto key storage for unknown staff user", {
-          tenantId,
-          staffId,
-          hasRegistrationCookie: !!registrationEmail,
-        });
+      if (staffUser.length === 0 || staffUser[0].tenantId !== tenantId) {
+        throw new AuthorizationError();
+      }
+
+      if (normalizeEmail(staffUser[0].email) !== bootstrapPayload.email) {
         throw new AuthorizationError();
       }
     }
