@@ -1,7 +1,18 @@
 import { ERRORS } from "$lib/errors";
 import logger from "$lib/logger";
 import type { AppointmentResponse } from "$lib/types/appointment";
-import { and, asc, eq, gt, gte, lt, lte, ne, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  eq,
+  gt,
+  gte,
+  lt,
+  lte,
+  ne,
+  sql,
+  type ExtractTablesWithRelations,
+} from "drizzle-orm";
 import { timingSafeEqual } from "node:crypto";
 import { centralDb, getTenantDb } from "../db";
 import * as centralSchema from "../db/central-schema";
@@ -20,6 +31,8 @@ import { challengeStore } from "./challenge-store";
 import { challengeThrottleService } from "./challenge-throttle";
 import { NotificationService } from "./notification-service";
 import { TenantAdminService } from "./tenant-admin-service";
+import type { PgTransaction } from "drizzle-orm/pg-core";
+import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
 
 export interface ClientTunnelData {
   tunnelId: string;
@@ -111,13 +124,30 @@ export class AppointmentService {
     return result.length > 0;
   }
 
-  private async ensureAgentIsAvailableForSlot(params: {
-    agentId: string;
-    appointmentDate: string;
-    duration: number;
-  }): Promise<void> {
+  private async ensureAgentIsAvailableForSlot(
+    tx: PgTransaction<
+      PostgresJsQueryResultHKT,
+      typeof tenantSchema,
+      ExtractTablesWithRelations<typeof tenantSchema>
+    >,
+    params: {
+      agentId: string;
+      appointmentDate: string;
+      duration: number;
+    },
+  ): Promise<void> {
     const log = logger.setContext("AppointmentService");
-    const db = await this.getDb();
+
+    // Lock the agent row to prevent concurrent modifications, additional calls will be serialised
+    const [lockedAgent] = await tx
+      .select({ id: tenantSchema.agent.id })
+      .from(tenantSchema.agent)
+      .where(eq(tenantSchema.agent.id, params.agentId))
+      .for("update");
+
+    if (!lockedAgent) {
+      throw new NotFoundError("Agent not found");
+    }
 
     const slotStart = new Date(params.appointmentDate);
     if (Number.isNaN(slotStart.getTime())) {
@@ -126,7 +156,7 @@ export class AppointmentService {
 
     const slotEnd = new Date(slotStart.getTime() + params.duration * 60_000);
 
-    const overlappingAppointment = await db
+    const overlappingAppointment = await tx
       .select({ id: tenantSchema.appointment.id })
       .from(tenantSchema.appointment)
       .where(
@@ -148,7 +178,7 @@ export class AppointmentService {
       throw new ConflictError(ERRORS.APPOINTMENTS.AGENT_NOT_AVAILABLE);
     }
 
-    const overlappingAbsence = await db
+    const overlappingAbsence = await tx
       .select({ id: tenantSchema.agentAbsence.id })
       .from(tenantSchema.agentAbsence)
       .where(
@@ -640,44 +670,54 @@ export class AppointmentService {
       throw new NotFoundError("Active channel not found");
     }
 
-    await this.ensureAgentIsAvailableForSlot({
-      agentId: appointmentData.agentId,
-      appointmentDate: appointmentData.appointmentDate,
-      duration: appointmentData.duration,
-    });
+    let result:
+      | {
+          id: string;
+          appointmentDate: Date;
+          status: "NEW" | "CONFIRMED" | "HELD" | "REJECTED" | "NO_SHOW";
+        }
+      | undefined;
 
-    const initialStatus =
-      channelResult[0].requiresConfirmation && !staffCreated ? "NEW" : "CONFIRMED";
-    const requiresConfirmation = staffCreated
-      ? false
-      : channelResult[0].requiresConfirmation || false;
-
-    // Create encrypted appointment
-    const appointmentResult = await db
-      .insert(tenantSchema.appointment)
-      .values({
-        tunnelId: appointmentData.tunnelId,
-        channelId: appointmentData.channelId,
+    await db.transaction(async (tx) => {
+      await this.ensureAgentIsAvailableForSlot(tx, {
         agentId: appointmentData.agentId,
-        appointmentDate: new Date(appointmentData.appointmentDate),
-        timezone: appointmentData.appointmentTimeZone,
+        appointmentDate: appointmentData.appointmentDate,
         duration: appointmentData.duration,
-        encryptedPayload: appointmentData.encryptedAppointment.encryptedPayload,
-        iv: appointmentData.encryptedAppointment.iv,
-        authTag: appointmentData.encryptedAppointment.authTag,
-        status: initialStatus,
-      })
-      .returning({
-        id: tenantSchema.appointment.id,
-        appointmentDate: tenantSchema.appointment.appointmentDate,
-        status: tenantSchema.appointment.status,
       });
 
-    if (appointmentResult.length === 0) {
+      const initialStatus =
+        channelResult[0].requiresConfirmation && !staffCreated ? "NEW" : "CONFIRMED";
+      // Create encrypted appointment
+      const [appointmentResult] = await tx
+        .insert(tenantSchema.appointment)
+        .values({
+          tunnelId: appointmentData.tunnelId,
+          channelId: appointmentData.channelId,
+          agentId: appointmentData.agentId,
+          appointmentDate: new Date(appointmentData.appointmentDate),
+          timezone: appointmentData.appointmentTimeZone,
+          duration: appointmentData.duration,
+          encryptedPayload: appointmentData.encryptedAppointment.encryptedPayload,
+          iv: appointmentData.encryptedAppointment.iv,
+          authTag: appointmentData.encryptedAppointment.authTag,
+          status: initialStatus,
+        })
+        .returning({
+          id: tenantSchema.appointment.id,
+          appointmentDate: tenantSchema.appointment.appointmentDate,
+          status: tenantSchema.appointment.status,
+        });
+
+      result = appointmentResult;
+    });
+
+    if (!result) {
       throw new InternalError("Failed to create appointment");
     }
 
-    const result = appointmentResult[0];
+    const requiresConfirmation = staffCreated
+      ? false
+      : channelResult[0].requiresConfirmation || false;
 
     const response: AppointmentResponse = {
       id: result.id,
@@ -752,14 +792,15 @@ export class AppointmentService {
       );
     }
 
-    await this.ensureAgentIsAvailableForSlot({
-      agentId: clientData.agentId,
-      appointmentDate: clientData.appointmentDate,
-      duration: clientData.duration,
-    });
-
     // Transactional: Create tunnel and appointment
     const result = await db.transaction(async (tx) => {
+      // 0. Ensure the agent is available. Needs to be part of transaction to avoid race conditions with concurrent appointment creation.
+      await this.ensureAgentIsAvailableForSlot(tx, {
+        agentId: clientData.agentId,
+        appointmentDate: clientData.appointmentDate,
+        duration: clientData.duration,
+      });
+
       // 1. Create client appointment tunnel
       const tunnelResult = await tx
         .insert(tenantSchema.clientAppointmentTunnel)
