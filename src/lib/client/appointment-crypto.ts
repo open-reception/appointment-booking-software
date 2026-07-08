@@ -1014,7 +1014,6 @@ export class UnifiedAppointmentCrypto {
     staffId: string,
     passkeyId: string,
     prfOutput: ArrayBuffer,
-    email: string,
     keyPair: { publicKey: Uint8Array; privateKey: Uint8Array },
   ): Promise<void> {
     // Derive passkey-based shard from PRF output
@@ -1034,7 +1033,6 @@ export class UnifiedAppointmentCrypto {
         passkeyId,
         publicKey: this.uint8ArrayToBase64(keyPair.publicKey),
         privateKeyShare: this.uint8ArrayToBase64(dbShard),
-        email,
       }),
     });
 
