@@ -735,7 +735,7 @@ describe("AgentService", () => {
 
         expect(result).toEqual(mockAbsence);
         expect(insertChain.values).toHaveBeenCalledWith({
-          type: "ONE_TIME",
+          type: request.type,
           agentId: request.agentId,
           startDate: new Date(request.startDate),
           endDate: new Date(request.endDate),
@@ -747,6 +747,78 @@ describe("AgentService", () => {
         });
       });
 
+      it("should create regular absence successfully", async () => {
+        const request: AbsenceCreationRequest = {
+          type: "REGULAR",
+          agentId: "123e4567-e89b-12d3-a456-426614174001",
+          startDate: "2024-01-01T08:00:00.000Z",
+          endDate: "2024-01-01T17:00:00.000Z",
+          absenceType: "Urlaub",
+          description: "Away every Wed and Fri afternoon",
+          weekdays: 8,
+          from: "12:00:00",
+          to: "18:00:00",
+        };
+
+        // Mock agent exists
+        const selectChainForAgent = {
+          from: vi.fn(() => ({
+            where: vi.fn(() => ({
+              limit: vi.fn().mockResolvedValue([mockAgent]),
+              orderBy: vi.fn(),
+            })),
+            orderBy: vi.fn(),
+            innerJoin: vi.fn(() => ({
+              where: vi.fn(() => ({
+                orderBy: vi.fn(),
+              })),
+            })),
+          })),
+        };
+
+        // Mock no overlapping absences
+        const selectChainForOverlap = {
+          from: vi.fn(() => ({
+            where: vi.fn().mockResolvedValue([]),
+            orderBy: vi.fn(),
+            innerJoin: vi.fn(() => ({
+              where: vi.fn(() => ({
+                orderBy: vi.fn(),
+              })),
+            })),
+          })),
+        };
+
+        let selectCallCount = 0;
+        mockDb.select.mockImplementation(() => {
+          selectCallCount++;
+          return selectCallCount === 1 ? selectChainForAgent : selectChainForOverlap;
+        });
+
+        const insertChain = {
+          values: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue([mockAbsence]),
+            onConflictDoNothing: vi.fn(),
+          })),
+        };
+        mockDb.insert.mockReturnValue(insertChain);
+
+        const result = await service.createAbsence(request);
+
+        expect(result).toEqual(mockAbsence);
+        expect(insertChain.values).toHaveBeenCalledWith({
+          type: request.type,
+          agentId: request.agentId,
+          startDate: new Date(request.startDate),
+          endDate: new Date(request.endDate),
+          absenceType: request.absenceType,
+          description: request.description,
+          weekdays: request.weekdays,
+          from: request.from,
+          to: request.to,
+        });
+      });
+
       it("should validate absence creation request", async () => {
         const invalidRequest = {
           agentId: "invalid-uuid",
@@ -754,6 +826,24 @@ describe("AgentService", () => {
           endDate: "2024-01-01T17:00:00.000Z",
           absenceType: "",
           description: "",
+        };
+
+        await expect(
+          service.createAbsence(invalidRequest as AbsenceCreationRequest),
+        ).rejects.toThrow(ValidationError);
+      });
+
+      it("should validate regular absence from-time to be before to-time", async () => {
+        const invalidRequest: AbsenceCreationRequest = {
+          type: "REGULAR",
+          agentId: "123e4567-e89b-12d3-a456-426614174001",
+          startDate: "2024-01-01T08:00:00.000Z",
+          endDate: "2024-01-01T17:00:00.000Z",
+          absenceType: "Urlaub",
+          description: "Away every Wed and Fri afternoon",
+          weekdays: 8,
+          from: "19:00:00", // Invalid time
+          to: "18:00:00",
         };
 
         await expect(
@@ -971,11 +1061,73 @@ describe("AgentService", () => {
         expect(result.description).toBe(updateData.description);
       });
 
+      it("should update absence successfully", async () => {
+        const updateData: AbsenceUpdateRequest = {
+          type: "REGULAR",
+          absenceType: "Krankheit",
+          description: "Away every Wed and Fri afternoon",
+          weekdays: 8,
+          from: "12:00:00",
+          to: "18:00:00",
+        };
+
+        // Mock current absence exists
+        const selectChain = {
+          from: vi.fn(() => ({
+            where: vi.fn(() => ({
+              limit: vi.fn().mockResolvedValue([mockAbsence]),
+              orderBy: vi.fn(),
+            })),
+            orderBy: vi.fn(),
+            innerJoin: vi.fn(() => ({
+              where: vi.fn(() => ({
+                orderBy: vi.fn(),
+              })),
+            })),
+          })),
+        };
+        mockDb.select.mockReturnValue(selectChain);
+
+        const updateChain = {
+          set: vi.fn(() => ({
+            where: vi.fn(() => ({
+              returning: vi.fn().mockResolvedValue([{ ...mockAbsence, ...updateData }]),
+            })),
+          })),
+        };
+        mockDb.update.mockReturnValue(updateChain);
+
+        const result = await service.updateAbsence("absence-123", updateData);
+
+        expect(result.type).toBe(updateData.type);
+        expect(result.description).toBe(updateData.description);
+        expect(result.weekdays).toBe(updateData.weekdays);
+        expect(result.from).toBe(updateData.from);
+        expect(result.to).toBe(updateData.to);
+      });
+
       it("should validate update request", async () => {
         const invalidUpdate: AbsenceUpdateRequest = {
           type: "ONE_TIME",
           absenceType: "", // Invalid empty type
           startDate: "invalid-date",
+        };
+
+        await expect(service.updateAbsence("absence-123", invalidUpdate)).rejects.toThrow(
+          ValidationError,
+        );
+      });
+
+      it("should validate update request", async () => {
+        const invalidUpdate: AbsenceUpdateRequest = {
+          type: "REGULAR",
+          startDate: "2024-01-01T08:00:00.000Z",
+          endDate: "2024-01-01T17:00:00.000Z",
+          absenceType: "Urlaub",
+          description: "Away every Wed and Fri afternoon",
+          weekdays: 8,
+          from: "19:00:00", // Invalid time
+          to: "18:00:00",
         };
 
         await expect(service.updateAbsence("absence-123", invalidUpdate)).rejects.toThrow(
