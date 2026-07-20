@@ -313,3 +313,17 @@ export const weekdays = [
     bit: 64,
   },
 ];
+
+export const isToAfterFrom = (from: string | undefined | null, to: string | undefined | null) => {
+  if (from && to) {
+    const fromDate = new Date(`1970-01-01T${from}Z`);
+    const toDate = new Date(`1970-01-01T${to}Z`);
+
+    if (fromDate < toDate) {
+      return true;
+    }
+
+    return false;
+  }
+  return false;
+};

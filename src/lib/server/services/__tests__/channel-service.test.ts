@@ -211,6 +211,24 @@ describe("ChannelService", () => {
       await expect(service.createChannel(request)).rejects.toThrow(ValidationError);
     });
 
+    it("should handle validation error for from-time being after to-time", async () => {
+      const request = {
+        names: { en: "Test Channel" },
+        agentIds: [],
+        slotTemplates: [
+          {
+            name: "Test Slot",
+            from: "19:00:00",
+            to: "17:00:00",
+            duration: 30,
+          },
+        ],
+        staffIds: [],
+      };
+
+      await expect(service.createChannel(request)).rejects.toThrow(ValidationError);
+    });
+
     it("should handle database transaction error", async () => {
       mockDb.transaction.mockRejectedValue(new Error("Transaction failed"));
 
@@ -257,6 +275,16 @@ describe("ChannelService", () => {
 
     it("should handle validation error for invalid name", async () => {
       const updateData = { names: { en: "" } };
+
+      await expect(
+        service.updateChannel("550e8400-e29b-41d4-a716-446655440000", updateData),
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it("should handle validation error for from-time being after to-time", async () => {
+      const updateData = {
+        slotTemplates: [{ from: "19:00:00", to: "17:00:00", weekdays: 4, duration: 30 }],
+      };
 
       await expect(
         service.updateChannel("550e8400-e29b-41d4-a716-446655440000", updateData),

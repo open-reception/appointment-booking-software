@@ -8,6 +8,7 @@ import { z } from "zod";
 import { ValidationError, NotFoundError, ConflictError } from "../utils/errors";
 import { supportedLocales } from "$lib/const/locales";
 import { TenantAdminService } from "./tenant-admin-service";
+import { isToAfterFrom } from "$lib/utils/datetime";
 
 const agentCreationSchema = z.object({
   name: z.string().min(1).max(100),
@@ -475,6 +476,11 @@ export class AgentService {
       throw new ValidationError("End date must be after start date");
     }
 
+    // Validate time settings
+    if (request.type === "REGULAR" && !isToAfterFrom(request.from, request.to)) {
+      throw new ValidationError("Impossible time setting: `to` must be after `from` time");
+    }
+
     log.debug("Creating new absence", {
       tenantId: this.tenantId,
       agentId: request.agentId,
@@ -800,6 +806,11 @@ export class AgentService {
     const validation = absenceUpdateSchema.safeParse(updateData);
     if (!validation.success) {
       throw new ValidationError("Invalid absence update request");
+    }
+
+    // Validate time settings
+    if (updateData.type === "REGULAR" && !isToAfterFrom(updateData.from, updateData.to)) {
+      throw new ValidationError("Impossible time setting: `to` must be after `from` time");
     }
 
     log.debug("Updating absence", {

@@ -1,4 +1,5 @@
 import { m } from "$i18n/messages";
+import { isToAfterFrom } from "$lib/utils/datetime";
 import { z } from "zod";
 
 export const formSchema = z
@@ -30,17 +31,12 @@ export const formSchema = z
         });
       }
 
-      if (data.from && data.to) {
-        const fromDate = new Date(`1970-01-01T${data.from}Z`);
-        const toDate = new Date(`1970-01-01T${data.to}Z`);
-
-        if (fromDate >= toDate) {
-          ctx.addIssue({
-            code: "custom",
-            message: m["form.errors.fromAfterTo"](),
-            path: ["from"],
-          });
-        }
+      if (!isToAfterFrom(data.from, data.to)) {
+        ctx.addIssue({
+          code: "custom",
+          message: m["form.errors.fromAfterTo"](),
+          path: ["from"],
+        });
       }
     }
   })

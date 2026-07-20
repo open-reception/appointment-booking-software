@@ -1,6 +1,7 @@
 import { supportedLocales } from "$lib/const/locales";
 import logger from "$lib/logger";
-import { asc, eq, inArray, sql, and } from "drizzle-orm";
+import { isToAfterFrom } from "$lib/utils/datetime";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getTenantDb } from "../db";
 import { TenantConfig } from "../db/tenant-config";
@@ -107,6 +108,15 @@ export class ChannelService {
     if (!validation.success) {
       throw new ValidationError("Invalid channel creation request");
     }
+
+    // Validate time settings in slotTemplates
+    request.slotTemplates?.some((template) => {
+      if (!isToAfterFrom(template.from, template.to)) {
+        throw new ValidationError(
+          "Impossible time setting: `to` must be after `from` time in each slotTemplate",
+        );
+      }
+    });
 
     if (!request.color) {
       // Automatically set the channel color if none is given
@@ -257,6 +267,15 @@ export class ChannelService {
     if (!validation.success) {
       throw new ValidationError("Invalid channel update request");
     }
+
+    // Validate time settings in slotTemplates
+    updateData.slotTemplates?.some((template) => {
+      if (!isToAfterFrom(template.from, template.to)) {
+        throw new ValidationError(
+          "Impossible time setting: `to` must be after `from` time in each slotTemplate",
+        );
+      }
+    });
 
     log.debug("Updating channel", {
       tenantId: this.tenantId,
