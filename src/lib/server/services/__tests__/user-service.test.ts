@@ -6,8 +6,32 @@ import { NotFoundError, ValidationError } from "../../utils/errors";
 vi.mock("../../db", () => ({
   centralDb: {
     insert: vi.fn(),
-    select: vi.fn(),
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({
+        where: vi.fn(),
+      })),
+    })),
     update: vi.fn(),
+    delete: vi.fn(),
+    transaction: vi.fn(),
+    limit: vi.fn(),
+  },
+  db: {
+    insert: vi.fn(),
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({
+        where: vi.fn(() => ({
+          limit: vi.fn(),
+        })),
+      })),
+    })),
+    update: vi.fn(() => ({
+      from: vi.fn(() => ({
+        where: vi.fn(() => ({
+          set: vi.fn(),
+        })),
+      })),
+    })),
     delete: vi.fn(),
     transaction: vi.fn(),
     limit: vi.fn(),
@@ -41,17 +65,19 @@ import { UserService } from "../user-service";
 
 describe("UserService", () => {
   let mockCentralDb: any;
+  let mockDb: any;
   let mockUuidv7: any;
   let mockAddMinutes: any;
   let mockSendConfirmationEmail: any;
   let mockTenantAdminService: any;
 
   beforeEach(async () => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
 
     // Get mocked modules
     const dbModule = await vi.importMock("../../db");
     mockCentralDb = dbModule.centralDb;
+    mockDb = dbModule.db;
 
     const uuidModule = await vi.importMock("uuidv7");
     mockUuidv7 = uuidModule.uuidv7;
@@ -225,6 +251,14 @@ describe("UserService", () => {
         where: vi.fn().mockReturnThis(),
         execute: vi.fn().mockResolvedValue({ count: 1 }),
       };
+
+      const mockInviteUpdateBuilder: any = {
+        set: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        returning: vi.fn().mockResolvedValue([{ id: "invite-123", used: true }]),
+      };
+      mockInviteUpdateBuilder.then = (resolve: any) => resolve([{ id: "invite-123", used: true }]);
+      mockDb.update.mockReturnValue(mockInviteUpdateBuilder);
 
       // First call for user lookup, second call for tenant admin count, third for total count
       mockCentralDb.select
