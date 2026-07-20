@@ -836,5 +836,109 @@ describe("ScheduleService", () => {
       expect(channel2Schedule.availableSlots).toHaveLength(1);
       expect(channel2Schedule.availableSlots[0].from).toBe("2024-01-01T09:00:00.000Z");
     });
+
+    it("should exclude slots where an agent has a regular absence", async () => {
+      const validRequest: ScheduleRequest = {
+        startDate: "2024-01-01T00:00:00.000Z",
+        endDate: "2024-01-01T23:59:59.999Z",
+        timeZone: "Europe/Berlin",
+        tenantId: mockTenantId,
+      };
+
+      const mockChannels = [
+        {
+          id: "channel1",
+          names: ["Test"],
+          pause: false,
+          descriptions: ["Test"],
+          languages: ["de"],
+          isPublic: true,
+          requiresConfirmation: false,
+          color: null,
+        },
+      ];
+
+      const mockSlotTemplates = [
+        {
+          slotTemplate: {
+            id: "template1",
+            weekdays: 1, // Monday (2^(1-1) = 1)
+            from: "09:00",
+            to: "12:00",
+            duration: 60,
+          },
+          channelId: "channel1",
+        },
+      ];
+
+      const mockAbsences = [
+        {
+          id: "absence1",
+          type: "REGULAR",
+          agentId: "agent1",
+          startDate: "2024-01-01T00:00:00.000Z",
+          endDate: "2024-01-01T23:59:59.999Z",
+          absenceType: "Urlaub",
+          description: null,
+          weekdays: 1,
+          from: "09:00",
+          to: "10:00",
+        },
+      ];
+
+      const mockChannelAgents = [
+        {
+          channelId: "channel1",
+          agent: {
+            id: "agent1",
+            name: "Agent",
+            description: null,
+            logo: null,
+          },
+        },
+      ];
+
+      // Setup mock database responses
+      setupDbMocks({
+        channels: mockChannels,
+        slotTemplates: mockSlotTemplates,
+        appointments: [],
+        absences: mockAbsences,
+        channelAgents: mockChannelAgents,
+      });
+
+      const result = await service.getSchedule(validRequest);
+
+      const channelSchedule = result.schedule[0].channels["channel1"];
+      expect(channelSchedule.availableSlots).toHaveLength(2);
+      expect(channelSchedule.availableSlots).toStrictEqual([
+        {
+          availableAgents: [
+            {
+              description: null,
+              id: "agent1",
+              logo: null,
+              name: "Agent",
+            },
+          ],
+          duration: 60,
+          from: "2024-01-01T10:00:00.000Z",
+          to: "2024-01-01T11:00:00.000Z",
+        },
+        {
+          availableAgents: [
+            {
+              description: null,
+              id: "agent1",
+              logo: null,
+              name: "Agent",
+            },
+          ],
+          duration: 60,
+          from: "2024-01-01T11:00:00.000Z",
+          to: "2024-01-01T12:00:00.000Z",
+        },
+      ]);
+    });
   });
 });
