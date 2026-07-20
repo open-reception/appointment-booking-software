@@ -80,10 +80,14 @@ export const actions: Actions = {
         },
         credentials: "same-origin",
         body: JSON.stringify({
+          type: form.data.type,
           description: form.data.description,
           absenceType: form.data.absenceType,
           startDate: new Date(form.data.startDate).toISOString(),
           endDate: new Date(form.data.endDate).toISOString(),
+          weekdays: form.data.weekdays,
+          from: form.data.from,
+          to: form.data.to,
         }),
       },
     );
@@ -98,7 +102,7 @@ export const actions: Actions = {
       } catch (e) {
         log.error("Failed to parse add absence error response", { error: e });
       }
-      return fail(400, {
+      return fail(resp.status, {
         form,
         error,
       });
@@ -129,10 +133,14 @@ export const actions: Actions = {
         },
         credentials: "same-origin",
         body: JSON.stringify({
+          type: form.data.type,
           description: form.data.description,
           absenceType: form.data.absenceType,
           startDate: new Date(form.data.startDate).toISOString(),
           endDate: new Date(form.data.endDate).toISOString(),
+          weekdays: form.data.weekdays,
+          from: form.data.from,
+          to: form.data.to,
         }),
       },
     );
@@ -147,7 +155,7 @@ export const actions: Actions = {
       } catch (e) {
         log.error("Failed to parse edit absences error response", { error: e });
       }
-      return fail(400, {
+      return fail(resp.status, {
         form: { ...form, data: { ...form.data } },
         error,
       });

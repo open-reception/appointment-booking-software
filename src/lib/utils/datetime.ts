@@ -250,7 +250,7 @@ export const getWeekDays = (day: CalendarDate, skipWeekend = false): CalendarDat
   return days;
 };
 
-export const toWeekdaysLabel = (bitmap: number | undefined) => {
+export const toWeekdaysLabel = (bitmap: number | undefined | null) => {
   if (!bitmap) return m["components.slotTemplate.empty_weekdays"]();
 
   switch (bitmap) {

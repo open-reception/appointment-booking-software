@@ -75,6 +75,8 @@
 			"noEndDate": "End date is required",
 			"endDateBeforeStartDate": "End date must be after start date",
 			"endDateTooEarly": "End date must be in the future",
+			"noWeekdaysSelected": "Select at least one weekday",
+			"fromAfterTo": "»From« time must be before »To« time",
 			"street": "Add a street",
 			"houseNo": "Required",
 			"zip": "Add a zip code",
@@ -621,6 +623,7 @@
 			"action": "Add Absence",
 			"success": "Absence added",
 			"errors": {
+				"conflict": "Agent is already (partially) absent in this time period",
 				"unknown": "Could not add absence"
 			},
 			"unavailable": {
@@ -638,12 +641,15 @@
 			"title": "Edit Absence",
 			"description": "Update the agents availability.",
 			"success": "Absence updated",
-			"error": "Could not update absence.",
+			"errors": {
+				"conflict": "Agent is already (partially) absent in this time period",
+				"unknown": "Could not update absence"
+			},
 			"action": "Edit Absence"
 		},
 		"delete": {
 			"title": "Delete Absence",
-			"description": "{name} will be available for appointments from {startDate} to {endDate}.",
+			"description": "{name} will be available for appointments again in this timespan: {timespan}.",
 			"description_fallback": "This agent",
 			"action": "Delete Absence",
 			"success": "Absence deleted",

@@ -30,7 +30,11 @@ vi.mock("$lib/logger", () => ({
 }));
 
 // Import after mocking
-import { AgentService, type AbsenceCreationRequest } from "../agent-service";
+import {
+  AgentService,
+  type AbsenceCreationRequest,
+  type AbsenceUpdateRequest,
+} from "../agent-service";
 import { getTenantDb } from "../../db";
 import { ValidationError, NotFoundError, ConflictError } from "../../utils/errors";
 
@@ -676,6 +680,7 @@ describe("AgentService", () => {
     describe("createAbsence", () => {
       it("should create absence successfully", async () => {
         const request: AbsenceCreationRequest = {
+          type: "ONE_TIME",
           agentId: "123e4567-e89b-12d3-a456-426614174001",
           startDate: "2024-01-01T08:00:00.000Z",
           endDate: "2024-01-01T17:00:00.000Z",
@@ -730,11 +735,15 @@ describe("AgentService", () => {
 
         expect(result).toEqual(mockAbsence);
         expect(insertChain.values).toHaveBeenCalledWith({
+          type: "ONE_TIME",
           agentId: request.agentId,
           startDate: new Date(request.startDate),
           endDate: new Date(request.endDate),
           absenceType: request.absenceType,
           description: request.description,
+          weekdays: null,
+          from: null,
+          to: null,
         });
       });
 
@@ -754,6 +763,7 @@ describe("AgentService", () => {
 
       it("should validate date range", async () => {
         const request: AbsenceCreationRequest = {
+          type: "ONE_TIME",
           agentId: "agent-123",
           startDate: "2024-01-01T17:00:00.000Z", // End before start
           endDate: "2024-01-01T08:00:00.000Z",
@@ -765,6 +775,7 @@ describe("AgentService", () => {
 
       it("should throw NotFoundError if agent does not exist", async () => {
         const request: AbsenceCreationRequest = {
+          type: "ONE_TIME",
           agentId: "123e4567-e89b-12d3-a456-426614174099", // Valid UUID format
           startDate: "2024-01-01T08:00:00.000Z",
           endDate: "2024-01-01T17:00:00.000Z",
@@ -792,6 +803,7 @@ describe("AgentService", () => {
 
       it("should throw ConflictError if absence period overlaps", async () => {
         const request: AbsenceCreationRequest = {
+          type: "ONE_TIME",
           agentId: "123e4567-e89b-12d3-a456-426614174001",
           startDate: "2024-01-01T08:00:00.000Z",
           endDate: "2024-01-01T17:00:00.000Z",
@@ -921,7 +933,8 @@ describe("AgentService", () => {
 
     describe("updateAbsence", () => {
       it("should update absence successfully", async () => {
-        const updateData = {
+        const updateData: AbsenceUpdateRequest = {
+          type: "ONE_TIME",
           absenceType: "Krankheit",
           description: "Sick leave",
         };
@@ -959,7 +972,8 @@ describe("AgentService", () => {
       });
 
       it("should validate update request", async () => {
-        const invalidUpdate = {
+        const invalidUpdate: AbsenceUpdateRequest = {
+          type: "ONE_TIME",
           absenceType: "", // Invalid empty type
           startDate: "invalid-date",
         };
@@ -970,7 +984,7 @@ describe("AgentService", () => {
       });
 
       it("should throw NotFoundError if absence does not exist", async () => {
-        const updateData = { absenceType: "Krankheit" };
+        const updateData: AbsenceUpdateRequest = { type: "ONE_TIME", absenceType: "Krankheit" };
 
         const selectChain = {
           from: vi.fn(() => ({
@@ -994,7 +1008,8 @@ describe("AgentService", () => {
       });
 
       it("should validate new date range", async () => {
-        const updateData = {
+        const updateData: AbsenceUpdateRequest = {
+          type: "ONE_TIME",
           startDate: "2024-01-01T17:00:00.000Z", // End before start
           endDate: "2024-01-01T08:00:00.000Z",
         };

@@ -38,9 +38,9 @@
       absenceType: "VACATION",
       startDate: getDefaultStartTime(),
       endDate: getDefaultEndTime(),
-      weekdays: 0,
-      from: timeLocalWithoutOffsetToUTC("09:00:00"),
-      to: timeLocalWithoutOffsetToUTC("17:00:00"),
+      weekdays: 0 as number | undefined,
+      from: timeLocalWithoutOffsetToUTC("09:00:00") as string | undefined,
+      to: timeLocalWithoutOffsetToUTC("17:00:00") as string | undefined,
     },
     {
       dataType: "json",
@@ -50,7 +50,11 @@
           toast.success(m["absences.add.success"]());
           done();
         } else if (event.result.type === "failure") {
-          toast.error(m["absences.add.errors.unknown"]());
+          if (event.result.status === 409) {
+            toast.error(m["absences.add.errors.conflict"]());
+          } else {
+            toast.error(m["absences.add.errors.unknown"]());
+          }
         }
         isSubmitting = false;
       },
@@ -100,8 +104,15 @@
             onValueChange={(v) => {
               if (v === "REGULAR") {
                 isAllDay = true;
-              } else {
+                $formData.absenceType = "OTHER";
                 $formData.weekdays = 0;
+                $formData.from = timeLocalWithoutOffsetToUTC("09:00:00");
+                $formData.to = timeLocalWithoutOffsetToUTC("17:00:00");
+              } else {
+                $formData.weekdays = undefined;
+                $formData.from = undefined;
+                $formData.to = undefined;
+                $formData.absenceType = "VACATION";
               }
             }}
           />
@@ -134,7 +145,7 @@
       </Form.Control>
       <Form.FieldErrors />
     </Form.Field>
-    <Form.Field {form} name="absenceType">
+    <Form.Field {form} name="absenceType" class={$formData.type === "REGULAR" ? "hidden" : ""}>
       <Form.Control>
         {#snippet children({ props })}
           <Form.Label>{m["absences.add.fields.absenceType.title"]()}</Form.Label>

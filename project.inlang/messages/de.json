@@ -60,6 +60,8 @@
 			"noEndDate": "Ende ist erforderlich",
 			"endDateBeforeStartDate": "Das Ende muss nach dem Beginn sein",
 			"endDateTooEarly": "Das Ende muss in der Zukunft liegen",
+			"noWeekdaysSelected": "Wähle mindestens einen Wochentag",
+			"fromAfterTo": "»Von« muss vor »Bis« liegen",
 			"street": "Straße hinzufügen",
 			"houseNo": "Pflichtfeld",
 			"zip": "Postleitzahl hinzufügen",
@@ -613,6 +615,7 @@
 			"action": "Abwesenheit hinzufügen",
 			"success": "Abwesenheit hinzugefügt",
 			"errors": {
+				"conflict": "Akteur ist bereits in diesem Zeitraum (teilweise) abwesend",
 				"unknown": "Konnte Abwesenheit nicht hinzufügen"
 			},
 			"unavailable": {
@@ -630,12 +633,15 @@
 			"title": "Abwesenheit bearbeiten",
 			"description": "Aktualisiere die Verfügbarkeit dieses Akteurs.",
 			"success": "Abwesenheit aktualisiert",
-			"error": "Konnte Abwesenheit nicht aktualisieren.",
+			"errors": {
+				"conflict": "Akteur ist bereits in diesem Zeitraum (teilweise) abwesend",
+				"unknown": "Konnte Abwesenheit nicht aktualisieren"
+			},
 			"action": "Übernehmen"
 		},
 		"delete": {
 			"title": "Abwesenheit löschen",
-			"description": "{name} wird vom {startDate} bis {endDate} wieder für Termine verfügbar sein.",
+			"description": "{name} wird in diesem Zeitraum wieder für Termine verfügbar sein: {timespan}.",
 			"description_fallback": "Diese/r Akteur:in",
 			"action": "Abwesenheit löschen",
 			"success": "Abwesenheit gelöscht",

@@ -53,14 +53,33 @@ registerOpenAPIRoute("/tenants/{id}/agents/{agentId}/absences/{absenceId}", "GET
                 type: "object",
                 properties: {
                   id: { type: "string", format: "uuid", description: "Absence ID" },
+                  type: {
+                    type: "string",
+                    enum: ["ONE_TIME", "REGULAR"],
+                    description: "Type of absence",
+                  },
                   agentId: { type: "string", format: "uuid", description: "Agent ID" },
                   startDate: { type: "string", format: "date-time", description: "Start date" },
                   endDate: { type: "string", format: "date-time", description: "End date" },
                   absenceType: { type: "string", description: "Type of absence" },
                   description: { type: "string", description: "Description" },
-                  isFullDay: { type: "boolean", description: "Full day absence" },
+                  weekdays: {
+                    type: "integer",
+                    description:
+                      "Bitmask representing weekdays for regular absences (0 = Sunday, 1 = Monday, ..., 6 = Saturday). Only applicable for REGULAR absences.",
+                  },
+                  from: {
+                    type: "string",
+                    format: "time",
+                    description: "Start time for REGULAR absences",
+                  },
+                  to: {
+                    type: "string",
+                    format: "time",
+                    description: "End time for REGULAR absences",
+                  },
                 },
-                required: ["id", "agentId", "startDate", "endDate", "absenceType", "isFullDay"],
+                required: ["id", "type", "agentId", "startDate", "endDate", "absenceType"],
               },
             },
             required: ["absence"],
@@ -162,11 +181,6 @@ registerOpenAPIRoute("/tenants/{id}/agents/{agentId}/absences/{absenceId}", "PUT
               description: "Optional description of the absence",
               example: "Erkältung",
             },
-            isFullDay: {
-              type: "boolean",
-              description: "Whether this is a full day absence",
-              example: false,
-            },
           },
         },
       },
@@ -185,14 +199,33 @@ registerOpenAPIRoute("/tenants/{id}/agents/{agentId}/absences/{absenceId}", "PUT
                 type: "object",
                 properties: {
                   id: { type: "string", format: "uuid", description: "Absence ID" },
+                  type: {
+                    type: "string",
+                    enum: ["ONE_TIME", "REGULAR"],
+                    description: "Type of absence",
+                  },
                   agentId: { type: "string", format: "uuid", description: "Agent ID" },
                   startDate: { type: "string", format: "date-time", description: "Start date" },
                   endDate: { type: "string", format: "date-time", description: "End date" },
                   absenceType: { type: "string", description: "Type of absence" },
                   description: { type: "string", description: "Description" },
-                  isFullDay: { type: "boolean", description: "Full day absence" },
+                  weekdays: {
+                    type: "integer",
+                    description:
+                      "Bitmask representing weekdays for regular absences (0 = Sunday, 1 = Monday, ..., 6 = Saturday). Only applicable for REGULAR absences.",
+                  },
+                  from: {
+                    type: "string",
+                    format: "time",
+                    description: "Start time for REGULAR absences",
+                  },
+                  to: {
+                    type: "string",
+                    format: "time",
+                    description: "End time for REGULAR absences",
+                  },
                 },
-                required: ["id", "agentId", "startDate", "endDate", "absenceType", "isFullDay"],
+                required: ["id", "type", "agentId", "startDate", "endDate", "absenceType"],
               },
             },
             required: ["message", "absence"],

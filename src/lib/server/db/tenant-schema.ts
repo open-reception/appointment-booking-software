@@ -26,6 +26,8 @@ export const appointmentStatusEnum = pgEnum("appointment_status", [
   "NO_SHOW",
 ]);
 
+export const absenceTypeEnum = pgEnum("agent_absence_type", ["ONE_TIME", "REGULAR"]);
+
 export const notificationTypes = [
   "APPOINTMENT_CONFIRMED",
   "APPOINTMENT_CANCELLED",
@@ -200,6 +202,8 @@ export const appointment = pgTable("appointment", {
 export const agentAbsence = pgTable("agent_absence", {
   /** Primary key - unique identifier */
   id: uuid("id").primaryKey().defaultRandom(),
+  /** Enum ONE_TIME or REGULAR, defaults to ONE_TIME */
+  type: absenceTypeEnum("type").notNull().default("ONE_TIME"),
   /** Foreign key to agent who is absent */
   agentId: uuid("agent_id")
     .notNull()
@@ -212,6 +216,12 @@ export const agentAbsence = pgTable("agent_absence", {
   absenceType: text("absence_type").notNull().default(""),
   /** Optional description/reason for absence */
   description: text("description"),
+  /** Set, when of type REGULAR: Bitmask for weekdays (1=Monday, 2=Tuesday, 4=Wednesday, etc.), is NULL by default */
+  weekdays: integer("weekdays"),
+  /** Set, when of type REGULAR: Start time for the regular absence */
+  from: time("from"),
+  /** Set, when of type REGULAR: End time for the regular absence */
+  to: time("to"),
 });
 
 /**

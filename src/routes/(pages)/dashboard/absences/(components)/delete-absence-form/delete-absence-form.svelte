@@ -5,11 +5,11 @@
   import { Text } from "$lib/components/ui/typography";
   import { agents as agentsStore } from "$lib/stores/agents";
   import type { TAbsence } from "$lib/types/absence";
-  import { toDisplayDateTime } from "$lib/utils/datetime";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from ".";
+  import { renderAbsenceTimespan } from "../../utils";
 
   const agents = $derived($agentsStore.agents ?? []);
   let { entity, done }: { entity: TAbsence; done: () => void } = $props();
@@ -43,8 +43,7 @@
       name:
         agents.find((a) => a.id === entity.agentId)?.name ||
         m["absences.delete.description_fallback"](),
-      startDate: toDisplayDateTime(new Date(entity.startDate)),
-      endDate: toDisplayDateTime(new Date(entity.endDate)),
+      timespan: renderAbsenceTimespan(entity),
     })}
   </Text>
   <Form.Field {form} name="id" class="hidden">

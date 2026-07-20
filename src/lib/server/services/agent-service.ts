@@ -2,7 +2,7 @@ import { getTenantDb } from "../db";
 import * as tenantSchema from "../db/tenant-schema";
 import { type SelectAgent, type SelectAgentAbsence } from "../db/tenant-schema";
 
-import { eq, and, between, or, lte, gte, ne } from "drizzle-orm";
+import { eq, and, between, or, lte, gte, ne, sql } from "drizzle-orm";
 import logger from "$lib/logger";
 import { z } from "zod";
 import { ValidationError, NotFoundError, ConflictError } from "../utils/errors";
@@ -23,20 +23,47 @@ const agentUpdateSchema = z.object({
   languages: z.array(z.string()).optional(),
 });
 
-const absenceCreationSchema = z.object({
-  agentId: z.string().uuid({ message: "Invalid UUID format" }),
-  startDate: z.string().datetime({ message: "Invalid datetime format" }),
-  endDate: z.string().datetime({ message: "Invalid datetime format" }),
-  absenceType: z.string().min(1).max(100),
-  description: z.string().optional(),
-});
+const absenceCreationSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("ONE_TIME"),
+    agentId: z.uuid({ message: "Invalid UUID format" }),
+    startDate: z.string().datetime({ message: "Invalid datetime format" }),
+    endDate: z.string().datetime({ message: "Invalid datetime format" }),
+    absenceType: z.string().min(1).max(100),
+    description: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("REGULAR"),
+    agentId: z.uuid({ message: "Invalid UUID format" }),
+    startDate: z.string().datetime({ message: "Invalid datetime format" }),
+    endDate: z.string().datetime({ message: "Invalid datetime format" }),
+    absenceType: z.string().min(1).max(100),
+    description: z.string().optional(),
+    weekdays: z.number().int().min(0).max(127).nullable(),
+    from: z.string().time({ message: "Invalid time format" }),
+    to: z.string().time({ message: "Invalid time format" }),
+  }),
+]);
 
-const absenceUpdateSchema = z.object({
-  startDate: z.string().datetime({ message: "Invalid datetime format" }).optional(),
-  endDate: z.string().datetime({ message: "Invalid datetime format" }).optional(),
-  absenceType: z.string().min(1).max(100).optional(),
-  description: z.string().optional(),
-});
+const absenceUpdateSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("ONE_TIME"),
+    startDate: z.string().datetime({ message: "Invalid datetime format" }).optional(),
+    endDate: z.string().datetime({ message: "Invalid datetime format" }).optional(),
+    absenceType: z.string().min(1).max(100).optional(),
+    description: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("REGULAR"),
+    startDate: z.string().datetime({ message: "Invalid datetime format" }).optional(),
+    endDate: z.string().datetime({ message: "Invalid datetime format" }).optional(),
+    absenceType: z.string().min(1).max(100).optional(),
+    description: z.string().optional(),
+    weekdays: z.number().int().min(0).max(127).nullable(),
+    from: z.string().time({ message: "Invalid time format" }),
+    to: z.string().time({ message: "Invalid time format" }),
+  }),
+]);
 
 const absenceQuerySchema = z.object({
   agentId: z.string().uuid({ message: "Invalid UUID format" }).optional(),
@@ -433,6 +460,11 @@ export class AgentService {
 
     const validation = absenceCreationSchema.safeParse(request);
     if (!validation.success) {
+      log.error("Error creating new absence", {
+        tenantId: this.tenantId,
+        request,
+        validation,
+      });
       throw new ValidationError("Invalid absence creation request");
     }
 
@@ -446,7 +478,7 @@ export class AgentService {
     log.debug("Creating new absence", {
       tenantId: this.tenantId,
       agentId: request.agentId,
-      absenceType: request.absenceType,
+      type: request.type,
       startDate: request.startDate,
       endDate: request.endDate,
     });
@@ -468,37 +500,40 @@ export class AgentService {
       }
 
       // Check for overlapping absences
-      const overlappingAbsences = await db
-        .select()
-        .from(tenantSchema.agentAbsence)
-        .where(
-          and(
-            eq(tenantSchema.agentAbsence.agentId, request.agentId),
-            or(
-              // New absence starts during existing absence
-              and(
-                between(
-                  tenantSchema.agentAbsence.startDate,
-                  new Date(request.startDate),
-                  new Date(request.endDate),
+      const overlappingAbsences =
+        request.type === "REGULAR"
+          ? []
+          : await db
+              .select()
+              .from(tenantSchema.agentAbsence)
+              .where(
+                and(
+                  eq(tenantSchema.agentAbsence.agentId, request.agentId),
+                  or(
+                    // New absence starts during existing absence
+                    and(
+                      between(
+                        tenantSchema.agentAbsence.startDate,
+                        new Date(request.startDate),
+                        new Date(request.endDate),
+                      ),
+                    ),
+                    // New absence ends during existing absence
+                    and(
+                      between(
+                        tenantSchema.agentAbsence.endDate,
+                        new Date(request.startDate),
+                        new Date(request.endDate),
+                      ),
+                    ),
+                    // New absence entirely contains existing absence
+                    and(
+                      gte(tenantSchema.agentAbsence.startDate, new Date(request.startDate)),
+                      lte(tenantSchema.agentAbsence.endDate, new Date(request.endDate)),
+                    ),
+                  ),
                 ),
-              ),
-              // New absence ends during existing absence
-              and(
-                between(
-                  tenantSchema.agentAbsence.endDate,
-                  new Date(request.startDate),
-                  new Date(request.endDate),
-                ),
-              ),
-              // New absence entirely contains existing absence
-              and(
-                gte(tenantSchema.agentAbsence.startDate, new Date(request.startDate)),
-                lte(tenantSchema.agentAbsence.endDate, new Date(request.endDate)),
-              ),
-            ),
-          ),
-        );
+              );
 
       if (overlappingAbsences.length > 0) {
         throw new ConflictError("Absence period overlaps with existing absence");
@@ -507,11 +542,15 @@ export class AgentService {
       const result = await db
         .insert(tenantSchema.agentAbsence)
         .values({
+          type: request.type,
           agentId: request.agentId,
           startDate: new Date(request.startDate),
           endDate: new Date(request.endDate),
           absenceType: request.absenceType,
           description: request.description,
+          weekdays: request.type === "REGULAR" ? request.weekdays : null,
+          from: request.type === "REGULAR" ? request.from : null,
+          to: request.type === "REGULAR" ? request.to : null,
         })
         .returning();
 
@@ -621,7 +660,10 @@ export class AgentService {
         .select()
         .from(tenantSchema.agentAbsence)
         .where(and(...conditions))
-        .orderBy(tenantSchema.agentAbsence.startDate);
+        .orderBy(
+          sql`CASE WHEN ${tenantSchema.agentAbsence.type} = 'ONE_TIME' THEN 0 ELSE 1 END`,
+          tenantSchema.agentAbsence.startDate,
+        );
 
       log.debug("Retrieved absences", {
         tenantId: this.tenantId,
@@ -666,7 +708,10 @@ export class AgentService {
         return result;
       }
 
-      const result = await query.orderBy(tenantSchema.agentAbsence.startDate);
+      const result = await query.orderBy(
+        sql`CASE WHEN ${tenantSchema.agentAbsence.type} = 'ONE_TIME' THEN 0 ELSE 1 END`,
+        tenantSchema.agentAbsence.startDate,
+      );
 
       log.debug("Retrieved agent absences", {
         tenantId: this.tenantId,
@@ -787,33 +832,36 @@ export class AgentService {
         }
 
         // Check for overlapping absences (excluding current absence)
-        const overlappingAbsences = await db
-          .select()
-          .from(tenantSchema.agentAbsence)
-          .where(
-            and(
-              eq(tenantSchema.agentAbsence.agentId, currentAbsence[0].agentId),
-              // Exclude current absence from check
-              ne(tenantSchema.agentAbsence.id, absenceId),
-              or(
-                between(
-                  tenantSchema.agentAbsence.startDate,
-                  new Date(newStartDate),
-                  new Date(newEndDate),
-                ),
-                between(
-                  tenantSchema.agentAbsence.endDate,
-                  new Date(newStartDate),
-                  new Date(newEndDate),
-                ),
-                // New period entirely contains existing absence
-                and(
-                  gte(tenantSchema.agentAbsence.startDate, new Date(newStartDate)),
-                  lte(tenantSchema.agentAbsence.endDate, new Date(newEndDate)),
-                ),
-              ),
-            ),
-          );
+        const overlappingAbsences =
+          updateData.type === "REGULAR"
+            ? []
+            : await db
+                .select()
+                .from(tenantSchema.agentAbsence)
+                .where(
+                  and(
+                    eq(tenantSchema.agentAbsence.agentId, currentAbsence[0].agentId),
+                    // Exclude current absence from check
+                    ne(tenantSchema.agentAbsence.id, absenceId),
+                    or(
+                      between(
+                        tenantSchema.agentAbsence.startDate,
+                        new Date(newStartDate),
+                        new Date(newEndDate),
+                      ),
+                      between(
+                        tenantSchema.agentAbsence.endDate,
+                        new Date(newStartDate),
+                        new Date(newEndDate),
+                      ),
+                      // New period entirely contains existing absence
+                      and(
+                        gte(tenantSchema.agentAbsence.startDate, new Date(newStartDate)),
+                        lte(tenantSchema.agentAbsence.endDate, new Date(newEndDate)),
+                      ),
+                    ),
+                  ),
+                );
 
         if (overlappingAbsences.length > 0) {
           throw new ConflictError("Updated absence period overlaps with existing absence");
