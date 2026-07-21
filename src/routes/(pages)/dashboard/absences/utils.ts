@@ -10,8 +10,8 @@ import { getLocalTimeZone } from "@internationalized/date";
 export const renderAbsenceTimespan = (item: TAbsence) => {
   if (item.type === "ONE_TIME") {
     return renderOneTimeAbsenceTimespan(item);
-  } else if (item.type === "REGULAR") {
-    return renderRegularAbsenceTimespan(item);
+  } else if (item.type === "RECURRING") {
+    return renderRecurringAbsenceTimespan(item);
   } else {
     return "";
   }
@@ -48,7 +48,7 @@ export const renderOneTimeAbsenceTimespan = (item: TAbsence) => {
   }
 };
 
-export const renderRegularAbsenceTimespan = (item: TAbsence) => {
+export const renderRecurringAbsenceTimespan = (item: TAbsence) => {
   if (!item.from || !item.to) {
     return "";
   }

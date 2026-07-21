@@ -994,7 +994,7 @@
     "public.agent_absence_type": {
       "name": "agent_absence_type",
       "schema": "public",
-      "values": ["ONE_TIME", "REGULAR"]
+      "values": ["ONE_TIME", "RECURRING"]
     },
     "public.appointment_status": {
       "name": "appointment_status",

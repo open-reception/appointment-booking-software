@@ -4,7 +4,7 @@ import { z } from "zod";
 
 export const formSchema = z
   .object({
-    type: z.enum(["ONE_TIME", "REGULAR"]),
+    type: z.enum(["ONE_TIME", "RECURRING"]),
     agent: z.string().uuid({ message: m["form.errors.noAgentsSelected"]() }),
     absenceType: z.string().min(1).max(100),
     description: z.string().optional(),
@@ -21,7 +21,7 @@ export const formSchema = z
       .optional(),
   })
   .superRefine((data, ctx) => {
-    if (data.type === "REGULAR") {
+    if (data.type === "RECURRING") {
       if (data.weekdays == null || data.weekdays === 0) {
         ctx.addIssue({
           code: "custom",

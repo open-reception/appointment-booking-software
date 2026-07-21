@@ -495,7 +495,7 @@ export class ScheduleService {
         case "ONE_TIME": {
           return slotStartsDuringAbsence || slotEndsDuringAbsence || slotCoversEntireAbsence;
         }
-        case "REGULAR": {
+        case "RECURRING": {
           return (
             (slotStartsDuringAbsence || slotEndsDuringAbsence || slotCoversEntireAbsence) &&
             isWithin(slotStart, slotEnd, absence.weekdays, absence.from, absence.to, timeZone)

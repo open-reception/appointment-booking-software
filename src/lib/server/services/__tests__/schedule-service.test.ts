@@ -837,7 +837,7 @@ describe("ScheduleService", () => {
       expect(channel2Schedule.availableSlots[0].from).toBe("2024-01-01T09:00:00.000Z");
     });
 
-    it("should exclude slots where an agent has a regular absence", async () => {
+    it("should exclude slots where an agent has a recurring absence", async () => {
       const validRequest: ScheduleRequest = {
         startDate: "2024-01-01T00:00:00.000Z",
         endDate: "2024-01-01T23:59:59.999Z",
@@ -874,7 +874,7 @@ describe("ScheduleService", () => {
       const mockAbsences = [
         {
           id: "absence1",
-          type: "REGULAR",
+          type: "RECURRING",
           agentId: "agent1",
           startDate: "2024-01-01T00:00:00.000Z",
           endDate: "2024-01-01T23:59:59.999Z",

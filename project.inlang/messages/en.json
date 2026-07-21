@@ -669,8 +669,8 @@
 				"title": "One-Time",
 				"description": "for vacation etc."
 			},
-			"REGULAR": {
-				"title": "Regular",
+			"RECURRING": {
+				"title": "Recurring",
 				"description": "every week"
 			}
 		}

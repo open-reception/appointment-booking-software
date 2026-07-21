@@ -34,7 +34,7 @@ const absenceCreationSchema = z.discriminatedUnion("type", [
     description: z.string().optional(),
   }),
   z.object({
-    type: z.literal("REGULAR"),
+    type: z.literal("RECURRING"),
     agentId: z.uuid({ message: "Invalid UUID format" }),
     startDate: z.string().datetime({ message: "Invalid datetime format" }),
     endDate: z.string().datetime({ message: "Invalid datetime format" }),
@@ -55,7 +55,7 @@ const absenceUpdateSchema = z.discriminatedUnion("type", [
     description: z.string().optional(),
   }),
   z.object({
-    type: z.literal("REGULAR"),
+    type: z.literal("RECURRING"),
     startDate: z.string().datetime({ message: "Invalid datetime format" }).optional(),
     endDate: z.string().datetime({ message: "Invalid datetime format" }).optional(),
     absenceType: z.string().min(1).max(100).optional(),
@@ -477,7 +477,7 @@ export class AgentService {
     }
 
     // Validate time settings
-    if (request.type === "REGULAR" && !isToAfterFrom(request.from, request.to)) {
+    if (request.type === "RECURRING" && !isToAfterFrom(request.from, request.to)) {
       throw new ValidationError("Impossible time setting: `to` must be after `from` time");
     }
 
@@ -507,7 +507,7 @@ export class AgentService {
 
       // Check for overlapping absences
       const overlappingAbsences =
-        request.type === "REGULAR"
+        request.type === "RECURRING"
           ? []
           : await db
               .select()
@@ -554,9 +554,9 @@ export class AgentService {
           endDate: new Date(request.endDate),
           absenceType: request.absenceType,
           description: request.description,
-          weekdays: request.type === "REGULAR" ? request.weekdays : null,
-          from: request.type === "REGULAR" ? request.from : null,
-          to: request.type === "REGULAR" ? request.to : null,
+          weekdays: request.type === "RECURRING" ? request.weekdays : null,
+          from: request.type === "RECURRING" ? request.from : null,
+          to: request.type === "RECURRING" ? request.to : null,
         })
         .returning();
 
@@ -809,7 +809,7 @@ export class AgentService {
     }
 
     // Validate time settings
-    if (updateData.type === "REGULAR" && !isToAfterFrom(updateData.from, updateData.to)) {
+    if (updateData.type === "RECURRING" && !isToAfterFrom(updateData.from, updateData.to)) {
       throw new ValidationError("Impossible time setting: `to` must be after `from` time");
     }
 
@@ -844,7 +844,7 @@ export class AgentService {
 
         // Check for overlapping absences (excluding current absence)
         const overlappingAbsences =
-          updateData.type === "REGULAR"
+          updateData.type === "RECURRING"
             ? []
             : await db
                 .select()

@@ -17,10 +17,10 @@ export const types = {
     title: m["absences.types.ONE_TIME.title"](),
     description: m["absences.types.ONE_TIME.description"](),
   },
-  REGULAR: {
+  RECURRING: {
     icon: RefreshCw,
-    value: "REGULAR",
-    title: m["absences.types.REGULAR.title"](),
-    description: m["absences.types.REGULAR.description"](),
+    value: "RECURRING",
+    title: m["absences.types.RECURRING.title"](),
+    description: m["absences.types.RECURRING.description"](),
   },
 };

@@ -661,8 +661,8 @@
 				"title": "Einmalig",
 				"description": "für Urlaub etc."
 			},
-			"REGULAR": {
-				"title": "Dauerhaft",
+			"RECURRING": {
+				"title": "Wiederholend",
 				"description": "jede Woche"
 			}
 		}

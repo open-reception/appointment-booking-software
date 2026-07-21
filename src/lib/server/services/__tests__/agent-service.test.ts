@@ -747,9 +747,9 @@ describe("AgentService", () => {
         });
       });
 
-      it("should create regular absence successfully", async () => {
+      it("should create recurring absence successfully", async () => {
         const request: AbsenceCreationRequest = {
-          type: "REGULAR",
+          type: "RECURRING",
           agentId: "123e4567-e89b-12d3-a456-426614174001",
           startDate: "2024-01-01T08:00:00.000Z",
           endDate: "2024-01-01T17:00:00.000Z",
@@ -833,9 +833,9 @@ describe("AgentService", () => {
         ).rejects.toThrow(ValidationError);
       });
 
-      it("should validate regular absence from-time to be before to-time", async () => {
+      it("should validate recurring absence from-time to be before to-time", async () => {
         const invalidRequest: AbsenceCreationRequest = {
-          type: "REGULAR",
+          type: "RECURRING",
           agentId: "123e4567-e89b-12d3-a456-426614174001",
           startDate: "2024-01-01T08:00:00.000Z",
           endDate: "2024-01-01T17:00:00.000Z",
@@ -1063,7 +1063,7 @@ describe("AgentService", () => {
 
       it("should update absence successfully", async () => {
         const updateData: AbsenceUpdateRequest = {
-          type: "REGULAR",
+          type: "RECURRING",
           absenceType: "Krankheit",
           description: "Away every Wed and Fri afternoon",
           weekdays: 8,
@@ -1120,7 +1120,7 @@ describe("AgentService", () => {
 
       it("should validate update request", async () => {
         const invalidUpdate: AbsenceUpdateRequest = {
-          type: "REGULAR",
+          type: "RECURRING",
           startDate: "2024-01-01T08:00:00.000Z",
           endDate: "2024-01-01T17:00:00.000Z",
           absenceType: "Urlaub",

@@ -84,7 +84,7 @@
                 title={agent?.name || item.agentId}
                 image={agent?.image || UnknownItemIcon}
                 description={renderDescription(item)}
-                icons={item.type === "REGULAR" ? [RefreshCw] : []}
+                icons={item.type === "RECURRING" ? [RefreshCw] : []}
                 actions={[
                   {
                     type: "action",

@@ -102,7 +102,7 @@
             bind:value={$formData.type}
             options={Object.values(types)}
             onValueChange={(v) => {
-              if (v === "REGULAR") {
+              if (v === "RECURRING") {
                 isAllDay = true;
                 $formData.absenceType = "OTHER";
                 $formData.weekdays = 0;
@@ -145,7 +145,7 @@
       </Form.Control>
       <Form.FieldErrors />
     </Form.Field>
-    <Form.Field {form} name="absenceType" class={$formData.type === "REGULAR" ? "hidden" : ""}>
+    <Form.Field {form} name="absenceType" class={$formData.type === "RECURRING" ? "hidden" : ""}>
       <Form.Control>
         {#snippet children({ props })}
           <Form.Label>{m["absences.add.fields.absenceType.title"]()}</Form.Label>
@@ -179,9 +179,9 @@
           setTimeout(() => (endDateTouched = false), 100);
         }
       }}
-      class={cn("mt-2 mb-1", $formData.type === "REGULAR" ? "hidden" : "")}
+      class={cn("mt-2 mb-1", $formData.type === "RECURRING" ? "hidden" : "")}
     />
-    <div class={cn($formData.type === "REGULAR" ? "grid grid-cols-2 gap-2" : "")}>
+    <div class={cn($formData.type === "RECURRING" ? "grid grid-cols-2 gap-2" : "")}>
       <Form.Field {form} name="startDate">
         <Form.Control>
           {#snippet children({ props })}
@@ -231,7 +231,7 @@
         <Form.FieldErrors />
       </Form.Field>
     </div>
-    {#if $formData.type === "REGULAR"}
+    {#if $formData.type === "RECURRING"}
       <Form.Field {form} name="weekdays">
         <Form.Control>
           {#snippet children({ props })}

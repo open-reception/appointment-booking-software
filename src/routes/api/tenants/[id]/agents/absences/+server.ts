@@ -51,7 +51,7 @@ registerOpenAPIRoute("/tenants/{id}/agents/absences", "GET", {
                     id: { type: "string", format: "uuid", description: "Absence ID" },
                     type: {
                       type: "string",
-                      enum: ["REGULAR", "ONE_TIME"],
+                      enum: ["RECURRING", "ONE_TIME"],
                       description: "Type of absence",
                     },
                     agentId: { type: "string", format: "uuid", description: "Agent ID" },
@@ -61,17 +61,17 @@ registerOpenAPIRoute("/tenants/{id}/agents/absences", "GET", {
                     description: { type: "string", description: "Description" },
                     weekdays: {
                       type: "integer",
-                      description: "Weekdays bitmask for regular absences",
+                      description: "Weekdays bitmask for recurring absences",
                     },
                     from: {
                       type: "string",
                       format: "time",
-                      description: "Start time for regular absences",
+                      description: "Start time for recurring absences",
                     },
                     to: {
                       type: "string",
                       format: "time",
-                      description: "End time for regular absences",
+                      description: "End time for recurring absences",
                     },
                   },
                   required: [
