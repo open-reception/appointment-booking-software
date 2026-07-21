@@ -449,6 +449,38 @@ export class ScheduleService {
     return absences.some((absence) => {
       if (absence.agentId !== agentId) return false;
 
+      function isWithin(
+        localStart: Date,
+        localEnd: Date,
+        bitmap: number | null,
+        from: string | null,
+        to: string | null,
+        timeZone: string,
+      ): boolean {
+        if (!bitmap || !from || !to) return false;
+
+        // Build a from/to Date on the SAME local calendar day as `d`.
+        const boundary = (d: Date, time: string): Date => {
+          const [h, m, s] = time.split(":").map(Number);
+          return new Date(
+            Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), h, m, s ?? 0),
+          );
+        };
+
+        const check = (d: Date): boolean => {
+          // weekday in local frame (Monday = 0)
+          const dayIndex = (d.getUTCDay() + 6) % 7;
+          if ((bitmap & (1 << dayIndex)) === 0) return false;
+
+          const fromDate = toLocalTimeIgnoringDst(boundary(d, from), timeZone);
+          const toDate = toLocalTimeIgnoringDst(boundary(d, to), timeZone);
+
+          return d >= fromDate && d <= toDate;
+        };
+
+        return check(localStart) && check(localEnd);
+      }
+
       const absenceStart = toLocalTime(new Date(absence.startDate), timeZone);
       const absenceEnd = toLocalTime(new Date(absence.endDate), timeZone);
       const slotStart = toLocalTimeIgnoringDst(slotStartDateTime, timeZone);
@@ -458,7 +490,20 @@ export class ScheduleService {
       const slotStartsDuringAbsence = slotStart >= absenceStart && slotStart < absenceEnd;
       const slotEndsDuringAbsence = slotEnd > absenceStart && slotEnd <= absenceEnd;
       const slotCoversEntireAbsence = slotStart <= absenceStart && slotEnd >= absenceEnd;
-      return slotStartsDuringAbsence || slotEndsDuringAbsence || slotCoversEntireAbsence;
+
+      switch (absence.type) {
+        case "ONE_TIME": {
+          return slotStartsDuringAbsence || slotEndsDuringAbsence || slotCoversEntireAbsence;
+        }
+        case "RECURRING": {
+          return (
+            (slotStartsDuringAbsence || slotEndsDuringAbsence || slotCoversEntireAbsence) &&
+            isWithin(slotStart, slotEnd, absence.weekdays, absence.from, absence.to, timeZone)
+          );
+        }
+        default:
+          return true;
+      }
     });
   }
 

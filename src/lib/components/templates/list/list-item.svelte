@@ -28,6 +28,7 @@
   let {
     image,
     title,
+    icons,
     description,
     descriptionOnClick,
     actions,
@@ -35,6 +36,7 @@
   }: HTMLAttributes<HTMLLIElement> & {
     image?: string | Component;
     title: string;
+    icons?: Component[];
     description?: string;
     descriptionOnClick?: () => void;
     actions?: ListItemAction[];
@@ -65,7 +67,16 @@
     <div></div>
     <div class="flex flex-col">
       <div class="flex items-center gap-2">
-        <Text style="md" class="font-medium">{title}</Text>
+        <Text style="md" class="flex items-center gap-2 font-medium">
+          {title}
+          {#if icons && icons.length > 0}
+            <div class="flex items-center gap-1">
+              {#each icons as Icon, index (`icon-${index}`)}
+                <Icon class="size-3" />
+              {/each}
+            </div>
+          {/if}
+        </Text>
         {#if badges && badges.length > 0}
           <div class="flex flex-wrap gap-1 py-1">
             {#each badges as badge, index (`${badge.label}-${index}`)}

@@ -11,7 +11,6 @@
   import { ROUTES } from "$lib/const/routes";
   import { agents as agentsStore } from "$lib/stores/agents";
   import { type TAbsence } from "$lib/types/absence";
-  import { toDisplayDateTime } from "$lib/utils/datetime";
   import EditIcon from "@lucide/svelte/icons/pencil";
   import PlusIcon from "@lucide/svelte/icons/plus";
   import DeleteIcon from "@lucide/svelte/icons/trash-2";
@@ -21,7 +20,8 @@
   import { DeleteAbsenceForm } from "./(components)/delete-absence-form";
   import EditAbsenceForm from "./(components)/edit-absence-form/edit-absence-form.svelte";
   import { reasons } from "./(components)/utils";
-  import { getLocalTimeZone } from "@internationalized/date";
+  import { renderAbsenceTimespan } from "./utils";
+  import { RefreshCw } from "@lucide/svelte";
 
   const { data } = $props();
   const agents = $derived($agentsStore.agents ?? []);
@@ -35,34 +35,11 @@
   });
 
   const renderDescription = (item: TAbsence) => {
-    const startDate = toDisplayDateTime(new Date(item.startDate));
-    const fullStartDay = toDisplayDateTime(new Date(item.startDate), {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      timeZone: getLocalTimeZone(),
-    });
-    const endDate = toDisplayDateTime(new Date(item.endDate));
-    const fullEndDay = toDisplayDateTime(new Date(item.endDate), {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      timeZone: getLocalTimeZone(),
-    });
-    const reason = reasons.find((r) => r.value === item.absenceType);
-    const isAllDay =
-      new Date(item.startDate).getHours() === 0 &&
-      new Date(item.startDate).getMinutes() === 0 &&
-      new Date(item.endDate).getHours() === 23 &&
-      new Date(item.endDate).getMinutes() === 59;
-    const isSameDay =
-      new Date(item.startDate).toDateString() === new Date(item.endDate).toDateString();
-    if (isSameDay && isAllDay) {
-      return `${reason?.label}: ${fullStartDay}`;
-    } else if (isAllDay) {
-      return `${reason?.label}: ${fullStartDay} - ${fullEndDay}`;
+    if (item.type === "ONE_TIME") {
+      const reason = reasons.find((r) => r.value === item.absenceType);
+      return `${reason?.label}: ${renderAbsenceTimespan(item)}`;
     } else {
-      return `${reason?.label}: ${startDate} - ${endDate}`;
+      return renderAbsenceTimespan(item);
     }
   };
 </script>
@@ -107,6 +84,7 @@
                 title={agent?.name || item.agentId}
                 image={agent?.image || UnknownItemIcon}
                 description={renderDescription(item)}
+                icons={item.type === "RECURRING" ? [RefreshCw] : []}
                 actions={[
                   {
                     type: "action",

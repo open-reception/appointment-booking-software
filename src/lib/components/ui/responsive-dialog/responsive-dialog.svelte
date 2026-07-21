@@ -100,7 +100,10 @@
         {/if}
       </Dialog.Trigger>
     {/if}
-    <Dialog.Content class="max-h-[95vh] sm:max-w-106.25">
+    <Dialog.Content
+      class="max-h-[95vh] sm:max-w-106.25"
+      onOpenAutoFocus={(e) => e.preventDefault()}
+    >
       <Dialog.Header>
         <Dialog.Title class={cn(description ? "" : "-mb-1")}>{title}</Dialog.Title>
         {#if description}
@@ -109,8 +112,8 @@
           </Dialog.Description>
         {/if}
       </Dialog.Header>
-      <ScrollArea class="-mx-1 max-h-[75vh]">
-        <div class="px-1 pt-2">
+      <ScrollArea class="-mx-1 max-h-[75vh] overflow-hidden">
+        <div class="px-1 pt-2 pb-3">
           {@render children?.()}
         </div>
       </ScrollArea>
@@ -129,6 +132,7 @@
     {/if}
     <Drawer.Content
       class="data-[vaul-drawer-direction=bottom]:max-h-[95vh] data-[vaul-drawer-direction=top]:max-h-[95vh]"
+      onOpenAutoFocus={(e) => e.preventDefault()}
     >
       <Drawer.Header class="text-left">
         <Drawer.Title class={cn(description ? "" : "-mb-1")}>{title}</Drawer.Title>

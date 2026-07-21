@@ -75,6 +75,8 @@
 			"noEndDate": "End date is required",
 			"endDateBeforeStartDate": "End date must be after start date",
 			"endDateTooEarly": "End date must be in the future",
+			"noWeekdaysSelected": "Select at least one weekday",
+			"fromAfterTo": "»From« time must be before »To« time",
 			"street": "Add a street",
 			"houseNo": "Required",
 			"zip": "Add a zip code",
@@ -596,6 +598,9 @@
 			"title": "Add Absence",
 			"description": "Absences are a way to mark you agents as being unavailbale.",
 			"fields": {
+				"type": {
+					"title": "Type of Absence"
+				},
 				"agent": {
 					"title": "Agent",
 					"placeholder": "Select agent"
@@ -618,6 +623,7 @@
 			"action": "Add Absence",
 			"success": "Absence added",
 			"errors": {
+				"conflict": "Agent is already (partially) absent in this time period",
 				"unknown": "Could not add absence"
 			},
 			"unavailable": {
@@ -635,12 +641,15 @@
 			"title": "Edit Absence",
 			"description": "Update the agents availability.",
 			"success": "Absence updated",
-			"error": "Could not update absence.",
+			"errors": {
+				"conflict": "Agent is already (partially) absent in this time period",
+				"unknown": "Could not update absence"
+			},
 			"action": "Edit Absence"
 		},
 		"delete": {
 			"title": "Delete Absence",
-			"description": "{name} will be available for appointments from {startDate} to {endDate}.",
+			"description": "{name} will be available for appointments again in this timespan: {timespan}.",
 			"description_fallback": "This agent",
 			"action": "Delete Absence",
 			"success": "Absence deleted",
@@ -654,6 +663,16 @@
 			"education": "Training/Education",
 			"off.site": "Off-Site",
 			"other": "Other"
+		},
+		"types": {
+			"ONE_TIME": {
+				"title": "One-Time",
+				"description": "for vacation etc."
+			},
+			"RECURRING": {
+				"title": "Recurring",
+				"description": "every week"
+			}
 		}
 	},
 	"settings": {

@@ -35,6 +35,12 @@ registerOpenAPIRoute("/tenants/{id}/agents/{agentId}/absences", "POST", {
         schema: {
           type: "object",
           properties: {
+            type: {
+              type: "string",
+              enum: ["ONE_TIME", "RECURRING"],
+              description: "Type of absence",
+              example: "ONE_TIME",
+            },
             startDate: {
               type: "string",
               format: "date-time",
@@ -58,14 +64,26 @@ registerOpenAPIRoute("/tenants/{id}/agents/{agentId}/absences", "POST", {
               description: "Optional description of the absence",
               example: "Jahresurlaub",
             },
-            isFullDay: {
-              type: "boolean",
-              description: "Whether this is a full day absence",
-              example: true,
-              default: true,
+            weekdays: {
+              type: "integer",
+              description:
+                "Bitmask representing weekdays for recurring absences (0 = Sunday, 1 = Monday, ..., 6 = Saturday). Only applicable for RECURRING absences.",
+              example: 62,
+            },
+            from: {
+              type: "string",
+              format: "time",
+              description: "Start time for RECURRING absences",
+              example: "09:00:00",
+            },
+            to: {
+              type: "string",
+              format: "time",
+              description: "End time for RECURRING absences",
+              example: "17:00:00",
             },
           },
-          required: ["startDate", "endDate", "absenceType"],
+          required: ["type", "startDate", "endDate", "absenceType"],
         },
       },
     },
@@ -83,14 +101,33 @@ registerOpenAPIRoute("/tenants/{id}/agents/{agentId}/absences", "POST", {
                 type: "object",
                 properties: {
                   id: { type: "string", format: "uuid", description: "Absence ID" },
+                  type: {
+                    type: "string",
+                    enum: ["ONE_TIME", "RECURRING"],
+                    description: "Type of absence",
+                  },
                   agentId: { type: "string", format: "uuid", description: "Agent ID" },
                   startDate: { type: "string", format: "date-time", description: "Start date" },
                   endDate: { type: "string", format: "date-time", description: "End date" },
                   absenceType: { type: "string", description: "Type of absence" },
                   description: { type: "string", description: "Description" },
-                  isFullDay: { type: "boolean", description: "Full day absence" },
+                  weekdays: {
+                    type: "integer",
+                    description:
+                      "Bitmask representing weekdays for recurring absences (0 = Sunday, 1 = Monday, ..., 6 = Saturday). Only applicable for RECURRING absences.",
+                  },
+                  from: {
+                    type: "string",
+                    format: "time",
+                    description: "Start time for RECURRING absences",
+                  },
+                  to: {
+                    type: "string",
+                    format: "time",
+                    description: "End time for RECURRING absences",
+                  },
                 },
-                required: ["id", "agentId", "startDate", "endDate", "absenceType", "isFullDay"],
+                required: ["id", "type", "agentId", "startDate", "endDate", "absenceType"],
               },
             },
             required: ["message", "absence"],
@@ -199,14 +236,33 @@ registerOpenAPIRoute("/tenants/{id}/agents/{agentId}/absences", "GET", {
                   type: "object",
                   properties: {
                     id: { type: "string", format: "uuid", description: "Absence ID" },
+                    type: {
+                      type: "string",
+                      enum: ["ONE_TIME", "RECURRING"],
+                      description: "Type of absence",
+                    },
                     agentId: { type: "string", format: "uuid", description: "Agent ID" },
                     startDate: { type: "string", format: "date-time", description: "Start date" },
                     endDate: { type: "string", format: "date-time", description: "End date" },
                     absenceType: { type: "string", description: "Type of absence" },
                     description: { type: "string", description: "Description" },
-                    isFullDay: { type: "boolean", description: "Full day absence" },
+                    weekdays: {
+                      type: "integer",
+                      description:
+                        "Bitmask representing weekdays for recurring absences (0 = Sunday, 1 = Monday, ..., 6 = Saturday). Only applicable for RECURRING absences.",
+                    },
+                    from: {
+                      type: "string",
+                      format: "time",
+                      description: "Start time for RECURRING absences",
+                    },
+                    to: {
+                      type: "string",
+                      format: "time",
+                      description: "End time for RECURRING absences",
+                    },
                   },
-                  required: ["id", "agentId", "startDate", "endDate", "absenceType", "isFullDay"],
+                  required: ["id", "type", "agentId", "startDate", "endDate", "absenceType"],
                 },
               },
             },
@@ -278,6 +334,10 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
       absenceType: body.absenceType,
       startDate: body.startDate,
       endDate: body.endDate,
+      type: body.type,
+      weekdays: body.weekdays,
+      from: body.from,
+      to: body.to,
     });
 
     const agentService = await AgentService.forTenant(tenantId);
