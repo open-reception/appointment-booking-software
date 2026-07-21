@@ -37,10 +37,10 @@
   });
 </script>
 
-<EmailLayout>
-  <EmailText variant="md">{m["emails.greeting"]({ name: user.email })}</EmailText>
+<EmailLayout {locale}>
+  <EmailText variant="md">{m["emails.greeting"]({ name: user.email }, { locale })}</EmailText>
   <EmailText variant="md">
-    {m["emails.appointmentRequest.introduction"]()}
+    {m["emails.appointmentRequest.introduction"]({}, { locale })}
   </EmailText>
   <EmailHeadline>{channel}</EmailHeadline>
   <EmailText variant="md">
@@ -57,6 +57,6 @@
     {address.city}
   </EmailText>
   <EmailText variant="md" color="text-light">
-    {m["emails.appointmentRequest.reason"]()}
+    {m["emails.appointmentRequest.reason"]({}, { locale })}
   </EmailText>
 </EmailLayout>

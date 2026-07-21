@@ -10,7 +10,6 @@ import type { SelectTenant, SelectUser } from "$lib/server/db/central-schema";
 import { getTenantDb } from "$lib/server/db";
 import * as tenantSchema from "$lib/server/db/tenant-schema";
 import { eq } from "drizzle-orm";
-import { setLocale } from "$i18n/runtime";
 import { m } from "$i18n/messages";
 import { render } from "svelte/server";
 import AppointmentBooked from "$lib/emails/AppointmentBooked.svelte";
@@ -139,9 +138,12 @@ export async function sendPinResetEmail(
   const recipient = createEmailRecipient(user);
   const locale = (recipient.language as Language) || "en";
 
-  const subject = m["emails.pinReset.subject"]({
-    tenant: tenant.longName,
-  });
+  const subject = m["emails.pinReset.subject"](
+    {
+      tenant: tenant.longName,
+    },
+    { locale },
+  );
   const emailRender = render(PinReset, {
     props: {
       locale,
@@ -193,9 +195,12 @@ export async function sendAppointmentReminderEmail(
   const { recipient, locale } = await getRecipient(user);
   const channelTitle = await getChannelTitle(tenant.id, appointment.channelId, locale);
   // Generate email
-  const subject = m["emails.appointmentReminder.subject"]({
-    tenant: tenant.longName,
-  });
+  const subject = m["emails.appointmentReminder.subject"](
+    {
+      tenant: tenant.longName,
+    },
+    { locale },
+  );
   const emailRender = render(AppointmentBooked, {
     props: {
       locale,
@@ -219,7 +224,6 @@ const getRecipient = async (user: SelectClient | SelectUser) => {
       ? { email: user.email, language: user.language }
       : createEmailRecipient(user);
   const locale = (recipient.language as Language) || "en";
-  setLocale(locale);
   return { recipient, locale };
 };
 
@@ -259,10 +263,13 @@ export async function sendAppointmentRejectedEmail(
   const { recipient, locale } = await getRecipient(user);
 
   // Generate email
-  const subject = m["emails.appointmentRejected.subject"]({
-    channel: channelTitle || appointment.channelId,
-    tenant: tenant.longName,
-  });
+  const subject = m["emails.appointmentRejected.subject"](
+    {
+      channel: channelTitle || appointment.channelId,
+      tenant: tenant.longName,
+    },
+    { locale },
+  );
   const emailRender = render(AppointmentRejected, {
     props: {
       locale,
@@ -303,10 +310,13 @@ export async function sendAppointmentCreatedEmail(
   const { recipient, locale } = await getRecipient(user);
 
   // Generate email
-  const subject = m["emails.appointmentBooked.subject"]({
-    channel: channelTitle || appointment.channelId,
-    tenant: tenant.longName,
-  });
+  const subject = m["emails.appointmentBooked.subject"](
+    {
+      channel: channelTitle || appointment.channelId,
+      tenant: tenant.longName,
+    },
+    { locale },
+  );
   const emailRender = render(AppointmentBooked, {
     props: {
       locale,
@@ -344,10 +354,13 @@ export async function sendAppointmentRequestEmail(
   const agent = await agentService.getAgentById(appointment.agentId);
   const { recipient, locale } = await getRecipient(user);
   // Generate email
-  const subject = m["emails.appointmentRequest.subject"]({
-    channel: channelTitle || appointment.channelId,
-    tenant: tenant.longName,
-  });
+  const subject = m["emails.appointmentRequest.subject"](
+    {
+      channel: channelTitle || appointment.channelId,
+      tenant: tenant.longName,
+    },
+    { locale },
+  );
   const emailRender = render(AppointmentRequest, {
     props: {
       locale,
@@ -362,35 +375,6 @@ export async function sendAppointmentRequestEmail(
   const text = htmlToText(html);
 
   await sendEmail(recipient, subject, html, text, tenant.longName);
-}
-
-/**
- * Send appointment update notification email
- * @param {SelectClient | SelectUser} user - Database user object
- * @param {SelectTenant} tenant - Tenant information for branding
- * @param {SelectAppointment} appointment - Updated appointment details
- * @param {string} [channelTitle] - Optional channel title/name
- * @param {string} [cancelUrl] - Optional URL to cancel appointment
- * @throws {Error} When email sending fails
- * @returns {Promise<void>}
- */
-export async function sendAppointmentUpdatedEmail(
-  user: SelectClient | SelectUser,
-  tenant: SelectTenant,
-  appointment: SelectAppointment,
-  channelTitle?: string,
-  cancelUrl?: string,
-): Promise<void> {
-  const recipient = createEmailRecipient(user);
-  const language = (recipient.language as Language) || "en";
-  const subject = language === "en" ? "Appointment Updated" : "Termin aktualisiert";
-
-  await sendTemplatedEmail("appointment-updated", recipient, subject, language, tenant, {
-    appointment,
-    appointmentDate: appointment.appointmentDate,
-    title: channelTitle || appointment.channelId,
-    cancelUrl,
-  });
 }
 
 /**
@@ -427,13 +411,17 @@ export async function sendConfirmationEmail(
   const baseUrl = generateBaseUrl(requestUrl);
   const confirmUrl = `${baseUrl}/confirm/${confirmationCode}`;
   const recipient = user;
+  const locale = (user.language as Language) ?? "en";
   // Generate email
-  const subject = m["emails.confirmation.subject"]({
-    tenant: tenant.longName,
-  });
+  const subject = m["emails.confirmation.subject"](
+    {
+      tenant: tenant.longName,
+    },
+    { locale },
+  );
   const emailRender = render(Confirmation, {
     props: {
-      locale: (user.language as Language) ?? "en",
+      locale,
       user: user as SelectUserEmail,
       confirmUrl,
       expirationMinutes,
@@ -464,10 +452,13 @@ export async function sendAppointmentCancelledEmail(
   // Create recipient directly for SelectClient type, use helper for SelectUser
   const { recipient, locale } = await getRecipient(user);
   // Generate email
-  const subject = m["emails.appointmentCancelled.subject"]({
-    channel: channelTitle || appointment.channelId,
-    tenant: tenant.longName,
-  });
+  const subject = m["emails.appointmentCancelled.subject"](
+    {
+      channel: channelTitle || appointment.channelId,
+      tenant: tenant.longName,
+    },
+    { locale },
+  );
   const emailRender = render(AppointmentCancelled, {
     props: {
       locale,
@@ -499,7 +490,7 @@ export async function sendNotificationEmail(
   // Create recipient directly for SelectClient type, use helper for SelectUser
   const { recipient, locale } = await getRecipient(user);
   // Generate email
-  const subject = m["emails.notification.subject"]();
+  const subject = m["emails.notification.subject"]({}, { locale });
   const emailRender = render(Notification, {
     props: {
       locale,

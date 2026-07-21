@@ -1,8 +1,16 @@
-<script lang="js">
+<script lang="ts">
   import { m } from "$i18n/messages";
+  import type { SupportedLocale } from "$lib/const/locales";
+  import type { Snippet } from "svelte";
   import EmailText from "./EmailText.svelte";
 
-  let { children } = $props();
+  let {
+    locale,
+    children,
+  }: {
+    locale: SupportedLocale;
+    children?: Snippet;
+  } = $props();
 </script>
 
 <div class="page">
@@ -11,7 +19,7 @@
       {@render children?.()}
     </div>
     <EmailText variant="sm" color="text-light" class="branding">
-      {m["emails.poweredBy"]()} <a href="https://open-reception.org">OpenReception</a>
+      {m["emails.poweredBy"]({}, { locale })} <a href="https://open-reception.org">OpenReception</a>
     </EmailText>
   </div>
 </div>

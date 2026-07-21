@@ -1,4 +1,4 @@
-<script lang="js">
+<script lang="ts">
   let { children, variant, color = "text-darkest", class: className = "" } = $props();
 </script>
 

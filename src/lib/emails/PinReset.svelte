@@ -1,6 +1,5 @@
 <script lang="ts">
   import { m } from "$i18n/messages";
-  import { setLocale } from "$i18n/runtime";
   import type { SupportedLocale } from "$lib/const/locales";
   import { type SelectTenant } from "$lib/server/db/central-schema";
   import type { SelectClient } from "$lib/server/email/email-service";
@@ -19,19 +18,15 @@
     tenant: SelectTenant;
     loginUrl: string;
   } = $props();
-
-  $effect(() => {
-    setLocale(locale);
-  });
 </script>
 
-<EmailLayout>
-  <EmailText variant="md">{m["emails.greeting"]({ name: user.email })}</EmailText>
+<EmailLayout {locale}>
+  <EmailText variant="md">{m["emails.greeting"]({ name: user.email }, { locale })}</EmailText>
   <EmailText variant="md">
-    {m["emails.pinReset.introduction"]({ tenant: tenant.longName })}
+    {m["emails.pinReset.introduction"]({ tenant: tenant.longName }, { locale })}
   </EmailText>
-  <EmailButton href={loginUrl}>{m["emails.pinReset.action"]()}</EmailButton>
+  <EmailButton href={loginUrl}>{m["emails.pinReset.action"]({}, { locale })}</EmailButton>
   <EmailText variant="md" color="text-light">
-    {m["emails.pinReset.reason"]()}
+    {m["emails.pinReset.reason"]({}, { locale })}
   </EmailText>
 </EmailLayout>

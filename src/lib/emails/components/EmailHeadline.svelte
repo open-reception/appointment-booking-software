@@ -1,4 +1,4 @@
-<script lang="js">
+<script lang="ts">
   let { children, variant = "h2", class: className = "" } = $props();
 </script>
 

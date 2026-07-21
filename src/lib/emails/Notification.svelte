@@ -1,6 +1,5 @@
 <script lang="ts">
   import { m } from "$i18n/messages";
-  import { setLocale } from "$i18n/runtime";
   import type { SupportedLocale } from "$lib/const/locales";
   import type { SelectUserEmail } from "$lib/server/email/email-service";
   import EmailButton from "./components/EmailButton.svelte";
@@ -16,19 +15,15 @@
     user: SelectUserEmail;
     dashboardUrl: string;
   } = $props();
-
-  $effect(() => {
-    setLocale(locale);
-  });
 </script>
 
-<EmailLayout>
-  <EmailText variant="md">{m["emails.greeting"]({ name: user.name })}</EmailText>
+<EmailLayout {locale}>
+  <EmailText variant="md">{m["emails.greeting"]({ name: user.name }, { locale })}</EmailText>
   <EmailText variant="md">
-    {m["emails.notification.introduction"]()}
+    {m["emails.notification.introduction"]({}, { locale })}
   </EmailText>
-  <EmailButton href={dashboardUrl}>{m["emails.notification.action"]()}</EmailButton>
+  <EmailButton href={dashboardUrl}>{m["emails.notification.action"]({}, { locale })}</EmailButton>
   <EmailText variant="md" color="text-light">
-    {m["emails.notification.reason"]()}
+    {m["emails.notification.reason"]({}, { locale })}
   </EmailText>
 </EmailLayout>
