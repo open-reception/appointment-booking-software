@@ -853,6 +853,13 @@
 				"description": "Nur Mitarbeiter:innen und Mandanten-Admins können Zugriff gewähren."
 			}
 		},
+		"resendInvite": {
+			"title": "Einladung erneut senden",
+			"description": "Soll {name} erneut eine Einladung per E-Mail erhalten?",
+			"action": "Erneut einladen",
+			"success": "E-Mail Einladung erneut versendet",
+			"error": "Einladung konnte nicht erneut gesendet werden"
+		},
 		"loading": "Lade Personal"
 	},
 	"yes": "Ja",
@@ -1079,7 +1086,7 @@
 			"subject": "E-Mail Adresse bestätigen",
 			"introduction": "willkommen bei unserem Terminbuchungsportal. Bitte bestätige Deine E-Mail Adresse.",
 			"action": "E-Mail Adresse bestätigen",
-			"hint": "Dieser Link ist nur {expirationMinutes} Minuten gültig und kann nur einmal verwendet werden.",
+			"hint": "Dieser Link ist nur {expirationMinutes} Minuten gültig und kann nur einmal verwendet werden.Du kannst unter dem Link oben jederzeit einen neuen Link anfordern.",
 			"reason": "Du erhältst diese E-Mail, weil jemand für Deine E-Mail Adresse ein Konto registriert hat."
 		},
 		"notification": {

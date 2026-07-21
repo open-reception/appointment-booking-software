@@ -7,6 +7,7 @@ import { zod4 as zod } from "sveltekit-superforms/adapters";
 import { formSchema as addFormSchema } from "./(components)/add-staff-member-form";
 import { formSchema as deleteFormSchema } from "./(components)/delete-staff-member-form";
 import { formSchema as editFormSchema } from "./(components)/edit-staff-member-form";
+import { formSchema as resendInviteFormSchema } from "./(components)/resend-invite-form";
 
 const log = logger.setContext(import.meta.filename);
 
@@ -181,6 +182,52 @@ export const actions: Actions = {
         error = body.error;
       } catch (e) {
         log.error("Failed to parse delete staff member error response", { error: e });
+      }
+      return fail(400, {
+        form,
+        error,
+      });
+    }
+  },
+  resendInvite: async (event) => {
+    const form = await superValidate(event, zod(resendInviteFormSchema));
+
+    if (!form.valid) {
+      log.error("Resend invite to staff member form is not valid", { errors: form.errors });
+      return fail(400, {
+        form: { ...form, data: { ...form.data } },
+        error: "Form is not valid",
+      });
+    }
+
+    if (!event.locals.user?.tenantId) {
+      log.error("User trying to resend an invite to a staff member, but has no tenantId");
+      redirect(302, ROUTES.LOGOUT);
+    }
+
+    const resp = await event.fetch(
+      `/api/tenants/${event.locals.user?.tenantId}/staff/${form.data.id}/resend-invite`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          email: form.data.email,
+        }),
+      },
+    );
+
+    if (resp.status < 400) {
+      return { form };
+    } else {
+      let error = "Unknown error";
+      try {
+        const body = await resp.json();
+        error = body.error;
+      } catch (e) {
+        log.error("Failed to parse staff member resend invite error response", { error: e });
       }
       return fail(400, {
         form,

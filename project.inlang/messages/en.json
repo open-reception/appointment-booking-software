@@ -861,6 +861,13 @@
 				"description": "Only Appointment Managers and Tenant Admins can be granted access to client data."
 			}
 		},
+		"resendInvite": {
+			"title": "Resend Invitation",
+			"description": "Do you want to send another invitation e-mail to {name}?",
+			"action": "Resend Invite",
+			"success": "E-Mail Invite sent again",
+			"error": "Could not resend invite"
+		},
 		"loading": "Loading staff members"
 	},
 	"yes": "Yes",
@@ -1087,7 +1094,7 @@
 			"subject": "Confirm your E-Mail Address",
 			"introduction": "welcome our appointment booking platform. Please confirm your e-mail address.",
 			"action": "Confirm E-Mail Address",
-			"hint": "This link is only valid for {expirationMinutes} minutes and can only be used once.",
+			"hint": "This link is only valid for {expirationMinutes} minutes and can only be used once. You can request a new link anytime using the link above.",
 			"reason": "You are receiving this email because someone registered an account with your e-mail address."
 		},
 		"notification": {
