@@ -28,7 +28,7 @@
       {@render childrenProp({ errors, errorProps })}
     {:else}
       <Text style="xs">
-        {#each errors as error (error)}
+        {#each errors as error, index (error + index)}
           <div {...errorProps} class={cn(errorClasses)}>{error}</div>
         {/each}
       </Text>
