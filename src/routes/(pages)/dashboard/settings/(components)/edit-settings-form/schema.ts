@@ -5,20 +5,13 @@ const optionalUrl = (errorMessage: string) =>
   z
     .union([
       z.literal(""),
-      // z
-      //   .url({ message: errorMessage })
-      //   .refine((url) => url.startsWith("http://") || url.startsWith("https://"), {
-      //     message: errorMessage,
-      //   }),
       z.string().refine(
         (val) => {
           try {
-            // 1. Check if it's a valid URL structure
             const url = new URL(val);
-            // 2. Check if it uses the correct HTTP protocols
             return url.protocol === "http:" || url.protocol === "https:";
           } catch {
-            return false; // Fails if not a valid URL structure
+            return false;
           }
         },
         { message: errorMessage },
