@@ -6,8 +6,9 @@ import type { AppointmentWithKeyShare } from "$lib/server/services/schedule-serv
 import { auth } from "$lib/stores/auth";
 import { calendarStore } from "$lib/stores/calendar";
 import { staffCrypto } from "$lib/stores/staff-crypto";
-import type { AppointmentStatus, TCalendar, TCalendarItem } from "$lib/types/calendar";
+import type { TCalendar, TCalendarItem } from "$lib/types/calendar";
 import type { TChannel } from "$lib/types/channel";
+import { serverAppointmentStatusToUiFilterStatus } from "$lib/utils/appointments";
 import { getWeekStartsOn, localToUTCWithoutDST } from "$lib/utils/datetime";
 import {
   getLocalTimeZone,
@@ -300,7 +301,7 @@ export const openAppointmentById = async (
       date: appointment.appointmentDate.toString(),
       id: appointment.id,
       duration: appointment.duration,
-      status: appointment.status as AppointmentStatus,
+      status: serverAppointmentStatusToUiFilterStatus(appointment.status),
       start: "08:00",
       channelId: appointment.channelId,
       color: channel?.color || "",

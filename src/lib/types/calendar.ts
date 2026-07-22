@@ -1,6 +1,6 @@
 import type { CalendarAgent, DaySchedule } from "$lib/server/services/schedule-service";
 
-export type AppointmentStatus = "available" | "booked" | "reserved";
+export type AppointmentStatus = "available" | "booked" | "reserved" | "rejected";
 export type TAppointmentFilter = "all" | AppointmentStatus;
 
 export type TCalendar = {

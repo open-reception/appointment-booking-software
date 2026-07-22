@@ -115,6 +115,7 @@
     base: "",
     variants: {
       status: {
+        rejected: "border-none bg-[var(--channel-color)]", // currently not returned from back-end
         available: "border-1 border-[var(--channel-color)] bg-background",
         booked: "border-none bg-[var(--channel-color)]",
         reserved:
