@@ -29,11 +29,13 @@ const scheduleRequestSchema = z.object({
 
 export type ScheduleRequest = z.infer<typeof scheduleRequestSchema>;
 
+export type CalendarAgent = Pick<SelectAgent, "id">;
+
 export interface TimeSlot {
   from: string; // UTC ISO timestamp
   to: string; // UTC ISO timestamp
   duration: number; // minutes
-  availableAgents: SelectAgent[];
+  availableAgents: CalendarAgent[];
 }
 
 export interface AppointmentWithKeyShare extends SelectAppointment {
@@ -201,7 +203,7 @@ export class ScheduleService {
       let channelAgents = await db
         .select({
           channelId: tenantSchema.channelAgent.channelId,
-          agent: tenantSchema.agent,
+          agent: { id: tenantSchema.agent.id },
         })
         .from(tenantSchema.channelAgent)
         .innerJoin(
@@ -266,7 +268,7 @@ export class ScheduleService {
     slotTemplates: { slotTemplate: SelectSlotTemplate; channelId: string }[];
     appointments: SelectAppointment[];
     absences: SelectAgentAbsence[];
-    channelAgents: { channelId: string; agent: SelectAgent }[];
+    channelAgents: { channelId: string; agent: CalendarAgent }[];
     staffKeyShares: Record<string, string>;
     timeZone: string;
   }): Promise<DaySchedule[]> {
@@ -357,7 +359,7 @@ export class ScheduleService {
     date: Date;
     slotTemplates: SelectSlotTemplate[];
     appointments: SelectAppointment[];
-    agents: SelectAgent[];
+    agents: CalendarAgent[];
     absences: SelectAgentAbsence[];
     timeZone: string;
   }): TimeSlot[] {

@@ -186,9 +186,6 @@ describe("ScheduleService", () => {
           channelId: "channel1",
           agent: {
             id: "agent1",
-            name: "Test Agent",
-            description: "Test Description",
-            logo: null,
           },
         },
       ];
@@ -241,7 +238,6 @@ describe("ScheduleService", () => {
         expect(actualSlot.duration).toBe(60); // 60-minute slots
         expect(actualSlot.availableAgents).toHaveLength(1);
         expect(actualSlot.availableAgents[0].id).toBe("agent1");
-        expect(actualSlot.availableAgents[0].name).toBe("Test Agent");
       });
     });
 

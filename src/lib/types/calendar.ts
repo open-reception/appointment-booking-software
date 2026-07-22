@@ -1,5 +1,4 @@
-import type { SelectAgent } from "$lib/server/db/tenant-schema";
-import type { DaySchedule } from "$lib/server/services/schedule-service";
+import type { CalendarAgent, DaySchedule } from "$lib/server/services/schedule-service";
 
 export type AppointmentStatus = "available" | "booked" | "reserved";
 export type TAppointmentFilter = "all" | AppointmentStatus;
@@ -33,5 +32,5 @@ export type TCalendarSlot = {
   color: string | null;
   column: number;
   channelId: string;
-  availableAgents?: SelectAgent[];
+  availableAgents?: CalendarAgent[];
 };
