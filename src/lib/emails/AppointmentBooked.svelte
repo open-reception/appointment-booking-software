@@ -1,6 +1,5 @@
 <script lang="ts">
   import { m } from "$i18n/messages";
-  import { setLocale } from "$i18n/runtime";
   import type { SupportedLocale } from "$lib/const/locales";
   import type { SelectTenant } from "$lib/server/db/central-schema";
   import { type SelectAppointment } from "$lib/server/db/tenant-schema";
@@ -34,16 +33,12 @@
     };
     cancelUrl: string;
   } = $props();
-
-  $effect(() => {
-    setLocale(locale);
-  });
 </script>
 
-<EmailLayout>
-  <EmailText variant="md">{m["emails.greeting"]({ name: user.email })}</EmailText>
+<EmailLayout {locale}>
+  <EmailText variant="md">{m["emails.greeting"]({ name: user.email }, { locale })}</EmailText>
   <EmailText variant="md">
-    {m["emails.appointmentBooked.introduction"]()}
+    {m["emails.appointmentBooked.introduction"]({}, { locale })}
   </EmailText>
   <EmailHeadline>{channel}</EmailHeadline>
   <EmailText variant="md">
@@ -59,8 +54,8 @@
     {address.zip}
     {address.city}
   </EmailText>
-  <EmailButton href={cancelUrl}>{m["emails.appointmentBooked.action"]()}</EmailButton>
+  <EmailButton href={cancelUrl}>{m["emails.appointmentBooked.action"]({}, { locale })}</EmailButton>
   <EmailText variant="md" color="text-light">
-    {m["emails.appointmentBooked.reason"]()}
+    {m["emails.appointmentBooked.reason"]({}, { locale })}
   </EmailText>
 </EmailLayout>

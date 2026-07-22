@@ -1,6 +1,5 @@
 <script lang="ts">
   import { m } from "$i18n/messages";
-  import { setLocale } from "$i18n/runtime";
   import type { SupportedLocale } from "$lib/const/locales";
   import type { SelectUserEmail } from "$lib/server/email/email-service";
   import EmailButton from "./components/EmailButton.svelte";
@@ -18,22 +17,22 @@
     confirmUrl: string;
     expirationMinutes: number;
   } = $props();
-
-  $effect(() => {
-    setLocale(locale);
-  });
 </script>
 
-<EmailLayout>
-  <EmailText variant="md">{m["emails.greeting"]({ name: user.name })}</EmailText>
+<EmailLayout {locale}>
   <EmailText variant="md">
-    {m["emails.confirmation.introduction"]()}
+    {m["emails.greeting"]({ name: user.name }, { locale })}
   </EmailText>
-  <EmailButton href={confirmUrl}>{m["emails.confirmation.action"]()}</EmailButton>
   <EmailText variant="md">
-    {m["emails.confirmation.hint"]({ expirationMinutes })}
+    {m["emails.confirmation.introduction"]({}, { locale })}
+  </EmailText>
+  <EmailButton {locale} href={confirmUrl}>
+    {m["emails.confirmation.action"]({}, { locale })}
+  </EmailButton>
+  <EmailText variant="md">
+    {m["emails.confirmation.hint"]({ expirationMinutes }, { locale })}
   </EmailText>
   <EmailText variant="md" color="text-light">
-    {m["emails.confirmation.reason"]()}
+    {m["emails.confirmation.reason"]({}, { locale })}
   </EmailText>
 </EmailLayout>
