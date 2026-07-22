@@ -10,6 +10,7 @@ import {
   lt,
   lte,
   ne,
+  or,
   sql,
   type ExtractTablesWithRelations,
 } from "drizzle-orm";
@@ -178,14 +179,39 @@ export class AppointmentService {
       throw new ConflictError(ERRORS.APPOINTMENTS.AGENT_NOT_AVAILABLE);
     }
 
+    const withinSchedule = (slot: Date) => {
+      const iso = slot.toISOString();
+      // EXTRACT(DOW) -> 0 = Sunday … 6 = Saturday; remap to 0 = Monday … 6 = Sunday
+      const dayIndex = sql`((EXTRACT(DOW FROM ${iso}::timestamptz)::int + 6) % 7)`;
+
+      return and(
+        // weekday bit is set in the bitmap
+        sql`(${tenantSchema.agentAbsence.weekdays} & (1 << ${dayIndex})) <> 0`,
+        // time-of-day within [from, to]
+        sql`${iso}::timestamptz::time >= ${tenantSchema.agentAbsence.from}::time`,
+        sql`${iso}::timestamptz::time <= ${tenantSchema.agentAbsence.to}::time`,
+      );
+    };
+
     const overlappingAbsence = await tx
       .select({ id: tenantSchema.agentAbsence.id })
       .from(tenantSchema.agentAbsence)
       .where(
-        and(
-          eq(tenantSchema.agentAbsence.agentId, params.agentId),
-          lt(tenantSchema.agentAbsence.startDate, slotEnd),
-          gt(tenantSchema.agentAbsence.endDate, slotStart),
+        or(
+          and(
+            eq(tenantSchema.agentAbsence.type, "ONE_TIME"),
+            eq(tenantSchema.agentAbsence.agentId, params.agentId),
+            lt(tenantSchema.agentAbsence.startDate, slotEnd),
+            gt(tenantSchema.agentAbsence.endDate, slotStart),
+          ),
+          and(
+            eq(tenantSchema.agentAbsence.type, "RECURRING"),
+            eq(tenantSchema.agentAbsence.agentId, params.agentId),
+            lt(tenantSchema.agentAbsence.startDate, slotEnd),
+            gt(tenantSchema.agentAbsence.endDate, slotStart),
+            withinSchedule(slotStart),
+            withinSchedule(slotEnd),
+          ),
         ),
       )
       .limit(1);
