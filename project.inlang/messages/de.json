@@ -1087,7 +1087,7 @@
 			"subject": "E-Mail Adresse bestätigen",
 			"introduction": "willkommen bei unserem Terminbuchungsportal. Bitte bestätige Deine E-Mail Adresse.",
 			"action": "E-Mail Adresse bestätigen",
-			"hint": "Dieser Link ist nur {expirationMinutes} Minuten gültig und kann nur einmal verwendet werden.Du kannst unter dem Link oben jederzeit einen neuen Link anfordern.",
+			"hint": "Dieser Link ist nur {expirationMinutes} Minuten gültig und kann nur einmal verwendet werden. Du kannst unter dem Link oben jederzeit einen neuen Link anfordern.",
 			"reason": "Du erhältst diese E-Mail, weil jemand für Deine E-Mail Adresse ein Konto registriert hat."
 		},
 		"notification": {
@@ -1097,10 +1097,11 @@
 			"reason": "Du erhältst diese E-Mail, weil Du für einen Kanal Benachrichtigungen aktiviert hast."
 		},
 		"pinReset": {
-			"subject": "PIN erfolgreich geändert",
-			"introduction": "Sie haben erfolgreich Ihre PIN beim Terminbuchungsportal von {tenant} geändert und können sich ab sofort mit Ihrer PIN anmelden.",
-			"action": "Anmelden",
-			"reason": "Sie erhalten diese E-Mail, weil jemand für die PIN für Ihr Konto geändert hat."
+			"subject": "PIN für {tenant} zurücksetzen",
+			"introduction": "folgen Sie diesem Link, um Ihre PIN zu ändern:",
+			"action": "PIN setzen",
+			"hint": "Dieser Link ist nur {expirationMinutes} Minuten gültig.",
+			"reason": "Sie erhalten diese E-Mail, weil jemand eine PIN-Änderung angefragt hat."
 		}
 	},
 	"notifications": {
@@ -1156,7 +1157,7 @@
 		},
 		"pinReset": {
 			"title": "PIN Zurücksetzen",
-			"description": "Sendet eine E-Mail an einen Klienten, damit die PIN zurückgesetzt werden kann. Link ist 10 Minuten gültig.",
+			"description": "Sendet eine E-Mail an einen Klienten, damit die PIN zurückgesetzt werden kann. Link ist 60 Minuten gültig.",
 			"fields": {
 				"language": {
 					"placeholder": "Sprache wählen",

@@ -24,6 +24,7 @@
       <ResponsiveDialog
         id="pin-reset"
         title={m["clients.pinReset.title"]()}
+        description={m["clients.pinReset.description"]()}
         triggerHidden={false}
         triggerLabel={m["clients.pinReset.title"]()}
       >

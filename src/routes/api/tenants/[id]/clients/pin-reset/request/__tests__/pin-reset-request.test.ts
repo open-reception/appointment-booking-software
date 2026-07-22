@@ -97,15 +97,13 @@ describe("POST /api/tenants/[id]/clients/pin-reset/request", () => {
     } as any);
 
     expect(result.status).toBe(200);
-    const data = await result.json();
-    expect(data).toHaveProperty("resetUrl");
   });
 
   it("should return 400 for invalid email hash", async () => {
     const request = new Request("http://localhost/api", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ emailHash: "invalid" }),
+      body: JSON.stringify({ email: "hello@example.com", emailHash: "invalid" }),
     });
 
     const result = await POST({

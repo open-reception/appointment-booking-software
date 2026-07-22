@@ -1,4 +1,3 @@
-import { env } from "$env/dynamic/private";
 import { UniversalLogger } from "$lib/logger";
 import { sendPinResetEmail } from "$lib/server/email/email-service";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
@@ -165,10 +164,6 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
       expirationMinutes,
     );
 
-    // Construct reset URL
-    const baseUrl = env.PUBLIC_APP_URL || "http://localhost:5173";
-    const resetUrl = `${baseUrl}/reset-pin/${token}`;
-
     logger.debug("PIN reset token created for email", {
       tenantId,
       emailHash: validatedData.emailHash.slice(0, 8),
@@ -185,18 +180,19 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
         },
         tenant.tenantData,
         new URL(`https://${tenant.tenantData.domain}`),
+        token,
+        expirationMinutes,
       );
     } else {
       logger.warn("PIN reset email not sent - tenant data not available", {
         emailHash: validatedData.emailHash.slice(0, 8),
-        resetUrl,
+        tenantId,
       });
     }
 
     return json({
       message: "PIN reset token created - provide reset URL to client",
       emailHash: validatedData.emailHash.slice(0, 8),
-      resetUrl, // Return URL so staff can manually send it to client
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

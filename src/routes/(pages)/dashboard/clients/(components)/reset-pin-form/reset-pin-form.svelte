@@ -1,28 +1,27 @@
 <script lang="ts">
   import { m } from "$i18n/messages.js";
+  import { hashEmail } from "$lib/client/appointment-crypto";
   import * as Form from "$lib/components/ui/form";
   import { Input } from "$lib/components/ui/input";
   import * as Select from "$lib/components/ui/select";
   import { supportedLocales, translatedLocales } from "$lib/const/locales";
   import { tenants } from "$lib/stores/tenants";
-  import { derived } from "svelte/store";
   import { toast } from "svelte-sonner";
-  import { get } from "svelte/store";
+  import { derived, get } from "svelte/store";
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from ".";
-  import { hashEmail } from "$lib/client/appointment-crypto";
+  import { getLocale } from "$i18n/runtime";
 
   let { done }: { done: () => void } = $props();
 
   const tenantId = derived(tenants, ($t) => $t.currentTenant?.id ?? null);
-  const tenantLocales = get(tenants).currentTenant?.languages ?? [];
   const form = superForm(
     {
       tenant: get(tenantId),
       email: "",
       hashedEmail: "",
-      language: tenantLocales[0] ?? "en",
+      language: getLocale() as string,
     },
     {
       dataType: "json",
@@ -61,7 +60,7 @@
     <Form.Control>
       {#snippet children({ props })}
         <Form.Label>{m["form.email"]()}</Form.Label>
-        <Input {...props} bind:value={$formData.email} type="email" />
+        <Input {...props} bind:value={$formData.email} type="email" autocomplete="off" />
       {/snippet}
     </Form.Control>
     <Form.FieldErrors />
@@ -70,12 +69,7 @@
     <Form.Control>
       {#snippet children({ props })}
         <Form.Label>{m["staff.form.fields.language.title"]()}</Form.Label>
-        <Select.Root
-          type="single"
-          bind:value={$formData.language}
-          name={props.name}
-          onValueChange={(v) => ($formData.language = v)}
-        >
+        <Select.Root type="single" bind:value={$formData.language} name={props.name}>
           <Select.Trigger {...props} class="w-full">
             {$formData.language
               ? translatedLocales[$formData.language as keyof typeof translatedLocales]
