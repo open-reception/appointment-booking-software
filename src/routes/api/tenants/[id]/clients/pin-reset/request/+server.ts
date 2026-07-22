@@ -1,16 +1,19 @@
+import { env } from "$env/dynamic/private";
+import { UniversalLogger } from "$lib/logger";
+import { sendPinResetEmail } from "$lib/server/email/email-service";
+import { registerOpenAPIRoute } from "$lib/server/openapi";
+import { ClientPinResetService } from "$lib/server/services/client-pin-reset-service";
+import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
+import { NotFoundError, ValidationError } from "$lib/server/utils/errors";
+import { checkPermission } from "$lib/server/utils/permissions";
 import type { RequestHandler } from "@sveltejs/kit";
 import { json } from "@sveltejs/kit";
 import { z } from "zod";
-import { UniversalLogger } from "$lib/logger";
-import { ValidationError, NotFoundError } from "$lib/server/utils/errors";
-import { checkPermission } from "$lib/server/utils/permissions";
-import { ClientPinResetService } from "$lib/server/services/client-pin-reset-service";
-import { registerOpenAPIRoute } from "$lib/server/openapi";
-import { env } from "$env/dynamic/private";
 
 const logger = new UniversalLogger().setContext("ClientPinResetRequestAPI");
 
 const requestPinResetSchema = z.object({
+  email: z.email(),
   emailHash: z.string().min(64).max(64), // SHA-256 hash is 64 hex characters
   clientLanguage: z.enum(["de", "en"]).optional().default("de"),
 });
@@ -144,7 +147,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
     logger.debug("PIN reset request received", { tenantId, userId: locals.user?.id });
 
     // Check permissions - only admins and staff can request PIN reset
-    await checkPermission(locals, tenantId);
+    checkPermission(locals, tenantId);
 
     // Parse and validate request body
     const body = await request.json();
@@ -172,16 +175,23 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
       initiatedBy: locals.user?.id,
     });
 
-    // TODO: Send actual email once we have a way to get the client's email
-    // For now, we just return success and log the URL
-    // In a real implementation, you would:
-    // 1. Look up the client's email from somewhere (maybe pass it in the request)
-    // 2. Use sendClientPinResetEmail(clientEmail, tenant, resetUrl, validatedData.clientLanguage)
+    const tenant = await TenantAdminService.getTenantById(tenantId);
 
-    logger.warn("PIN reset email not sent - email address not available", {
-      emailHash: validatedData.emailHash.slice(0, 8),
-      resetUrl,
-    });
+    if (tenant.tenantData) {
+      await sendPinResetEmail(
+        {
+          email: validatedData.email,
+          language: validatedData.clientLanguage,
+        },
+        tenant.tenantData,
+        new URL(`https://${tenant.tenantData.domain}`),
+      );
+    } else {
+      logger.warn("PIN reset email not sent - tenant data not available", {
+        emailHash: validatedData.emailHash.slice(0, 8),
+        resetUrl,
+      });
+    }
 
     return json({
       message: "PIN reset token created - provide reset URL to client",

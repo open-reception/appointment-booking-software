@@ -160,6 +160,7 @@
 		"agents": "Akteure",
 		"channels": "Kanäle",
 		"absences": "Abwesenheiten",
+		"clients": "Klienten",
 		"account": "Konto",
 		"settings": "Einstellungen",
 		"documentation": "Dokumentation",
@@ -1152,6 +1153,19 @@
 				"NEW": "angefragt",
 				"CONFIRMED": "bestätigt"
 			}
+		},
+		"pinReset": {
+			"title": "PIN Zurücksetzen",
+			"description": "Sendet eine E-Mail an einen Klienten, damit die PIN zurückgesetzt werden kann. Link ist 10 Minuten gültig.",
+			"fields": {
+				"language": {
+					"placeholder": "Sprache wählen",
+					"description": "Wird in der E-Mail für das Zurücksetzen der PIN verwendet."
+				}
+			},
+			"action": "E-Mail senden",
+			"success": "E-Mail wurde gesendet",
+			"error": "E-Mail konnte nicht gesendet werden. E-Mail Adresse vtml. unbekannt/falsch."
 		}
 	}
 }
