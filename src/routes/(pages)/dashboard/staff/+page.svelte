@@ -23,6 +23,8 @@
   import { EditStaffMemberForm } from "./(components)/edit-staff-member-form";
   import { GrantAccessForm } from "./(components)/grant-access-form";
   import { roles } from "./(components)/utils";
+  import { MailPlus } from "@lucide/svelte";
+  import { ResendInviteForm } from "./(components)/resend-invite-form";
 
   const { data } = $props();
   let curItem: TStaff | null = $state(null);
@@ -95,10 +97,22 @@
                         type: "action",
                         icon: AccessIcon,
                         label: m["staff.access.action"](),
-                        isHidden: item.confirmationState === "ACCESS_GRANTED",
+                        isHidden:
+                          item.confirmationState === "ACCESS_GRANTED" ||
+                          item.confirmationState === "INVITED",
                         onClick: () => {
                           curItem = item;
                           openDialog("access");
+                        },
+                      },
+                      {
+                        type: "action",
+                        icon: MailPlus,
+                        label: m["staff.resendInvite.action"](),
+                        isHidden: item.confirmationState === "ACCESS_GRANTED",
+                        onClick: () => {
+                          curItem = item;
+                          openDialog("resendInvite");
                         },
                       },
                       {
@@ -159,6 +173,22 @@
                 entity={curItem}
                 done={() => {
                   closeDialog("access");
+                  curItem = null;
+                  invalidate(`app:staff-${tenantId}`);
+                }}
+              />
+            {/if}
+          </ResponsiveDialog>
+          <ResponsiveDialog
+            id="resendInvite"
+            title={m["staff.resendInvite.title"]()}
+            triggerHidden={true}
+          >
+            {#if curItem}
+              <ResendInviteForm
+                entity={curItem}
+                done={() => {
+                  closeDialog("resendInvite");
                   curItem = null;
                   invalidate(`app:staff-${tenantId}`);
                 }}
