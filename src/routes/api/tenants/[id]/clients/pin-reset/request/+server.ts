@@ -134,10 +134,6 @@ registerOpenAPIRoute("/tenants/{id}/clients/pin-reset/request", "POST", {
  * - Creates a reset token (60 minutes expiration)
  * - Sends email with reset link to client
  *
- * NOTE: This endpoint does NOT send an actual email yet, as we don't store
- * the client's email address. The email would need to be provided separately
- * or the practice needs to manually send the link to the client.
- * For now, this returns the token that can be used to construct a reset URL.
  */
 export const POST: RequestHandler = async ({ params, request, locals }) => {
   const tenantId = params.id!;
@@ -145,8 +141,14 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
   try {
     logger.debug("PIN reset request received", { tenantId, userId: locals.user?.id });
 
-    // Check permissions - only admins and staff can request PIN reset
+    // Check permissions
     checkPermission(locals, tenantId);
+
+    // Check if Tenant Admin or Staff Member
+    if (!locals.user || !["STAFF", "TENANT_ADMIN"].includes(locals.user.role)) {
+      logger.warn("Unauthorized user tried to reset pin", { user: locals.user?.id });
+      return json({ error: "Forbidden" }, { status: 403 });
+    }
 
     // Parse and validate request body
     const body = await request.json();
