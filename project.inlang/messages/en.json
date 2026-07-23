@@ -765,7 +765,7 @@
 		"general": {
 			"navItem": "Settings",
 			"title": "Account Settings",
-			"description": "Change your name."
+			"description": "Change your name and e-mail language."
 		},
 		"change-email": {
 			"navItem": "E-Mail Address",
@@ -775,7 +775,36 @@
 		"passkeys": {
 			"navItem": "Passkeys",
 			"title": "Manage Passkeys",
-			"description": "You can add up to three passkeys."
+			"description": "You can add up to three passkeys.",
+			"list": {
+				"loading": "Loading Passkeys",
+				"unnamedPasskey": "Unnamed Passkey",
+				"empty": "No Passkeys set",
+				"createdAt": "Created at: {createdAt}.",
+				"lastUsedAt": "Last used at: {lastUsedAt}."
+			},
+			"add": {
+				"title": "Add Passkey",
+				"description": "Add a Passkey to your account",
+				"action": "Add Passkey",
+				"success": "Passkey added",
+				"error": "Passkey could not be added"
+			},
+			"edit": {
+				"title": "Rename Passkey",
+				"description": "Rename it to something you will recognize",
+				"action": "Rename",
+				"success": "Passkey renamed",
+				"error": "Passkey could not be renamed"
+			},
+			"delete": {
+				"title": "Delete Passkey",
+				"description": "This action cannot be undone.",
+				"forbidden": "You cannot delete the last passkey in your account",
+				"action": "Delete",
+				"success": "Passkey deleted",
+				"error": "Passkey could not be deleted"
+			}
 		},
 		"change-passphrase": {
 			"navItem": "Passphrase",
@@ -872,6 +901,7 @@
 	},
 	"yes": "Yes",
 	"no": "No",
+	"unknown": "unknown",
 	"public": {
 		"links": {
 			"website": "Go to Website",

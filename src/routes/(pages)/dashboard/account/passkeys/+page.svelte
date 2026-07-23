@@ -2,9 +2,23 @@
   import { m } from "$i18n/messages";
   import { MaxPageWidth } from "$lib/components/layouts/max-page-width";
   import { SidebarLayout } from "$lib/components/layouts/sidebar-layout";
-  import { Headline } from "$lib/components/ui/typography";
+  import { List, ListItem } from "$lib/components/templates/list";
+  import { LoadingList } from "$lib/components/templates/loading";
+  import { openDialog, ResponsiveDialog } from "$lib/components/ui/responsive-dialog";
+  import { Headline, Text } from "$lib/components/ui/typography";
   import { ROUTES } from "$lib/const/routes";
+  import type { RedactedPasskeyHydrated } from "$lib/types/passkeys";
+  import { toDisplayDateTime } from "$lib/utils/datetime";
+  import { getLocalTimeZone } from "@internationalized/date";
+  import { Pen, PlusIcon, Trash2 } from "@lucide/svelte";
+
+  const { data } = $props();
+  let curItem: RedactedPasskeyHydrated | null = $state(null);
 </script>
+
+<svelte:head>
+  <title>{m["account.passkeys.title"]()} - OpenReception</title>
+</svelte:head>
 
 <SidebarLayout
   breakcrumbs={[
@@ -20,5 +34,101 @@
 >
   <MaxPageWidth maxWidth="md" class="flex flex-col gap-6">
     <Headline level="h1" style="h3">{m["account.passkeys.title"]()}</Headline>
+    {#await data.streamed.list}
+      <LoadingList title={m["account.passkeys.list.loading"]()} />
+    {:then items}
+      <div class="flex flex-col items-start gap-5">
+        <ResponsiveDialog
+          id="add"
+          title={m["account.passkeys.add.title"]()}
+          description={m["account.passkeys.add.description"]()}
+          triggerHidden={false}
+        >
+          {#snippet triggerLabel()}
+            <PlusIcon /> {m["account.passkeys.add.title"]()}
+          {/snippet}
+          SetupPasskeyForm?
+        </ResponsiveDialog>
+
+        {#if items.length > 0}
+          <List>
+            {#each items as item (item.id)}
+              <ListItem
+                title={item.deviceName || m["account.passkeys.list.unnamedPasskey"]()}
+                description={`${m["account.passkeys.list.createdAt"]({
+                  createdAt: item.createdAt
+                    ? toDisplayDateTime(item.createdAt, {
+                        year: "numeric",
+                        month: "numeric",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        timeZone: getLocalTimeZone(),
+                      })
+                    : m["unknown"](),
+                })} ${m["account.passkeys.list.lastUsedAt"]({
+                  lastUsedAt: item.lastUsedAt
+                    ? toDisplayDateTime(item.lastUsedAt, {
+                        year: "numeric",
+                        month: "numeric",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        timeZone: getLocalTimeZone(),
+                      })
+                    : m["unknown"](),
+                })}`}
+                actions={[
+                  {
+                    type: "action",
+                    icon: Pen,
+                    label: m["edit"](),
+                    onClick: () => {
+                      curItem = item;
+                      openDialog("edit");
+                    },
+                  },
+                  {
+                    type: "divider",
+                  },
+                  {
+                    type: "action",
+                    icon: Trash2,
+                    label: m["delete"](),
+                    isDestructive: true,
+                    onClick: () => {
+                      curItem = item;
+                      openDialog("delete");
+                    },
+                  },
+                ]}
+              />
+            {/each}
+          </List>
+          <ResponsiveDialog
+            id="edit"
+            title={m["account.passkeys.edit.title"]()}
+            description={m["account.passkeys.edit.description"]()}
+            triggerHidden={true}
+          >
+            {#if curItem}
+              Edit
+            {/if}
+          </ResponsiveDialog>
+          <ResponsiveDialog
+            id="delete"
+            title={m["account.passkeys.delete.title"]()}
+            description={m["account.passkeys.delete.description"]()}
+            triggerHidden={true}
+          >
+            {#if curItem}
+              Delete
+            {/if}
+          </ResponsiveDialog>
+        {:else}
+          <Text style="md">No passkeys found</Text>
+        {/if}
+      </div>
+    {/await}
   </MaxPageWidth>
 </SidebarLayout>

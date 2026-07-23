@@ -757,7 +757,7 @@
 		"general": {
 			"navItem": "Einstellungen",
 			"title": "Kontoeinstellungen",
-			"description": "Ändere Deinen Namen."
+			"description": "Ändere Deinen Namen oder die Sprache für E-Mails."
 		},
 		"change-email": {
 			"navItem": "E-Mail Adresse",
@@ -767,7 +767,36 @@
 		"passkeys": {
 			"navItem": "Passkeys",
 			"title": "Passkeys verwalten",
-			"description": "Du kannst bis zu drei Passkeys für Dein Konto hinzufügen."
+			"description": "Du kannst bis zu drei Passkeys für Dein Konto hinzufügen.",
+			"list": {
+				"loading": "Lade Passkeys",
+				"unnamedPasskey": "Unbenannter Passkey",
+				"empty": "Keine Passkeys hinterlegt",
+				"createdAt": "Erstellt am: {createdAt}.",
+				"lastUsedAt": "Erstellt am {lastUsedAt}."
+			},
+			"add": {
+				"title": "Passkey hinzufügen",
+				"description": "Füge Deinem Account einen Passkey hinzu",
+				"action": "Hinzufügen",
+				"success": "Passkey hinzugefügt",
+				"error": "Passkey konnte nicht hinzugefügt werden"
+			},
+			"edit": {
+				"title": "Passkey umbenennen",
+				"description": "Gib' Deinem Passkey einen Namen, den Du wieder erkennst",
+				"action": "Umbenennen",
+				"success": "Passkey umbenannt",
+				"error": "Passkey konnte nicht umbenannt werden"
+			},
+			"delete": {
+				"title": "Passkey löschen",
+				"description": "Diese Aktion kann nicht rückgängig gemacht werden.",
+				"forbidden": "Du kannst den letzten Passkey in Deinem Account nicht löschen",
+				"action": "Löschen",
+				"success": "Passkey gelöscht",
+				"error": "Passkey konnte nicht gelöscht werden"
+			}
 		},
 		"change-passphrase": {
 			"navItem": "Passphrase",
@@ -864,6 +893,7 @@
 	},
 	"yes": "Ja",
 	"no": "Nein",
+	"unknown": "unbekannt",
 	"public": {
 		"links": {
 			"website": "Webseite aufrufen",

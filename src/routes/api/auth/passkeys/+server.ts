@@ -6,6 +6,7 @@ import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { checkPermission } from "$lib/server/utils/permissions";
 import logger from "$lib/logger";
+import type { RedactedPasskey } from "$lib/types/passkeys";
 
 // Register OpenAPI documentation
 registerOpenAPIRoute("/auth/passkeys", "POST", {
@@ -80,6 +81,46 @@ registerOpenAPIRoute("/auth/passkeys", "POST", {
     },
   },
 });
+
+export const GET: RequestHandler = async ({ locals }) => {
+  const log = logger.setContext("API");
+
+  try {
+    if (!locals.user) {
+      throw new AuthenticationError();
+    }
+    checkPermission(locals, locals.user.tenantId, false, false);
+
+    const passkeys = await WebAuthnService.getUserPasskeys(locals.user.id);
+
+    const redactedPasskeys: RedactedPasskey[] = passkeys.map((it) => ({
+      id: it.id,
+      deviceName: it.deviceName,
+      createdAt: it.createdAt ? it.createdAt.toISOString() : null,
+      lastUsedAt: it.lastUsedAt ? it.lastUsedAt.toISOString() : null,
+    }));
+
+    log.debug("Returning user passkeys", {
+      userId: locals.user.id,
+      passkeys: redactedPasskeys,
+    });
+
+    return json(
+      {
+        passkeys: redactedPasskeys,
+      },
+      { status: 200 },
+    );
+  } catch (error) {
+    log.error("Getting passkey error:", JSON.stringify(error || "?"));
+
+    if (error instanceof BackendError) {
+      return error.toJson();
+    }
+
+    return json({ error: "Internal server error" }, { status: 500 });
+  }
+};
 
 export const POST: RequestHandler = async ({ request, locals, cookies, url }) => {
   const log = logger.setContext("API");
