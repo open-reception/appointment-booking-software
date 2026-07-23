@@ -151,7 +151,7 @@ export async function sendPinResetEmail(
       locale,
       user,
       tenant,
-      resetUri: `${generateBaseUrl(requestUrl)}/clients/reset-pin/${token}`,
+      resetUri: `${generateBaseUrl(requestUrl)}/set-pin/${token}`,
       expirationMinutes,
     },
   });

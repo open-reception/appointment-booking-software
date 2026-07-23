@@ -1166,7 +1166,14 @@
 			},
 			"action": "E-Mail senden",
 			"success": "E-Mail wurde gesendet",
-			"error": "E-Mail konnte nicht gesendet werden. E-Mail Adresse vtml. unbekannt/falsch."
+			"error": "E-Mail konnte nicht gesendet werden. E-Mail Adresse vtml. unbekannt/falsch.",
+			"page": {
+				"title": "PIN neu setzen",
+				"description": "Setzen Sie hier Ihre neue PIN.",
+				"action": "PIN setzen",
+				"success": "PIN neu gesetzt",
+				"error": "PIN konnte nicht neu gesetzt werden. Link ist evtl. schon abgelaufen."
+			}
 		}
 	}
 }

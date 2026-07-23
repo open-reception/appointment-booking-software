@@ -1174,7 +1174,14 @@
 			},
 			"action": "Send PIN-Reset",
 			"success": "PIN-Reset e-mail sent",
-			"error": "Could not send E-Mail. Address probably not listed/incorrect."
+			"error": "Could not send E-Mail. Address probably not listed/incorrect.",
+			"page": {
+				"title": "Set new PIN",
+				"description": "Set you new PIN here.",
+				"action": "Set PIN",
+				"success": "New PIN was set",
+				"error": "Could not set new PIN. Link may already have expired."
+			}
 		}
 	}
 }
