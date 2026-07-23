@@ -64,7 +64,7 @@
 
           return {
             tunnelId: tunnel.id,
-            encryptedTunnelKey: encryptedForNewStaff[0].encryptedTunnelKey,
+            encryptedTunnelKeys: encryptedForNewStaff.map((it) => it.encryptedTunnelKey),
           };
         }),
       );

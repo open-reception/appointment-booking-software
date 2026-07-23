@@ -56,8 +56,11 @@ registerOpenAPIRoute("/tenants/{id}/appointments/tunnels/add-staff-key-shares", 
                     description: "Tunnel ID to add key share for",
                   },
                   encryptedTunnelKey: {
-                    type: "string",
-                    description: "Tunnel key encrypted with staff member's public key",
+                    type: "array",
+                    items: {
+                      type: "string",
+                      description: "Tunnel key encrypted with staff member's public key",
+                    },
                   },
                 },
                 required: ["tunnelId", "encryptedTunnelKey"],
@@ -143,7 +146,9 @@ const requestSchema = z.object({
   keyShares: z.array(
     z.object({
       tunnelId: z.string().uuid("Invalid tunnel ID format"),
-      encryptedTunnelKey: z.string().min(1, "Encrypted tunnel key cannot be empty"),
+      encryptedTunnelKeys: z
+        .array(z.string().min(1, "Encrypted tunnel key cannot be empty"))
+        .min(1, "encryptedTunnelKeys list must hat at least one item"),
     }),
   ),
 });
@@ -267,7 +272,7 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
           newKeyShares.map((keyShare) => ({
             tunnelId: keyShare.tunnelId,
             userId: staffUserId,
-            encryptedTunnelKey: keyShare.encryptedTunnelKey,
+            encryptedTunnelKeys: keyShare.encryptedTunnelKeys,
           })),
         )
         .returning({

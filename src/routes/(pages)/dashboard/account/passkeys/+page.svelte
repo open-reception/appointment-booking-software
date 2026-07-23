@@ -47,7 +47,11 @@
           {#snippet triggerLabel()}
             <PlusIcon /> {m["account.passkeys.add.title"]()}
           {/snippet}
-          SetupPasskeyForm?
+          <ul>
+            <li>Do more or less what's done in setup passkey form</li>
+            <li>send it to POST /api/auth/passkeys</li>
+            <li>do more or less what grant access form does</li>
+          </ul>
         </ResponsiveDialog>
 
         {#if items.length > 0}
@@ -123,6 +127,24 @@
           >
             {#if curItem}
               Delete
+              <ul>
+                <li>Cannot delete last passkey (check be for this as well)</li>
+                <li>
+                  Delete
+                  <ul>
+                    <li>Remove from db</li>
+                    <li>Go through tunnels and remove this passkey from it</li>
+                    <ul>
+                      <li>
+                        On creation of a new client tunnel, also sve user passkeyId in
+                        client_tunnel_staff_key_share `// TODO: passkeyId`
+                      </li>
+                      <li>migration of already existing passkeys</li>
+                      <li>Delete from client_tunnel_staff_key_share where userId and passkeyId</li>
+                    </ul>
+                  </ul>
+                </li>
+              </ul>
             {/if}
           </ResponsiveDialog>
         {:else}

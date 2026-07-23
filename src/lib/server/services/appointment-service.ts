@@ -850,6 +850,7 @@ export class AppointmentService {
             tunnelId: clientData.tunnelId,
             userId: share.userId,
             encryptedTunnelKey: share.encryptedTunnelKey,
+            // TODO: passkeyId
           })),
         );
       }
