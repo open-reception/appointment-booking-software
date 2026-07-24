@@ -101,12 +101,21 @@
                     icon: Trash2,
                     label: m["delete"](),
                     isDestructive: true,
+                    isDisabled: data.passkeyId === item.id,
                     onClick: () => {
                       curItem = item;
                       openDialog("delete");
                     },
                   },
                 ]}
+                badges={data.passkeyId === item.id
+                  ? [
+                      {
+                        label: m["account.passkeys.list.current"](),
+                        variant: "outline",
+                      },
+                    ]
+                  : undefined}
               />
             {/each}
           </List>

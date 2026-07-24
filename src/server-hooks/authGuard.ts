@@ -31,6 +31,7 @@ export const authGuard: Handle = async ({ event, resolve }) => {
         sessionId: sessionData.sessionId,
         exp: sessionData.exp.valueOf(),
       },
+      passkeyId: sessionData.passkeyId,
     };
 
     switch (true) {

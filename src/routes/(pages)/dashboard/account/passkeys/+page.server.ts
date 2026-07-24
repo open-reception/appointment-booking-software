@@ -9,11 +9,9 @@ import { formSchema as editFormSchema } from "./(components)/edit-passkey-form";
 const log = logger.setContext(import.meta.filename);
 
 export const load = async (event) => {
-  const tenantId = event.locals.user?.tenantId;
-  event.depends(`app:passkeys-${tenantId}`);
-
-  if (!tenantId) {
-    log.error("User trying to access their passkeys, but has no tenantId");
+  const user = event.locals.user;
+  if (!user) {
+    log.error("User trying to access their passkeys, but has no user");
     redirect(302, ROUTES.LOGOUT);
   }
 
@@ -45,6 +43,7 @@ export const load = async (event) => {
     });
 
   return {
+    passkeyId: user.passkeyId,
     streamed: {
       list,
     },

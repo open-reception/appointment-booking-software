@@ -779,6 +779,7 @@
 			"list": {
 				"loading": "Loading Passkeys",
 				"unnamedPasskey": "Unnamed Passkey",
+				"current": "Current Session",
 				"empty": "No Passkeys set",
 				"createdAt": "Created at: {createdAt}.",
 				"lastUsedAt": "Last used at: {lastUsedAt}."
