@@ -2,15 +2,17 @@
   import { m } from "$i18n/messages";
   import { MaxPageWidth } from "$lib/components/layouts/max-page-width";
   import { SidebarLayout } from "$lib/components/layouts/sidebar-layout";
+  import EmptyState from "$lib/components/templates/empty-state/center-state.svelte";
   import { List, ListItem } from "$lib/components/templates/list";
   import { LoadingList } from "$lib/components/templates/loading";
+  import { Button } from "$lib/components/ui/button";
   import { closeDialog, openDialog, ResponsiveDialog } from "$lib/components/ui/responsive-dialog";
-  import { Headline, Text } from "$lib/components/ui/typography";
+  import { Headline } from "$lib/components/ui/typography";
   import { ROUTES } from "$lib/const/routes";
   import type { RedactedPasskeyHydrated } from "$lib/types/passkeys";
   import { toDisplayDateTime } from "$lib/utils/datetime";
   import { getLocalTimeZone } from "@internationalized/date";
-  import { Pen, PlusIcon, Trash2 } from "@lucide/svelte";
+  import { UserKey, Pen, PlusIcon, Trash2 } from "@lucide/svelte";
   import { EditPasskeyForm } from "./(components)/edit-passkey-form";
 
   const { data } = $props();
@@ -43,7 +45,7 @@
           id="add"
           title={m["account.passkeys.add.title"]()}
           description={m["account.passkeys.add.description"]()}
-          triggerHidden={false}
+          triggerHidden={items.length === 0}
         >
           {#snippet triggerLabel()}
             <PlusIcon /> {m["account.passkeys.add.title"]()}
@@ -164,7 +166,17 @@
             {/if}
           </ResponsiveDialog>
         {:else}
-          <Text style="md">No passkeys found</Text>
+          <div class="flex w-full flex-col items-center">
+            <EmptyState
+              Icon={UserKey}
+              headline={m["account.passkeys.list.empty.title"]()}
+              description={m["account.passkeys.list.empty.description"]()}
+            />
+            <Button size="lg" onclick={() => openDialog("add")}>
+              <PlusIcon />
+              {m["account.passkeys.add.title"]()}
+            </Button>
+          </div>
         {/if}
       </div>
     {/await}

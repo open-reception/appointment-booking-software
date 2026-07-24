@@ -772,9 +772,12 @@
 				"loading": "Lade Passkeys",
 				"unnamedPasskey": "Unbenannter Passkey",
 				"current": "Aktuelle Session",
-				"empty": "Keine Passkeys hinterlegt",
 				"createdAt": "Erstellt am: {createdAt}.",
-				"lastUsedAt": "Erstellt am {lastUsedAt}."
+				"lastUsedAt": "Erstellt am {lastUsedAt}.",
+				"empty": {
+					"title": "Keine Passkeys hinterlegt",
+					"description": "Du kannst bis zu 3 Passkeys hinterlgen"
+				}
 			},
 			"add": {
 				"title": "Passkey hinzufügen",
