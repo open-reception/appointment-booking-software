@@ -9,6 +9,74 @@ import logger from "$lib/logger";
 import type { RedactedPasskey } from "$lib/types/passkeys";
 
 // Register OpenAPI documentation
+registerOpenAPIRoute("/auth/passkeys", "GET", {
+  summary: "Get WebAuthn passkeys for user account",
+  description: "Allows authenticated users to get their WebAuthn keys",
+  tags: ["Authentication"],
+  responses: {
+    "200": {
+      description: "WebAuthn passkeys",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              id: { type: "string", description: "ID of the added passkey" },
+              deviceName: { type: "string", description: "Recognizable Name of the passkey" },
+              createdAt: {
+                type: "string",
+                description: "When this passkey was created. ISO-Date string",
+              },
+              lastUsedAt: {
+                type: "string",
+                description: "When this passkey was last used. ISO-Date string",
+              },
+            },
+            required: ["message", "passkeyId"],
+          },
+          example: {
+            passkeys: [
+              {
+                id: "passkey-id",
+                deviceName: "My Device",
+                createdAt: "2026-01-01T01:01:01.000Z",
+                lastUsedAt: "2026-01-01T01:01:01.000Z",
+              },
+            ],
+          },
+        },
+      },
+    },
+    "401": {
+      description: "Unauthorized",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+          example: { error: "User must be logged in to view their passkeys" },
+        },
+      },
+    },
+    "403": {
+      description: "Forbidden",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+          example: { error: "User is forbidden to access their passkeys" },
+        },
+      },
+    },
+    "500": {
+      description: "Internal server error",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+          example: { error: "Internal server error" },
+        },
+      },
+    },
+  },
+});
+
 registerOpenAPIRoute("/auth/passkeys", "POST", {
   summary: "Add additional WebAuthn passkey to user account",
   description: "Allows authenticated users to add additional WebAuthn keys to their accounts",
