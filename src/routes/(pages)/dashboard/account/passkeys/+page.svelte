@@ -4,13 +4,14 @@
   import { SidebarLayout } from "$lib/components/layouts/sidebar-layout";
   import { List, ListItem } from "$lib/components/templates/list";
   import { LoadingList } from "$lib/components/templates/loading";
-  import { openDialog, ResponsiveDialog } from "$lib/components/ui/responsive-dialog";
+  import { closeDialog, openDialog, ResponsiveDialog } from "$lib/components/ui/responsive-dialog";
   import { Headline, Text } from "$lib/components/ui/typography";
   import { ROUTES } from "$lib/const/routes";
   import type { RedactedPasskeyHydrated } from "$lib/types/passkeys";
   import { toDisplayDateTime } from "$lib/utils/datetime";
   import { getLocalTimeZone } from "@internationalized/date";
   import { Pen, PlusIcon, Trash2 } from "@lucide/svelte";
+  import { EditPasskeyForm } from "./(components)/edit-passkey-form";
 
   const { data } = $props();
   let curItem: RedactedPasskeyHydrated | null = $state(null);
@@ -116,7 +117,13 @@
             triggerHidden={true}
           >
             {#if curItem}
-              Edit
+              <EditPasskeyForm
+                entity={curItem}
+                done={() => {
+                  closeDialog("edit");
+                  curItem = null;
+                }}
+              />
             {/if}
           </ResponsiveDialog>
           <ResponsiveDialog
