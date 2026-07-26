@@ -12,6 +12,7 @@ import { eq, and, between, sql, or, inArray } from "drizzle-orm";
 import logger from "$lib/logger";
 import { z } from "zod";
 import { ValidationError } from "../utils/errors";
+import { WebAuthnService } from "../auth/webauthn-service";
 import { isValidTimeZone, toLocalTime, toLocalTimeIgnoringDst } from "../utils/timezone";
 
 const scheduleRequestSchema = z.object({
@@ -153,7 +154,12 @@ export class ScheduleService {
 
       // 3a. If staffUserId is provided, get staffKeyShares for all appointment tunnels
       let staffKeyShares: Record<string, string> = {};
-      if (request.staffUserId && appointments.length > 0) {
+      // Tunnel keys are wrapped per passkey; scope the lookup to the passkey the user most
+      // recently authenticated with (same definition getClientTunnels / key-shard use).
+      const recentPasskey = request.staffUserId
+        ? await WebAuthnService.getMostRecentPasskey(request.staffUserId)
+        : null;
+      if (request.staffUserId && recentPasskey && appointments.length > 0) {
         const tunnelIds = [...new Set(appointments.map((apt) => apt.tunnelId))];
         const keyShares = await db
           .select()
@@ -161,6 +167,7 @@ export class ScheduleService {
           .where(
             and(
               eq(tenantSchema.clientTunnelStaffKeyShare.userId, request.staffUserId),
+              eq(tenantSchema.clientTunnelStaffKeyShare.passkeyId, recentPasskey.id),
               inArray(tenantSchema.clientTunnelStaffKeyShare.tunnelId, tunnelIds),
             ),
           );

@@ -24,6 +24,7 @@ describe("Add Staff Key Shares API", () => {
         keyShares: [
           {
             tunnelId: mockTunnelId,
+            passkeyId: "passkey-abc",
             encryptedTunnelKey: "base64-encoded-encrypted-key",
           },
         ],
@@ -33,12 +34,14 @@ describe("Add Staff Key Shares API", () => {
       expect(Array.isArray(validRequest.keyShares)).toBe(true);
       expect(validRequest.keyShares.length).toBeGreaterThan(0);
       expect(validRequest.keyShares[0]).toHaveProperty("tunnelId");
+      expect(validRequest.keyShares[0]).toHaveProperty("passkeyId");
       expect(validRequest.keyShares[0]).toHaveProperty("encryptedTunnelKey");
     });
 
     it("should validate key share structure", () => {
       const keyShare = {
         tunnelId: mockTunnelId,
+        passkeyId: "passkey-abc",
         encryptedTunnelKey:
           "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
       };
@@ -46,6 +49,7 @@ describe("Add Staff Key Shares API", () => {
       expect(keyShare.tunnelId).toMatch(
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
       );
+      expect(typeof keyShare.passkeyId).toBe("string");
       expect(typeof keyShare.encryptedTunnelKey).toBe("string");
       expect(keyShare.encryptedTunnelKey.length).toBeGreaterThan(0);
 

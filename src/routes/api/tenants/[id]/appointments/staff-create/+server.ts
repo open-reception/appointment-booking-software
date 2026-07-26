@@ -30,6 +30,7 @@ const requestSchema = z
       .array(
         z.object({
           userId: z.string(),
+          passkeyId: z.string(),
           encryptedTunnelKey: z.string(),
         }),
       )
@@ -158,6 +159,7 @@ registerOpenAPIRoute("/tenants/{id}/appointments/staff-create", "POST", {
                 type: "object",
                 properties: {
                   userId: { type: "string", format: "uuid" },
+                  passkeyId: { type: "string" },
                   encryptedTunnelKey: { type: "string" },
                 },
               },

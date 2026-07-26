@@ -93,15 +93,22 @@ registerOpenAPIRoute("/auth/passkeys", "POST", {
               description: "WebAuthn passkey data",
               properties: {
                 id: { type: "string", description: "Credential ID from WebAuthn" },
-                publicKey: { type: "string", description: "Base64 encoded public key" },
-                counter: { type: "integer", description: "Signature counter", default: 0 },
+                attestationObject: {
+                  type: "string",
+                  description:
+                    "Base64 encoded WebAuthn attestation object (contains the public key)",
+                },
+                clientDataJSON: {
+                  type: "string",
+                  description: "Base64 encoded WebAuthn client data JSON",
+                },
                 deviceName: {
                   type: "string",
                   description: "Device name for identification",
                   example: "iPhone 15",
                 },
               },
-              required: ["id", "publicKey"],
+              required: ["id", "attestationObject", "clientDataJSON"],
             },
           },
           required: ["passkey"],
@@ -206,11 +213,17 @@ export const POST: RequestHandler = async ({ request, locals, cookies, url }) =>
       throw new ValidationError("Missing registration challenge");
     }
 
-    // Validate required fields
+    // Validate required fields. The public key is NOT sent by the client: it is extracted from
+    // the attestation object during verifyRegistration below. The client must therefore provide
+    // the raw WebAuthn registration response (attestationObject + clientDataJSON).
     if (!body.passkey) {
       throw new ValidationError("passkey is required");
-    } else if (!body.passkey.id || !body.passkey.publicKey) {
-      throw new ValidationError("Passkey must include id and publicKey");
+    } else if (
+      !body.passkey.id ||
+      !body.passkey.attestationObject ||
+      !body.passkey.clientDataJSON
+    ) {
+      throw new ValidationError("Passkey must include id, attestationObject and clientDataJSON");
     }
 
     log.debug("Adding additional passkey to user", {

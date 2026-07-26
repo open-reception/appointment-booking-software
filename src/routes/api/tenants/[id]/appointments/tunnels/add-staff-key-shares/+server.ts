@@ -55,15 +55,16 @@ registerOpenAPIRoute("/tenants/{id}/appointments/tunnels/add-staff-key-shares", 
                     format: "uuid",
                     description: "Tunnel ID to add key share for",
                   },
+                  passkeyId: {
+                    type: "string",
+                    description: "Passkey the tunnel key was wrapped for",
+                  },
                   encryptedTunnelKey: {
-                    type: "array",
-                    items: {
-                      type: "string",
-                      description: "Tunnel key encrypted with staff member's public key",
-                    },
+                    type: "string",
+                    description: "Tunnel key encrypted with the passkey's public key",
                   },
                 },
-                required: ["tunnelId", "encryptedTunnelKey"],
+                required: ["tunnelId", "passkeyId", "encryptedTunnelKey"],
               },
               description: "Array of tunnel key shares to add (minimum 1 item)",
             },
@@ -143,14 +144,15 @@ registerOpenAPIRoute("/tenants/{id}/appointments/tunnels/add-staff-key-shares", 
 
 const requestSchema = z.object({
   staffUserId: z.string().uuid("Invalid staff user ID format"),
-  keyShares: z.array(
-    z.object({
-      tunnelId: z.string().uuid("Invalid tunnel ID format"),
-      encryptedTunnelKeys: z
-        .array(z.string().min(1, "Encrypted tunnel key cannot be empty"))
-        .min(1, "encryptedTunnelKeys list must hat at least one item"),
-    }),
-  ),
+  keyShares: z
+    .array(
+      z.object({
+        tunnelId: z.string().uuid("Invalid tunnel ID format"),
+        passkeyId: z.string().min(1, "Passkey ID cannot be empty"),
+        encryptedTunnelKey: z.string().min(1, "Encrypted tunnel key cannot be empty"),
+      }),
+    )
+    .min(1, "keyShares list must have at least one item"),
 });
 
 export const POST: RequestHandler = async ({ params, locals, request }) => {
@@ -220,13 +222,23 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
       throw new ValidationError(`Invalid or inactive tunnel IDs: ${invalidTunnelIds.join(", ")}`);
     }
 
+    // A key share is unique per (tunnel, passkey): the same user can hold several passkeys,
+    // each with its own wrapped copy of the tunnel key. Deduplicate on that composite key so
+    // that adding a further passkey does not get skipped just because the user already has
+    // shares from an earlier passkey.
+    const shareKey = (ks: { tunnelId: string; passkeyId: string }) =>
+      `${ks.tunnelId}:${ks.passkeyId}`;
+
     const existingKeyShares = await db
-      .select({ tunnelId: clientTunnelStaffKeyShare.tunnelId })
+      .select({
+        tunnelId: clientTunnelStaffKeyShare.tunnelId,
+        passkeyId: clientTunnelStaffKeyShare.passkeyId,
+      })
       .from(clientTunnelStaffKeyShare)
       .where(eq(clientTunnelStaffKeyShare.userId, staffUserId));
 
-    const existingKeyShareTunnelIds = new Set(existingKeyShares.map((ks) => ks.tunnelId));
-    const duplicateKeyShares = keyShares.filter((ks) => existingKeyShareTunnelIds.has(ks.tunnelId));
+    const existingKeyShareKeys = new Set(existingKeyShares.map(shareKey));
+    const duplicateKeyShares = keyShares.filter((ks) => existingKeyShareKeys.has(shareKey(ks)));
 
     if (duplicateKeyShares.length > 0) {
       log.warn("Some key shares already exist", {
@@ -236,7 +248,7 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
       });
     }
 
-    const newKeyShares = keyShares.filter((ks) => !existingKeyShareTunnelIds.has(ks.tunnelId));
+    const newKeyShares = keyShares.filter((ks) => !existingKeyShareKeys.has(shareKey(ks)));
 
     const ensureAccessGranted = async () => {
       await centralDb
@@ -272,7 +284,8 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
           newKeyShares.map((keyShare) => ({
             tunnelId: keyShare.tunnelId,
             userId: staffUserId,
-            encryptedTunnelKeys: keyShare.encryptedTunnelKeys,
+            passkeyId: keyShare.passkeyId,
+            encryptedTunnelKey: keyShare.encryptedTunnelKey,
           })),
         )
         .returning({

@@ -38,6 +38,7 @@ const requestSchema = z.object({
   staffKeyShares: z.array(
     z.object({
       userId: z.string(),
+      passkeyId: z.string(),
       encryptedTunnelKey: z.string(),
     }),
   ),
@@ -194,12 +195,16 @@ registerOpenAPIRoute("/tenants/{id}/appointments/create-new-client", "POST", {
                     format: "uuid",
                     description: "Staff member's user ID",
                   },
+                  passkeyId: {
+                    type: "string",
+                    description: "Passkey whose public key the tunnel key was wrapped for",
+                  },
                   encryptedTunnelKey: {
                     type: "string",
-                    description: "Tunnel key encrypted with staff member's public key",
+                    description: "Tunnel key encrypted with the passkey's public key",
                   },
                 },
-                required: ["userId", "encryptedTunnelKey"],
+                required: ["userId", "passkeyId", "encryptedTunnelKey"],
               },
               description: "Tunnel key shares for staff members",
             },

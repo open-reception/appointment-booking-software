@@ -20,6 +20,13 @@ vi.mock("$lib/logger", () => ({
   },
 }));
 
+vi.mock("../../auth/webauthn-service", () => ({
+  WebAuthnService: {
+    // Staff key shares are scoped to the caller's most recently used passkey.
+    getMostRecentPasskey: vi.fn().mockResolvedValue({ id: "passkey-123", lastUsedAt: new Date() }),
+  },
+}));
+
 // Import after mocking
 import { ScheduleService, type ScheduleRequest } from "../schedule-service";
 import { getTenantDb } from "../../db";

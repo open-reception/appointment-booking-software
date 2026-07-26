@@ -35,6 +35,13 @@ vi.mock("../notification-service", () => ({
   },
 }));
 
+vi.mock("../../auth/webauthn-service", () => ({
+  WebAuthnService: {
+    // getClientTunnels scopes staff key shares to the caller's most recently used passkey.
+    getMostRecentPasskey: vi.fn().mockResolvedValue({ id: "passkey-123", lastUsedAt: new Date() }),
+  },
+}));
+
 const mockAppointment = {
   id: "appointment-123",
   tunnelId: "tunnel-123",
@@ -77,6 +84,7 @@ const mockClientTunnelData = {
   staffKeyShares: [
     {
       userId: "staff-123",
+      passkeyId: "passkey-123",
       encryptedTunnelKey: "encrypted-tunnel-key",
     },
   ],
