@@ -139,8 +139,8 @@
 	"logout": {
 		"title": "Logout",
 		"success": {
-			"title": "You are logged out.",
-			"description": "You are logged-out."
+			"title": "Have a good day",
+			"description": "You are now logged out."
 		},
 		"error": {
 			"title": "Logout failed",
@@ -765,7 +765,15 @@
 		"general": {
 			"navItem": "Settings",
 			"title": "Account Settings",
-			"description": "Change your name and e-mail language."
+			"description": "Change your name and e-mail language.",
+			"language": {
+				"title": "E-Mail Language",
+				"placeholder": "Select a language",
+				"hint": "OpenReception will send e-mails in this language to you"
+			},
+			"action": "Save changes",
+			"success": "Account Settings saved",
+			"error": "Account Settings could not be saved"
 		},
 		"change-email": {
 			"navItem": "E-Mail Address",

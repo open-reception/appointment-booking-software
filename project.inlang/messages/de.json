@@ -131,7 +131,7 @@
 	"logout": {
 		"title": "Abmelden",
 		"success": {
-			"title": "Du wurdest abgemeldet.",
+			"title": "Bis bald",
 			"description": "Du wurdest abgemeldet."
 		},
 		"error": {
@@ -757,7 +757,15 @@
 		"general": {
 			"navItem": "Einstellungen",
 			"title": "Kontoeinstellungen",
-			"description": "Ändere Deinen Namen oder die Sprache für E-Mails."
+			"description": "Ändere Deinen Namen oder die Sprache für E-Mails.",
+			"language": {
+				"title": "E-Mail Sprache",
+				"placeholder": "Wähle eine Sprache",
+				"hint": "OpenReception sendet E-Mails in dieser Sprache an Dich"
+			},
+			"action": "Änderungen speichern",
+			"success": "Konto-Einstellungen gespeichert",
+			"error": "Konto-Einstellungen konnten nicht gespeichert werden"
 		},
 		"change-email": {
 			"navItem": "E-Mail Adresse",

@@ -1,4 +1,5 @@
 import { browser } from "$app/environment";
+import type { SupportedLocale } from "$lib/const/locales";
 import type { UserRole } from "$lib/server/auth/authorization-service";
 import { writable } from "svelte/store";
 
@@ -17,6 +18,7 @@ export interface AuthState {
     email: string;
     name: string;
     role: UserRole;
+    language: SupportedLocale;
     // The currently selected tenant
     tenantId?: string | null;
   };
