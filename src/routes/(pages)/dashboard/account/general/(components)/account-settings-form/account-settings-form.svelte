@@ -3,7 +3,7 @@
   import * as Form from "$lib/components/ui/form";
   import { Input } from "$lib/components/ui/input";
   import * as Select from "$lib/components/ui/select";
-  import { supportedLocales, translatedLocales } from "$lib/const/locales";
+  import { supportedLocales, translatedLocales, type SupportedLocale } from "$lib/const/locales";
   import { auth } from "$lib/stores/auth";
   import { untrack } from "svelte";
   import { toast } from "svelte-sonner";
@@ -15,41 +15,48 @@
   const form = superForm(
     {
       name: untrack(() => account?.name || ""),
-      language: untrack(() => account?.language) as string,
+      language: untrack(() => account?.language as string),
     },
     {
       dataType: "json",
       validators: zodClient(formSchema),
       onResult: async (event) => {
         if (event.result.type === "success") {
-          if (account) {
-            auth.setUser({
-              ...account,
-              name: event.result.data?.form.data.name,
-              language: event.result.data?.form.data.language,
-            });
-          }
           toast.success(m["account.general.success"]());
         } else if (event.result.type === "failure") {
           toast.error(m["account.general.error"]());
         }
         isSubmitting = false;
       },
+      onUpdated: ({ form }) => {
+        if (account) {
+          auth.setUser({
+            ...account,
+            name: form.data.name,
+            language: form.data.language as SupportedLocale,
+          });
+        }
+      },
       onSubmit: () => (isSubmitting = true),
     },
   );
 
-  $effect(() => {
-    // Fixes hard reload of page resulting in empty form
-    if (!$formData.name && account?.name) {
-      $formData.name = account.name;
-      $formData.language = account.language;
-    }
-  });
-
   let isSubmitting = $state(false);
 
-  const { form: formData, enhance } = form;
+  const { form: formData, enhance, reset } = form;
+
+  $effect(() => {
+    if (account) {
+      untrack(() =>
+        reset({
+          data: {
+            name: account.name,
+            language: account.language,
+          },
+        }),
+      );
+    }
+  });
 </script>
 
 {#if account}

@@ -13,17 +13,19 @@ export interface PasskeyAuthData {
 export interface AuthState {
   isAuthenticated: boolean;
   refreshPromise: Promise<Response> | null;
-  user?: {
-    id: string;
-    email: string;
-    name: string;
-    role: UserRole;
-    language: SupportedLocale;
-    // The currently selected tenant
-    tenantId?: string | null;
-  };
+  user?: AuthStateUser;
   passkeyAuthData?: PasskeyAuthData;
 }
+
+export type AuthStateUser = {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  language: SupportedLocale;
+  // The currently selected tenant
+  tenantId?: string | null;
+};
 
 function createAuthStore() {
   const store = writable<AuthState>({

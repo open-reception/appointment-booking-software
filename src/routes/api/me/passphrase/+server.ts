@@ -4,27 +4,30 @@
 
 import { logger } from "$lib/logger";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
+import { challengeThrottleService } from "$lib/server/services/challenge-throttle";
 import { UserService } from "$lib/server/services/user-service";
 import {
   AuthenticationError,
+  AuthorizationError,
   BackendError,
   InternalError,
   logError,
   ValidationError,
 } from "$lib/server/utils/errors";
+import { hashPassphrase, verifyPassphrase } from "$lib/server/utils/passphrase";
 import type { RequestHandler } from "@sveltejs/kit";
 import { json } from "@sveltejs/kit";
 import { z } from "zod";
 
 const requestSchema = z.object({
-  name: z.string().min(2).max(50).optional(),
-  language: z.enum(["de", "en"]).optional(),
+  passphrase: z.string().min(30).max(100).optional(),
+  newPassphrase: z.string().min(30).max(100),
 });
 
 // Register OpenAPI documentation for DELETE
-registerOpenAPIRoute("/me", "PUT", {
-  summary: "Update current account",
-  description: "Allows a staff member to update their current account settings.",
+registerOpenAPIRoute("/me/passphrase", "PUT", {
+  summary: "Update current account passphrase",
+  description: "Allows a global admins to update their passphrase.",
   tags: ["Staff", "Account"],
   requestBody: {
     description: "Account data",
@@ -33,13 +36,13 @@ registerOpenAPIRoute("/me", "PUT", {
         schema: {
           type: "object",
           properties: {
-            name: {
+            passphrase: {
               type: "string",
-              description: "Name of the staff member",
+              description: "Current passphrase",
             },
-            language: {
+            newPassphrase: {
               type: "string",
-              description: "ISO 639-1 Code",
+              description: "New passphrase",
             },
           },
         },
@@ -48,21 +51,12 @@ registerOpenAPIRoute("/me", "PUT", {
   },
   responses: {
     "200": {
-      description: "Account settings changed",
+      description: "Passphrase changed",
       content: {
         "application/json": {
           schema: {
             type: "object",
-            properties: {
-              name: {
-                type: "string",
-                example: "John Doe",
-              },
-              language: {
-                type: "string",
-                example: "en",
-              },
-            },
+            properties: {},
           },
         },
       },
@@ -83,6 +77,14 @@ registerOpenAPIRoute("/me", "PUT", {
         },
       },
     },
+    "403": {
+      description: "Forbidden. This account cannot set a passphrase",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
     "500": {
       description: "Internal server error",
       content: {
@@ -95,33 +97,46 @@ registerOpenAPIRoute("/me", "PUT", {
 });
 
 export const PUT: RequestHandler = async ({ request, locals }) => {
-  const log = logger.setContext("API.Me");
+  const log = logger.setContext("API.Me.Passphrase");
 
   try {
     if (!locals.user) {
       throw new AuthenticationError("Unauthorized");
     }
 
+    if (locals.user.role !== "GLOBAL_ADMIN") {
+      throw new AuthorizationError("This user cannot set a passphrase");
+    }
+
     const body = await request.json();
     const updateData = requestSchema.parse(body);
 
-    log.debug("Staff member updating their account", {
+    const user = await UserService.getUserByEmail(locals.user.email);
+    // Check passphrase, if user currently has a passphrase set
+    if (user.passphraseHash) {
+      const isPassphraseValid = await verifyPassphrase(user.passphraseHash || "", body.passphrase);
+      if (!isPassphraseValid) {
+        await challengeThrottleService.recordFailedAttempt(user.email, "passphrase");
+        return json({ error: "Invalid passphrase" }, { status: 401 });
+      }
+      // Clear throttle on successful passphrase check
+      await challengeThrottleService.clearThrottle(user.email, "passphrase");
+    }
+
+    log.debug("User setting new passphrase", {
       userId: locals.user.id,
-      updateData,
     });
 
-    const user = await UserService.updateUser(locals.user.id, updateData);
+    const passphraseHash = await hashPassphrase(updateData.newPassphrase);
+    await UserService.updateUser(locals.user.id, { passphraseHash });
 
-    log.debug("User updated", {
+    log.debug("User passphrase updated", {
       userId: locals.user.id,
     });
 
-    return json({
-      name: user.name,
-      language: user.language,
-    });
+    return json({});
   } catch (error) {
-    logError(log)("Error updating user", error);
+    logError(log)("Error updating user passphrase", error);
 
     if (error instanceof BackendError) {
       return error.toJson();

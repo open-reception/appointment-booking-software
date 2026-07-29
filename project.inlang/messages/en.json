@@ -64,6 +64,7 @@
 		"errors": {
 			"email": "Invalid format",
 			"passphrase": "Must be at least 30 characters long",
+			"passphraseMismatch": "Does not match the new passphrase",
 			"noPassAtAll": "Either passphrase or passkey is required",
 			"bothPassSet": "Only one of passphrase or passkey should be provided",
 			"name": "Must be at least 2 characters",
@@ -821,7 +822,17 @@
 		"change-passphrase": {
 			"navItem": "Passphrase",
 			"title": "Change Passphrase",
-			"description": "Global Admins can set strong passphrases as a backup login method."
+			"description": "Global Admins can set strong passphrases as a backup login method.",
+			"currentPassphrase": "Current Passphrase",
+			"newPassphrase": "New Passphrase",
+			"repeatedPassphrase": "New Passphrase (repeat)",
+			"action": "Change Passphrase",
+			"success": "Passphrase changed",
+			"errors": {
+				"notAGlobalAdmin": "You are now allowed to add a passphrase",
+				"passphraseIncorrect": "Current Passphrase is incorrect",
+				"unknown": "Passphrase could not be updated"
+			}
 		}
 	},
 	"staff": {

@@ -49,6 +49,7 @@
 		"errors": {
 			"email": "Ungültiges Format",
 			"passphrase": "Muss mindestens 30 Zeichen lang sein",
+			"passphraseMismatch": "Ist nicht mit dem Passphrase identisch",
 			"noPassAtAll": "Either passphrase or passkey is required",
 			"bothPassSet": "Nur Passphrase oder Passkey darf gesetzt sein",
 			"name": "Muss mindestens 2 Zeichen lang sein",
@@ -813,7 +814,17 @@
 		"change-passphrase": {
 			"navItem": "Passphrase",
 			"title": "Change Passphrase",
-			"description": "Globale Admins können einen Passphrase als Backup-Methode verwenden."
+			"description": "Globale Admins können einen Passphrase als Backup-Methode verwenden.",
+			"currentPassphrase": "Aktueller Passphrase",
+			"newPassphrase": "Neuer Passphrase",
+			"repeatedPassphrase": "Neuer Passphrase (Wiederholung)",
+			"action": "Passphrase ändern",
+			"success": "Passphrase geändert",
+			"errors": {
+				"notAGlobalAdmin": "Du darfst keinen Passphrase einrichten",
+				"passphraseIncorrect": "Aktueller Passphrase falsch",
+				"unknown": "Passphrase konnte nicht geändert werden"
+			}
 		}
 	},
 	"staff": {
