@@ -14,6 +14,7 @@
   import { getLocalTimeZone } from "@internationalized/date";
   import { UserKey, Pen, PlusIcon, Trash2 } from "@lucide/svelte";
   import { EditPasskeyForm } from "./(components)/edit-passkey-form";
+  import { AddPasskeyForm } from "./(components)/add-passkey-form";
 
   const { data } = $props();
   let curItem: RedactedPasskeyHydrated | null = $state(null);
@@ -50,11 +51,7 @@
           {#snippet triggerLabel()}
             <PlusIcon /> {m["account.passkeys.add.title"]()}
           {/snippet}
-          <ul>
-            <li>Do more or less what's done in setup passkey form</li>
-            <li>send it to POST /api/auth/passkeys</li>
-            <li>do more or less what grant access form does</li>
-          </ul>
+          <AddPasskeyForm />
         </ResponsiveDialog>
 
         {#if items.length > 0}

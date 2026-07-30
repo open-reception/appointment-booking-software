@@ -85,7 +85,9 @@
 		"pin": "PIN",
 		"pinHint": "Speichere Deine PIN an einem sicheren Ort, z.B. in einem Passwort-Manager.",
 		"locale": "Sprache",
-		"localePlaceholder": "Sprache wählen"
+		"localePlaceholder": "Sprache wählen",
+		"deviceName": "Passkey Name",
+		"deviceNameHint": "Something you will recognize"
 	},
 	"login": {
 		"or": "Oder",

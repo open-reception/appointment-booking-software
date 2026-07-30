@@ -9,6 +9,8 @@ import { formSchema as editFormSchema } from "./(components)/edit-passkey-form";
 const log = logger.setContext(import.meta.filename);
 
 export const load = async (event) => {
+  event.depends(`app:account-passkeys`);
+
   const user = event.locals.user;
   if (!user) {
     log.error("User trying to access their passkeys, but has no user");

@@ -101,7 +101,9 @@
 		"pin": "PIN",
 		"pinHint": "Save your PIN in a secure place, like a password-manager.",
 		"locale": "Language",
-		"localePlaceholder": "Select Language"
+		"localePlaceholder": "Select Language",
+		"deviceName": "Passkey Name",
+		"deviceNameHint": "Etwas, das Du wiedererkennen wirst"
 	},
 	"login": {
 		"or": "Or",
