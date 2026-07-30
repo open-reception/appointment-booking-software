@@ -65,7 +65,7 @@
       <Form.Control>
         {#snippet children({ props })}
           <Form.Label>{m["form.name"]()}</Form.Label>
-          <Input {...props} bind:value={$formData.name} type="name" />
+          <Input {...props} bind:value={$formData.name} type="name" autocomplete="off" />
         {/snippet}
       </Form.Control>
       <Form.FieldErrors />
