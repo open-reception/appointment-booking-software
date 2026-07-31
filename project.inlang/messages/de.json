@@ -810,7 +810,7 @@
 			},
 			"delete": {
 				"title": "Passkey löschen",
-				"description": "Diese Aktion kann nicht rückgängig gemacht werden.",
+				"description": "Diese Aktion kann nicht rückgängig gemacht werden. Tippe {name} um den Passkey zu löschen.",
 				"forbidden": "Du kannst den letzten Passkey in Deinem Account nicht löschen",
 				"action": "Löschen",
 				"success": "Passkey gelöscht",

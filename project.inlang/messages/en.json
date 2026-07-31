@@ -818,7 +818,7 @@
 			},
 			"delete": {
 				"title": "Delete Passkey",
-				"description": "This action cannot be undone.",
+				"description": "This action cannot be undone. Type {name} to delete this passkey.",
 				"forbidden": "You cannot delete the last passkey in your account",
 				"action": "Delete",
 				"success": "Passkey deleted",

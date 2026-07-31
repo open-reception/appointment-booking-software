@@ -15,6 +15,8 @@
   import { UserKey, Pen, PlusIcon, Trash2, OctagonX } from "@lucide/svelte";
   import { EditPasskeyForm } from "./(components)/edit-passkey-form";
   import { AddPasskeyForm } from "./(components)/add-passkey-form";
+  import { DeletePasskeyForm } from "./(components)/delete-passkey-form";
+  import { invalidate } from "$app/navigation";
 
   const { data } = $props();
   let curItem: RedactedPasskeyHydrated | null = $state(null);
@@ -108,7 +110,7 @@
                     icon: Trash2,
                     label: m["delete"](),
                     isDestructive: true,
-                    isDisabled: data.passkeyId === item.id,
+                    isDisabled: data.passkeyId === item.id || items.lenght <= 1,
                     onClick: () => {
                       curItem = item;
                       openDialog("delete");
@@ -145,29 +147,17 @@
           <ResponsiveDialog
             id="delete"
             title={m["account.passkeys.delete.title"]()}
-            description={m["account.passkeys.delete.description"]()}
             triggerHidden={true}
           >
             {#if curItem}
-              Delete
-              <ul>
-                <li>Cannot delete last passkey (check be for this as well)</li>
-                <li>
-                  Delete
-                  <ul>
-                    <li>Remove from db</li>
-                    <li>Go through tunnels and remove this passkey from it</li>
-                    <ul>
-                      <li>
-                        On creation of a new client tunnel, also sve user passkeyId in
-                        client_tunnel_staff_key_share `// TODO: passkeyId`
-                      </li>
-                      <li>migration of already existing passkeys</li>
-                      <li>Delete from client_tunnel_staff_key_share where userId and passkeyId</li>
-                    </ul>
-                  </ul>
-                </li>
-              </ul>
+              <DeletePasskeyForm
+                id={curItem.id}
+                deviceName={curItem.deviceName || ""}
+                done={() => {
+                  curItem = null;
+                  invalidate("app:account-passkeys");
+                }}
+              />
             {/if}
           </ResponsiveDialog>
         {:else}

@@ -5,6 +5,7 @@ import { fail, redirect, type Actions } from "@sveltejs/kit";
 import { superValidate } from "sveltekit-superforms";
 import { zod4 as zod } from "sveltekit-superforms/adapters";
 import { formSchema as editFormSchema } from "./(components)/edit-passkey-form";
+import { formSchema as deleteFormSchema } from "./(components)/delete-passkey-form";
 
 const log = logger.setContext(import.meta.filename);
 
@@ -66,7 +67,10 @@ export const actions: Actions = {
 
     if (!form.data.passkeyId) {
       log.error("User trying to edit a passkey, but has no passkeyId");
-      redirect(302, ROUTES.LOGOUT);
+      return fail(400, {
+        form: { ...form, data: { ...form.data } },
+        error: "Missing passkeyId",
+      });
     }
 
     const resp = await event.fetch(`/api/auth/passkeys/${form.data.passkeyId}`, {
@@ -92,6 +96,55 @@ export const actions: Actions = {
       }
       return fail(400, {
         form: { ...form, data: { ...form.data } },
+        error,
+      });
+    }
+  },
+  delete: async (event) => {
+    if (!event.locals.user) {
+      log.error("User trying to delete a passkeys, but has no user");
+      redirect(302, ROUTES.LOGOUT);
+    }
+
+    const form = await superValidate(event, zod(deleteFormSchema));
+
+    if (!form.valid) {
+      log.error("Delete passkey form is not valid", { errors: form.errors });
+      return fail(400, {
+        form: { ...form, data: { ...form.data } },
+        error: "Form is not valid",
+      });
+    }
+
+    if (!form.data.passkeyId) {
+      log.error("User trying to delete a passkey, but has no passkeyId");
+      return fail(400, {
+        form: { ...form, data: { ...form.data } },
+        error: "Missing passkeyId",
+      });
+    }
+
+    const resp = await event.fetch(`/api/auth/passkeys/${form.data.passkeyId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ tenantId: event.locals.user.tenantId }),
+      credentials: "same-origin",
+    });
+
+    if (resp.status < 400) {
+      return { form };
+    } else {
+      let error = "Unknown error";
+      try {
+        const body = await resp.json();
+        error = body.error;
+      } catch (e) {
+        log.error("Failed to parse delete passkey error response", { error: e });
+      }
+      return fail(resp.status, {
+        form,
         error,
       });
     }

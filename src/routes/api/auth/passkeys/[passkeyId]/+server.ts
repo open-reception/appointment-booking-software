@@ -12,6 +12,9 @@ import {
 } from "$lib/server/utils/errors";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
+import { getTenantDb } from "$lib/server/db";
+import { clientTunnelStaffKeyShare } from "$lib/server/db/tenant-schema";
+import { and, eq } from "drizzle-orm";
 
 // Register OpenAPI documentation for DELETE
 registerOpenAPIRoute("/auth/passkeys/{passkeyId}", "PUT", {
@@ -256,7 +259,7 @@ export async function PUT({ params, request, locals }: RequestEvent) {
   }
 }
 
-export async function DELETE({ params, locals }: RequestEvent) {
+export async function DELETE({ params, locals, request }: RequestEvent) {
   const log = logger.setContext("API.DeletePasskey");
   const { passkeyId } = params;
 
@@ -270,10 +273,16 @@ export async function DELETE({ params, locals }: RequestEvent) {
       throw new ValidationError("Passkey ID is required");
     }
 
-    const userId = locals.user.id;
+    const body = await request.json();
+    const tenantId = body.tenantId;
+    if (!tenantId) {
+      throw new ValidationError("tenantId is required");
+    }
 
+    const userId = locals.user.id;
     log.debug("Attempting to delete passkey", {
       passkeyId,
+      tenantId: body.tenantId,
       userId,
     });
 
@@ -304,6 +313,21 @@ export async function DELETE({ params, locals }: RequestEvent) {
 
     if (!deletedPasskey) {
       throw new NotFoundError("Failed to delete passkey");
+    }
+
+    // Delete tenant-specific data (client tunnel key shares)
+    const tenantDb = await getTenantDb(tenantId);
+    const keyShareDeletionResult = await tenantDb
+      .delete(clientTunnelStaffKeyShare)
+      .where(
+        and(
+          eq(clientTunnelStaffKeyShare.userId, userId),
+          eq(clientTunnelStaffKeyShare.passkeyId, passkeyId),
+        ),
+      );
+
+    if (!keyShareDeletionResult) {
+      throw new NotFoundError("Failed to delete passkey key shares");
     }
 
     log.info("Passkey deleted successfully", {
