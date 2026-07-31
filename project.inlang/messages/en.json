@@ -791,8 +791,8 @@
 				"loading": "Loading Passkeys",
 				"unnamedPasskey": "Unnamed Passkey",
 				"current": "Current Session",
-				"createdAt": "Created at: {createdAt}.",
-				"lastUsedAt": "Last used at: {lastUsedAt}.",
+				"createdAt": "Created: {createdAt}.",
+				"lastUsedAt": "Last used: {lastUsedAt}.",
 				"empty": {
 					"title": "No Passkeys set",
 					"description": "You can add up to 3 Passkeys"
@@ -927,6 +927,7 @@
 	"yes": "Yes",
 	"no": "No",
 	"unknown": "unknown",
+	"never": "never",
 	"public": {
 		"links": {
 			"website": "Go to Website",

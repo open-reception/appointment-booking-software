@@ -80,7 +80,7 @@
                         minute: "2-digit",
                         timeZone: getLocalTimeZone(),
                       })
-                    : m["unknown"](),
+                    : m["never"](),
                 })}`}
                 actions={[
                   {

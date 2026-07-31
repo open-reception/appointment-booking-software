@@ -9,6 +9,7 @@
   import type { PasskeyState } from "$lib/components/ui/passkey/state.svelte";
   import logger from "$lib/logger";
   import { auth } from "$lib/stores/auth";
+  import { tenants } from "$lib/stores/tenants";
   import { getPasskeyFormData } from "$lib/utils/passkey";
   import { untrack } from "svelte";
   import { toast } from "svelte-sonner";
@@ -16,9 +17,10 @@
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { superForm } from "sveltekit-superforms/client";
   import { formSchema } from "./schema";
+  import { staffCrypto } from "$lib/stores/staff-crypto";
 
   let account = $derived($auth.user);
-  let tenantId: string | undefined = $state();
+  let tenantId: string | undefined = $derived($tenants.currentTenant?.id);
   let passkeyId: string | undefined = $state();
   let prfOutput: ArrayBuffer | undefined = $state();
   let kyberKeyPair: { publicKey: Uint8Array; privateKey: Uint8Array } | undefined = $state();
@@ -135,22 +137,37 @@
       }
 
       const respBody = await resp.json();
-      console.log("respBody", respBody);
 
       await storeStaffKeyPairForNewPasskey();
 
-      // TODO: Add later with respBody
-      //   const crypto = $staffCrypto.crypto;
-      //   if (crypto) {
-      //     crypto.rewrapAllTunnelsForNewPasskey();
-      //   } else {
-      //     throw Error(`Adding passkey failed. Error: staffCrypto is undefined`);
-      //   }
-      toast.success(m["setupPasskey.success"]());
+      if (!tenantId) {
+        throw "Tenant ID not present anymore";
+      }
+
+      if (!account) {
+        throw "Staff ID not present anymore";
+      }
+
+      if (!kyberKeyPair) {
+        throw "Keypair not present";
+      }
+
+      const crypto = $staffCrypto.crypto;
+      if (crypto) {
+        crypto.rewrapAllTunnelsForNewPasskey(
+          tenantId,
+          account.id,
+          respBody.passkeyId,
+          btoa(String.fromCharCode(...kyberKeyPair.publicKey)),
+        );
+      } else {
+        throw Error(`Adding passkey failed. Error: staffCrypto is undefined`);
+      }
+      toast.success(m["account.passkeys.add.success"]());
       invalidate("app:account-passkeys");
     } catch (error) {
       console.error("Unable to add passkey", error);
-      toast.error(m["setupPasskey.error"]());
+      toast.error(m["account.passkeys.add.error"]());
     } finally {
       isSubmitting = false;
     }
@@ -171,46 +188,46 @@
     </Form.Description>
   </Form.Field>
   <div>
-    <Form.Field {form} name="email">
+    <Form.Field {form} name="email" class="hidden">
       <Form.Control>
         {#snippet children({ props })}
-          <Input {...props} bind:value={$formData.email} type="email" />
+          <Input {...props} bind:value={$formData.email} type="hidden" />
         {/snippet}
       </Form.Control>
       <Form.FieldErrors />
     </Form.Field>
-    <Form.Field {form} name="userId" class="">
+    <Form.Field {form} name="userId" class="hidden">
       <Form.Control>
         {#snippet children({ props })}
-          <Input {...props} bind:value={$formData.userId} type="text" />
+          <Input {...props} bind:value={$formData.userId} type="hidden" />
         {/snippet}
       </Form.Control>
     </Form.Field>
-    <Form.Field {form} name="id" class="">
+    <Form.Field {form} name="id" class="hidden">
       <Form.Control>
         {#snippet children({ props })}
-          <Input {...props} bind:value={$formData.id} type="text" />
+          <Input {...props} bind:value={$formData.id} type="hidden" />
         {/snippet}
       </Form.Control>
     </Form.Field>
-    <Form.Field {form} name="attestationObjectBase64" class="">
+    <Form.Field {form} name="attestationObjectBase64" class="hidden">
       <Form.Control>
         {#snippet children({ props })}
-          <Input {...props} bind:value={$formData.attestationObjectBase64} type="text" />
+          <Input {...props} bind:value={$formData.attestationObjectBase64} type="hidden" />
         {/snippet}
       </Form.Control>
     </Form.Field>
-    <Form.Field {form} name="clientDataJSONBase64" class="">
+    <Form.Field {form} name="clientDataJSONBase64" class="hidden">
       <Form.Control>
         {#snippet children({ props })}
-          <Input {...props} bind:value={$formData.clientDataJSONBase64} type="text" />
+          <Input {...props} bind:value={$formData.clientDataJSONBase64} type="hidden" />
         {/snippet}
       </Form.Control>
     </Form.Field>
-    <Form.Field {form} name="challenge" class="">
+    <Form.Field {form} name="challenge" class="hidden">
       <Form.Control>
         {#snippet children({ props })}
-          <Input {...props} bind:value={$formData.challenge} type="text" />
+          <Input {...props} bind:value={$formData.challenge} type="hidden" />
         {/snippet}
       </Form.Control>
     </Form.Field>

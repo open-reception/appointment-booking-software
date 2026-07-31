@@ -783,8 +783,8 @@
 				"loading": "Lade Passkeys",
 				"unnamedPasskey": "Unbenannter Passkey",
 				"current": "Aktuelle Session",
-				"createdAt": "Erstellt am: {createdAt}.",
-				"lastUsedAt": "Erstellt am {lastUsedAt}.",
+				"createdAt": "Erstellt: {createdAt}.",
+				"lastUsedAt": "Zuletzt verwendet: {lastUsedAt}.",
 				"empty": {
 					"title": "Keine Passkeys hinterlegt",
 					"description": "Du kannst bis zu 3 Passkeys hinterlgen"
@@ -919,6 +919,7 @@
 	"yes": "Ja",
 	"no": "Nein",
 	"unknown": "unbekannt",
+	"never": "niemals",
 	"public": {
 		"links": {
 			"website": "Webseite aufrufen",
