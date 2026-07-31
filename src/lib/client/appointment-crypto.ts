@@ -49,7 +49,13 @@
 
 import type { BootstrapChallengeResponse, BootstrapVerifyResponse } from "$lib/types/appointment";
 import { OptimizedArgon2 } from "$lib/crypto/hashing";
-import { AESCrypto, BufferUtils, KyberCrypto, ShamirSecretSharing } from "$lib/crypto/utils";
+import {
+  AESCrypto,
+  BufferUtils,
+  encryptedDataToString,
+  KyberCrypto,
+  ShamirSecretSharing,
+} from "$lib/crypto/utils";
 import type { ClientTunnelResponse } from "$lib/server/services/appointment-service";
 import { pinThrottleStore } from "$lib/stores/pin-throttle";
 
@@ -64,7 +70,7 @@ interface StaffKeyPair {
   privateKey: Uint8Array;
 }
 
-interface EncryptedData {
+export interface EncryptedData {
   encryptedPayload: string;
   iv: string;
   authTag: string;
@@ -90,6 +96,7 @@ interface StaffPublicKey {
 
 export interface DecryptedAppointment {
   id: string;
+  channelId?: string;
   appointmentDate: string;
   status: string;
   name: string;
@@ -103,6 +110,7 @@ interface MyAppointmentsResponse {
     id: string;
     appointmentDate: string;
     status: string;
+    channelId: string;
     encryptedData: EncryptedData;
   }>;
 }
@@ -246,7 +254,9 @@ export class UnifiedAppointmentCrypto {
   async cancelAppointmentByClient(opts: {
     tenant: string;
     appointment: string;
+    name: string;
     email: string;
+    phone?: string;
   }): Promise<void> {
     try {
       if (this.pin === null) {
@@ -305,6 +315,13 @@ export class UnifiedAppointmentCrypto {
             emailHash: this.emailHash,
             challengeId: challengeData.challengeId,
             challengeResponse: decryptedChallenge,
+            encryptedPayload: encryptedDataToString(
+              await this.encryptData({
+                name: opts.name,
+                email: opts.email,
+                phone: opts.phone,
+              }),
+            ),
           }),
         },
       );
@@ -709,6 +726,7 @@ export class UnifiedAppointmentCrypto {
             id: encryptedAppt.id,
             appointmentDate: encryptedAppt.appointmentDate,
             status: encryptedAppt.status,
+            channelId: encryptedAppt.channelId,
             ...decryptedData,
           });
         } catch (error) {
@@ -787,6 +805,16 @@ export class UnifiedAppointmentCrypto {
     encryptedAppointment: EncryptedData;
     staffKeyShare: string;
   }): Promise<AppointmentData> {
+    return this.decryptStaff<AppointmentData>({
+      data: encryptedData.encryptedAppointment,
+      staffKeyShare: encryptedData.staffKeyShare,
+    });
+  }
+
+  /**
+   * Decrypt appointment data for staff members
+   */
+  async decryptStaff<T>(encryptedData: { data: EncryptedData; staffKeyShare: string }): Promise<T> {
     if (!this.staffAuthenticated || !this.staffKeyPair) {
       throw new Error("Staff not authenticated");
     }
@@ -848,9 +876,9 @@ export class UnifiedAppointmentCrypto {
       );
 
       // 5. Now decrypt the actual appointment data
-      const appointmentIv = this.hexToUint8Array(encryptedData.encryptedAppointment.iv);
-      const ciphertext = this.hexToUint8Array(encryptedData.encryptedAppointment.encryptedPayload);
-      const authTag = this.hexToUint8Array(encryptedData.encryptedAppointment.authTag);
+      const appointmentIv = this.hexToUint8Array(encryptedData.data.iv);
+      const ciphertext = this.hexToUint8Array(encryptedData.data.encryptedPayload);
+      const authTag = this.hexToUint8Array(encryptedData.data.authTag);
 
       // Combine ciphertext and auth tag for Web Crypto API
       const encrypted = new Uint8Array(ciphertext.length + authTag.length);
@@ -1137,6 +1165,13 @@ export class UnifiedAppointmentCrypto {
     data: AppointmentData | AppointmentDataByStaff,
     tunnelKey?: CryptoKey,
   ): Promise<EncryptedData> {
+    return this.encryptData<AppointmentData | AppointmentDataByStaff>(data, tunnelKey);
+  }
+
+  /**
+   * Encrypt data with the tunnel key
+   */
+  private async encryptData<T>(data: T, tunnelKey?: CryptoKey): Promise<EncryptedData> {
     const usedTunnelKey = tunnelKey ?? this.tunnelKey;
     if (!usedTunnelKey) throw new Error("No tunnel key available");
 

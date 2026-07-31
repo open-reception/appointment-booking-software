@@ -554,26 +554,6 @@ export class AppointmentService {
       );
     }
 
-    // Create notifications for all staff members in the channel
-    const notificationService = await NotificationService.forTenant(this.tenantId);
-
-    // Create notifications (async, don't wait)
-    notificationService
-      .createNotification({
-        channelId,
-        type: "APPOINTMENT_CANCELLED",
-        metaData: {
-          appointmentId,
-        },
-      })
-      .catch((error) => {
-        log.error("Failed to create channel notifications", {
-          appointmentId,
-          channelId,
-          error: String(error),
-        });
-      });
-
     log.info("Appointment deleted by staff successfully", {
       appointmentId,
       channelId,
@@ -1121,6 +1101,7 @@ export class AppointmentService {
     emailHash: string,
     challengeId: string,
     challengeResponse: string,
+    encryptedPayload?: string,
   ): Promise<void> {
     const log = logger.setContext("AppointmentService");
     log.debug("Client deleting appointment with authentication", {
@@ -1237,6 +1218,10 @@ export class AppointmentService {
       type: "APPOINTMENT_CANCELLED",
       metaData: {
         appointmentId,
+        channelId: appointment.channelId,
+        appointmentDate: appointment.appointmentDate,
+        tunnelId: appointment.tunnelId,
+        encryptedPayload,
       },
     });
 

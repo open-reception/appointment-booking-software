@@ -490,6 +490,7 @@
 	},
 	"channels": {
 		"title": "Kanäle",
+		"singular": "Kanal",
 		"empty": {
 			"title": "Bisher keine Kanäle",
 			"description": "Kanäle sind Ihre Möglichkeit, verschiedene Arten von Terminen zu sammeln"
@@ -1113,16 +1114,13 @@
 		"empty": "Keine Benachrichtigungen vorhanden",
 		"types": {
 			"APPOINTMENT_REQUESTED": {
-				"title": "Neue Terminanfrage",
-				"description": "Ein neuer Termin wurde in {channel} angefragt."
+				"title": "Neue Terminanfrage"
 			},
 			"APPOINTMENT_CONFIRMED": {
-				"title": "Termin bestätigt",
-				"description": "Terminanfrage in {channel} wurde bestätigt."
+				"title": "Termin bestätigt"
 			},
 			"APPOINTMENT_CANCELLED": {
-				"title": "Termin abgesagt",
-				"description": "Der Klient hat den Termin in {channel} abgesagt."
+				"title": "Termin abgesagt"
 			}
 		}
 	},
