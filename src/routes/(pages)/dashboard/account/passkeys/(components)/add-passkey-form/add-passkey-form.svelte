@@ -61,6 +61,7 @@
       email: $formData.email,
       userId: $formData.userId,
       setPasskeyFieldState: (v) => ($passkeyLoading = v),
+      isAdditionalPasskey: true,
     });
 
     if (!data) {

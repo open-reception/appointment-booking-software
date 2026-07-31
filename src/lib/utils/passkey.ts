@@ -50,7 +50,7 @@ export function base64ToArrayBuffer(base64: string) {
   return bytes.buffer;
 }
 
-export const fetchChallenge = async (email: string, userId?: string) => {
+export const fetchChallenge = async (email: string, userId?: string, omitCookieUpdate = false) => {
   const resp = await fetch("/api/auth/challenge", {
     method: "POST",
     headers: {
@@ -59,6 +59,7 @@ export const fetchChallenge = async (email: string, userId?: string) => {
     body: JSON.stringify({
       email,
       ...(userId ? { userId } : {}),
+      omitCookieUpdate,
     }),
   });
 
@@ -357,10 +358,12 @@ export const getPasskeyFormData = async ({
   email,
   userId,
   setPasskeyFieldState,
+  isAdditionalPasskey,
 }: {
   email: string;
   userId: string;
   setPasskeyFieldState: (newState: PasskeyState) => void;
+  isAdditionalPasskey: boolean;
 }) => {
   setPasskeyFieldState("loading");
 
@@ -426,11 +429,10 @@ export const getPasskeyFormData = async ({
     // Uses email as salt for multi-passkey support
     let prfOutput: ArrayBuffer | undefined;
     try {
-      const prfChallenge = await fetchChallenge(email, userId);
+      const prfChallenge = await fetchChallenge(email, userId, true);
       if (!prfChallenge) {
         throw new Error("Failed to fetch PRF challenge");
       }
-
       const prfOutputResp = await getPRFOutputAfterRegistration({
         passkeyId: passkeyResp.id,
         rpId: prfChallenge.id,

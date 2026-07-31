@@ -171,12 +171,16 @@ async function validateRegistrationBootstrapSession(input: {
   }
 }
 
-function parseChallengeRequest(body: unknown): { requestEmail: string; requestUserId?: string } {
+function parseChallengeRequest(body: unknown): {
+  requestEmail: string;
+  requestUserId?: string;
+  omitCookieUpdate?: boolean;
+} {
   if (!body || typeof body !== "object") {
     throw new ValidationError("Valid email is required");
   }
 
-  const parsedBody = body as { email?: unknown; userId?: unknown };
+  const parsedBody = body as { email?: unknown; userId?: unknown; omitCookieUpdate?: unknown };
   const requestEmail =
     typeof parsedBody.email === "string" ? normalizeEmail(parsedBody.email) : undefined;
 
@@ -186,13 +190,15 @@ function parseChallengeRequest(body: unknown): { requestEmail: string; requestUs
 
   const requestUserId = typeof parsedBody.userId === "string" ? parsedBody.userId : undefined;
 
-  return { requestEmail, requestUserId };
+  const omitCookieUpdate =
+    typeof parsedBody.omitCookieUpdate === "boolean" ? parsedBody.omitCookieUpdate : undefined;
+  return { requestEmail, requestUserId, omitCookieUpdate };
 }
 
 export const POST: RequestHandler = async ({ request, cookies, url }) => {
   try {
     const body = await request.json();
-    const { requestEmail, requestUserId } = parseChallengeRequest(body);
+    const { requestEmail, requestUserId, omitCookieUpdate } = parseChallengeRequest(body);
 
     logger.debug("Generating WebAuthn challenge", { email: requestEmail, requestUserId });
 
@@ -264,14 +270,16 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
         maxAge: 60 * 5, // 5 minutes
       });
     }
-    // For login and registration, store the challenge for signature verification
-    cookies.set("webauthn-challenge", challenge, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-      path: "/",
-      maxAge: 60 * 5, // 5 minutes
-    });
+    if (!omitCookieUpdate) {
+      // For login and registration, store the challenge for signature verification
+      cookies.set("webauthn-challenge", challenge, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "strict",
+        path: "/",
+        maxAge: 60 * 5, // 5 minutes
+      });
+    }
 
     let allowCredentials: Array<{
       id: string;
