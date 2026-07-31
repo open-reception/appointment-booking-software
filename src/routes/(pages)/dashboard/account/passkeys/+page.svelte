@@ -12,7 +12,7 @@
   import type { RedactedPasskeyHydrated } from "$lib/types/passkeys";
   import { toDisplayDateTime } from "$lib/utils/datetime";
   import { getLocalTimeZone } from "@internationalized/date";
-  import { UserKey, Pen, PlusIcon, Trash2 } from "@lucide/svelte";
+  import { UserKey, Pen, PlusIcon, Trash2, OctagonX } from "@lucide/svelte";
   import { EditPasskeyForm } from "./(components)/edit-passkey-form";
   import { AddPasskeyForm } from "./(components)/add-passkey-form";
 
@@ -51,7 +51,15 @@
           {#snippet triggerLabel()}
             <PlusIcon /> {m["account.passkeys.add.title"]()}
           {/snippet}
-          <AddPasskeyForm />
+          {#if items.length >= 3}
+            <EmptyState
+              Icon={OctagonX}
+              headline={m["account.passkeys.add.maxReached.title"]()}
+              description={m["account.passkeys.add.maxReached.description"]()}
+            />
+          {:else}
+            <AddPasskeyForm />
+          {/if}
         </ResponsiveDialog>
 
         {#if items.length > 0}

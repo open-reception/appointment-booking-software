@@ -795,7 +795,11 @@
 				"description": "Füge Deinem Account einen Passkey hinzu",
 				"action": "Hinzufügen",
 				"success": "Passkey hinzugefügt",
-				"error": "Passkey konnte nicht hinzugefügt werden"
+				"error": "Passkey konnte nicht hinzugefügt werden",
+				"maxReached": {
+					"title": "Maximum erreicht",
+					"description": "Du hast bereits die maximale Anzahl von Passkeys für Deinen Account erreicht"
+				}
 			},
 			"edit": {
 				"title": "Passkey umbenennen",
