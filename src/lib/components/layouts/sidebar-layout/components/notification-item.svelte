@@ -67,11 +67,15 @@
 
       const data = stringToEncryptedData(item.metaData?.encryptedPayload);
       if (data) {
-        // decrypted = await $staffCrypto.crypto.decryptStaff({
-        //   data,
-        //   // TODO: Add proper staffKeyShare
-        //   staffKeyShare: "",
-        // });
+        // GET /api/tenants/[id]/appointments/tunnels/[tunnelId]/staff-key-share/+server.ts
+
+        // Select currently in use passkey staff-key-share OR the first one for now
+
+        decrypted = await $staffCrypto.crypto.decryptStaff({
+          data,
+          // TODO: Add proper staffKeyShare
+          staffKeyShare: "",
+        });
       }
     }
   };
