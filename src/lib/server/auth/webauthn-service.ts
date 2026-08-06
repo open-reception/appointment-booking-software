@@ -1,6 +1,6 @@
 import { centralDb as db } from "$lib/server/db";
 import { userPasskey } from "$lib/server/db/central-schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, isNotNull } from "drizzle-orm";
 import { randomBytes } from "node:crypto";
 import { UniversalLogger } from "$lib/logger";
 import { verifyAuthenticationResponse, verifyRegistrationResponse } from "@simplewebauthn/server";
@@ -309,7 +309,7 @@ export class WebAuthnService {
         lastUsedAt: userPasskey.lastUsedAt,
       })
       .from(userPasskey)
-      .where(eq(userPasskey.userId, userId))
+      .where(and(eq(userPasskey.userId, userId), isNotNull(userPasskey.lastUsedAt)))
       .orderBy(desc(userPasskey.lastUsedAt))
       .limit(1);
 
