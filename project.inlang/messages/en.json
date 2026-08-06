@@ -1008,6 +1008,11 @@
 				"reserved": "reserved"
 			}
 		},
+		"moveAppointment": {
+			"action": "Move appointment",
+			"success": "Appointment moved successfully",
+			"error": "Failed to move appointment"
+		},
 		"cancelAppointment": {
 			"confirm": "Are you sure you want to cancel this appointment?",
 			"action": "Cancel Appointment",

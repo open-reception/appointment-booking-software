@@ -29,15 +29,19 @@
 
 <script lang="ts">
   import { m } from "$i18n/messages";
+  import type { ListItemAction } from "$lib/components/templates/list/list-item.svelte";
   import { buttonVariants, type ButtonVariant } from "$lib/components/ui/button";
+  import { Button } from "$lib/components/ui/button/index.js";
   import * as Dialog from "$lib/components/ui/dialog";
   import * as Drawer from "$lib/components/ui/drawer";
+  import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
+  import { cn } from "$lib/utils";
+  import { Ellipsis, X } from "@lucide/svelte";
   import { onDestroy, type Snippet } from "svelte";
   import type { HTMLAttributes } from "svelte/elements";
   import { MediaQuery, SvelteMap } from "svelte/reactivity";
   import { HorizontalPagePadding } from "../page";
   import { ScrollArea } from "../scroll-area";
-  import { cn } from "$lib/utils";
 
   let {
     id,
@@ -46,6 +50,7 @@
     description,
     triggerHidden = false,
     triggerVariant = "default",
+    actions,
     children,
   }: HTMLAttributes<HTMLDivElement> & {
     id: string;
@@ -54,9 +59,11 @@
     title: string;
     description?: string;
     triggerVariant?: ButtonVariant;
+    actions?: ListItemAction[];
   } = $props();
 
   let open = $state(false);
+  let actionsOpen = $state(false);
 
   $effect(() => {
     const unsubscribe = responsiveDialogs.subscribe((value) => {
@@ -89,6 +96,43 @@
   const isDesktop = new MediaQuery("(min-width: 768px)");
 </script>
 
+{#snippet actionsSnippet()}
+  {#if actions && actions.length > 0}
+    <DropdownMenu.Root bind:open={actionsOpen}>
+      <DropdownMenu.Trigger>
+        {#snippet child({ props })}
+          <Button variant="ghost" size="sm" {...props} aria-label={m["components.openMenu"]()}>
+            <Ellipsis />
+          </Button>
+        {/snippet}
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Content class="w-50" align="end">
+        <DropdownMenu.Group>
+          <DropdownMenu.Label>{m["actions"]()}</DropdownMenu.Label>
+          <DropdownMenu.Separator />
+          {#each actions as action, index (`action-${index}`)}
+            {#if action.type === "action" && action.isHidden !== true}
+              <DropdownMenu.Item
+                onSelect={action.onClick}
+                class={cn(
+                  action.isDestructive ? "text-destructive data-highlighted:text-destructive" : "",
+                )}
+              >
+                <action.icon
+                  class={cn("mr-2 size-4", action.isDestructive ? "text-destructive" : "")}
+                />
+                {action.label}
+              </DropdownMenu.Item>
+            {:else if action.type === "divider"}
+              <DropdownMenu.Separator />
+            {/if}
+          {/each}
+        </DropdownMenu.Group>
+      </DropdownMenu.Content>
+    </DropdownMenu.Root>
+  {/if}
+{/snippet}
+
 {#if isDesktop.current}
   <Dialog.Root bind:open>
     {#if !triggerHidden && triggerLabel}
@@ -101,15 +145,28 @@
       </Dialog.Trigger>
     {/if}
     <Dialog.Content
-      class="max-h-[95vh] sm:max-w-106.25"
+      class={cn(
+        "max-h-[95vh] sm:max-w-106.25",
+        actions && actions.length > 0 && "[&>button:last-child]:hidden", // hides default close button
+      )}
       onOpenAutoFocus={(e) => e.preventDefault()}
     >
-      <Dialog.Header>
-        <Dialog.Title class={cn(description ? "" : "-mb-1")}>{title}</Dialog.Title>
-        {#if description}
-          <Dialog.Description>
-            {description}
-          </Dialog.Description>
+      <Dialog.Header class="flex flex-row items-start justify-between gap-2">
+        <div class="flex flex-col gap-1 text-left">
+          <Dialog.Title class={cn(description ? "" : "-mb-1")}>{title}</Dialog.Title>
+          {#if description}
+            <Dialog.Description>
+              {description}
+            </Dialog.Description>
+          {/if}
+        </div>
+        {#if actions && actions.length > 0}
+          <div class="flex items-center gap-2">
+            {@render actionsSnippet?.()}
+            <Dialog.Close>
+              <X class="size-4" />
+            </Dialog.Close>
+          </div>
         {/if}
       </Dialog.Header>
       <ScrollArea class="-mx-1 max-h-[75vh] overflow-hidden">
@@ -134,13 +191,18 @@
       class="data-[vaul-drawer-direction=bottom]:max-h-[95vh] data-[vaul-drawer-direction=top]:max-h-[95vh]"
       onOpenAutoFocus={(e) => e.preventDefault()}
     >
-      <Drawer.Header class="text-left">
-        <Drawer.Title class={cn(description ? "" : "-mb-1")}>{title}</Drawer.Title>
-        {#if description}
-          <Drawer.Description>
-            {description}
-          </Drawer.Description>
-        {/if}
+      <Drawer.Header class="flex flex-row justify-between gap-2 text-left">
+        <div>
+          <Drawer.Title class={cn(description ? "" : "-mb-1")}>{title}</Drawer.Title>
+          {#if description}
+            <Drawer.Description>
+              {description}
+            </Drawer.Description>
+          {/if}
+        </div>
+        <div>
+          {@render actionsSnippet?.()}
+        </div>
       </Drawer.Header>
       <HorizontalPagePadding class="max-h-[95vh] overflow-y-scroll pt-2">
         {@render children?.()}

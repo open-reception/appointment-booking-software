@@ -1000,6 +1000,11 @@
 				"reserved": "reserviert"
 			}
 		},
+		"moveAppointment": {
+			"action": "Termin verschieben",
+			"success": "Termin erfolgreich verschoben",
+			"error": "Fehler beim Verschieben des Termins"
+		},
 		"cancelAppointment": {
 			"confirm": "Sind Sie sicher, dass Sie diesen Termin absagen möchten?",
 			"action": "Termin absagen",

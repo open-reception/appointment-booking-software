@@ -13,3 +13,4 @@ export type TAddAppointment = {
 };
 
 export type TAddAppointmentStep = "email" | "agent" | "client" | "summary" | "success" | "error";
+export type TMoveAppointmentStep = "agent" | "summary" | "success" | "error";

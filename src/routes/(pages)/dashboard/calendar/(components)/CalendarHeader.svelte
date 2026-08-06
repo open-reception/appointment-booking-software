@@ -2,6 +2,9 @@
   import { m } from "$i18n/messages";
   import { getLocale } from "$i18n/runtime";
   import { Button, buttonVariants } from "$lib/components/ui/button";
+  import * as Popover from "$lib/components/ui/popover/index.js";
+  import type { TAppointmentFilter, TCalendarMode } from "$lib/types/calendar";
+  import { cn } from "$lib/utils";
   import {
     CalendarDate,
     getLocalTimeZone,
@@ -10,21 +13,21 @@
     type DateValue,
   } from "@internationalized/date";
   import { ChevronLeft, ChevronRight } from "@lucide/svelte";
-  import * as Popover from "$lib/components/ui/popover/index.js";
-  import { cn } from "$lib/utils";
-  import CalendarMonth from "./CalendarMonth.svelte";
-  import type { TAppointmentFilter } from "$lib/types/calendar";
   import type { CalendarView } from "../types";
+  import CalendarMode from "./CalendarMode.svelte";
+  import CalendarMonth from "./CalendarMonth.svelte";
 
   let {
     selectedDate = $bindable(),
     view = $bindable(),
-    shownAppointments,
-    shownChannels,
-    shownAgents,
+    mode = $bindable(),
+    shownAppointments = $bindable(),
+    shownChannels = $bindable(),
+    shownAgents = $bindable(),
   }: {
     selectedDate: CalendarDate;
     view: CalendarView;
+    mode: TCalendarMode;
     shownAppointments: TAppointmentFilter;
     shownChannels: string[];
     shownAgents: string[];
@@ -81,51 +84,54 @@
   };
 </script>
 
-<div
-  class="flex flex-col items-start justify-between gap-2 min-[500px]:flex-row min-[500px]:items-center"
->
-  <div class={cn("-ml-1 flex items-center justify-between gap-5", isWeekView ? "w-60" : "w-75")}>
-    <Button size="sm" variant="ghost" class="h-6 p-1!" onclick={prev}>
-      <ChevronLeft />
-    </Button>
-    <Popover.Root bind:open>
-      <Popover.Trigger
-        class={cn(buttonVariants({ variant: "ghost" }), "h-auto py-1 leading-none font-normal")}
-      >
-        {#if isWeekView}
-          {@const week = getISOWeek(selectedDate)}
-          {m["calendar.calendarWeek"](week)}
-        {:else}
-          {Intl.DateTimeFormat(getLocale(), {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-            weekday: "short",
-            timeZone: getLocalTimeZone().toString(),
-          }).format(selectedDate.toDate(getLocalTimeZone()))}
-        {/if}
-      </Popover.Trigger>
-      <Popover.Content class="w-64">
-        <CalendarMonth
-          bind:selectedDate
-          {shownAppointments}
-          {shownAgents}
-          {shownChannels}
-          {onSelectDay}
-        />
-      </Popover.Content>
-    </Popover.Root>
-    <Button size="sm" variant="ghost" class="h-6 p-1!" onclick={next}>
-      <ChevronRight />
+<div class="flex flex-col gap-4">
+  <CalendarMode bind:mode bind:shownAppointments bind:shownAgents bind:shownChannels />
+  <div
+    class="flex flex-col items-start justify-between gap-2 min-[500px]:flex-row min-[500px]:items-center"
+  >
+    <div class={cn("-ml-1 flex items-center justify-between gap-5", isWeekView ? "w-60" : "w-75")}>
+      <Button size="sm" variant="ghost" class="h-6 p-1!" onclick={prev}>
+        <ChevronLeft />
+      </Button>
+      <Popover.Root bind:open>
+        <Popover.Trigger
+          class={cn(buttonVariants({ variant: "ghost" }), "h-auto py-1 leading-none font-normal")}
+        >
+          {#if isWeekView}
+            {@const week = getISOWeek(selectedDate)}
+            {m["calendar.calendarWeek"](week)}
+          {:else}
+            {Intl.DateTimeFormat(getLocale(), {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+              weekday: "short",
+              timeZone: getLocalTimeZone().toString(),
+            }).format(selectedDate.toDate(getLocalTimeZone()))}
+          {/if}
+        </Popover.Trigger>
+        <Popover.Content class="w-64">
+          <CalendarMonth
+            bind:selectedDate
+            {shownAppointments}
+            {shownAgents}
+            {shownChannels}
+            {onSelectDay}
+          />
+        </Popover.Content>
+      </Popover.Root>
+      <Button size="sm" variant="ghost" class="h-6 p-1!" onclick={next}>
+        <ChevronRight />
+      </Button>
+    </div>
+    <Button
+      size="sm"
+      variant="outline"
+      onclick={setToToday}
+      disabled={selectedDate.toString() === today(getLocalTimeZone()).toString()}
+      class="-order-1 ml-auto min-[500px]:order-0"
+    >
+      {m["calendar.today"]()}
     </Button>
   </div>
-  <Button
-    size="sm"
-    variant="outline"
-    onclick={setToToday}
-    disabled={selectedDate.toString() === today(getLocalTimeZone()).toString()}
-    class="-order-1 ml-auto min-[500px]:order-0"
-  >
-    {m["calendar.today"]()}
-  </Button>
 </div>
