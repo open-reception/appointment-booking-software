@@ -366,6 +366,7 @@
 	"delete": "Löschen",
 	"select": "Auswählen",
 	"close": "Schließen",
+	"unkown": "Unbekannt",
 	"dashboard": {
 		"title": "Übersicht",
 		"hello": "Hallo",

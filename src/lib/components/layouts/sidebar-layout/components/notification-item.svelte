@@ -3,6 +3,7 @@
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import { m } from "$i18n/messages";
+  import { getStaffKeyShares } from "$lib/client/crypto";
   import { Button } from "$lib/components/ui/button";
   import { Text } from "$lib/components/ui/typography";
   import { ROUTES } from "$lib/const/routes";
@@ -10,6 +11,7 @@
   import { auth } from "$lib/stores/auth";
   import { channels as channelsStore } from "$lib/stores/channels";
   import { staffCrypto } from "$lib/stores/staff-crypto";
+  import { tenants } from "$lib/stores/tenants";
   import type { TAppointment } from "$lib/types/appointments";
   import type { TNotification } from "$lib/types/notification";
   import { toDisplayDateTime } from "$lib/utils/datetime";
@@ -28,6 +30,7 @@
 
   const queryClient = useQueryClient();
   const channels = $derived($channelsStore.channels);
+  const tenant = $derived($tenants.currentTenant);
   let appointment: TAppointment | undefined = $state();
   let decrypted: { name?: string; email?: string; phone?: string } | undefined = $state();
 
@@ -67,14 +70,23 @@
 
       const data = stringToEncryptedData(item.metaData?.encryptedPayload);
       if (data) {
-        // GET /api/tenants/[id]/appointments/tunnels/[tunnelId]/staff-key-share/+server.ts
+        if (!item.metaData?.tunnelId) {
+          console.error("Missing tunnelId in notification metadata");
+          return;
+        }
 
-        // Select currently in use passkey staff-key-share OR the first one for now
+        if (tenant === null) {
+          console.error("Missing tenant to decrypt encrypted notification payload");
+        }
+
+        const staffKeyShares = await getStaffKeyShares(tenant!.id, item.metaData.tunnelId);
+
+        // TODO: When multiple staffKeyShares are supported, select the one currently in use
+        const staffKeyShare = staffKeyShares[0];
 
         decrypted = await $staffCrypto.crypto.decryptStaff({
           data,
-          // TODO: Add proper staffKeyShare
-          staffKeyShare: "",
+          staffKeyShare: staffKeyShare.encryptedTunnelKey,
         });
       }
     }
@@ -166,8 +178,7 @@
   {/if}
   {#if decrypted?.name}
     <Text style="xs" class="text-muted-foreground flex w-full text-start whitespace-break-spaces">
-      <!-- TODO: Use unknown translation from other branch m["unkown"]() -->
-      {m["form.name"]()}: {decrypted.name || "unkown"}
+      {m["form.name"]()}: {decrypted.name || m["unkown"]()}
     </Text>
   {/if}
   {#if decrypted?.email}
