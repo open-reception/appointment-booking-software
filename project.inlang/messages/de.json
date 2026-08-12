@@ -1006,6 +1006,12 @@
 			"success": "Termin erfolgreich verschoben",
 			"error": "Fehler beim Verschieben des Termins"
 		},
+		"addFollowUpAppointment": {
+			"action": "Folgetermin hinzufügen"
+		},
+		"addAppointmentAfterFail": {
+			"action": "Nach anderem Termin suchen"
+		},
 		"cancelAppointment": {
 			"confirm": "Sind Sie sicher, dass Sie diesen Termin absagen möchten?",
 			"action": "Termin absagen",

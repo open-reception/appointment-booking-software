@@ -237,7 +237,15 @@
       description={channel ? getCurrentTranlslation(channel.names) : undefined}
       triggerHidden={true}
     >
-      <AddAppointment {tenantId} item={curEmptySlot} {updateCalendar} />
+      <AddAppointment
+        {tenantId}
+        item={curEmptySlot}
+        bind:mode
+        bind:shownAppointments
+        bind:shownChannels
+        bind:shownAgents
+        {updateCalendar}
+      />
     </ResponsiveDialog>
   {:else if mode.mode === "MOVE"}
     <MoveAppointment

@@ -3,16 +3,16 @@
   import { getLocale } from "$i18n/runtime";
   import { AppointmentDetails } from "$lib/components/ui/appointment-details";
   import { Button } from "$lib/components/ui/button";
-  import { type SupportedLocale } from "$lib/const/locales";
-  import { type CurAppointmentItem } from "$lib/stores/calendar";
-  import type { TAppointmentFilter, TCalendarMode } from "$lib/types/calendar";
-  import { channels as channelsStore } from "$lib/stores/channels";
-  import { Calendar, Trash2 } from "@lucide/svelte";
-  import { toast } from "svelte-sonner";
-  import { agents as agentsStore } from "$lib/stores/agents";
-  import { cancelAppointment, confirmAppointment, denyAppointment } from "./utils";
   import { ResponsiveDialog } from "$lib/components/ui/responsive-dialog";
+  import { type SupportedLocale } from "$lib/const/locales";
+  import { agents as agentsStore } from "$lib/stores/agents";
+  import { type CurAppointmentItem } from "$lib/stores/calendar";
+  import { channels as channelsStore } from "$lib/stores/channels";
+  import type { TAppointmentFilter, TCalendarMode } from "$lib/types/calendar";
   import { getCurrentTranlslation } from "$lib/utils/localizations";
+  import { CalendarPlus, Move, Trash2 } from "@lucide/svelte";
+  import { toast } from "svelte-sonner";
+  import { cancelAppointment, confirmAppointment, denyAppointment } from "./utils";
 
   let {
     tenantId,
@@ -92,7 +92,7 @@
     {
       type: "action",
       label: m["calendar.moveAppointment.action"](),
-      icon: Calendar,
+      icon: Move,
       onClick: () => {
         mode = {
           mode: "MOVE",
@@ -111,6 +111,27 @@
         };
         shownAppointments = "available";
         shownChannels = [item.appointment.channelId];
+        close();
+      },
+    },
+    {
+      type: "action",
+      label: m["calendar.addFollowUpAppointment.action"](),
+      icon: CalendarPlus,
+      onClick: () => {
+        mode = {
+          mode: "ADD_FOLLOW_UP",
+          appointment: {
+            email: item.decrypted.email,
+            shareEmail: item.decrypted.shareEmail,
+            dateTime: item.appointment.appointment?.dateTime,
+            hasNoEmail: Boolean(item.decrypted.email),
+            phone: item.decrypted.phone,
+            name: item.decrypted.name,
+            locale: item.decrypted.locale || getLocale(),
+          },
+        };
+        shownAppointments = "available";
         close();
       },
     },

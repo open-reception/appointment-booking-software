@@ -1,6 +1,7 @@
 import { json } from "@sveltejs/kit";
 import { AppointmentService } from "$lib/server/services/appointment-service";
 import {
+  AuthorizationError,
   BackendError,
   InternalError,
   logError,
@@ -394,6 +395,17 @@ export const PUT: RequestHandler = async ({ params, locals, request }) => {
     }
 
     checkPermission(locals, tenantId);
+
+    // Can global Admins do this?
+    const role = locals.user?.role;
+
+    if (!role) {
+      throw new AuthorizationError("Role unavailable");
+    }
+
+    if (!["TENANT_ADMIN", "STAFF"].includes(role)) {
+      throw new AuthorizationError("Role not permitted to make this request");
+    }
 
     log.debug("Updating appointment", {
       tenantId,

@@ -124,6 +124,33 @@ describe("Appointment Detail API Routes", () => {
       expect(mockAppointmentService.updateAppointmentByStaff).not.toHaveBeenCalled();
     });
 
+    it("should return 403 when global admin tries to update appointments", async () => {
+      vi.mocked(checkPermission).mockImplementationOnce(() => {
+        throw new AuthorizationError("Insufficient permissions");
+      });
+
+      const event = createMockRequestEvent({
+        locals: {
+          user: {
+            userId: "user123",
+            role: "GLOBAL_ADMIN",
+            tenantId: "different-tenant",
+          },
+        } as any,
+        request: createMockRequest({
+          agentId: "agent-456",
+          appointmentDate: "2024-01-15T11:00:00.000Z",
+        }),
+      });
+
+      const response = await PUT(event);
+      const result = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(result.error).toBe("Insufficient permissions");
+      expect(mockAppointmentService.updateAppointmentByStaff).not.toHaveBeenCalled();
+    });
+
     it("should return 401 for unauthenticated requests", async () => {
       vi.mocked(checkPermission).mockImplementationOnce(() => {
         throw new AuthenticationError("Authentication required");

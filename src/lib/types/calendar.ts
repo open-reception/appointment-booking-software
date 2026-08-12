@@ -41,11 +41,11 @@ export type TCalendarModeAddAfterFail = {
 };
 
 export type TAppointmentInClipboard = {
-  email: string;
   shareEmail: boolean;
   hasNoEmail: boolean;
   name: string;
   locale: string;
+  email?: string;
   phone?: string;
   dateTime?: Date;
 };

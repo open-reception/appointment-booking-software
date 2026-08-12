@@ -1014,6 +1014,12 @@
 			"success": "Appointment moved successfully",
 			"error": "Failed to move appointment"
 		},
+		"addFollowUpAppointment": {
+			"action": "Add follow-up"
+		},
+		"addAppointmentAfterFail": {
+			"action": "Look for another appointment"
+		},
 		"cancelAppointment": {
 			"confirm": "Are you sure you want to cancel this appointment?",
 			"action": "Cancel Appointment",

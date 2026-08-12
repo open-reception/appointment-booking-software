@@ -22,7 +22,9 @@
 
   let element = $state<HTMLElement>();
   let channels = $derived($channelsStore.channels);
-  const channelId = mode.mode === "MOVE" ? mode.channelId : undefined;
+  const channelId = $derived(
+    mode.mode === "MOVE" || mode.mode === "ADD_AFTER_FAIL" ? mode.channelId : undefined,
+  );
   let channel = $derived(channelId ? channels.find((c) => c.id === channelId) : undefined);
 
   $effect(() => {
@@ -37,8 +39,10 @@
         <Card.Title class="text-left">
           {#if mode.mode === "MOVE"}
             {m["calendar.moveAppointment.action"]()}
-            <!-- {:else if mode.mode === "FOLLOW_UP"}
-            {m["calendar.followUpAppointment.action"]()} -->
+          {:else if mode.mode === "ADD_FOLLOW_UP"}
+            {m["calendar.addFollowUpAppointment.action"]()}
+          {:else if mode.mode === "ADD_AFTER_FAIL"}
+            {m["calendar.addAppointmentAfterFail.action"]()}
           {/if}
         </Card.Title>
         <Card.Description class="text-left">
@@ -46,7 +50,7 @@
           {#if channel}
             ({getCurrentTranlslation(channel.names)})
           {/if}
-          {#if mode.appointment.dateTime}
+          {#if mode.mode === "MOVE" && mode.appointment.dateTime}
             <br />
             {toDisplayDateTime(mode.appointment.dateTime)}
           {/if}
