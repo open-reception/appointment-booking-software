@@ -870,6 +870,7 @@
 		},
 		"loading": "Loading staff members"
 	},
+	"currentSelection": "current selection",
 	"yes": "Yes",
 	"no": "No",
 	"public": {
@@ -1008,6 +1009,17 @@
 				"reserved": "reserved"
 			}
 		},
+		"moveAppointment": {
+			"action": "Move appointment",
+			"success": "Appointment moved successfully",
+			"error": "Failed to move appointment"
+		},
+		"addFollowUpAppointment": {
+			"action": "Add follow-up"
+		},
+		"addAppointmentAfterFail": {
+			"action": "Look for another appointment"
+		},
 		"cancelAppointment": {
 			"confirm": "Are you sure you want to cancel this appointment?",
 			"action": "Cancel Appointment",
@@ -1084,6 +1096,11 @@
 			"subject": "{channel} with {tenant} requested",
 			"introduction": "your appointment was requested. You will be notified once it is confirmed.",
 			"reason": "You are receiving this email because someone requested an appointment with your e-mail address."
+		},
+		"appointmentUpdated": {
+			"subject": "Your appointment for {channel} at {tenant} was updated",
+			"introduction": "Your appointment was updated.",
+			"reason": "You are receiving this email because someone booked an appointment with your e-mail address."
 		},
 		"appointmentCancelled": {
 			"subject": "Your appointment for {channel} at {tenant} was cancelled",

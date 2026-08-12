@@ -3,24 +3,34 @@
   import { type AppointmentDataByStaff } from "$lib/client/appointment-crypto";
   import { CenterState } from "$lib/components/templates/empty-state";
   import Button from "$lib/components/ui/button/button.svelte";
+  import { closeDialog } from "$lib/components/ui/responsive-dialog";
   import { ERRORS } from "$lib/errors";
   import { staffCrypto } from "$lib/stores/staff-crypto";
-  import type { TCalendarSlot } from "$lib/types/calendar";
+  import type { TAppointmentFilter, TCalendarMode, TCalendarSlot } from "$lib/types/calendar";
+  import { utcToLocalWithoutDST } from "$lib/utils/datetime";
   import { BanIcon, Check } from "@lucide/svelte";
+  import { onMount } from "svelte";
   import { ClientDataForm } from "./client-data-form";
   import { SearchClientForm } from "./search-client-form";
   import SelectAgent from "./SelectAgent.svelte";
   import Summary from "./Summary.svelte";
   import type { TAddAppointment, TAddAppointmentStep } from "./types";
-  import { utcToLocalWithoutDST } from "$lib/utils/datetime";
 
   let {
     tenantId,
     item = $bindable(),
+    mode = $bindable(),
+    shownAppointments = $bindable(),
+    shownChannels = $bindable(),
+    shownAgents = $bindable(),
     updateCalendar,
   }: {
     tenantId: string;
     item: TCalendarSlot;
+    mode: TCalendarMode;
+    shownAppointments: TAppointmentFilter;
+    shownChannels: string[];
+    shownAgents: string[];
     updateCalendar: () => void;
   } = $props();
 
@@ -36,21 +46,7 @@
 
   const proceed = (data: TAddAppointment) => {
     switch (true) {
-      case Boolean(data.name): {
-        newAppointment = {
-          ...data,
-        };
-        step = "summary";
-        break;
-      }
-      case Boolean(data.agentId): {
-        newAppointment = {
-          ...data,
-        };
-        step = "client";
-        break;
-      }
-      case Boolean(data.email) || data.hasNoEmail: {
+      case !data.agentId: {
         newAppointment = {
           ...data,
         };
@@ -60,6 +56,20 @@
         } else {
           step = "agent";
         }
+        break;
+      }
+      case !data.name: {
+        newAppointment = {
+          ...data,
+        };
+        step = "client";
+        break;
+      }
+      default: {
+        newAppointment = {
+          ...data,
+        };
+        step = "summary";
         break;
       }
     }
@@ -94,6 +104,7 @@
         .then(() => {
           submitErrorMessage = null;
           step = "success";
+          mode = { mode: "VIEW" };
           updateCalendar();
         })
         .catch((error: unknown) => {
@@ -108,6 +119,23 @@
         });
     }
   };
+
+  onMount(() => {
+    if (["ADD_FOLLOW_UP", "ADD_AFTER_FAIL"].includes(mode.mode)) {
+      const appointment = "appointment" in mode ? mode.appointment : undefined;
+      if (appointment) {
+        proceed({
+          ...newAppointment,
+          name: appointment.name,
+          email: appointment.email,
+          shareEmail: appointment.shareEmail,
+          phone: appointment.phone,
+          locale: appointment.locale,
+          hasNoEmail: Boolean(appointment.email),
+        });
+      }
+    }
+  });
 </script>
 
 <Summary {step} {newAppointment} />
@@ -135,4 +163,31 @@
     Icon={BanIcon}
     size="sm"
   />
+  <Button
+    class="w-full"
+    onclick={() => {
+      if (newAppointment.name && newAppointment.shareEmail !== undefined && newAppointment.locale) {
+        mode = {
+          mode: "ADD_AFTER_FAIL",
+          channelId: item.channelId,
+          appointment: {
+            name: newAppointment.name,
+            email: newAppointment.email,
+            shareEmail: newAppointment.shareEmail,
+            phone: newAppointment.phone,
+            locale: newAppointment.locale,
+            hasNoEmail: Boolean(newAppointment.email),
+          },
+        };
+        shownAppointments = "available";
+        shownChannels = [item.channelId];
+        if (newAppointment.agentId) {
+          shownAgents = [newAppointment.agentId];
+        }
+        closeDialog("current-calendar-slot");
+      }
+    }}
+  >
+    {m["calendar.addAppointmentAfterFail.action"]()}
+  </Button>
 {/if}
