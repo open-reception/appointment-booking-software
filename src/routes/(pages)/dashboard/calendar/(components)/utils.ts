@@ -174,6 +174,40 @@ export function positionItems(items: TCalendarItem[] | undefined) {
   return processedItems;
 }
 
+export const moveAppointment = async (opts: {
+  tenant: string;
+  appointment: string;
+  updateData: { agentId: string; appointmentDate: string };
+  email?: string;
+  locale: string;
+}) => {
+  if (!browser) return;
+
+  let body: { [key: string]: string } = opts.updateData;
+  if (opts.email) {
+    body = {
+      ...body,
+      clientEmail: opts.email,
+      clientLanguage: opts.locale,
+    };
+  }
+  const res = await fetch(`/api/tenants/${opts.tenant}/appointments/${opts.appointment}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+
+  if (res.status < 400) {
+    return true;
+  } else {
+    if (res.status === 401) {
+      goto(resolve(ROUTES.LOGIN));
+    } else {
+      console.error("Unable to update appointment", opts, res.status, res.statusText);
+    }
+    return false;
+  }
+};
+
 export const cancelAppointment = async (opts: {
   tenant: string;
   appointment: string;

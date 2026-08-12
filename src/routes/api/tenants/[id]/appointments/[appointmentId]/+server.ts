@@ -8,6 +8,7 @@ import {
   ValidationError,
 } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
+import { z } from "zod";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
 import { checkPermission } from "$lib/server/utils/permissions";
@@ -132,10 +133,119 @@ registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "GET", {
   },
 });
 
+// Register OpenAPI documentation for PUT
+registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "PUT", {
+  summary: "Update appointment",
+  description: "Updates a specific appointment. Only staff members can update appointments.",
+  tags: ["Appointments"],
+  parameters: [
+    {
+      name: "id",
+      in: "path",
+      required: true,
+      schema: { type: "string", format: "uuid" },
+      description: "Tenant ID",
+    },
+    {
+      name: "appointmentId",
+      in: "path",
+      required: true,
+      schema: { type: "string", format: "uuid" },
+      description: "Appointment ID",
+    },
+  ],
+  requestBody: {
+    description: "Properties to update",
+    content: {
+      "application/json": {
+        schema: {
+          type: "object",
+          properties: {
+            agentId: {
+              type: "string",
+              description: "ID of the agent that will conduct the appointment",
+              example: "01234567-89ab-cdef-0123-456789abcdef",
+            },
+            appointmentDate: {
+              type: "string",
+              format: "date-time",
+              description: "Appointment date and time (ISO 8601)",
+              example: "2024-12-31T14:30:00.000Z",
+            },
+          },
+          required: [],
+        },
+      },
+    },
+  },
+  responses: {
+    "200": {
+      description: "Appointment updated successfully",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              agentId: { type: "string", description: "The updated agent ID" },
+              appointmentDate: {
+                type: "string",
+                format: "date-time",
+                description: "The updated appointment date and time (ISO 8601)",
+                example: "2024-12-31T14:30:00.000Z",
+              },
+            },
+            required: [],
+          },
+        },
+      },
+    },
+    "400": {
+      description: "Invalid input data",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "401": {
+      description: "Authentication required",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "403": {
+      description: "Insufficient permissions",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "404": {
+      description: "Appointment not found",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+    "500": {
+      description: "Internal server error",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+        },
+      },
+    },
+  },
+});
+
 // Register OpenAPI documentation for DELETE
 registerOpenAPIRoute("/tenants/{id}/appointments/{appointmentId}", "DELETE", {
   summary: "Delete appointment",
-  description: "Deletes a specific appointment. Only tenant admins can delete appointments.",
+  description: "Deletes a specific appointment. Only staff members can delete appointments.",
   tags: ["Appointments"],
   parameters: [
     {
@@ -254,6 +364,74 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     });
   } catch (error) {
     logError(log)("Error getting appointment", error, locals.user?.id, params.id);
+
+    if (error instanceof BackendError) {
+      return error.toJson();
+    }
+
+    return new InternalError().toJson();
+  }
+};
+
+const requestSchema = z.object({
+  // For sending change notifications
+  clientEmail: z.string().optional(),
+  clientLanguage: z.string().optional(),
+  // Actual update data
+  agentId: z.string().min(1),
+  appointmentDate: z.string().min(1),
+});
+
+export const PUT: RequestHandler = async ({ params, locals, request }) => {
+  const log = logger.setContext("API");
+
+  try {
+    const tenantId = params.id;
+    const appointmentId = params.appointmentId;
+
+    if (!tenantId || !appointmentId) {
+      throw new ValidationError("Tenant ID and appointment ID are required");
+    }
+
+    checkPermission(locals, tenantId);
+
+    log.debug("Updating appointment", {
+      tenantId,
+      appointmentId,
+      requestedBy: locals.user?.id,
+    });
+
+    const body = await request.json();
+    const validation = requestSchema.safeParse(body);
+
+    if (!validation.success) {
+      throw new ValidationError(
+        "Invalid request data: " + validation.error.issues.map((e) => e.message).join(", "),
+      );
+    }
+
+    const { clientEmail, clientLanguage, ...updateData } = validation.data;
+    const appointmentService = await AppointmentService.forTenant(tenantId);
+    const updated = await appointmentService.updateAppointmentByStaff(
+      appointmentId,
+      updateData,
+      clientEmail,
+      clientLanguage,
+    );
+
+    if (!updated) {
+      return json({ error: "Appointment not found" }, { status: 404 });
+    }
+
+    log.debug("Appointment updated successfully", {
+      tenantId,
+      appointmentId,
+      requestedBy: locals.user?.id,
+    });
+
+    return json(updated);
+  } catch (error) {
+    logError(log)("Error updating appointment", error, locals.user?.id, params.id);
 
     if (error instanceof BackendError) {
       return error.toJson();

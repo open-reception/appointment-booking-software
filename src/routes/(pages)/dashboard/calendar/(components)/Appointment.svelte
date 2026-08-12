@@ -38,6 +38,7 @@
   let agent = $derived.by(() => agents.find((a) => a.id === item.appointment.appointment?.agentId));
   let isConfirming = $state(false);
   let isDenying = $state(false);
+  let isDeleting = $state(false);
 
   const denyItem = async () => {
     const proceed = confirm(
@@ -68,7 +69,7 @@
       tenant: tenantId,
       appointment: item.appointment.id,
       email: item.decrypted.shareEmail ? item.decrypted.email : undefined,
-      locale: "de", // TODO: Use client language as soon as available in appointment
+      locale: item.decrypted.locale || getLocale(),
     });
     if (success) {
       toast.success(m["calendar.confirmAppointment.success"]());
@@ -86,6 +87,7 @@
   title={agent?.name || "unkown agent"}
   description={channel ? getCurrentTranlslation(channel.names) : undefined}
   triggerHidden={true}
+  isActionLoading={isDeleting}
   actions={[
     {
       type: "action",
@@ -99,6 +101,7 @@
           agentId: item.appointment.appointment?.agentId,
           appointment: {
             email: item.decrypted.email,
+            shareEmail: item.decrypted.shareEmail,
             dateTime: item.appointment.appointment?.dateTime,
             hasNoEmail: Boolean(item.decrypted.email), // TODO:
             phone: item.decrypted.phone,
@@ -119,14 +122,13 @@
       isDestructive: true,
       label: m["calendar.cancelAppointment.action"](),
       icon: Trash2,
-      // isLoading: isDeletingAppointment && item.appointment.id === item.appointment.id,
       onClick: async () => {
         const proceed = confirm(
           `${m["calendar.notificationHint"]()} ${m["calendar.cancelAppointment.confirm"]()}`,
         );
         if (!proceed) return;
 
-        // isDeletingAppointment = true;
+        isDeleting = true;
         const success = await cancelAppointment({
           tenant: tenantId,
           appointment: item.appointment.id,
@@ -140,7 +142,7 @@
         } else {
           toast.error(m["calendar.cancelAppointment.error"]());
         }
-        // isDeletingAppointment = false;
+        isDeleting = false;
       },
     },
   ]}
@@ -171,29 +173,27 @@
           },
         ]}
       />
-      <div class="mt-5 flex w-full flex-col gap-4">
-        {#if item.appointment.status === "reserved"}
-          <div class="flex flex-col gap-2">
-            <Button
-              class="w-full"
-              disabled={isConfirming || isDenying}
-              isLoading={isConfirming}
-              onclick={confirmItem}
-            >
-              {m["calendar.confirmAppointment.action"]()}
-            </Button>
-            <Button
-              class="w-full"
-              disabled={isConfirming || isDenying}
-              isLoading={isConfirming}
-              variant="destructive"
-              onclick={denyItem}
-            >
-              {m["calendar.denyAppointment.action"]()}
-            </Button>
-          </div>
-        {/if}
-      </div>
+      {#if item.appointment.status === "reserved"}
+        <div class="mt-5 flex flex-col gap-2">
+          <Button
+            class="w-full"
+            disabled={isConfirming || isDenying}
+            isLoading={isConfirming}
+            onclick={confirmItem}
+          >
+            {m["calendar.confirmAppointment.action"]()}
+          </Button>
+          <Button
+            class="w-full"
+            disabled={isConfirming || isDenying}
+            isLoading={isConfirming}
+            variant="destructive"
+            onclick={denyItem}
+          >
+            {m["calendar.denyAppointment.action"]()}
+          </Button>
+        </div>
+      {/if}
     </div>
   {/if}
 </ResponsiveDialog>

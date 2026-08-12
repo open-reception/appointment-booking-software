@@ -4,7 +4,7 @@
   import { m } from "$i18n/messages";
   import { SidebarLayout } from "$lib/components/layouts/sidebar-layout";
   import { Button } from "$lib/components/ui/button";
-  import { ResponsiveDialog } from "$lib/components/ui/responsive-dialog";
+  import { closeDialog, ResponsiveDialog } from "$lib/components/ui/responsive-dialog";
   import { ROUTES } from "$lib/const/routes";
   import { auth } from "$lib/stores/auth";
   import { calendarStore } from "$lib/stores/calendar";
@@ -240,6 +240,17 @@
       <AddAppointment {tenantId} item={curEmptySlot} {updateCalendar} />
     </ResponsiveDialog>
   {:else if mode.mode === "MOVE"}
-    <MoveAppointment bind:mode {tenantId} item={curEmptySlot} {updateCalendar} />
+    <MoveAppointment
+      bind:mode
+      {tenantId}
+      item={curEmptySlot}
+      updateCalendar={() => {
+        closeDialog("current-calendar-slot");
+        shownAppointments = "all";
+        shownChannels = [];
+        mode = { mode: "VIEW" };
+        updateCalendar();
+      }}
+    />
   {/if}
 {/if}

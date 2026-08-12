@@ -862,6 +862,7 @@
 		},
 		"loading": "Lade Personal"
 	},
+	"currentSelection": "Aktuelle Auswahl",
 	"yes": "Ja",
 	"no": "Nein",
 	"public": {
@@ -1081,6 +1082,11 @@
 			"subject": "Ihre Anfrage für {channel} bei {tenant} wurde abgelehnt",
 			"introduction": "Ihr Termin wurde abgelehnt.",
 			"reason": "Sie erhalten diese E-Mail, weil jemand mit Ihrer E-Mail Adresse einen Termin bei angefragt hat."
+		},
+		"appointmentUpdated": {
+			"subject": "Ihr Termin für {channel} bei {tenant} wurde aktualisiert",
+			"introduction": "Ihr Termin wurde aktualisiert.",
+			"reason": "Sie erhalten diese E-Mail, weil mit Ihrer E-Mail Adresse einen Termin gebucht wurde."
 		},
 		"appointmentCancelled": {
 			"subject": "Ihr Termin für {channel} bei {tenant} wurde abgesagt",

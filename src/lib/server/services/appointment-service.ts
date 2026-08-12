@@ -26,6 +26,7 @@ import {
   sendAppointmentCreatedEmail,
   sendAppointmentRejectedEmail,
   sendAppointmentRequestEmail,
+  sendAppointmentUpdatedEmail,
 } from "../email/email-service";
 import { ConflictError, InternalError, NotFoundError, ValidationError } from "../utils/errors";
 import { challengeStore } from "./challenge-store";
@@ -495,7 +496,6 @@ export class AppointmentService {
     const log = logger.setContext("AppointmentService");
     log.debug("Deleting appointment by staff", {
       appointmentId,
-      clientEmail,
       tenantId: this.tenantId,
     });
 
@@ -579,6 +579,136 @@ export class AppointmentService {
       channelId,
       tenantId: this.tenantId,
     });
+  }
+
+  /**
+   * Updates an appointment by staff member
+   * This will:
+   * 1. Change agent or appointment datetime in the database
+   * 2. Send email to the client, if configured
+   * @param appointmentId - The appointment ID
+   * @param updateData - Appointment Data that can be updated
+   * @param clientEmail - The client's email address
+   * @param clientLanguage - The client's preferred language (optional, defaults to "de")
+   * @returns Promise<void>
+   */
+  public async updateAppointmentByStaff(
+    appointmentId: string,
+    updateData: { agentId: string; appointmentDate?: string },
+    clientEmail: string | undefined,
+    clientLanguage: string = "de",
+  ): Promise<{ agentId: string; appointmentDate?: Date }> {
+    const log = logger.setContext("AppointmentService");
+    log.debug("Updating appointment by staff", {
+      appointmentId,
+      tenantId: this.tenantId,
+    });
+
+    const db = await this.getDb();
+
+    // Get appointment details before deletion
+    const appointmentResult = await db
+      .select()
+      .from(tenantSchema.appointment)
+      .where(eq(tenantSchema.appointment.id, appointmentId))
+      .limit(1);
+
+    if (appointmentResult.length === 0) {
+      log.warn("Appointment not found", {
+        appointmentId,
+        tenantId: this.tenantId,
+      });
+      throw new NotFoundError("Appointment not found");
+    }
+
+    const appointment = appointmentResult[0];
+    const channelId = appointment.channelId;
+
+    const newAppointment = await db.transaction(async (tx) => {
+      await this.ensureAgentIsAvailableForSlot(tx, {
+        agentId: updateData.agentId,
+        appointmentDate: updateData.appointmentDate || appointment.appointmentDate.toISOString(),
+        duration: appointment.duration,
+      });
+
+      // Update the appointment
+      const newAppointments = await tx
+        .update(tenantSchema.appointment)
+        .set({
+          agentId: updateData.agentId,
+          appointmentDate: updateData.appointmentDate
+            ? new Date(updateData.appointmentDate)
+            : undefined,
+          updatedAt: new Date(),
+        })
+        .where(eq(tenantSchema.appointment.id, appointmentId))
+        .returning({
+          agentId: tenantSchema.appointment.agentId,
+          appointmentDate: tenantSchema.appointment.appointmentDate,
+        });
+
+      log.debug("Appointment updated", {
+        appointmentId,
+        tenantId: this.tenantId,
+        agentId: newAppointments[0].agentId,
+        appointmentDate: newAppointments[0].appointmentDate,
+      });
+      return newAppointments[0];
+    });
+
+    if (!newAppointment) {
+      log.error("Appointment could not be updated", {
+        appointmentId,
+        tenantId: this.tenantId,
+        agentId: appointment.agentId,
+        appointmentDate: appointment.appointmentDate,
+      });
+    }
+
+    // Get tenant and channel information for email and notifications
+    const tenantService = await TenantAdminService.getTenantById(this.tenantId);
+    const tenant = tenantService.tenantData;
+
+    if (!tenant) {
+      log.error("Tenant not found", { tenantId: this.tenantId });
+      throw new InternalError("Tenant not found");
+    }
+
+    // Get channel title
+    const channelTitle = await getChannelTitle(this.tenantId, channelId, clientLanguage);
+
+    // Send change email to client (async, don't wait)
+    if (clientEmail) {
+      const clientData = {
+        email: clientEmail,
+        language: clientLanguage,
+      };
+
+      sendAppointmentUpdatedEmail(
+        clientData,
+        tenant,
+        {
+          ...appointment,
+          agentId: newAppointment.agentId,
+          appointmentDate: newAppointment.appointmentDate,
+        },
+        channelTitle,
+      ).catch((error) => {
+        log.error("Failed to send appointment update email", {
+          appointmentId,
+          clientEmail,
+          error: String(error),
+        });
+      });
+    }
+
+    log.info("Appointment updated by staff successfully", {
+      appointmentId,
+      channelId,
+      tenantId: this.tenantId,
+    });
+
+    return newAppointment;
   }
 
   /**

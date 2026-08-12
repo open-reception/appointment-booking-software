@@ -42,6 +42,7 @@ export type TCalendarModeAddAfterFail = {
 
 export type TAppointmentInClipboard = {
   email: string;
+  shareEmail: boolean;
   hasNoEmail: boolean;
   name: string;
   locale: string;

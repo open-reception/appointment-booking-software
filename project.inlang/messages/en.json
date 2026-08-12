@@ -870,6 +870,7 @@
 		},
 		"loading": "Loading staff members"
 	},
+	"currentSelection": "current selection",
 	"yes": "Yes",
 	"no": "No",
 	"public": {
@@ -1089,6 +1090,11 @@
 			"subject": "{channel} with {tenant} requested",
 			"introduction": "your appointment was requested. You will be notified once it is confirmed.",
 			"reason": "You are receiving this email because someone requested an appointment with your e-mail address."
+		},
+		"appointmentUpdated": {
+			"subject": "Your appointment for {channel} at {tenant} was updated",
+			"introduction": "Your appointment was updated.",
+			"reason": "You are receiving this email because someone booked an appointment with your e-mail address."
 		},
 		"appointmentCancelled": {
 			"subject": "Your appointment for {channel} at {tenant} was cancelled",

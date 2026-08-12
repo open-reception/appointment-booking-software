@@ -37,6 +37,7 @@
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
   import { cn } from "$lib/utils";
   import { Ellipsis, X } from "@lucide/svelte";
+  import Loader from "@lucide/svelte/icons/loader-2";
   import { onDestroy, type Snippet } from "svelte";
   import type { HTMLAttributes } from "svelte/elements";
   import { MediaQuery, SvelteMap } from "svelte/reactivity";
@@ -50,6 +51,7 @@
     description,
     triggerHidden = false,
     triggerVariant = "default",
+    isActionLoading = false,
     actions,
     children,
   }: HTMLAttributes<HTMLDivElement> & {
@@ -59,6 +61,7 @@
     title: string;
     description?: string;
     triggerVariant?: ButtonVariant;
+    isActionLoading?: boolean;
     actions?: ListItemAction[];
   } = $props();
 
@@ -98,6 +101,9 @@
 
 {#snippet actionsSnippet()}
   {#if actions && actions.length > 0}
+    {#if isActionLoading === true}
+      <Loader class="size-4 animate-spin" strokeWidth={1} />
+    {/if}
     <DropdownMenu.Root bind:open={actionsOpen}>
       <DropdownMenu.Trigger>
         {#snippet child({ props })}

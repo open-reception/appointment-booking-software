@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { DELETE } from "../+server";
+import { DELETE, PUT } from "../+server";
 import type { RequestEvent } from "@sveltejs/kit";
 
 // Mock dependencies
@@ -32,6 +32,7 @@ describe("Appointment Detail API Routes", () => {
   const mockAppointmentId = "456e7890-e12b-34d5-a678-901234567890";
   const mockAppointmentService = {
     getAppointmentById: vi.fn(),
+    updateAppointmentByStaff: vi.fn(),
     deleteAppointment: vi.fn(),
   };
 
@@ -55,6 +56,165 @@ describe("Appointment Detail API Routes", () => {
       ...overrides,
     } as RequestEvent;
   }
+
+  function createMockRequest(body: unknown): Request {
+    return { json: async () => body } as any;
+  }
+
+  describe("PUT /api/tenants/[id]/appointments/[appointmentId]", () => {
+    it("should update the appointment successfully", async () => {
+      mockAppointmentService.updateAppointmentByStaff.mockResolvedValue({
+        agentId: "agent-456",
+        appointmentDate: new Date("2024-01-15T11:00:00.000Z"),
+      });
+
+      const event = createMockRequestEvent({
+        request: createMockRequest({
+          agentId: "agent-456",
+          appointmentDate: "2024-01-15T11:00:00.000Z",
+          clientEmail: "client@example.com",
+          clientLanguage: "de",
+        }),
+      });
+
+      const response = await PUT(event);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.agentId).toBe("agent-456");
+      expect(data.appointmentDate).toBe("2024-01-15T11:00:00.000Z");
+      expect(mockAppointmentService.updateAppointmentByStaff).toHaveBeenCalledWith(
+        mockAppointmentId,
+        { agentId: "agent-456", appointmentDate: "2024-01-15T11:00:00.000Z" },
+        "client@example.com",
+        "de",
+      );
+    });
+
+    it("should return 400 for invalid request payload", async () => {
+      const event = createMockRequestEvent({
+        request: createMockRequest({ agentId: "agent-456" }),
+      });
+
+      const response = await PUT(event);
+      const result = await response.json();
+
+      expect(response.status).toBe(422);
+      expect(result.error).toContain("Invalid request data");
+      expect(mockAppointmentService.updateAppointmentByStaff).not.toHaveBeenCalled();
+    });
+
+    it("should return 403 when permission is denied", async () => {
+      vi.mocked(checkPermission).mockImplementationOnce(() => {
+        throw new AuthorizationError("Insufficient permissions");
+      });
+
+      const event = createMockRequestEvent({
+        request: createMockRequest({
+          agentId: "agent-456",
+          appointmentDate: "2024-01-15T11:00:00.000Z",
+        }),
+      });
+
+      const response = await PUT(event);
+      const result = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(result.error).toBe("Insufficient permissions");
+      expect(mockAppointmentService.updateAppointmentByStaff).not.toHaveBeenCalled();
+    });
+
+    it("should return 401 for unauthenticated requests", async () => {
+      vi.mocked(checkPermission).mockImplementationOnce(() => {
+        throw new AuthenticationError("Authentication required");
+      });
+
+      const event = createMockRequestEvent({
+        locals: { user: null } as any,
+        request: createMockRequest({
+          agentId: "agent-456",
+          appointmentDate: "2024-01-15T11:00:00.000Z",
+        }),
+      });
+
+      const response = await PUT(event);
+      const result = await response.json();
+
+      expect(response.status).toBe(401);
+      expect(result.error).toBe("Authentication required");
+      expect(mockAppointmentService.updateAppointmentByStaff).not.toHaveBeenCalled();
+    });
+
+    it("should return 404 when appointment is not found", async () => {
+      mockAppointmentService.updateAppointmentByStaff.mockRejectedValue(
+        new NotFoundError("Appointment not found"),
+      );
+
+      const event = createMockRequestEvent({
+        request: createMockRequest({
+          agentId: "agent-456",
+          appointmentDate: "2024-01-15T11:00:00.000Z",
+        }),
+      });
+
+      const response = await PUT(event);
+      const result = await response.json();
+
+      expect(response.status).toBe(404);
+      expect(result.error).toBe("Appointment not found");
+    });
+
+    it("should return 422 for missing tenant ID", async () => {
+      const event = createMockRequestEvent({
+        params: { id: undefined, appointmentId: mockAppointmentId },
+        request: createMockRequest({
+          agentId: "agent-456",
+          appointmentDate: "2024-01-15T11:00:00.000Z",
+        }),
+      });
+
+      const response = await PUT(event);
+      const data = await response.json();
+
+      expect(response.status).toBe(422);
+      expect(data.error).toBe("Tenant ID and appointment ID are required");
+    });
+
+    it("should return 422 for missing appointment ID", async () => {
+      const event = createMockRequestEvent({
+        params: { id: mockTenantId, appointmentId: undefined },
+        request: createMockRequest({
+          agentId: "agent-456",
+          appointmentDate: "2024-01-15T11:00:00.000Z",
+        }),
+      });
+
+      const response = await PUT(event);
+      const data = await response.json();
+
+      expect(response.status).toBe(422);
+      expect(data.error).toBe("Tenant ID and appointment ID are required");
+    });
+
+    it("should return 500 for internal service errors", async () => {
+      mockAppointmentService.updateAppointmentByStaff.mockRejectedValue(
+        new Error("Database error"),
+      );
+
+      const event = createMockRequestEvent({
+        request: createMockRequest({
+          agentId: "agent-456",
+          appointmentDate: "2024-01-15T11:00:00.000Z",
+        }),
+      });
+
+      const response = await PUT(event);
+      const result = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(result.error).toBe("Internal server error");
+    });
+  });
 
   describe("DELETE /api/tenants/[id]/appointments/[appointmentId]", () => {
     it("should delete appointment for tenant admin", async () => {
