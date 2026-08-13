@@ -586,7 +586,10 @@ export class AppointmentService {
   /**
    * Get all client tunnels for the tenant
    */
-  public async getClientTunnels(staffUserId?: string): Promise<ClientTunnelResponse[]> {
+  public async getClientTunnels(
+    staffUserId?: string,
+    passkeyId?: string,
+  ): Promise<ClientTunnelResponse[]> {
     const log = logger.setContext("AppointmentService");
     log.debug("Fetching client tunnels", { tenantId: this.tenantId, staffUserId });
     const db = await this.getDb();
@@ -607,7 +610,7 @@ export class AppointmentService {
     if (staffUserId) {
       // Each passkey has its own Kyber keypair, so the tunnel key is wrapped separately per
       // passkey. Otherwise the returned share maybe for a different passkey and fail to decrypt.
-      const recentPasskey = await WebAuthnService.getMostRecentPasskey(staffUserId);
+      const recentPasskey = await WebAuthnService.getCurrentPasskey(staffUserId, passkeyId);
 
       if (recentPasskey) {
         const staffKeyShares = await db

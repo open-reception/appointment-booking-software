@@ -294,22 +294,30 @@ export class WebAuthnService {
     return await db.select().from(userPasskey).where(eq(userPasskey.userId, userId));
   }
 
-  /**
-   * Get the most recently used passkey for a user
-   * Used when we need to determine which passkey was used for authentication
-   * but the session doesn't store this information directly
-   */
-  static async getMostRecentPasskey(userId: string): Promise<{
+  static async getCurrentPasskey(
+    userId: string,
+    passkeyId: string | undefined,
+  ): Promise<{
     id: string;
     lastUsedAt: Date | null;
   } | null> {
+    if (!passkeyId) {
+      return null;
+    }
+
     const passkeys = await db
       .select({
         id: userPasskey.id,
         lastUsedAt: userPasskey.lastUsedAt,
       })
       .from(userPasskey)
-      .where(and(eq(userPasskey.userId, userId), isNotNull(userPasskey.lastUsedAt)))
+      .where(
+        and(
+          eq(userPasskey.userId, userId),
+          eq(userPasskey.id, passkeyId),
+          isNotNull(userPasskey.lastUsedAt),
+        ),
+      )
       .orderBy(desc(userPasskey.lastUsedAt))
       .limit(1);
 

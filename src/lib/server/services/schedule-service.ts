@@ -93,7 +93,10 @@ export class ScheduleService {
    * @param request Schedule request with date range
    * @returns Schedule result with available slots and appointments
    */
-  async getSchedule(request: ScheduleRequest): Promise<ScheduleResult> {
+  async getSchedule(
+    request: ScheduleRequest,
+    passkeyId: string | undefined,
+  ): Promise<ScheduleResult> {
     const log = logger.setContext("ScheduleService");
 
     const validation = scheduleRequestSchema.safeParse(request);
@@ -157,7 +160,7 @@ export class ScheduleService {
       // Tunnel keys are wrapped per passkey; scope the lookup to the passkey the user most
       // recently authenticated with (same definition getClientTunnels / key-shard use).
       const recentPasskey = request.staffUserId
-        ? await WebAuthnService.getMostRecentPasskey(request.staffUserId)
+        ? await WebAuthnService.getCurrentPasskey(request.staffUserId, passkeyId)
         : null;
       if (request.staffUserId && recentPasskey && appointments.length > 0) {
         const tunnelIds = [...new Set(appointments.map((apt) => apt.tunnelId))];

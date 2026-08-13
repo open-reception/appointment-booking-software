@@ -148,7 +148,10 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
     try {
       // Get the most recently used passkey for this authenticated user
-      const recentPasskey = await WebAuthnService.getMostRecentPasskey(locals.user.id);
+      const recentPasskey = await WebAuthnService.getCurrentPasskey(
+        locals.user.id,
+        locals.user?.passkeyId,
+      );
 
       if (!recentPasskey) {
         log.warn("No passkey found for authenticated user - security violation", {

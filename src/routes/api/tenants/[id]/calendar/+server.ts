@@ -173,13 +173,16 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
     // Get the staff user ID if authenticated (for including staffKeyShares)
     const staffUserId = locals.user?.id;
 
-    const schedule = await scheduleService.getSchedule({
-      tenantId,
-      startDate: startDateParam,
-      endDate: endDateParam,
-      timeZone: timeZoneParam,
-      staffUserId,
-    });
+    const schedule = await scheduleService.getSchedule(
+      {
+        tenantId,
+        startDate: startDateParam,
+        endDate: endDateParam,
+        timeZone: timeZoneParam,
+        staffUserId,
+      },
+      locals.user?.passkeyId,
+    );
 
     // Return full calendar data (including appointments and detailed agent info)
     const result = {

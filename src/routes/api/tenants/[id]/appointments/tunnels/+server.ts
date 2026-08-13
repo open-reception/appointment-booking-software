@@ -124,7 +124,10 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     log.debug("Fetching client tunnels", { tenantId, requesterId: requesterUserId });
 
     const appointmentService = await AppointmentService.forTenant(tenantId);
-    const tunnels = await appointmentService.getClientTunnels(requesterUserId);
+    const tunnels = await appointmentService.getClientTunnels(
+      requesterUserId,
+      locals.user?.passkeyId,
+    );
 
     log.debug("Client tunnels retrieved successfully", {
       tenantId,
