@@ -373,6 +373,8 @@
 	"pause": "Deactivate",
 	"delete": "Delete",
 	"select": "Select",
+	"close": "Close",
+	"unkown": "Unkown",
 	"dashboard": {
 		"title": "Dashboard",
 		"hello": "Hello",
@@ -432,7 +434,6 @@
 			}
 		}
 	},
-	"close": "Close",
 	"agents": {
 		"title": "Agents",
 		"empty": {
@@ -498,6 +499,7 @@
 	},
 	"channels": {
 		"title": "Channels",
+		"singular": "Channel",
 		"empty": {
 			"title": "No channels yet",
 			"description": "Channels are your way to collect different types of appointments"
@@ -1138,16 +1140,13 @@
 		"empty": "No notifications available",
 		"types": {
 			"APPOINTMENT_REQUESTED": {
-				"title": "New appointment request",
-				"description": "A new appointment has been requested in {channel}."
+				"title": "New appointment request"
 			},
 			"APPOINTMENT_CONFIRMED": {
-				"title": "Appointment confirmed",
-				"description": "Appointment in {channel} was confirmed."
+				"title": "Appointment confirmed"
 			},
 			"APPOINTMENT_CANCELLED": {
-				"title": "Appointment cancelled",
-				"description": "Client cancelled appointment in {channel}."
+				"title": "Appointment cancelled"
 			}
 		}
 	},

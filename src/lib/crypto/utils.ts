@@ -1,5 +1,6 @@
 import { ml_kem768 } from "@noble/post-quantum/ml-kem";
 import { randomBytes } from "@noble/hashes/utils";
+import type { EncryptedData } from "$lib/client/appointment-crypto";
 
 /**
  * Type alias for cryptographic buffer operations
@@ -588,3 +589,43 @@ export class ShamirSecretSharing {
     return length;
   }
 }
+
+export const encryptedDataToString = (data: EncryptedData): string => {
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(JSON.stringify(data));
+
+  const binString = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join("");
+  const base64 = btoa(binString);
+
+  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+};
+
+export const stringToEncryptedData = (str: string): EncryptedData | null => {
+  try {
+    const base64 = str.replace(/-/g, "+").replace(/_/g, "/");
+
+    const binString = atob(base64);
+    const bytes = Uint8Array.from(binString, (char) => char.codePointAt(0)!);
+
+    const decoder = new TextDecoder();
+    const parsed = JSON.parse(decoder.decode(bytes));
+
+    if (
+      typeof parsed.encryptedPayload === "string" &&
+      typeof parsed.iv === "string" &&
+      typeof parsed.authTag === "string"
+    ) {
+      return {
+        encryptedPayload: parsed.encryptedPayload,
+        iv: parsed.iv,
+        authTag: parsed.authTag,
+      };
+    } else {
+      console.error("Hydrated encrypted data does not match expected object type");
+      return null;
+    }
+  } catch (error) {
+    console.error("Failed to hydrate encrypted data from string", error);
+    return null;
+  }
+};

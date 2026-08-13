@@ -2,7 +2,7 @@
   import { Text } from "$lib/components/ui/typography";
   import { languageSwitchLocales } from "$lib/const/locales";
   import { toDisplayDateTime } from "$lib/utils/datetime";
-  import { Calendar, Languages, Mail, Phone, User, UserStar } from "@lucide/svelte";
+  import { Calendar, Languages, Mail, Phone, Split, User, UserStar } from "@lucide/svelte";
   import type { AppointmentDetailItems } from ".";
   import CopyButton from "./copy-button.svelte";
 
@@ -18,7 +18,12 @@
     {#each items as item (item.type)}
       {#if item.value}
         <div class="flex items-center gap-2">
-          {#if item.type === "agent"}
+          {#if item.type === "channel"}
+            <Split class="size-4 shrink-0" />
+            <Text style="sm">
+              {item.value}
+            </Text>
+          {:else if item.type === "agent"}
             <UserStar class="size-4 shrink-0" />
             <Text style="sm">
               {item.value}
