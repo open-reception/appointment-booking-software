@@ -220,6 +220,86 @@ describe("AppointmentService", () => {
     });
   });
 
+  describe("updateAppointmentByStaff", () => {
+    it("should update the appointment and send an update email", async () => {
+      const { getTenantDb } = await import("../../db");
+
+      const mockSelect = vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([mockAppointment]),
+          }),
+        }),
+      });
+
+      const tx = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              for: vi.fn().mockResolvedValue([{ id: "agent-123" }]),
+              limit: vi.fn().mockResolvedValue([]),
+            }),
+          }),
+        }),
+        update: vi.fn().mockReturnValue({
+          set: vi.fn().mockReturnThis(),
+          where: vi.fn().mockReturnThis(),
+          returning: vi.fn().mockResolvedValue([
+            {
+              agentId: "agent-456",
+              appointmentDate: new Date("2024-01-15T11:00:00Z"),
+            },
+          ]),
+        }),
+      } as any;
+
+      const mockDb = {
+        select: mockSelect,
+        transaction: vi.fn().mockImplementation(async (callback: any) => callback(tx)),
+      };
+
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const tenantModule = await import("../tenant-admin-service");
+      const mockTenant = {
+        id: "tenant-123",
+        shortName: "Test Clinic",
+        longName: "Test Clinic",
+        languages: ["de", "en"],
+      };
+      vi.spyOn(tenantModule.TenantAdminService, "getTenantById").mockResolvedValue({
+        tenantData: mockTenant,
+      } as any);
+
+      const emailModule = await import("../../email/email-service");
+      const mockGetChannelTitle = vi.fn().mockResolvedValue("Test Channel");
+      const mockSendAppointmentUpdatedEmail = vi.fn().mockResolvedValue(undefined);
+      vi.spyOn(emailModule, "getChannelTitle").mockImplementation(mockGetChannelTitle);
+      vi.spyOn(emailModule, "sendAppointmentUpdatedEmail").mockImplementation(
+        mockSendAppointmentUpdatedEmail,
+      );
+
+      const service = await AppointmentService.forTenant("tenant-123");
+      const result = await service.updateAppointmentByStaff(
+        "appointment-123",
+        { agentId: "agent-456", appointmentDate: "2024-01-15T11:00:00Z" },
+        "client@example.com",
+        "de",
+      );
+
+      expect(result.agentId).toBe("agent-456");
+      expect(result.appointmentDate).toEqual(new Date("2024-01-15T11:00:00Z"));
+      expect(mockDb.transaction).toHaveBeenCalled();
+      expect(mockGetChannelTitle).toHaveBeenCalledWith("tenant-123", "channel-123", "de");
+      expect(mockSendAppointmentUpdatedEmail).toHaveBeenCalledWith(
+        { email: "client@example.com", language: "de" },
+        mockTenant,
+        expect.objectContaining({ agentId: "agent-456" }),
+        "Test Channel",
+      );
+    });
+  });
+
   describe("createNewClientWithAppointment", () => {
     it("should create client tunnel and appointment successfully", async () => {
       const { getTenantDb, centralDb } = await import("../../db");

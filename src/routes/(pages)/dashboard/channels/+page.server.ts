@@ -8,7 +8,7 @@ import { formSchema as editFormSchema } from "./(components)/edit-channel-form";
 import { formSchema as deleteFormSchema } from "./(components)/delete-channel-form";
 import { formSchema as pauseFormSchema } from "./(components)/pause-channel-form";
 import type { TChannel } from "$lib/types/channel";
-import { removeEmptyTranslations } from "$lib/utils/localizations";
+import { getCurrentTranlslation, removeEmptyTranslations } from "$lib/utils/localizations";
 
 const log = logger.setContext(import.meta.filename);
 
@@ -34,7 +34,10 @@ export const load = async (event) => {
 
       try {
         const body = await res.json();
-        return body.channels as TChannel[];
+        const list = body.channels as TChannel[];
+        return list.sort((a, b) =>
+          getCurrentTranlslation(a.names).localeCompare(getCurrentTranlslation(b.names)),
+        );
       } catch (error) {
         log.error("Failed to parse channels response", { error });
       }

@@ -33,7 +33,8 @@ export const load = async (event) => {
 
       try {
         const body = await res.json();
-        return body.agents as TAgent[];
+        const list = body.agents as TAgent[];
+        return list.sort((a, b) => a.name.localeCompare(b.name));
       } catch (error) {
         log.error("Failed to parse agents response", { error });
       }

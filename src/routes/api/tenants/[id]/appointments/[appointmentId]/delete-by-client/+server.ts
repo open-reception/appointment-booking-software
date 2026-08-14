@@ -17,6 +17,7 @@ const requestSchema = z.object({
   emailHash: z.string().min(1),
   challengeId: z.string().min(1),
   challengeResponse: z.string().min(1),
+  encryptedPayload: z.string().optional(),
 });
 
 // Register OpenAPI documentation for DELETE
@@ -131,7 +132,8 @@ export const DELETE: RequestHandler = async ({ request, params }) => {
     }
 
     const body = await request.json();
-    const { emailHash, challengeId, challengeResponse } = requestSchema.parse(body);
+    const { emailHash, challengeId, challengeResponse, encryptedPayload } =
+      requestSchema.parse(body);
 
     log.debug("Client deleting appointment", {
       tenantId,
@@ -146,6 +148,7 @@ export const DELETE: RequestHandler = async ({ request, params }) => {
       emailHash,
       challengeId,
       challengeResponse,
+      encryptedPayload,
     );
 
     log.debug("Appointment deleted successfully by client", {

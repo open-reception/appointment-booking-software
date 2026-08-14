@@ -6,14 +6,17 @@
   import { agents as agentsStore } from "$lib/stores/agents";
   import UnknownItemIcon from "@lucide/svelte/icons/user-star";
   import type { TAddAppointment } from "./types";
+  import { Badge } from "$lib/components/ui/badge";
 
   let {
     newAppointment,
     availableAgents,
+    curAgentId,
     proceed,
   }: {
     newAppointment: TAddAppointment;
     availableAgents: CalendarAgent[];
+    curAgentId?: string | undefined;
     proceed: (data: TAddAppointment) => void;
   } = $props();
 
@@ -46,10 +49,15 @@
                 class="bg-muted text-muted-foreground size-15 rounded-full border stroke-1 p-1"
               />
             {/if}
-            <div class="flex grow flex-col gap-1">
+            <div class="flex grow justify-between gap-1">
               <Text style="md" class="font-medium">
                 {agentItem.name}
               </Text>
+              {#if curAgentId === agentItem.id}
+                <Badge>
+                  {m["currentSelection"]()}
+                </Badge>
+              {/if}
             </div>
           </Button>
         </li>

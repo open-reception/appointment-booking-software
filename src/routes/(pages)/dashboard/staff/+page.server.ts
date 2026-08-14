@@ -36,7 +36,8 @@ export const load = async (event) => {
 
       try {
         const body = await res.json();
-        return body.staff as TStaff[];
+        const list = body.staff as TStaff[];
+        return list.sort((a, b) => a.name.localeCompare(b.name));
       } catch (error) {
         log.error("Failed to parse staff members response", { error });
         return [];

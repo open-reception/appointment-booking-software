@@ -369,6 +369,7 @@
 	"delete": "Löschen",
 	"select": "Auswählen",
 	"close": "Schließen",
+	"unkown": "Unbekannt",
 	"dashboard": {
 		"title": "Übersicht",
 		"hello": "Hallo",
@@ -493,6 +494,7 @@
 	},
 	"channels": {
 		"title": "Kanäle",
+		"singular": "Kanal",
 		"empty": {
 			"title": "Bisher keine Kanäle",
 			"description": "Kanäle sind Ihre Möglichkeit, verschiedene Arten von Terminen zu sammeln"
@@ -920,6 +922,7 @@
 		},
 		"loading": "Lade Personal"
 	},
+	"currentSelection": "Aktuelle Auswahl",
 	"yes": "Ja",
 	"no": "Nein",
 	"unknown": "unbekannt",
@@ -1060,6 +1063,17 @@
 				"reserved": "reserviert"
 			}
 		},
+		"moveAppointment": {
+			"action": "Termin verschieben",
+			"success": "Termin erfolgreich verschoben",
+			"error": "Fehler beim Verschieben des Termins"
+		},
+		"addFollowUpAppointment": {
+			"action": "Folgetermin hinzufügen"
+		},
+		"addAppointmentAfterFail": {
+			"action": "Nach anderem Termin suchen"
+		},
 		"cancelAppointment": {
 			"confirm": "Sind Sie sicher, dass Sie diesen Termin absagen möchten?",
 			"action": "Termin absagen",
@@ -1137,6 +1151,11 @@
 			"introduction": "Ihr Termin wurde abgelehnt.",
 			"reason": "Sie erhalten diese E-Mail, weil jemand mit Ihrer E-Mail Adresse einen Termin bei angefragt hat."
 		},
+		"appointmentUpdated": {
+			"subject": "Ihr Termin für {channel} bei {tenant} wurde aktualisiert",
+			"introduction": "Ihr Termin wurde aktualisiert.",
+			"reason": "Sie erhalten diese E-Mail, weil mit Ihrer E-Mail Adresse einen Termin gebucht wurde."
+		},
 		"appointmentCancelled": {
 			"subject": "Ihr Termin für {channel} bei {tenant} wurde abgesagt",
 			"introduction": "Ihr Termin wurde abgesagt.",
@@ -1173,16 +1192,13 @@
 		"empty": "Keine Benachrichtigungen vorhanden",
 		"types": {
 			"APPOINTMENT_REQUESTED": {
-				"title": "Neue Terminanfrage",
-				"description": "Ein neuer Termin wurde in {channel} angefragt."
+				"title": "Neue Terminanfrage"
 			},
 			"APPOINTMENT_CONFIRMED": {
-				"title": "Termin bestätigt",
-				"description": "Terminanfrage in {channel} wurde bestätigt."
+				"title": "Termin bestätigt"
 			},
 			"APPOINTMENT_CANCELLED": {
-				"title": "Termin abgesagt",
-				"description": "Der Klient hat den Termin in {channel} abgesagt."
+				"title": "Termin abgesagt"
 			}
 		}
 	},

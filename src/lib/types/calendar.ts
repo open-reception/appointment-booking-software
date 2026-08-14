@@ -11,6 +11,45 @@ export type TCalendar = {
   calendar: DaySchedule[];
 };
 
+export type TCalendarMode =
+  | TCalendarModeView
+  | TCalendarModeFollowUp
+  | TCalendarModeMove
+  | TCalendarModeAddAfterFail;
+
+export type TCalendarModeView = {
+  mode: "VIEW";
+};
+
+export type TCalendarModeMove = {
+  mode: "MOVE";
+  channelId: string;
+  agentId: string | undefined;
+  appointmentId: string;
+  appointment: TAppointmentInClipboard;
+};
+
+export type TCalendarModeFollowUp = {
+  mode: "ADD_FOLLOW_UP";
+  appointment: TAppointmentInClipboard;
+};
+
+export type TCalendarModeAddAfterFail = {
+  mode: "ADD_AFTER_FAIL";
+  channelId: string;
+  appointment: TAppointmentInClipboard;
+};
+
+export type TAppointmentInClipboard = {
+  shareEmail: boolean;
+  hasNoEmail: boolean;
+  name: string;
+  locale: string;
+  email?: string;
+  phone?: string;
+  dateTime?: Date;
+};
+
 export type TCalendarItem = TCalendarSlot & {
   appointment?: {
     dateTime: Date;
