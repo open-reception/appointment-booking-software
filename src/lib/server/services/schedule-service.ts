@@ -14,6 +14,13 @@ import { z } from "zod";
 import { ValidationError } from "../utils/errors";
 import { isValidTimeZone, toLocalTime, toLocalTimeIgnoringDst } from "../utils/timezone";
 
+// calendar-speed-logging
+const subsections = {
+  date: new Date(),
+  isAgentAbsent: 0,
+  hasAgentAppointmentConflict: 0,
+};
+
 const scheduleRequestSchema = z.object({
   startDate: z.string().datetime({ offset: true }), // ISO date string with timezone
   endDate: z.string().datetime({ offset: true }), // ISO date string with timezone
@@ -185,16 +192,19 @@ export class ScheduleService {
             and(
               sql`${tenantSchema.agentAbsence.startDate} >= ${request.startDate}`,
               sql`${tenantSchema.agentAbsence.startDate} <= ${request.endDate}`,
+              sql`${tenantSchema.agentAbsence.endDate} > now()`,
             ),
             // Absence ends within period
             and(
               sql`${tenantSchema.agentAbsence.endDate} >= ${request.startDate}`,
               sql`${tenantSchema.agentAbsence.endDate} <= ${request.endDate}`,
+              sql`${tenantSchema.agentAbsence.endDate} > now()`,
             ),
             // Absence spans entire period
             and(
               sql`${tenantSchema.agentAbsence.startDate} <= ${request.startDate}`,
               sql`${tenantSchema.agentAbsence.endDate} >= ${request.endDate}`,
+              sql`${tenantSchema.agentAbsence.endDate} > now()`,
             ),
           ),
         );
@@ -227,9 +237,10 @@ export class ScheduleService {
         timeZone: request.timeZone,
       });
 
-      log.debug("Schedule generated successfully", {
-        tenantId: this.tenantId,
-        daysGenerated: schedule.length,
+      // calendar-speed-logging
+      const log = logger.setContext("generateAvailableSlots");
+      log.debug("⏱️⏱️⏱️ Schedule retrieval completed", {
+        subsections,
       });
 
       return {
@@ -405,20 +416,40 @@ export class ScheduleService {
           ),
         );
 
+        // Do not include slots that are in the past
+        if (slotEndDateTime.getTime() < new Date().getTime()) {
+          currentTime += slotDuration;
+          continue;
+        }
+
         const availableAgents = agents.filter((agent) => {
+          // calendar-speed-logging
+          subsections.date = new Date();
           if (
             this.isAgentAbsent(agent.id, slotStartDateTime, slotEndDateTime, absences, timeZone)
           ) {
             return false;
           }
 
-          return !this.hasAgentAppointmentConflict(
+          // calendar-speed-logging
+          subsections.isAgentAbsent =
+            subsections.isAgentAbsent + (new Date().getTime() - subsections.date.getTime());
+          subsections.date = new Date();
+
+          const conflictResult = !this.hasAgentAppointmentConflict(
             agent.id,
             slotStartDateTime,
             slotEndDateTime,
             appointments,
             timeZone,
           );
+
+          // calendar-speed-logging
+          subsections.hasAgentAppointmentConflict =
+            subsections.hasAgentAppointmentConflict +
+            (new Date().getTime() - subsections.date.getTime());
+
+          return conflictResult;
         });
 
         // Only include slot if there are available agents
@@ -487,6 +518,11 @@ export class ScheduleService {
       const absenceEnd = toLocalTime(new Date(absence.endDate), timeZone);
       const slotStart = toLocalTimeIgnoringDst(slotStartDateTime, timeZone);
       const slotEnd = toLocalTimeIgnoringDst(slotEndDateTime, timeZone);
+
+      // Quick way out
+      if (slotStart > absenceEnd || slotEnd < absenceStart) {
+        return false; // No overlap
+      }
 
       // For time-specific absences, check if the time slot overlaps
       const slotStartsDuringAbsence = slotStart >= absenceStart && slotStart < absenceEnd;
