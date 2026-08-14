@@ -95,7 +95,7 @@ export class ScheduleService {
    */
   async getSchedule(
     request: ScheduleRequest,
-    passkeyId: string | undefined,
+    passkeyId?: string | undefined,
   ): Promise<ScheduleResult> {
     const log = logger.setContext("ScheduleService");
 

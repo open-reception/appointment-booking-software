@@ -23,7 +23,7 @@ vi.mock("$lib/logger", () => ({
 vi.mock("../../auth/webauthn-service", () => ({
   WebAuthnService: {
     // Staff key shares are scoped to the caller's most recently used passkey.
-    getMostRecentPasskey: vi.fn().mockResolvedValue({ id: "passkey-123", lastUsedAt: new Date() }),
+    getCurrentPasskey: vi.fn().mockResolvedValue({ id: "passkey-123", lastUsedAt: new Date() }),
   },
 }));
 
@@ -146,9 +146,9 @@ describe("ScheduleService", () => {
         tenantId: "invalid-uuid",
       };
 
-      await expect(service.getSchedule(invalidRequest as ScheduleRequest)).rejects.toThrow(
-        ValidationError,
-      );
+      await expect(
+        service.getSchedule(invalidRequest as ScheduleRequest, "passkeyId"),
+      ).rejects.toThrow(ValidationError);
     });
 
     it("should generate schedule for valid date range", async () => {
@@ -206,7 +206,7 @@ describe("ScheduleService", () => {
         channelAgents: mockChannelAgents,
       });
 
-      const result = await service.getSchedule(validRequest);
+      const result = await service.getSchedule(validRequest, "passkeyId");
 
       // Validate basic structure
       expect(result).toHaveProperty("period");
@@ -265,7 +265,7 @@ describe("ScheduleService", () => {
         channelAgents: [],
       });
 
-      const result = await service.getSchedule(validRequest);
+      const result = await service.getSchedule(validRequest, "passkeyId");
 
       expect(result.schedule).toHaveLength(1); // One day
       expect(result.schedule[0].channels).toEqual({});
@@ -283,7 +283,9 @@ describe("ScheduleService", () => {
         throw new Error("Database error");
       });
 
-      await expect(service.getSchedule(validRequest)).rejects.toThrow("Database error");
+      await expect(service.getSchedule(validRequest, "passkeyId")).rejects.toThrow(
+        "Database error",
+      );
     });
 
     it("should generate multiple days for date range", async () => {
@@ -303,7 +305,7 @@ describe("ScheduleService", () => {
         channelAgents: [],
       });
 
-      const result = await service.getSchedule(validRequest);
+      const result = await service.getSchedule(validRequest, "passkeyId");
 
       expect(result.schedule).toHaveLength(3); // Three days
       expect(result.schedule[0].date).toBe("2024-01-01");
@@ -384,7 +386,7 @@ describe("ScheduleService", () => {
         channelAgents: mockChannelAgents,
       });
 
-      const result = await service.getSchedule(validRequest);
+      const result = await service.getSchedule(validRequest, "passkeyId");
 
       // Should only have Monday slot (09:00-10:00), not Tuesday slot
       const channelSchedule = result.schedule[0].channels["channel1"];
@@ -459,7 +461,7 @@ describe("ScheduleService", () => {
         channelAgents: mockChannelAgents,
       });
 
-      const result = await service.getSchedule(validRequest);
+      const result = await service.getSchedule(validRequest, "passkeyId");
 
       const channelSchedule = result.schedule[0].channels["channel1"];
       // Should only have 10:00-11:00 slot, not 09:00-10:00 (has appointment)
@@ -544,7 +546,7 @@ describe("ScheduleService", () => {
         channelAgents: mockChannelAgents,
       });
 
-      const result = await service.getSchedule(validRequest);
+      const result = await service.getSchedule(validRequest, "passkeyId");
 
       // Validate appointments are returned
       const channelSchedule = result.schedule[0].channels["channel1"];
@@ -642,7 +644,7 @@ describe("ScheduleService", () => {
         channelAgents: mockChannelAgents,
       });
 
-      const result = await service.getSchedule(validRequest);
+      const result = await service.getSchedule(validRequest, "passkeyId");
 
       const channelSchedule = result.schedule[0].channels["channel1"];
       // Should have no available slots since only agent is absent
@@ -724,7 +726,7 @@ describe("ScheduleService", () => {
         channelAgents: mockChannelAgents,
       });
 
-      const result = await service.getSchedule(validRequest);
+      const result = await service.getSchedule(validRequest, "passkeyId");
 
       const channelSchedule = result.schedule[0].channels["channel1"];
       expect(channelSchedule.availableSlots).toHaveLength(1);
@@ -828,7 +830,7 @@ describe("ScheduleService", () => {
         channelAgents: mockChannelAgents,
       });
 
-      const result = await service.getSchedule(validRequest);
+      const result = await service.getSchedule(validRequest, "passkeyId");
 
       const channel1Schedule = result.schedule[0].channels["channel1"];
       const channel2Schedule = result.schedule[0].channels["channel2"];
@@ -910,7 +912,7 @@ describe("ScheduleService", () => {
         channelAgents: mockChannelAgents,
       });
 
-      const result = await service.getSchedule(validRequest);
+      const result = await service.getSchedule(validRequest, "passkeyId");
 
       const channelSchedule = result.schedule[0].channels["channel1"];
       expect(channelSchedule.availableSlots).toHaveLength(2);

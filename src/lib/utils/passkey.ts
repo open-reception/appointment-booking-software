@@ -358,12 +358,10 @@ export const getPasskeyFormData = async ({
   email,
   userId,
   setPasskeyFieldState,
-  isAdditionalPasskey,
 }: {
   email: string;
   userId: string;
   setPasskeyFieldState: (newState: PasskeyState) => void;
-  isAdditionalPasskey: boolean;
 }) => {
   setPasskeyFieldState("loading");
 
