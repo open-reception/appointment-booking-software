@@ -4,6 +4,7 @@
   import { CenterState } from "$lib/components/templates/empty-state";
   import Button from "$lib/components/ui/button/button.svelte";
   import { closeDialog } from "$lib/components/ui/responsive-dialog";
+  import { Text } from "$lib/components/ui/typography";
   import { ERRORS } from "$lib/errors";
   import { staffCrypto } from "$lib/stores/staff-crypto";
   import type { TAppointmentFilter, TCalendarMode, TCalendarSlot } from "$lib/types/calendar";
@@ -144,9 +145,21 @@
 {:else if step === "agent" && item.availableAgents}
   <SelectAgent availableAgents={item.availableAgents} {newAppointment} {proceed} />
 {:else if step === "summary"}
-  <Button onclick={addAppointment} class="w-full" isLoading={isSubmitting} disabled={isSubmitting}>
-    {m["calendar.addAppointment.steps.summary.action"]()}
-  </Button>
+  <div class="flex flex-col gap-2">
+    {#if newAppointment.hasNoEmail || !newAppointment.tunnel}
+      <Text style="sm" color="light" class="text-center">
+        {m["calendar.addAppointment.steps.summary.hint"]()}
+      </Text>
+    {/if}
+    <Button
+      onclick={addAppointment}
+      class="w-full"
+      isLoading={isSubmitting}
+      disabled={isSubmitting}
+    >
+      {m["calendar.addAppointment.steps.summary.action"]()}
+    </Button>
+  </div>
 {:else if step === "client"}
   <ClientDataForm {newAppointment} {proceed} />
 {:else if step === "success"}

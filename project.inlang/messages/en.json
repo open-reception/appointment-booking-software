@@ -1058,6 +1058,7 @@
 					"action": "Add Client Details"
 				},
 				"summary": {
+					"hint": "Adding this appointment will create a new client. This process will take a bit longer.",
 					"action": "Add Appointment"
 				},
 				"error": {
