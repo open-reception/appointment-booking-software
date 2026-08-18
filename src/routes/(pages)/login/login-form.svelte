@@ -45,6 +45,10 @@
           auth.setUser(event.result.data?.user);
           await goto(resolve(ROUTES.DASHBOARD.MAIN));
         } else {
+          if ($formData.type === "passkey" && $formData.id === "") {
+            onEvent({ isSubmitting: false });
+            return; // Don't show error if passkey is not set yet
+          }
           toast.error(m["login.error"]());
         }
         onEvent({ isSubmitting: false });
