@@ -1110,6 +1110,7 @@
 					"action": "Daten hinzufügen"
 				},
 				"summary": {
+					"hint": "Das Hinzufügen dieses Termins erstellt einen neuen Klienten. Dieser Vorgang dauert etwas länger.",
 					"action": "Termin hinzufügen"
 				},
 				"error": {
