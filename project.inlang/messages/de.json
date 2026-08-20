@@ -798,6 +798,7 @@
 				"action": "Hinzufügen",
 				"success": "Passkey hinzugefügt",
 				"error": "Passkey konnte nicht hinzugefügt werden",
+				"errorDeleteSuccess": "Teilweise hinzugefügter Passkey gelöscht",
 				"maxReached": {
 					"title": "Maximum erreicht",
 					"description": "Du hast bereits die maximale Anzahl von Passkeys für Deinen Account erreicht"

@@ -167,6 +167,17 @@
     } catch (error) {
       console.error("Unable to add passkey", error);
       toast.error(m["account.passkeys.add.error"]());
+
+      // Try to delete the partially added passkey if it was created
+      await fetch(`/api/auth/passkeys/${$formData.id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ tenantId }),
+        credentials: "same-origin",
+      });
+      toast.info(m["account.passkeys.add.errorDeleteSuccess"]());
     } finally {
       isSubmitting = false;
     }

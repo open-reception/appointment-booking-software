@@ -229,10 +229,12 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
     // Try to get user by email - but don't fail if not found
     let user = null;
     let isRegistration = false;
+    let passkeysLength = 0;
 
     try {
       user = await UserService.getUserByEmail(requestEmail);
       const passkeys = await UserService.getUserPasskeys(user.id);
+      passkeysLength = passkeys.length;
       if (passkeys.length === 0) {
         isRegistration = true; // User exists but has no passphrase - must register
       }
@@ -279,6 +281,10 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
         path: "/",
         maxAge: 60 * 5, // 5 minutes
       });
+    } else {
+      if (passkeysLength >= 3) {
+        throw new BackendError("Maximum number of passkeys reached", 400);
+      }
     }
 
     let allowCredentials: Array<{

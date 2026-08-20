@@ -806,6 +806,7 @@
 				"action": "Add Passkey",
 				"success": "Passkey added",
 				"error": "Passkey could not be added",
+				"errorDeleteSuccess": "Partially added Passkey deleted",
 				"maxReached": {
 					"title": "Maximum reached",
 					"description": "You've reached the maximum amount of Passkeys for this account"
