@@ -97,6 +97,24 @@ function setupDbMocks(responses: {
   });
 }
 
+const january1stNextYear = new Date();
+january1stNextYear.setFullYear(january1stNextYear.getFullYear() + 1);
+january1stNextYear.setMonth(0);
+january1stNextYear.setDate(1);
+const jan1stNextYearString = january1stNextYear.toISOString().split("T")[0];
+
+const jan2ndNextYear = new Date(january1stNextYear);
+jan2ndNextYear.setDate(january1stNextYear.getDate() + 1);
+const jan2ndNextYearString = jan2ndNextYear.toISOString().split("T")[0];
+
+const jan3rdNextYear = new Date(january1stNextYear);
+jan3rdNextYear.setDate(january1stNextYear.getDate() + 2);
+const jan3rdNextYearString = jan3rdNextYear.toISOString().split("T")[0];
+
+const weekdayJan1stNextYear = january1stNextYear.getUTCDay();
+const bitmaskForJan1stNextYear =
+  weekdayJan1stNextYear === 0 ? 64 : Math.pow(2, weekdayJan1stNextYear - 1);
+
 describe("ScheduleService", () => {
   const mockTenantId = "123e4567-e89b-12d3-a456-426614174000";
 
@@ -146,8 +164,8 @@ describe("ScheduleService", () => {
 
     it("should generate schedule for valid date range", async () => {
       const validRequest: ScheduleRequest = {
-        startDate: "2024-01-01T00:00:00.000Z",
-        endDate: "2024-01-01T23:59:59.999Z",
+        startDate: `${jan1stNextYearString}T00:00:00.000Z`,
+        endDate: `${jan1stNextYearString}T23:59:59.999Z`,
         timeZone: "Europe/Berlin",
         tenantId: mockTenantId,
       };
@@ -170,7 +188,7 @@ describe("ScheduleService", () => {
         {
           slotTemplate: {
             id: "template1",
-            weekdays: 1, // Monday (2^(1-1) = 1)
+            weekdays: bitmaskForJan1stNextYear,
             from: "09:00",
             to: "17:00",
             duration: 60,
@@ -211,7 +229,7 @@ describe("ScheduleService", () => {
 
       // Validate Monday schedule with 8 slots from 09:00-17:00
       const mondaySchedule = result.schedule[0];
-      expect(mondaySchedule.date).toBe("2024-01-01");
+      expect(mondaySchedule.date).toBe(`${jan1stNextYearString}`);
       expect(mondaySchedule.channels).toHaveProperty("channel1");
 
       const channelSchedule = mondaySchedule.channels["channel1"];
@@ -221,14 +239,38 @@ describe("ScheduleService", () => {
 
       // Validate each slot has correct times, duration, and agents
       const expectedSlots = [
-        { from: "2024-01-01T09:00:00.000Z", to: "2024-01-01T10:00:00.000Z" },
-        { from: "2024-01-01T10:00:00.000Z", to: "2024-01-01T11:00:00.000Z" },
-        { from: "2024-01-01T11:00:00.000Z", to: "2024-01-01T12:00:00.000Z" },
-        { from: "2024-01-01T12:00:00.000Z", to: "2024-01-01T13:00:00.000Z" },
-        { from: "2024-01-01T13:00:00.000Z", to: "2024-01-01T14:00:00.000Z" },
-        { from: "2024-01-01T14:00:00.000Z", to: "2024-01-01T15:00:00.000Z" },
-        { from: "2024-01-01T15:00:00.000Z", to: "2024-01-01T16:00:00.000Z" },
-        { from: "2024-01-01T16:00:00.000Z", to: "2024-01-01T17:00:00.000Z" },
+        {
+          from: `${jan1stNextYearString}T09:00:00.000Z`,
+          to: `${jan1stNextYearString}T10:00:00.000Z`,
+        },
+        {
+          from: `${jan1stNextYearString}T10:00:00.000Z`,
+          to: `${jan1stNextYearString}T11:00:00.000Z`,
+        },
+        {
+          from: `${jan1stNextYearString}T11:00:00.000Z`,
+          to: `${jan1stNextYearString}T12:00:00.000Z`,
+        },
+        {
+          from: `${jan1stNextYearString}T12:00:00.000Z`,
+          to: `${jan1stNextYearString}T13:00:00.000Z`,
+        },
+        {
+          from: `${jan1stNextYearString}T13:00:00.000Z`,
+          to: `${jan1stNextYearString}T14:00:00.000Z`,
+        },
+        {
+          from: `${jan1stNextYearString}T14:00:00.000Z`,
+          to: `${jan1stNextYearString}T15:00:00.000Z`,
+        },
+        {
+          from: `${jan1stNextYearString}T15:00:00.000Z`,
+          to: `${jan1stNextYearString}T16:00:00.000Z`,
+        },
+        {
+          from: `${jan1stNextYearString}T16:00:00.000Z`,
+          to: `${jan1stNextYearString}T17:00:00.000Z`,
+        },
       ];
 
       expectedSlots.forEach((expectedSlot, index) => {
@@ -243,8 +285,8 @@ describe("ScheduleService", () => {
 
     it("should handle empty channel results", async () => {
       const validRequest: ScheduleRequest = {
-        startDate: "2024-01-01T00:00:00.000Z",
-        endDate: "2024-01-01T23:59:59.999Z",
+        startDate: `${jan1stNextYearString}T00:00:00.000Z`,
+        endDate: `${jan1stNextYearString}T23:59:59.999Z`,
         timeZone: "Europe/Berlin",
         tenantId: mockTenantId,
       };
@@ -266,8 +308,8 @@ describe("ScheduleService", () => {
 
     it("should handle database errors", async () => {
       const validRequest: ScheduleRequest = {
-        startDate: "2024-01-01T00:00:00.000Z",
-        endDate: "2024-01-01T23:59:59.999Z",
+        startDate: `${jan1stNextYearString}T00:00:00.000Z`,
+        endDate: `${jan1stNextYearString}T23:59:59.999Z`,
         timeZone: "Europe/Berlin",
         tenantId: mockTenantId,
       };
@@ -281,8 +323,8 @@ describe("ScheduleService", () => {
 
     it("should generate multiple days for date range", async () => {
       const validRequest: ScheduleRequest = {
-        startDate: "2024-01-01T00:00:00.000Z",
-        endDate: "2024-01-03T23:59:59.999Z", // 3 days
+        startDate: `${jan1stNextYearString}T00:00:00.000Z`,
+        endDate: `${jan3rdNextYear.toISOString()}`, // 3 days
         timeZone: "Europe/Berlin",
         tenantId: mockTenantId,
       };
@@ -299,9 +341,9 @@ describe("ScheduleService", () => {
       const result = await service.getSchedule(validRequest);
 
       expect(result.schedule).toHaveLength(3); // Three days
-      expect(result.schedule[0].date).toBe("2024-01-01");
-      expect(result.schedule[1].date).toBe("2024-01-02");
-      expect(result.schedule[2].date).toBe("2024-01-03");
+      expect(result.schedule[0].date).toBe(`${jan1stNextYearString}`);
+      expect(result.schedule[1].date).toBe(`${jan2ndNextYearString}`);
+      expect(result.schedule[2].date).toBe(`${jan3rdNextYearString}`);
     });
   });
 
@@ -314,8 +356,8 @@ describe("ScheduleService", () => {
 
     it("should filter slots by weekday", async () => {
       const validRequest: ScheduleRequest = {
-        startDate: "2024-01-01T00:00:00.000Z", // Monday
-        endDate: "2024-01-01T23:59:59.999Z",
+        startDate: `${jan1stNextYearString}T00:00:00.000Z`, // Monday
+        endDate: `${jan1stNextYearString}T23:59:59.999Z`,
         timeZone: "Europe/Berlin",
         tenantId: mockTenantId,
       };
@@ -337,7 +379,7 @@ describe("ScheduleService", () => {
         {
           slotTemplate: {
             id: "template1",
-            weekdays: 1, // Only Monday (2^(1-1) = 1)
+            weekdays: bitmaskForJan1stNextYear,
             from: "09:00",
             to: "10:00",
             duration: 60,
@@ -382,13 +424,13 @@ describe("ScheduleService", () => {
       // Should only have Monday slot (09:00-10:00), not Tuesday slot
       const channelSchedule = result.schedule[0].channels["channel1"];
       expect(channelSchedule.availableSlots).toHaveLength(1);
-      expect(channelSchedule.availableSlots[0].from).toBe("2024-01-01T09:00:00.000Z");
+      expect(channelSchedule.availableSlots[0].from).toBe(`${jan1stNextYearString}T09:00:00.000Z`);
     });
 
     it("should exclude slots with appointments", async () => {
       const validRequest: ScheduleRequest = {
-        startDate: "2024-01-01T00:00:00.000Z",
-        endDate: "2024-01-01T23:59:59.999Z",
+        startDate: `${jan1stNextYearString}T00:00:00.000Z`,
+        endDate: `${jan1stNextYearString}T23:59:59.999Z`,
         timeZone: "Europe/Berlin",
         tenantId: mockTenantId,
       };
@@ -410,7 +452,7 @@ describe("ScheduleService", () => {
         {
           slotTemplate: {
             id: "template1",
-            weekdays: 1, // Monday (2^(1-1) = 1)
+            weekdays: bitmaskForJan1stNextYear,
             from: "09:00",
             to: "11:00",
             duration: 60,
@@ -425,7 +467,7 @@ describe("ScheduleService", () => {
           tunnelId: "tunnel1",
           channelId: "channel1",
           agentId: "agent1",
-          appointmentDate: "2024-01-01T09:00:00.000Z", // 09:00 UTC
+          appointmentDate: `${jan1stNextYearString}T09:00:00.000Z`, // 09:00 UTC
           duration: 60,
           status: "NEW",
         },
@@ -457,13 +499,13 @@ describe("ScheduleService", () => {
       const channelSchedule = result.schedule[0].channels["channel1"];
       // Should only have 10:00-11:00 slot, not 09:00-10:00 (has appointment)
       expect(channelSchedule.availableSlots).toHaveLength(1);
-      expect(channelSchedule.availableSlots[0].from).toBe("2024-01-01T10:00:00.000Z");
+      expect(channelSchedule.availableSlots[0].from).toBe(`${jan1stNextYearString}T10:00:00.000Z`);
     });
 
     it("should handle appointments correctly and reduce available slots", async () => {
       const validRequest: ScheduleRequest = {
-        startDate: "2024-01-01T00:00:00.000Z", // Monday
-        endDate: "2024-01-01T23:59:59.999Z",
+        startDate: `${jan1stNextYearString}T00:00:00.000Z`, // Monday
+        endDate: `${jan1stNextYearString}T23:59:59.999Z`,
         timeZone: "Europe/Berlin",
         tenantId: mockTenantId,
       };
@@ -485,7 +527,7 @@ describe("ScheduleService", () => {
         {
           slotTemplate: {
             id: "template1",
-            weekdays: 1, // Monday (2^(1-1) = 1)
+            weekdays: bitmaskForJan1stNextYear,
             from: "09:00",
             to: "17:00",
             duration: 60,
@@ -501,7 +543,7 @@ describe("ScheduleService", () => {
           tunnelId: "tunnel1",
           channelId: "channel1",
           agentId: "agent1",
-          appointmentDate: "2024-01-01T10:00:00.000Z", // 10:00 UTC
+          appointmentDate: `${jan1stNextYearString}T10:00:00.000Z`, // 10:00 UTC
           duration: 60,
           status: "CONFIRMED",
         },
@@ -510,7 +552,7 @@ describe("ScheduleService", () => {
           tunnelId: "tunnel2",
           channelId: "channel1",
           agentId: "agent1",
-          appointmentDate: "2024-01-01T14:00:00.000Z", // 14:00 UTC
+          appointmentDate: `${jan1stNextYearString}T14:00:00.000Z`, // 14:00 UTC
           duration: 60,
           status: "NEW",
         },
@@ -550,12 +592,30 @@ describe("ScheduleService", () => {
 
       // Validate available slots exclude booked times (10:00-11:00 and 14:00-15:00)
       const expectedAvailableSlots = [
-        { from: "2024-01-01T09:00:00.000Z", to: "2024-01-01T10:00:00.000Z" },
-        { from: "2024-01-01T11:00:00.000Z", to: "2024-01-01T12:00:00.000Z" },
-        { from: "2024-01-01T12:00:00.000Z", to: "2024-01-01T13:00:00.000Z" },
-        { from: "2024-01-01T13:00:00.000Z", to: "2024-01-01T14:00:00.000Z" },
-        { from: "2024-01-01T15:00:00.000Z", to: "2024-01-01T16:00:00.000Z" },
-        { from: "2024-01-01T16:00:00.000Z", to: "2024-01-01T17:00:00.000Z" },
+        {
+          from: `${jan1stNextYearString}T09:00:00.000Z`,
+          to: `${jan1stNextYearString}T10:00:00.000Z`,
+        },
+        {
+          from: `${jan1stNextYearString}T11:00:00.000Z`,
+          to: `${jan1stNextYearString}T12:00:00.000Z`,
+        },
+        {
+          from: `${jan1stNextYearString}T12:00:00.000Z`,
+          to: `${jan1stNextYearString}T13:00:00.000Z`,
+        },
+        {
+          from: `${jan1stNextYearString}T13:00:00.000Z`,
+          to: `${jan1stNextYearString}T14:00:00.000Z`,
+        },
+        {
+          from: `${jan1stNextYearString}T15:00:00.000Z`,
+          to: `${jan1stNextYearString}T16:00:00.000Z`,
+        },
+        {
+          from: `${jan1stNextYearString}T16:00:00.000Z`,
+          to: `${jan1stNextYearString}T17:00:00.000Z`,
+        },
       ];
 
       expectedAvailableSlots.forEach((expectedSlot, index) => {
@@ -570,8 +630,8 @@ describe("ScheduleService", () => {
 
     it("should exclude slots when all agents are absent", async () => {
       const validRequest: ScheduleRequest = {
-        startDate: "2024-01-01T00:00:00.000Z",
-        endDate: "2024-01-01T23:59:59.999Z",
+        startDate: `${jan1stNextYearString}T00:00:00.000Z`,
+        endDate: `${jan1stNextYearString}T23:59:59.999Z`,
         timeZone: "Europe/Berlin",
         tenantId: mockTenantId,
       };
@@ -593,7 +653,7 @@ describe("ScheduleService", () => {
         {
           slotTemplate: {
             id: "template1",
-            weekdays: 1, // Monday (2^(1-1) = 1)
+            weekdays: bitmaskForJan1stNextYear,
             from: "09:00",
             to: "10:00",
             duration: 60,
@@ -606,8 +666,8 @@ describe("ScheduleService", () => {
         {
           id: "absence1",
           agentId: "agent1",
-          startDate: "2024-01-01T00:00:00.000Z",
-          endDate: "2024-01-01T23:59:59.999Z",
+          startDate: `${jan1stNextYearString}T00:00:00.000Z`,
+          endDate: `${jan1stNextYearString}T23:59:59.999Z`,
           absenceType: "Urlaub",
           description: null,
           isFullDay: true,
@@ -644,8 +704,8 @@ describe("ScheduleService", () => {
 
     it("should keep slot if one agent is booked but another is available", async () => {
       const validRequest: ScheduleRequest = {
-        startDate: "2024-01-01T00:00:00.000Z",
-        endDate: "2024-01-01T23:59:59.999Z",
+        startDate: `${jan1stNextYearString}T00:00:00.000Z`,
+        endDate: `${jan1stNextYearString}T23:59:59.999Z`,
         timeZone: "Europe/Berlin",
         tenantId: mockTenantId,
       };
@@ -667,7 +727,7 @@ describe("ScheduleService", () => {
         {
           slotTemplate: {
             id: "template1",
-            weekdays: 1,
+            weekdays: bitmaskForJan1stNextYear,
             from: "09:00",
             to: "10:00",
             duration: 60,
@@ -682,7 +742,7 @@ describe("ScheduleService", () => {
           tunnelId: "tunnel1",
           channelId: "channel1",
           agentId: "agent1",
-          appointmentDate: "2024-01-01T09:00:00.000Z",
+          appointmentDate: `${jan1stNextYearString}T09:00:00.000Z`,
           duration: 60,
           status: "CONFIRMED",
         },
@@ -721,15 +781,15 @@ describe("ScheduleService", () => {
 
       const channelSchedule = result.schedule[0].channels["channel1"];
       expect(channelSchedule.availableSlots).toHaveLength(1);
-      expect(channelSchedule.availableSlots[0].from).toBe("2024-01-01T09:00:00.000Z");
+      expect(channelSchedule.availableSlots[0].from).toBe(`${jan1stNextYearString}T09:00:00.000Z`);
       expect(channelSchedule.availableSlots[0].availableAgents).toHaveLength(1);
       expect(channelSchedule.availableSlots[0].availableAgents[0].id).toBe("agent2");
     });
 
     it("should block same agent across channels at the same time", async () => {
       const validRequest: ScheduleRequest = {
-        startDate: "2024-01-01T00:00:00.000Z",
-        endDate: "2024-01-01T23:59:59.999Z",
+        startDate: `${jan1stNextYearString}T00:00:00.000Z`,
+        endDate: `${jan1stNextYearString}T23:59:59.999Z`,
         timeZone: "Europe/Berlin",
         tenantId: mockTenantId,
       };
@@ -761,7 +821,7 @@ describe("ScheduleService", () => {
         {
           slotTemplate: {
             id: "template1",
-            weekdays: 1,
+            weekdays: bitmaskForJan1stNextYear,
             from: "09:00",
             to: "11:00",
             duration: 60,
@@ -771,7 +831,7 @@ describe("ScheduleService", () => {
         {
           slotTemplate: {
             id: "template2",
-            weekdays: 1,
+            weekdays: bitmaskForJan1stNextYear,
             from: "09:00",
             to: "11:00",
             duration: 60,
@@ -786,7 +846,7 @@ describe("ScheduleService", () => {
           tunnelId: "tunnel1",
           channelId: "channel1",
           agentId: "agent1",
-          appointmentDate: "2024-01-01T10:00:00.000Z",
+          appointmentDate: `${jan1stNextYearString}T10:00:00.000Z`,
           duration: 60,
           status: "CONFIRMED",
         },
@@ -827,16 +887,16 @@ describe("ScheduleService", () => {
       const channel2Schedule = result.schedule[0].channels["channel2"];
 
       expect(channel1Schedule.availableSlots).toHaveLength(1);
-      expect(channel1Schedule.availableSlots[0].from).toBe("2024-01-01T09:00:00.000Z");
+      expect(channel1Schedule.availableSlots[0].from).toBe(`${jan1stNextYearString}T09:00:00.000Z`);
 
       expect(channel2Schedule.availableSlots).toHaveLength(1);
-      expect(channel2Schedule.availableSlots[0].from).toBe("2024-01-01T09:00:00.000Z");
+      expect(channel2Schedule.availableSlots[0].from).toBe(`${jan1stNextYearString}T09:00:00.000Z`);
     });
 
     it("should exclude slots where an agent has a recurring absence", async () => {
       const validRequest: ScheduleRequest = {
-        startDate: "2024-01-01T00:00:00.000Z",
-        endDate: "2024-01-01T23:59:59.999Z",
+        startDate: `${jan1stNextYearString}T00:00:00.000Z`,
+        endDate: `${jan1stNextYearString}T23:59:59.999Z`,
         timeZone: "Europe/Berlin",
         tenantId: mockTenantId,
       };
@@ -858,7 +918,7 @@ describe("ScheduleService", () => {
         {
           slotTemplate: {
             id: "template1",
-            weekdays: 1, // Monday (2^(1-1) = 1)
+            weekdays: bitmaskForJan1stNextYear,
             from: "09:00",
             to: "12:00",
             duration: 60,
@@ -872,11 +932,11 @@ describe("ScheduleService", () => {
           id: "absence1",
           type: "RECURRING",
           agentId: "agent1",
-          startDate: "2024-01-01T00:00:00.000Z",
-          endDate: "2024-01-01T23:59:59.999Z",
+          startDate: `${jan1stNextYearString}T00:00:00.000Z`,
+          endDate: `${jan1stNextYearString}T23:59:59.999Z`,
           absenceType: "Urlaub",
           description: null,
-          weekdays: 1,
+          weekdays: bitmaskForJan1stNextYear,
           from: "09:00",
           to: "10:00",
         },
@@ -903,6 +963,8 @@ describe("ScheduleService", () => {
         channelAgents: mockChannelAgents,
       });
 
+      console.log("validRequest", validRequest);
+      console.log("mockAbsences", mockAbsences);
       const result = await service.getSchedule(validRequest);
 
       const channelSchedule = result.schedule[0].channels["channel1"];
@@ -918,8 +980,8 @@ describe("ScheduleService", () => {
             },
           ],
           duration: 60,
-          from: "2024-01-01T10:00:00.000Z",
-          to: "2024-01-01T11:00:00.000Z",
+          from: `${jan1stNextYearString}T10:00:00.000Z`,
+          to: `${jan1stNextYearString}T11:00:00.000Z`,
         },
         {
           availableAgents: [
@@ -931,8 +993,8 @@ describe("ScheduleService", () => {
             },
           ],
           duration: 60,
-          from: "2024-01-01T11:00:00.000Z",
-          to: "2024-01-01T12:00:00.000Z",
+          from: `${jan1stNextYearString}T11:00:00.000Z`,
+          to: `${jan1stNextYearString}T12:00:00.000Z`,
         },
       ]);
     });
