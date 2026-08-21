@@ -35,6 +35,7 @@ import { NotificationService } from "./notification-service";
 import { TenantAdminService } from "./tenant-admin-service";
 import type { PgTransaction } from "drizzle-orm/pg-core";
 import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
+import { ScheduleService } from "./schedule-service";
 
 export interface ClientTunnelData {
   tunnelId: string;
@@ -429,6 +430,16 @@ export class AppointmentService {
           tenantId: this.tenantId,
         });
       });
+
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    const date = new Date(result[0].appointmentDate);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: date,
+      endDate: date,
+      channelId: result[0].channelId,
+      awaitRebuild: true,
+    });
   }
 
   public async cancelAppointment(id: string): Promise<SelectAppointment> {
@@ -451,6 +462,16 @@ export class AppointmentService {
       throw new ValidationError("Appointment not found or in wrong state");
     }
 
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    const date = new Date(result[0].appointmentDate);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: date,
+      endDate: date,
+      channelId: result[0].channelId,
+      awaitRebuild: true,
+    });
+
     const row = result[0];
     return row;
   }
@@ -472,6 +493,16 @@ export class AppointmentService {
       });
       return false;
     }
+
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    const date = new Date(result[0].appointmentDate);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: date,
+      endDate: date,
+      channelId: result[0].channelId,
+      awaitRebuild: true,
+    });
 
     log.debug("Appointment deleted successfully", { appointmentId: id, tenantId: this.tenantId });
     return true;
@@ -553,6 +584,16 @@ export class AppointmentService {
         },
       );
     }
+
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    const date = new Date(appointmentResult[0].appointmentDate);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: date,
+      endDate: date,
+      channelId: appointmentResult[0].channelId,
+      awaitRebuild: true,
+    });
 
     log.info("Appointment deleted by staff successfully", {
       appointmentId,
@@ -687,6 +728,28 @@ export class AppointmentService {
       channelId,
       tenantId: this.tenantId,
     });
+
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    const date = new Date(appointmentResult[0].appointmentDate);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: date,
+      endDate: date,
+      channelId: appointmentResult[0].channelId,
+      awaitRebuild: true,
+    });
+    // Also update the cache if the appointment date has changed to a different day
+    if (
+      date.toISOString().split("T")[0] !==
+      newAppointment.appointmentDate.toISOString().split("T")[0]
+    ) {
+      await scheduleService.cleanAndRegenerateCache({
+        startDate: newAppointment.appointmentDate,
+        endDate: newAppointment.appointmentDate,
+        channelId: appointmentResult[0].channelId,
+        awaitRebuild: true,
+      });
+    }
 
     return newAppointment;
   }
@@ -867,6 +930,15 @@ export class AppointmentService {
       tenantId: this.tenantId,
       tunnelId: appointmentData.tunnelId,
       appointmentId: result.id,
+    });
+
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: result.appointmentDate,
+      endDate: result.appointmentDate,
+      channelId: appointmentData.channelId,
+      awaitRebuild: true,
     });
 
     return response;
@@ -1065,6 +1137,16 @@ export class AppointmentService {
         });
       });
     }
+
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    const date = new Date(result.appointment.appointmentDate);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: date,
+      endDate: date,
+      channelId: result.appointment.channelId,
+      awaitRebuild: true,
+    });
 
     return response;
   }
@@ -1359,6 +1441,16 @@ export class AppointmentService {
       tenantId: this.tenantId,
       appointmentId,
       channelId: appointment.channelId,
+    });
+
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    const date = new Date(appointmentResult[0].appointmentDate);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: date,
+      endDate: date,
+      channelId: appointmentResult[0].channelId,
+      awaitRebuild: true,
     });
   }
 
