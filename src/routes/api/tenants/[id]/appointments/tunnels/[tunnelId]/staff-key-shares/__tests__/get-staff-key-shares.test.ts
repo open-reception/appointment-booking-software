@@ -47,6 +47,7 @@ vi.mock("$lib/server/db/tenant-schema", () => ({
     userId: "userId",
     tunnelId: "tunnelId",
     encryptedTunnelKey: "encryptedTunnelKey",
+    passkeyId: "passkeyId",
   },
 }));
 
@@ -106,6 +107,7 @@ describe("Get Staff Key Shares API", () => {
         {
           tunnelId: mockTunnelId,
           encryptedTunnelKey: "encrypted-key-share",
+          passkeyId: "passkey-id",
         },
       ]),
     );
@@ -123,7 +125,13 @@ describe("Get Staff Key Shares API", () => {
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body).toEqual({
-      keyShares: [{ tunnelId: mockTunnelId, encryptedTunnelKey: "encrypted-key-share" }],
+      keyShares: [
+        {
+          tunnelId: mockTunnelId,
+          encryptedTunnelKey: "encrypted-key-share",
+          passkeyId: "passkey-id",
+        },
+      ],
     });
     expect(mockCheckPermission).toHaveBeenCalledWith(
       { user: { id: mockStaffUserId, tenantId: mockTenantId, role: "STAFF" } },

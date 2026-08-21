@@ -5,4 +5,5 @@ export type TStaff = Pick<SelectUser, "id" | "name" | "role" | "email">;
 export type TStaffKeyShare = {
   tunnelId: string;
   encryptedTunnelKey: string;
+  passkeyId: string;
 };
