@@ -376,6 +376,7 @@ export class ScheduleService {
         and(
           eq(scheduleCache.date, date.toISOString().split("T")[0]),
           eq(scheduleCache.channel, channelId),
+          eq(scheduleCache.timezone, timeZone),
         ),
       )
       .orderBy(scheduleCache.date);
@@ -669,6 +670,10 @@ export class ScheduleService {
     channelId: string;
     awaitRebuild?: boolean;
   }): Promise<void> {
+    console.log("🚨🚨🚨🚨🚨🚨🚨🚨 cleanAndRegenerateCache()");
+    console.log("channelId:", channelId);
+    console.log("startDate:", startDate);
+    console.log("endDate:", endDate);
     // Get all time zones for the channel in the cache
     const timeZones = await this.usedTimeZones();
 
