@@ -27,6 +27,14 @@ import { getTenantDb } from "../../db";
 // Mock database operations with proper query chain handling
 const mockDb = {
   select: vi.fn(),
+  delete: vi.fn(() => ({
+    where: vi.fn(() => Promise.resolve()),
+  })),
+  insert: vi.fn(() => ({
+    values: vi.fn(() => ({
+      onConflictDoUpdate: vi.fn(() => Promise.resolve()),
+    })),
+  })),
 };
 
 // Helper to setup database query mocks for the exact ScheduleService query pattern
@@ -36,8 +44,11 @@ function setupDbMocks(responses: {
   appointments: any[];
   absences: any[];
   channelAgents: any[];
+  scheduleCache?: any[];
+  keyShares?: any[];
 }) {
   let queryCallIndex = 0;
+  const hasKeyShareQuery = typeof responses.keyShares !== "undefined";
 
   (mockDb.select as any).mockImplementation(() => {
     queryCallIndex++;
@@ -69,8 +80,18 @@ function setupDbMocks(responses: {
       };
     }
 
+    // Query 3a (optional): staff key shares - select with where
+    if (hasKeyShareQuery && queryCallIndex === 4) {
+      return {
+        from: vi.fn(() => ({
+          where: vi.fn(() => responses.keyShares ?? []),
+        })),
+      };
+    }
+
     // Query 4: Absences - select with where (complex date conditions)
-    if (queryCallIndex === 4) {
+    const absencesQueryIndex = hasKeyShareQuery ? 5 : 4;
+    if (queryCallIndex === absencesQueryIndex) {
       return {
         from: vi.fn(() => ({
           where: vi.fn(() => responses.absences),
@@ -79,7 +100,8 @@ function setupDbMocks(responses: {
     }
 
     // Query 5: Channel Agents - select with innerJoin
-    if (queryCallIndex === 5) {
+    const channelAgentsQueryIndex = hasKeyShareQuery ? 6 : 5;
+    if (queryCallIndex === channelAgentsQueryIndex) {
       return {
         from: vi.fn(() => ({
           innerJoin: vi.fn(() => responses.channelAgents),
@@ -87,10 +109,24 @@ function setupDbMocks(responses: {
       };
     }
 
+    // Query 6+: Schedule cache lookup - select with where().orderBy()
+    const firstCacheQueryIndex = hasKeyShareQuery ? 7 : 6;
+    if (queryCallIndex >= firstCacheQueryIndex) {
+      return {
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            orderBy: vi.fn(() => responses.scheduleCache ?? []),
+          })),
+        })),
+      };
+    }
+
     // Default fallback
     return {
       from: vi.fn(() => ({
-        where: vi.fn(() => []),
+        where: vi.fn(() => ({
+          orderBy: vi.fn(() => []),
+        })),
         innerJoin: vi.fn(() => []),
       })),
     };
@@ -997,6 +1033,235 @@ describe("ScheduleService", () => {
           to: `${jan1stNextYearString}T12:00:00.000Z`,
         },
       ]);
+    });
+  });
+
+  describe("cache management", () => {
+    let service: ScheduleService;
+
+    beforeEach(async () => {
+      service = await ScheduleService.forTenant(mockTenantId);
+    });
+
+    it("should clean cache and rebuild synchronously when awaitRebuild is true", async () => {
+      const startDate = new Date(`${jan1stNextYearString}T00:00:00.000Z`);
+      const endDate = new Date(`${jan2ndNextYearString}T23:59:59.999Z`);
+
+      (mockDb.select as any).mockReturnValue({
+        from: vi.fn(() => ({
+          groupBy: vi.fn(() => [{ timezone: "UTC" }, { timezone: "Europe/Berlin" }]),
+        })),
+      });
+
+      const deleteWhere = vi.fn(() => Promise.resolve());
+      (mockDb.delete as any).mockReturnValue({
+        where: deleteWhere,
+      });
+
+      const getScheduleSpy = vi.spyOn(service, "getSchedule").mockResolvedValue({
+        period: {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+        },
+        schedule: [],
+      });
+
+      await service.cleanAndRegenerateCache({
+        startDate,
+        endDate,
+        channelId: "channel-123",
+        awaitRebuild: true,
+      });
+
+      expect(deleteWhere).toHaveBeenCalledTimes(1);
+      expect(getScheduleSpy).toHaveBeenCalledTimes(2);
+      expect(getScheduleSpy).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          tenantId: mockTenantId,
+          channelId: "channel-123",
+          timeZone: "UTC",
+        }),
+      );
+      expect(getScheduleSpy).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          tenantId: mockTenantId,
+          channelId: "channel-123",
+          timeZone: "Europe/Berlin",
+        }),
+      );
+    });
+
+    it("should cap rebuild end date to max allowed horizon", async () => {
+      const startDate = new Date(`${jan1stNextYearString}T00:00:00.000Z`);
+      const veryFarEndDate = new Date("3000-01-01T00:00:00.000Z");
+
+      (mockDb.select as any).mockReturnValue({
+        from: vi.fn(() => ({
+          groupBy: vi.fn(() => [{ timezone: "UTC" }]),
+        })),
+      });
+
+      (mockDb.delete as any).mockReturnValue({
+        where: vi.fn(() => Promise.resolve()),
+      });
+
+      const getScheduleSpy = vi.spyOn(service, "getSchedule").mockResolvedValue({
+        period: {
+          startDate: startDate.toISOString(),
+          endDate: veryFarEndDate.toISOString(),
+        },
+        schedule: [],
+      });
+
+      await service.cleanAndRegenerateCache({
+        startDate,
+        endDate: veryFarEndDate,
+        channelId: "channel-123",
+        awaitRebuild: true,
+      });
+
+      const now = new Date();
+      const maxEndDate = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 14, 0, 23, 59, 59, 999),
+      );
+
+      expect(getScheduleSpy).toHaveBeenCalledTimes(1);
+      expect(new Date(getScheduleSpy.mock.calls[0][0].endDate).toISOString()).toBe(
+        maxEndDate.toISOString(),
+      );
+    });
+
+    it("should clean cache and trigger background rebuild when awaitRebuild is false", async () => {
+      const startDate = new Date(`${jan1stNextYearString}T00:00:00.000Z`);
+      const endDate = new Date(`${jan2ndNextYearString}T23:59:59.999Z`);
+
+      (mockDb.select as any).mockReturnValue({
+        from: vi.fn(() => ({
+          groupBy: vi.fn(() => [{ timezone: "UTC" }]),
+        })),
+      });
+
+      const deleteWhere = vi.fn(() => Promise.resolve());
+      (mockDb.delete as any).mockReturnValue({
+        where: deleteWhere,
+      });
+
+      const getScheduleSpy = vi.spyOn(service, "getSchedule").mockResolvedValue({
+        period: {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+        },
+        schedule: [],
+      });
+
+      await service.cleanAndRegenerateCache({
+        startDate,
+        endDate,
+        channelId: "channel-123",
+      });
+
+      // Background rebuild starts immediately even though it is not awaited.
+      await Promise.resolve();
+
+      expect(deleteWhere).toHaveBeenCalledTimes(1);
+      expect(getScheduleSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("should handle usedTimeZones errors and still clear cache", async () => {
+      const startDate = new Date(`${jan1stNextYearString}T00:00:00.000Z`);
+      const endDate = new Date(`${jan2ndNextYearString}T23:59:59.999Z`);
+
+      (mockDb.select as any).mockReturnValue({
+        from: vi.fn(() => ({
+          groupBy: vi.fn(() => {
+            throw new Error("groupBy failed");
+          }),
+        })),
+      });
+
+      const deleteWhere = vi.fn(() => Promise.resolve());
+      (mockDb.delete as any).mockReturnValue({
+        where: deleteWhere,
+      });
+
+      const getScheduleSpy = vi.spyOn(service, "getSchedule").mockResolvedValue({
+        period: {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+        },
+        schedule: [],
+      });
+
+      await service.cleanAndRegenerateCache({
+        startDate,
+        endDate,
+        channelId: "channel-123",
+        awaitRebuild: true,
+      });
+
+      expect(deleteWhere).toHaveBeenCalledTimes(1);
+      expect(getScheduleSpy).not.toHaveBeenCalled();
+    });
+
+    it("should delete past cache entries", async () => {
+      const deleteWhere = vi.fn(() => Promise.resolve());
+      (mockDb.delete as any).mockReturnValue({
+        where: deleteWhere,
+      });
+
+      await service.cleanPastCache();
+
+      expect(mockDb.delete).toHaveBeenCalledTimes(1);
+      expect(deleteWhere).toHaveBeenCalledTimes(1);
+    });
+
+    it("should generate cache ahead for all channels and used timezones", async () => {
+      const getScheduleSpy = vi.spyOn(service, "getSchedule").mockResolvedValue({
+        period: {
+          startDate: new Date().toISOString(),
+          endDate: new Date().toISOString(),
+        },
+        schedule: [],
+      });
+
+      let selectCall = 0;
+      (mockDb.select as any).mockImplementation(() => {
+        selectCall++;
+
+        // usedTimeZones()
+        if (selectCall === 1) {
+          return {
+            from: vi.fn(() => ({
+              groupBy: vi.fn(() => [{ timezone: "UTC" }, { timezone: "Europe/Berlin" }]),
+            })),
+          };
+        }
+
+        // generateCacheAhead() channels query
+        return {
+          from: vi.fn(() => [{ id: "channel-1" }, { id: "channel-2" }]),
+        };
+      });
+
+      await service.generateCacheAhead();
+      await Promise.resolve();
+
+      expect(getScheduleSpy).toHaveBeenCalledTimes(4);
+      const observedCombinations = getScheduleSpy.mock.calls.map((call) => {
+        const req = call[0];
+        return `${req.channelId}:${req.timeZone}`;
+      });
+
+      expect(observedCombinations).toEqual(
+        expect.arrayContaining([
+          "channel-1:UTC",
+          "channel-1:Europe/Berlin",
+          "channel-2:UTC",
+          "channel-2:Europe/Berlin",
+        ]),
+      );
     });
   });
 });

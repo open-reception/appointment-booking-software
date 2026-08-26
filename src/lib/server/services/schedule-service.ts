@@ -645,13 +645,22 @@ export class ScheduleService {
   }
 
   private async usedTimeZones(): Promise<string[]> {
-    // TODO: Once we have a tenant timezone setting, we can get that timezone instead of all timezones in the cache
-    const db = await this.getDb();
-    const timeZones = await db
-      .select({ timezone: scheduleCache.timezone })
-      .from(scheduleCache)
-      .groupBy(scheduleCache.timezone);
-    return timeZones.map((tz) => tz.timezone);
+    try {
+      // TODO: Once we have a tenant timezone setting, we can get that timezone instead of all timezones in the cache
+      const db = await this.getDb();
+      const timeZones = await db
+        .select({ timezone: scheduleCache.timezone })
+        .from(scheduleCache)
+        .groupBy(scheduleCache.timezone);
+      return timeZones.map((tz) => tz.timezone);
+    } catch (error) {
+      const log = logger.setContext("ScheduleService");
+      log.error("Failed to get used time zones", {
+        tenantId: this.tenantId,
+        error: String(error),
+      });
+      return [];
+    }
   }
 
   /**
@@ -670,10 +679,13 @@ export class ScheduleService {
     channelId: string;
     awaitRebuild?: boolean;
   }): Promise<void> {
-    console.log("🚨🚨🚨🚨🚨🚨🚨🚨 cleanAndRegenerateCache()");
-    console.log("channelId:", channelId);
-    console.log("startDate:", startDate);
-    console.log("endDate:", endDate);
+    const log = logger.setContext("ScheduleService");
+    log.debug("Cleaning and regenerating cache", {
+      tenantId: this.tenantId,
+      channelId,
+      startDate: startDate.toISOString().split("T")[0],
+      endDate: endDate.toISOString().split("T")[0],
+    });
     // Get all time zones for the channel in the cache
     const timeZones = await this.usedTimeZones();
 
@@ -718,11 +730,20 @@ export class ScheduleService {
    */
   async generateCacheAhead(): Promise<void> {
     const timeZones = await this.usedTimeZones();
+    const log = logger.setContext("ScheduleService");
 
     // Generate cache for next months
     const db = await this.getDb();
     const channels = await db.select().from(tenantSchema.channel);
     for (const channel of channels) {
+      log.debug("Generating schedule cache ahead", {
+        tenantId: this.tenantId,
+        channelId: channel.id,
+        startDate: new Date().toISOString().split("T")[0],
+        endDate: new Date(new Date().setMonth(new Date().getMonth() + 14))
+          .toISOString()
+          .split("T")[0],
+      });
       this.generateCache({
         startDate: new Date(),
         endDate: new Date(new Date().setMonth(new Date().getMonth() + 14)),
