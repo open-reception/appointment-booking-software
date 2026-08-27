@@ -15,6 +15,8 @@ import { z } from "zod";
 import { ValidationError } from "../utils/errors";
 import { isValidTimeZone, toLocalTime, toLocalTimeIgnoringDst } from "../utils/timezone";
 
+const CACHE_MAX_AHEAD_MONTHS = 14;
+
 const scheduleRequestSchema = z.object({
   startDate: z.string().datetime({ offset: true }), // ISO date string with timezone
   endDate: z.string().datetime({ offset: true }), // ISO date string with timezone
@@ -64,6 +66,13 @@ export interface ScheduleResult {
 
 export class ScheduleService {
   #db: Awaited<ReturnType<typeof getTenantDb>> | null = null;
+  #buffer: Array<{
+    startDate: Date;
+    endDate: Date;
+    channelId: string;
+    timeZones: string[];
+  }> = [];
+  #isProcessingBuffer = false;
 
   private constructor(public readonly tenantId: string) {}
 
@@ -601,6 +610,13 @@ export class ScheduleService {
     channelId: string;
   }): Promise<void> {
     const db = await this.getDb();
+
+    // If endDate is far ahead, set it to 2999-12-31 to avoid not deleting future cache entries, that have become invalid because we only generate a certain number of months ahead, but users could generate a schedule cache for dates far in the future.
+    const usedEndDate =
+      endDate > new Date(new Date().setMonth(new Date().getMonth() + CACHE_MAX_AHEAD_MONTHS - 2))
+        ? new Date(2999, 11, 31)
+        : endDate;
+
     await db
       .delete(scheduleCache)
       .where(
@@ -609,7 +625,7 @@ export class ScheduleService {
           between(
             scheduleCache.date,
             startDate.toISOString().split("T")[0],
-            endDate.toISOString().split("T")[0],
+            usedEndDate.toISOString().split("T")[0],
           ),
         ),
       );
@@ -629,18 +645,71 @@ export class ScheduleService {
     // Maximum end date is the last day of the month, 13 months from now
     const now = new Date();
     const maxEndDate = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 14, 0, 23, 59, 59, 999),
+      Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth() + CACHE_MAX_AHEAD_MONTHS,
+        0,
+        23,
+        59,
+        59,
+        999,
+      ),
     );
     const usedEndDate = endDate > maxEndDate ? maxEndDate : endDate;
 
-    for (const timeZone of timeZones) {
-      await this.getSchedule({
-        startDate: startDate.toISOString(),
-        endDate: usedEndDate.toISOString(),
-        tenantId: this.tenantId,
-        channelId,
-        timeZone,
-      });
+    // Add to buffer
+    this.#buffer.push({
+      startDate,
+      endDate: usedEndDate,
+      channelId,
+      timeZones,
+    });
+
+    // Start buffer queue
+    this.processBufferQueue();
+  }
+
+  private async processBufferQueue(): Promise<void> {
+    if (this.#isProcessingBuffer || this.#buffer.length === 0) return;
+
+    this.#isProcessingBuffer = true;
+    try {
+      const log = logger.setContext("ScheduleService.Buffer");
+      while (this.#buffer.length > 0) {
+        const { startDate, endDate, channelId, timeZones } = this.#buffer[0];
+        try {
+          log.debug("Generating schedule cache", {
+            tenantId: this.tenantId,
+            channelId,
+            startDate: startDate.toISOString().split("T")[0],
+            endDate: endDate.toISOString().split("T")[0],
+          });
+
+          // Generate cache for each timezone
+          for (const timeZone of timeZones) {
+            await this.getSchedule({
+              startDate: startDate.toISOString(),
+              endDate: endDate.toISOString(),
+              tenantId: this.tenantId,
+              channelId,
+              timeZone,
+            });
+          }
+        } catch (error) {
+          log.error("Failed to generate schedule cache", {
+            tenantId: this.tenantId,
+            channelId,
+            startDate: startDate.toISOString().split("T")[0],
+            endDate: endDate.toISOString().split("T")[0],
+            error: String(error),
+          });
+        } finally {
+          // Remove the processed item from the buffer
+          this.#buffer.shift();
+        }
+      }
+    } finally {
+      this.#isProcessingBuffer = false;
     }
   }
 
@@ -740,13 +809,13 @@ export class ScheduleService {
         tenantId: this.tenantId,
         channelId: channel.id,
         startDate: new Date().toISOString().split("T")[0],
-        endDate: new Date(new Date().setMonth(new Date().getMonth() + 14))
+        endDate: new Date(new Date().setMonth(new Date().getMonth() + CACHE_MAX_AHEAD_MONTHS))
           .toISOString()
           .split("T")[0],
       });
       this.generateCache({
         startDate: new Date(),
-        endDate: new Date(new Date().setMonth(new Date().getMonth() + 14)),
+        endDate: new Date(new Date().setMonth(new Date().getMonth() + CACHE_MAX_AHEAD_MONTHS)),
         channelId: channel.id,
         timeZones,
       });

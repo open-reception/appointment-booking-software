@@ -1246,9 +1246,7 @@ describe("ScheduleService", () => {
       });
 
       await service.generateCacheAhead();
-      await Promise.resolve();
-
-      expect(getScheduleSpy).toHaveBeenCalledTimes(4);
+      await vi.waitFor(() => expect(getScheduleSpy).toHaveBeenCalledTimes(4));
       const observedCombinations = getScheduleSpy.mock.calls.map((call) => {
         const req = call[0];
         return `${req.channelId}:${req.timeZone}`;
