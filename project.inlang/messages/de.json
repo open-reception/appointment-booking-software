@@ -91,6 +91,7 @@
 		"usePasskey": "Passkey verwenden",
 		"usePassphrase": "Passphrase verwenden",
 		"title": "Anmelden",
+		"description_passkey": "Gib Deine E-Mail-Adresse ein und klicke/tippe um Passkey hinzuzufügen.",
 		"description_passphrase": "Gib Deine E-Mail-Adresse und Deinen Passphrase ein, um Dich anzumelden.",
 		"action": "Anmelden",
 		"error": "Anmeldung fehlgeschlagen. Bitte erneut versuchen"

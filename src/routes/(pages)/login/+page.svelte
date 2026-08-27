@@ -9,14 +9,18 @@
   import { ROUTES } from "$lib/const/routes";
 
   const formId = "create-account-form";
+  let isHidingSubmit = $state(true);
   let isSubmitting = $state(false);
 
   const onEvent: EventReporter = (params) => {
     if (params.isSubmitting) {
       isSubmitting = true;
-    }
-    if (params.isSubmitting === false) {
+    } else if (params.isSubmitting === false) {
       isSubmitting = false;
+    } else if (params.isHidingSubmit === true) {
+      isHidingSubmit = true;
+    } else if (params.isHidingSubmit === false) {
+      isHidingSubmit = false;
     }
   };
 </script>
@@ -34,23 +38,31 @@
       <CenteredCard.Title>
         {m["login.title"]()}
       </CenteredCard.Title>
-      <CenteredCard.Description>
-        {m["login.description_passphrase"]()}
-      </CenteredCard.Description>
+      {#if isHidingSubmit}
+        <CenteredCard.Description>
+          {m["login.description_passkey"]()}
+        </CenteredCard.Description>
+      {:else}
+        <CenteredCard.Description>
+          {m["login.description_passphrase"]()}
+        </CenteredCard.Description>
+      {/if}
     </CenteredCard.Header>
     <CenteredCard.Main>
       <LoginForm {formId} {onEvent} />
     </CenteredCard.Main>
-    <CenteredCard.Action>
-      <Form.Button
-        size="lg"
-        class="w-full"
-        form={formId}
-        isLoading={isSubmitting}
-        disabled={isSubmitting}
-      >
-        {m["login.action"]()}
-      </Form.Button>
-    </CenteredCard.Action>
+    {#if !isHidingSubmit}
+      <CenteredCard.Action>
+        <Form.Button
+          size="lg"
+          class="w-full"
+          form={formId}
+          isLoading={isSubmitting}
+          disabled={isSubmitting}
+        >
+          {m["login.action"]()}
+        </Form.Button>
+      </CenteredCard.Action>
+    {/if}
   </CenteredCard.Root>
 </PageWithClaim>
