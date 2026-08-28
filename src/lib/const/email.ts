@@ -1,0 +1,3 @@
+export const EMAIL_TYPE = {
+  APPOINTMENT_REMINDER: "APPOINTMENT_REMINDER",
+} as const;

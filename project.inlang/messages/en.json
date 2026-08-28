@@ -433,6 +433,32 @@
 					"action": "Add Staff Member"
 				}
 			}
+		},
+		"appointmentReminders": {
+			"title": "Appointment Reminders",
+			"loading": "Loading appointments until tomorrow evening",
+			"noneUpcoming": "No upcoming appointments",
+			"sending": [
+				{
+					"declarations": ["input length", "local lengthPlural = length: plural"],
+					"selectors": ["lengthPlural"],
+					"match": {
+						"lengthPlural=one": "Sending {length} reminder",
+						"lengthPlural=other": "Sending {length} reminders"
+					}
+				}
+			],
+			"success": [
+				{
+					"declarations": ["input length", "local lengthPlural = length: plural"],
+					"selectors": ["lengthPlural"],
+					"match": {
+						"lengthPlural=one": "{length} reminder sent",
+						"lengthPlural=other": "{length} reminders sent"
+					}
+				}
+			],
+			"error": "Failed to send reminders"
 		}
 	},
 	"agents": {
