@@ -195,7 +195,7 @@
         ]}
       />
       {#if item.appointment.status === "reserved"}
-        <div class="mt-5 flex flex-col gap-2">
+        <div class="mt-5 flex w-full flex-col gap-2">
           <Button
             class="w-full"
             disabled={isConfirming || isDenying}

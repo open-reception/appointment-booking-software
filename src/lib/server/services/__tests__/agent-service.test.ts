@@ -29,6 +29,27 @@ vi.mock("$lib/logger", () => ({
   },
 }));
 
+const { mockCleanAndRegenerateCache, mockGetAllChannels } = vi.hoisted(() => ({
+  mockCleanAndRegenerateCache: vi.fn().mockResolvedValue(undefined),
+  mockGetAllChannels: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock("../schedule-service", () => ({
+  ScheduleService: {
+    forTenant: vi.fn().mockResolvedValue({
+      cleanAndRegenerateCache: mockCleanAndRegenerateCache,
+    }),
+  },
+}));
+
+vi.mock("../channel-service", () => ({
+  ChannelService: {
+    forTenant: vi.fn().mockResolvedValue({
+      getAllChannels: mockGetAllChannels,
+    }),
+  },
+}));
+
 // Import after mocking
 import {
   AgentService,
@@ -83,7 +104,9 @@ const mockDb = {
         })),
       })),
       delete: vi.fn(() => ({
-        where: vi.fn().mockResolvedValue([]),
+        where: vi.fn(() => ({
+          returning: vi.fn().mockResolvedValue([]),
+        })),
       })),
     };
     return await callback(mockTx);
@@ -104,6 +127,8 @@ describe("AgentService", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+    mockCleanAndRegenerateCache.mockResolvedValue(undefined);
+    mockGetAllChannels.mockResolvedValue([]);
 
     // Import and get the mocked centralDb
     const dbModule = await import("../../db");
@@ -484,10 +509,39 @@ describe("AgentService", () => {
       };
       mockCentralDb.select.mockReturnValue(mockSelectBuilder);
 
+      mockDb.transaction = vi.fn(async (callback) => {
+        const mockTx = {
+          update: vi.fn(() => ({
+            set: vi.fn(() => ({
+              where: vi.fn(() => ({
+                returning: vi.fn().mockResolvedValue([mockAgent]),
+              })),
+            })),
+          })),
+          delete: vi.fn(() => ({
+            where: vi.fn(() => ({
+              returning: vi.fn().mockResolvedValue([
+                {
+                  agentId: "agent-123",
+                  channelId: "channel-123",
+                },
+              ]),
+            })),
+          })),
+        };
+        return await callback(mockTx);
+      });
+
       const result = await service.deleteAgent("agent-123");
 
       expect(result).toBe(true);
       expect(mockDb.transaction).toHaveBeenCalledTimes(1);
+      expect(mockCleanAndRegenerateCache).toHaveBeenCalledTimes(1);
+      expect(mockCleanAndRegenerateCache).toHaveBeenCalledWith(
+        expect.objectContaining({
+          channelId: "channel-123",
+        }),
+      );
     });
 
     it("should return false when agent not found", async () => {
@@ -502,7 +556,9 @@ describe("AgentService", () => {
             })),
           })),
           delete: vi.fn(() => ({
-            where: vi.fn().mockResolvedValue([]),
+            where: vi.fn(() => ({
+              returning: vi.fn().mockResolvedValue([]),
+            })),
           })),
         };
         return await callback(mockTx);
@@ -615,6 +671,12 @@ describe("AgentService", () => {
         agentId: "agent-123",
         channelId: "channel-123",
       });
+      expect(mockCleanAndRegenerateCache).toHaveBeenCalledTimes(1);
+      expect(mockCleanAndRegenerateCache).toHaveBeenCalledWith(
+        expect.objectContaining({
+          channelId: "channel-123",
+        }),
+      );
     });
 
     it("should handle database error", async () => {
@@ -648,6 +710,12 @@ describe("AgentService", () => {
       await service.removeAgentFromChannel("agent-123", "channel-123");
 
       expect(mockDb.delete).toHaveBeenCalled();
+      expect(mockCleanAndRegenerateCache).toHaveBeenCalledTimes(1);
+      expect(mockCleanAndRegenerateCache).toHaveBeenCalledWith(
+        expect.objectContaining({
+          channelId: "channel-123",
+        }),
+      );
     });
 
     it("should handle database error", async () => {
@@ -730,6 +798,12 @@ describe("AgentService", () => {
           })),
         };
         mockDb.insert.mockReturnValue(insertChain);
+        mockGetAllChannels.mockResolvedValue([
+          {
+            id: "channel-123",
+            agents: [{ id: request.agentId }],
+          },
+        ] as any);
 
         const result = await service.createAbsence(request);
 
@@ -745,6 +819,14 @@ describe("AgentService", () => {
           from: null,
           to: null,
         });
+        expect(mockCleanAndRegenerateCache).toHaveBeenCalledTimes(1);
+        expect(mockCleanAndRegenerateCache).toHaveBeenCalledWith(
+          expect.objectContaining({
+            channelId: "channel-123",
+            startDate: new Date(request.startDate),
+            endDate: new Date(request.endDate),
+          }),
+        );
       });
 
       it("should create recurring absence successfully", async () => {
@@ -1054,11 +1136,23 @@ describe("AgentService", () => {
           })),
         };
         mockDb.update.mockReturnValue(updateChain);
+        mockGetAllChannels.mockResolvedValue([
+          {
+            id: "channel-123",
+            agents: [{ id: "agent-123" }],
+          },
+        ] as any);
 
         const result = await service.updateAbsence("absence-123", updateData);
 
         expect(result.absenceType).toBe(updateData.absenceType);
         expect(result.description).toBe(updateData.description);
+        expect(mockCleanAndRegenerateCache).toHaveBeenCalledTimes(1);
+        expect(mockCleanAndRegenerateCache).toHaveBeenCalledWith(
+          expect.objectContaining({
+            channelId: "channel-123",
+          }),
+        );
       });
 
       it("should update absence successfully", async () => {
@@ -1196,10 +1290,22 @@ describe("AgentService", () => {
           })),
         };
         mockDb.delete.mockReturnValue(deleteChain);
+        mockGetAllChannels.mockResolvedValue([
+          {
+            id: "channel-123",
+            agents: [{ id: "agent-123" }],
+          },
+        ] as any);
 
         const result = await service.deleteAbsence("absence-123");
 
         expect(result).toBe(true);
+        expect(mockCleanAndRegenerateCache).toHaveBeenCalledTimes(1);
+        expect(mockCleanAndRegenerateCache).toHaveBeenCalledWith(
+          expect.objectContaining({
+            channelId: "channel-123",
+          }),
+        );
       });
 
       it("should return false if absence not found", async () => {
