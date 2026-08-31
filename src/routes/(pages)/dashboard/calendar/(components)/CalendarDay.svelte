@@ -127,6 +127,7 @@
 
 <div class="relative flex w-full flex-col">
   {#if isWeekView && items}
+    <!-- Date -->
     {@const isSelected = selectedDate.toString() === day.toString()}
     {@const isToday = toCalendarDate(day).toString() === today(getLocalTimeZone()).toString()}
     <Text
@@ -142,10 +143,25 @@
         weekday: "short",
       })}
     </Text>
+
+    <!-- Vertical line separating days in week view -->
     <Separator
       orientation="vertical"
       class="bg-muted-foreground absolute top-0 bottom-0 left-0 z-10 transition-all duration-200"
-      style={{ height: `${(latestEndHour * 30 + 30) * scale + 20}px`, marginTop: "-10px" }}
+      style={{
+        height: `${
+          // shown hours in minutes
+          ((latestEndHour - earliestStartHour) * 60 +
+            // plus 30 minutes before the day starts
+            30) *
+            scale +
+          // plus 3 pixels for the bottom overflow of the line
+          4 +
+          // plus 10 pixels for the margin
+          10
+        }px`,
+        marginTop: "-10px",
+      }}
     />
   {/if}
   <div class="absolute top-0 right-0 bottom-0 left-0 z-10">

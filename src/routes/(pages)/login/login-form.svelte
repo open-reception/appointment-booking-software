@@ -68,6 +68,7 @@
         type: "passphrase",
         passphrase: "",
       };
+      onEvent({ isHidingSubmit: false });
     } else {
       $formData = {
         ...$formData,
@@ -78,6 +79,7 @@
         signatureBase64: "",
       };
       setProperPasskeyState();
+      onEvent({ isHidingSubmit: true });
     }
   };
 
@@ -246,7 +248,7 @@
         {m["login.or"]()}
         <Button variant="link" size="xs" onclick={onToggle} class="text-inherit">
           {m["login.usePassphrase"]()}
-        </Button>.
+        </Button>
       </Text>
     </div>
   {/if}

@@ -195,9 +195,9 @@
                   class="mt-2 mb-1"
                 >
                   {#snippet label()}
-                    <div class="flex items-center gap-1">
+                    <div class="flex items-start gap-1">
                       <div
-                        class="bg-primary h-4 w-2 rounded-sm"
+                        class="bg-primary mt-0.5 h-4 w-2 rounded-sm"
                         style:background-color={channel.color}
                       ></div>
                       {name}
@@ -244,6 +244,7 @@
             changeView("week");
           }
         }}
+        class="min-h-82"
       />
     </HorizontalPagePadding>
   </Sidebar.Content>

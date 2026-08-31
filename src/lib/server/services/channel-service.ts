@@ -9,6 +9,7 @@ import * as tenantSchema from "../db/tenant-schema";
 import { type SelectAgent, type SelectChannel, type SelectSlotTemplate } from "../db/tenant-schema";
 import { NotFoundError, ValidationError } from "../utils/errors";
 import { TenantAdminService } from "./tenant-admin-service";
+import { ScheduleService } from "./schedule-service";
 
 const CHANNEL_COLORS = [
   "#F3835C",
@@ -239,6 +240,14 @@ export class ChannelService {
 
       const adminService = await TenantAdminService.getTenantById(this.tenantId);
       adminService.validateSetupState();
+
+      // Regenerate schedule cache
+      const scheduleService = await ScheduleService.forTenant(this.tenantId);
+      scheduleService.cleanAndRegenerateCache({
+        startDate: new Date(),
+        endDate: new Date("2999-12-31"),
+        channelId: result.id,
+      });
 
       return result;
     } catch (error) {
@@ -538,6 +547,16 @@ export class ChannelService {
         slotTemplateCount: result.slotTemplates.length,
       });
 
+      if (updateData.slotTemplates !== undefined && result.agents.length > 0) {
+        // Regenerate schedule cache
+        const scheduleService = await ScheduleService.forTenant(this.tenantId);
+        scheduleService.cleanAndRegenerateCache({
+          startDate: new Date(),
+          endDate: new Date("2999-12-31"),
+          channelId: result.id,
+        });
+      }
+
       return result;
     } catch (error) {
       if (error instanceof NotFoundError || error instanceof ValidationError) throw error;
@@ -746,6 +765,16 @@ export class ChannelService {
           })
           .where(eq(tenantSchema.channel.id, channelId))
           .returning();
+
+        // Regenerate schedule cache
+        if (slotTemplateIds.length > 0) {
+          const scheduleService = await ScheduleService.forTenant(this.tenantId);
+          scheduleService.cleanAndRegenerateCache({
+            startDate: new Date(),
+            endDate: new Date("2999-12-31"),
+            channelId: channelId,
+          });
+        }
 
         return deleteResult.length > 0;
       });

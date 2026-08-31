@@ -12,6 +12,7 @@
     today,
   } from "@internationalized/date";
   import Loader from "@lucide/svelte/icons/loader-2";
+  import { isAfterOperatingHours, isBeforeOperatingHours } from "./utils";
 
   let {
     day = $bindable(),
@@ -32,6 +33,8 @@
   const curTimeIndicator = $derived(
     today(getLocalTimeZone()).toString() === day.toString() ? $clock : undefined,
   );
+  const isBeforeHours = $derived(isBeforeOperatingHours(curTimeIndicator, earliestStartHour));
+  const isAfterHours = $derived(isAfterOperatingHours(curTimeIndicator, latestEndHour));
 </script>
 
 <div class="relative flex w-16 shrink-0 flex-col">
@@ -50,14 +53,10 @@
     </div>
   {/if}
 
-  <!-- Current Time Indicator -->
+  <!-- Current Time Indicator Time Bubble -->
   {#if !isLoading && curTimeIndicator}
     {@const isToday = toCalendarDate($clock).toString() === today(getLocalTimeZone()).toString()}
-    {@const isNotAfterHours =
-      latestEndHour * hourSize + hourSize / 2 > curTimeIndicator.hour * hourSize}
-    {@const isNotBeforeHours =
-      earliestStartHour * hourSize - hourSize * 2 < curTimeIndicator.hour * hourSize}
-    {#if isToday && isNotAfterHours && isNotBeforeHours}
+    {#if isToday && !isAfterHours && !isBeforeHours}
       {@const top =
         focusAdjustment +
         curTimeIndicator.hour * hourSize +

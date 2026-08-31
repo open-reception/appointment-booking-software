@@ -11,7 +11,6 @@
   import { channels as channelsStore } from "$lib/stores/channels";
   import { sidebar } from "$lib/stores/sidebar";
   import type { TAppointmentFilter, TCalendarMode } from "$lib/types/calendar";
-  import { timeUTCToLocalWithoutOffset } from "$lib/utils/datetime";
   import { getCurrentTranlslation } from "$lib/utils/localizations";
   import { getLocalTimeZone, today, type CalendarDate } from "@internationalized/date";
   import { SlidersHorizontal } from "@lucide/svelte";
@@ -25,10 +24,10 @@
   import CalendarLegend from "./(components)/CalendarLegend.svelte";
   import CalendarLines from "./(components)/CalendarLines.svelte";
   import CalendarWeek from "./(components)/CalendarWeek.svelte";
-  import { calendarMonthQuery } from "./(components)/queries";
-  import { convertDate, openAppointmentById } from "./(components)/utils";
-  import type { CalendarView } from "./types";
   import MoveAppointment from "./(components)/MoveAppointment.svelte";
+  import { calendarMonthQuery } from "./(components)/queries";
+  import { convertDate, getOperatingHours, openAppointmentById } from "./(components)/utils";
+  import type { CalendarView } from "./types";
 
   const queryClient = useQueryClient();
   const tenantId = $derived($auth.user?.tenantId);
@@ -49,23 +48,7 @@
     mode: "VIEW",
   });
   let view: CalendarView = $state(page.data.calendarView);
-  let hours = $derived.by(() => {
-    const from = channels
-      .map((c) => c.slotTemplates.map((t) => t.from))
-      .flat()
-      .map((time) => {
-        const [hourStr] = timeUTCToLocalWithoutOffset(time).split(":");
-        return parseInt(hourStr, 10);
-      });
-    const to = channels
-      .map((c) => c.slotTemplates.map((t) => t.to))
-      .flat()
-      .map((time) => {
-        const [hourStr] = timeUTCToLocalWithoutOffset(time).split(":");
-        return parseInt(hourStr, 10);
-      });
-    return { from: Math.min(...from), to: Math.max(...to) };
-  });
+  let hours = $derived.by(() => getOperatingHours(channels, calendar));
   let scale = $state(page.data.calendarZoom);
 
   $effect(() => {

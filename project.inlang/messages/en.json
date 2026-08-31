@@ -111,6 +111,7 @@
 		"usePassphrase": "use passphrase",
 		"orUse": "Or {button}",
 		"title": "Login",
+		"description_passkey": "Enter your email and click/tap to add passkey.",
 		"description_passphrase": "Enter your email and passphrase below to access your account.",
 		"action": "Login",
 		"error": "Login failed. Please retry",

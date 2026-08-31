@@ -19,12 +19,14 @@
   import { type ComponentProps } from "svelte";
   import type { OnChangeFn } from "vaul-svelte";
   import { calendarMonthQuery } from "./queries";
+  import { cn } from "$lib/utils";
 
   let {
     selectedDate = $bindable(),
     shownAppointments,
     shownChannels,
     shownAgents,
+    class: className,
     onSelectDay,
     ref = $bindable(null),
   }: ComponentProps<typeof Sidebar.Root> & {
@@ -32,6 +34,7 @@
     shownAppointments: TAppointmentFilter;
     shownChannels: string[];
     shownAgents: string[];
+    class?: string;
     onSelectDay?: OnChangeFn<DateValue | undefined>;
   } = $props();
 
@@ -176,7 +179,7 @@
     type="single"
     locale={getLocale()}
     calendarLabel={m["calendar.selectDate"]()}
-    class="bg-transparent p-0 [&_td]:grow [&_td_*]:mx-auto [&_th]:grow"
+    class={cn("bg-transparent p-0 [&_td]:grow [&_td_*]:mx-auto [&_th]:grow", className)}
     preventDeselect={true}
     bind:value={selectedDate}
     bind:placeholder

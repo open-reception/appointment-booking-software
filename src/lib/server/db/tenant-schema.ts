@@ -1,10 +1,13 @@
 import type { InferSelectModel } from "drizzle-orm";
 import {
   boolean,
+  date,
   integer,
   json,
+  jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   time,
   timestamp,
@@ -431,6 +434,35 @@ export const clientPinResetToken = pgTable("client_pin_reset_token", {
   used: boolean("used").default(false).notNull(),
 });
 
+/**
+ * Schedule Cache table - stores cached schedule data for channels on specific dates
+ * Used to improve performance of schedule queries in calendar and appointment booking
+ * @table cacheSchedule
+ */
+export const scheduleCache = pgTable(
+  "cache_schedule",
+  {
+    /** date of the cached schedule */
+    date: date("date").notNull(),
+    /** channel of the cached schedule */
+    channel: uuid("channel")
+      .notNull()
+      .references(() => channel.id),
+    /** timezone for this calculation */
+    timezone: text("timezone").notNull(),
+    /** cache data */
+    data: jsonb("data").notNull(),
+    /** When this entry was created */
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    /** When this entry was last updated */
+    updatedAt: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [primaryKey({ columns: [table.date, table.timezone, table.channel] })],
+);
+
 /** StaffCrypto record type for database queries */
 export type SelectStaffCrypto = InferSelectModel<typeof staffCrypto>;
 
@@ -445,3 +477,6 @@ export type SelectClientPinResetToken = InferSelectModel<typeof clientPinResetTo
 
 /** BookingAccessToken record type for database queries */
 export type SelectBookingAccessToken = InferSelectModel<typeof bookingAccessToken>;
+
+/** ScheduleCache record type for database queries */
+export type SelectScheduleCache = InferSelectModel<typeof scheduleCache>;

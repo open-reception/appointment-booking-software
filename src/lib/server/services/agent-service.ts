@@ -9,6 +9,8 @@ import { ValidationError, NotFoundError, ConflictError } from "../utils/errors";
 import { supportedLocales } from "$lib/const/locales";
 import { TenantAdminService } from "./tenant-admin-service";
 import { isToAfterFrom } from "$lib/utils/datetime";
+import { ScheduleService } from "./schedule-service";
+import { ChannelService } from "./channel-service";
 
 const agentCreationSchema = z.object({
   name: z.string().min(1).max(100),
@@ -284,11 +286,16 @@ export class AgentService {
     try {
       const db = await this.getDb();
 
+      let channels: {
+        agentId: string;
+        channelId: string;
+      }[] = [];
       const result = await db.transaction(async (tx) => {
         // First, remove all channel-agent associations
-        await tx
+        channels = await tx
           .delete(tenantSchema.channelAgent)
-          .where(eq(tenantSchema.channelAgent.agentId, agentId));
+          .where(eq(tenantSchema.channelAgent.agentId, agentId))
+          .returning();
 
         // Then delete the agent (soft delete by setting archived flag)
         return await tx
@@ -313,6 +320,16 @@ export class AgentService {
 
       const adminService = await TenantAdminService.getTenantById(this.tenantId);
       adminService.validateSetupState();
+
+      // Regenerate schedule cache
+      const scheduleService = await ScheduleService.forTenant(this.tenantId);
+      for (const channel of channels) {
+        scheduleService.cleanAndRegenerateCache({
+          startDate: new Date(),
+          endDate: new Date("2999-12-31"),
+          channelId: channel.channelId,
+        });
+      }
 
       return true;
     } catch (error) {
@@ -402,6 +419,14 @@ export class AgentService {
         agentId,
         channelId,
       });
+
+      // Regenerate schedule cache
+      const scheduleService = await ScheduleService.forTenant(this.tenantId);
+      scheduleService.cleanAndRegenerateCache({
+        startDate: new Date(),
+        endDate: new Date("2999-12-31"),
+        channelId,
+      });
     } catch (error) {
       log.error("Failed to assign agent to channel", {
         tenantId: this.tenantId,
@@ -438,6 +463,14 @@ export class AgentService {
       log.debug("Agent removed from channel successfully", {
         tenantId: this.tenantId,
         agentId,
+        channelId,
+      });
+
+      // Regenerate schedule cache
+      const scheduleService = await ScheduleService.forTenant(this.tenantId);
+      scheduleService.cleanAndRegenerateCache({
+        startDate: new Date(),
+        endDate: new Date("2999-12-31"),
         channelId,
       });
     } catch (error) {
@@ -565,6 +598,21 @@ export class AgentService {
         absenceId: result[0].id,
         agentId: request.agentId,
       });
+
+      // Regenerate schedule cache
+      const scheduleService = await ScheduleService.forTenant(this.tenantId);
+      const channelService = await ChannelService.forTenant(this.tenantId);
+      const channels = await channelService.getAllChannels();
+      const relevantChannels = channels.filter((channel) =>
+        channel.agents.map((it) => it.id).includes(request.agentId),
+      );
+      for (const channel of relevantChannels) {
+        scheduleService.cleanAndRegenerateCache({
+          startDate: new Date(request.startDate),
+          endDate: new Date(request.endDate),
+          channelId: channel.id,
+        });
+      }
 
       return result[0];
     } catch (error) {
@@ -902,6 +950,27 @@ export class AgentService {
         updateFields: Object.keys(updateData),
       });
 
+      // Regenerate schedule cache
+      const scheduleService = await ScheduleService.forTenant(this.tenantId);
+      const channelService = await ChannelService.forTenant(this.tenantId);
+      const channels = await channelService.getAllChannels();
+      const relevantChannels = channels.filter((channel) =>
+        channel.agents.map((it) => it.id).includes(currentAbsence[0].agentId),
+      );
+      const earliestStartDate = updateData.startDate
+        ? new Date(updateData.startDate)
+        : currentAbsence[0].startDate;
+      const latestEndDate = updateData.endDate
+        ? new Date(updateData.endDate)
+        : currentAbsence[0].endDate;
+      for (const channel of relevantChannels) {
+        scheduleService.cleanAndRegenerateCache({
+          startDate: earliestStartDate,
+          endDate: latestEndDate,
+          channelId: channel.id,
+        });
+      }
+
       return result[0];
     } catch (error) {
       if (error instanceof NotFoundError || error instanceof ConflictError) throw error;
@@ -942,6 +1011,21 @@ export class AgentService {
         tenantId: this.tenantId,
         absenceId,
       });
+
+      // Regenerate schedule cache
+      const scheduleService = await ScheduleService.forTenant(this.tenantId);
+      const channelService = await ChannelService.forTenant(this.tenantId);
+      const channels = await channelService.getAllChannels();
+      const relevantChannels = channels.filter((channel) =>
+        channel.agents.map((it) => it.id).includes(result[0].agentId),
+      );
+      for (const channel of relevantChannels) {
+        scheduleService.cleanAndRegenerateCache({
+          startDate: new Date(result[0].startDate),
+          endDate: new Date(result[0].endDate),
+          channelId: channel.id,
+        });
+      }
 
       return true;
     } catch (error) {
