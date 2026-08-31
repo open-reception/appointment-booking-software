@@ -37,8 +37,15 @@
         )
           return undefined;
 
-        // TODO: Don't even decrypt, if reminder was already sent
-        // if (appointment.remindedAt) return undefined;
+        // Skip if reminder was already sent
+        if (appointment.remindedAt) return undefined;
+
+        // Skip if appointment is booked today
+        if (
+          appointment.createdAt &&
+          new Date(appointment.createdAt).toDateString() === new Date().toDateString()
+        )
+          return undefined;
 
         const staffKeyShares = await getStaffKeyShares(tenantId, appointment.tunnelId);
         const staffKeyShare = staffKeyShares[0];
@@ -92,11 +99,12 @@
         {m["dashboard.appointmentReminders.loading"]()}
       {:else if appointments.length === 0}
         <Check class="size-4" />
-        {m["dashboard.appointmentReminders.noneUpcoming"]()}
+        {m["dashboard.appointmentReminders.noRemindersToSend"]()}
       {:else if status === "sending"}
         <Loader2 class="size-4 animate-spin" />
         {m["dashboard.appointmentReminders.sending"]({ length: appointments.length })}
       {:else if status === "success"}
+        <Check class="size-4" />
         {m["dashboard.appointmentReminders.success"]({ length: appointments.length })}
       {:else}
         <Cross class="size-4" />

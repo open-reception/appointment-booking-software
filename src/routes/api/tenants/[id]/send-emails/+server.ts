@@ -1,7 +1,6 @@
 import { EMAIL_TYPE } from "$lib/const/email";
 import { ERRORS } from "$lib/errors";
 import { logger } from "$lib/logger";
-import { sendAppointmentReminderEmail } from "$lib/server/email/email-service";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { AppointmentService } from "$lib/server/services/appointment-service";
 import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
@@ -163,15 +162,12 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
       const appointment = await appointmentService.getAppointmentById(email.appointment.id);
       switch (email.type) {
         case EMAIL_TYPE.APPOINTMENT_REMINDER:
-          return sendAppointmentReminderEmail(
-            {
-              name: email.appointment.name,
-              email: email.appointment.email,
-              language: email.appointment.locale,
-            },
-            tenant,
-            appointment,
-          );
+          await appointmentService.sendAppointmentReminder(tenant, appointment.id, {
+            email: email.appointment.email,
+            name: email.appointment.name,
+            locale: email.appointment.locale,
+          });
+          break;
         default:
           throw new ValidationError(`Unsupported email type: ${email.type}`);
       }

@@ -432,7 +432,7 @@
 		"appointmentReminders": {
 			"title": "Termin-Erinnerungen",
 			"loading": "Lade Termine bis morgen Abend",
-			"noneUpcoming": "Keine bevorstehenden Termine",
+			"noRemindersToSend": "Keine Erinnerungen zu senden",
 			"sending": [
 				{
 					"declarations": ["input length", "local lengthPlural = length: plural"],

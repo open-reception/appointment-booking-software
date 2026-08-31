@@ -952,6 +952,152 @@ describe("AppointmentService", () => {
     });
   });
 
+  describe("sendAppointmentReminder", () => {
+    const mockTenant = {
+      id: "tenant-123",
+      shortName: "test-clinic",
+      longName: "Test Clinic",
+      languages: ["de", "en"],
+    };
+    const reminderData = { email: "client@example.com", name: "Ada Lovelace", locale: "de" };
+
+    it("should send the reminder email and mark the appointment as reminded", async () => {
+      const { getTenantDb } = await import("../../db");
+
+      const emailModule = await import("../../email/email-service");
+      const mockSendReminderEmail = vi.fn().mockResolvedValue(undefined);
+      vi.spyOn(emailModule, "sendAppointmentReminderEmail").mockImplementation(
+        mockSendReminderEmail,
+      );
+
+      const remindedAppointment = { ...mockAppointment, remindedAt: new Date() };
+
+      const mockDb = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([mockAppointment]),
+            }),
+          }),
+        }),
+        update: vi.fn().mockReturnValue({
+          set: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              returning: vi.fn().mockResolvedValue([remindedAppointment]),
+            }),
+          }),
+        }),
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+      const result = await service.sendAppointmentReminder(
+        mockTenant as any,
+        "appointment-123",
+        reminderData,
+      );
+
+      expect(result).toEqual(remindedAppointment);
+      expect(mockSendReminderEmail).toHaveBeenCalledWith(
+        { name: "Ada Lovelace", email: "client@example.com", language: "de" },
+        mockTenant,
+        mockAppointment,
+      );
+      expect(mockDb.update).toHaveBeenCalled();
+    });
+
+    it("should return null when no appointment row is updated", async () => {
+      const { getTenantDb } = await import("../../db");
+
+      const emailModule = await import("../../email/email-service");
+      vi.spyOn(emailModule, "sendAppointmentReminderEmail").mockResolvedValue(undefined);
+
+      const mockDb = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([mockAppointment]),
+            }),
+          }),
+        }),
+        update: vi.fn().mockReturnValue({
+          set: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              returning: vi.fn().mockResolvedValue([]),
+            }),
+          }),
+        }),
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+      const result = await service.sendAppointmentReminder(
+        mockTenant as any,
+        "appointment-123",
+        reminderData,
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it("should return null when the appointment does not exist", async () => {
+      const { getTenantDb } = await import("../../db");
+
+      const mockDb = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([]),
+            }),
+          }),
+        }),
+        update: vi.fn(),
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+      const result = await service.sendAppointmentReminder(
+        mockTenant as any,
+        "appointment-123",
+        reminderData,
+      );
+
+      expect(result).toBeNull();
+      expect(mockDb.update).not.toHaveBeenCalled();
+    });
+
+    it("should return null when the email service fails", async () => {
+      const { getTenantDb } = await import("../../db");
+
+      const emailModule = await import("../../email/email-service");
+      vi.spyOn(emailModule, "sendAppointmentReminderEmail").mockRejectedValue(
+        new Error("Email provider unavailable"),
+      );
+
+      const mockDb = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([mockAppointment]),
+            }),
+          }),
+        }),
+        update: vi.fn(),
+      };
+      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
+
+      const service = await AppointmentService.forTenant("tenant-123");
+      const result = await service.sendAppointmentReminder(
+        mockTenant as any,
+        "appointment-123",
+        reminderData,
+      );
+
+      expect(result).toBeNull();
+      expect(mockDb.update).not.toHaveBeenCalled();
+    });
+  });
+
   describe("deleteAppointmentByClient", () => {
     it("should delete appointment after verifying challenge and ownership", async () => {
       const { getTenantDb } = await import("../../db");

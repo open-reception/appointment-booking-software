@@ -440,7 +440,7 @@
 		"appointmentReminders": {
 			"title": "Appointment Reminders",
 			"loading": "Loading appointments until tomorrow evening",
-			"noneUpcoming": "No upcoming appointments",
+			"noRemindersToSend": "No reminders to send",
 			"sending": [
 				{
 					"declarations": ["input length", "local lengthPlural = length: plural"],

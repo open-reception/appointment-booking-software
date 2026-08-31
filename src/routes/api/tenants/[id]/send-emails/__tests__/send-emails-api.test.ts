@@ -17,10 +17,6 @@ vi.mock("$lib/server/services/tenant-admin-service", () => ({
   },
 }));
 
-vi.mock("$lib/server/email/email-service", () => ({
-  sendAppointmentReminderEmail: vi.fn(),
-}));
-
 vi.mock("$lib/server/utils/permissions", () => ({
   checkPermission: vi.fn(),
 }));
@@ -33,7 +29,6 @@ vi.mock("$lib/logger", () => ({
   },
 }));
 
-import { sendAppointmentReminderEmail } from "$lib/server/email/email-service";
 import { AppointmentService } from "$lib/server/services/appointment-service";
 import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
 import { checkPermission } from "$lib/server/utils/permissions";
@@ -42,8 +37,7 @@ describe("Send Email API", () => {
   const mockTenantId = "123e4567-e89b-12d3-a456-426614174000";
   const mockAppointmentId = "123e4567-e89b-12d3-a456-426614174001";
   const mockTenant = { id: mockTenantId, shortName: "test-practice" };
-  const mockAppointment = { id: mockAppointmentId };
-  const mockAppointmentService = { getAppointmentById: vi.fn() };
+  const mockAppointmentService = { getAppointmentById: vi.fn(), sendAppointmentReminder: vi.fn() };
   const validBody = {
     emails: [
       {
@@ -82,8 +76,10 @@ describe("Send Email API", () => {
       tenantData: mockTenant,
     } as any);
     vi.mocked(AppointmentService.forTenant).mockResolvedValue(mockAppointmentService as any);
-    mockAppointmentService.getAppointmentById.mockResolvedValue(mockAppointment);
-    vi.mocked(sendAppointmentReminderEmail).mockResolvedValue(undefined);
+    mockAppointmentService.getAppointmentById.mockImplementation((id: string) =>
+      Promise.resolve({ id }),
+    );
+    mockAppointmentService.sendAppointmentReminder.mockResolvedValue({ id: mockAppointmentId });
   });
 
   describe("POST /api/tenants/[id]/send-emails", () => {
@@ -117,15 +113,15 @@ describe("Send Email API", () => {
       expect(AppointmentService.forTenant).toHaveBeenCalledWith(mockTenantId);
       expect(mockAppointmentService.getAppointmentById).toHaveBeenCalledWith(mockAppointmentId);
       expect(mockAppointmentService.getAppointmentById).toHaveBeenCalledWith(secondAppointmentId);
-      expect(sendAppointmentReminderEmail).toHaveBeenCalledWith(
-        { name: "Ada Lovelace", email: "ada@example.com", language: "de" },
+      expect(mockAppointmentService.sendAppointmentReminder).toHaveBeenCalledWith(
         mockTenant,
-        mockAppointment,
+        mockAppointmentId,
+        { name: "Ada Lovelace", email: "ada@example.com", locale: "de" },
       );
-      expect(sendAppointmentReminderEmail).toHaveBeenCalledWith(
-        { name: "Grace Hopper", email: "grace@example.com", language: "en" },
+      expect(mockAppointmentService.sendAppointmentReminder).toHaveBeenCalledWith(
         mockTenant,
-        mockAppointment,
+        secondAppointmentId,
+        { name: "Grace Hopper", email: "grace@example.com", locale: "en" },
       );
     });
 
@@ -139,7 +135,7 @@ describe("Send Email API", () => {
       );
 
       expect(response.status).toBe(200);
-      expect(sendAppointmentReminderEmail).toHaveBeenCalledOnce();
+      expect(mockAppointmentService.sendAppointmentReminder).toHaveBeenCalledOnce();
     });
 
     it("rejects unauthenticated requests", async () => {
@@ -201,11 +197,11 @@ describe("Send Email API", () => {
 
       expect(response.status).toBe(500);
       expect(await response.json()).toHaveProperty("error");
-      expect(sendAppointmentReminderEmail).not.toHaveBeenCalled();
+      expect(mockAppointmentService.sendAppointmentReminder).not.toHaveBeenCalled();
     });
 
     it("returns an internal error when email delivery fails", async () => {
-      vi.mocked(sendAppointmentReminderEmail).mockRejectedValue(
+      mockAppointmentService.sendAppointmentReminder.mockRejectedValue(
         new Error("Email provider unavailable"),
       );
 

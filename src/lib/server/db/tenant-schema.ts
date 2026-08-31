@@ -194,6 +194,8 @@ export const appointment = pgTable("appointment", {
   createdAt: timestamp("created_at").defaultNow(),
   /** Timestamp when the appointment was last updated */
   updatedAt: timestamp("updated_at").defaultNow(),
+  /** Timestamp when the client was last reminded about the appointment */
+  remindedAt: timestamp("reminded_at"),
 });
 
 /**
