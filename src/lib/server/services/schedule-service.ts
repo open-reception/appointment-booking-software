@@ -13,6 +13,7 @@ import { eq, and, between, sql, or, inArray } from "drizzle-orm";
 import logger from "$lib/logger";
 import { z } from "zod";
 import { ValidationError } from "../utils/errors";
+import { WebAuthnService } from "../auth/webauthn-service";
 import { isValidTimeZone, toLocalTime, toLocalTimeIgnoringDst } from "../utils/timezone";
 
 const CACHE_MAX_AHEAD_MONTHS = 14;
@@ -102,7 +103,10 @@ export class ScheduleService {
    * @param request Schedule request with date range
    * @returns Schedule result with available slots and appointments
    */
-  async getSchedule(request: ScheduleRequest): Promise<ScheduleResult> {
+  async getSchedule(
+    request: ScheduleRequest,
+    passkeyId?: string | undefined,
+  ): Promise<ScheduleResult> {
     const log = logger.setContext("ScheduleService");
 
     const validation = scheduleRequestSchema.safeParse(request);
@@ -163,7 +167,12 @@ export class ScheduleService {
 
       // 3a. If staffUserId is provided, get staffKeyShares for all appointment tunnels
       let staffKeyShares: Record<string, string> = {};
-      if (request.staffUserId && appointments.length > 0) {
+      // Tunnel keys are wrapped per passkey; scope the lookup to the passkey the user most
+      // recently authenticated with (same definition getClientTunnels / key-shard use).
+      const currentPasskey = request.staffUserId
+        ? await WebAuthnService.getCurrentPasskey(request.staffUserId, passkeyId)
+        : null;
+      if (request.staffUserId && currentPasskey && appointments.length > 0) {
         const tunnelIds = [...new Set(appointments.map((apt) => apt.tunnelId))];
         const keyShares = await db
           .select()
@@ -171,6 +180,7 @@ export class ScheduleService {
           .where(
             and(
               eq(tenantSchema.clientTunnelStaffKeyShare.userId, request.staffUserId),
+              eq(tenantSchema.clientTunnelStaffKeyShare.passkeyId, currentPasskey.id),
               inArray(tenantSchema.clientTunnelStaffKeyShare.tunnelId, tunnelIds),
             ),
           );

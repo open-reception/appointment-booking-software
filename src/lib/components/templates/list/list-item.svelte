@@ -16,6 +16,7 @@
         label: string;
         isDestructive?: boolean;
         isHidden?: boolean;
+        isDisabled?: boolean;
         onClick: () => void;
       }
     | { type: "divider" };
@@ -112,7 +113,7 @@
           </Button>
         {/snippet}
       </DropdownMenu.Trigger>
-      <DropdownMenu.Content class="w-[200px]" align="end">
+      <DropdownMenu.Content class="w-50" align="end">
         <DropdownMenu.Group>
           <DropdownMenu.Label>{m["actions"]()}</DropdownMenu.Label>
           <DropdownMenu.Separator />
@@ -123,6 +124,7 @@
                 class={cn(
                   action.isDestructive ? "text-destructive data-highlighted:text-destructive" : "",
                 )}
+                disabled={action.isDisabled}
               >
                 <action.icon
                   class={cn("mr-2 size-4", action.isDestructive ? "text-destructive" : "")}

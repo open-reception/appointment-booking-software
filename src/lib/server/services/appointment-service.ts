@@ -29,6 +29,7 @@ import {
   sendAppointmentUpdatedEmail,
 } from "../email/email-service";
 import { ConflictError, InternalError, NotFoundError, ValidationError } from "../utils/errors";
+import { WebAuthnService } from "../auth/webauthn-service";
 import { challengeStore } from "./challenge-store";
 import { challengeThrottleService } from "./challenge-throttle";
 import { NotificationService } from "./notification-service";
@@ -56,6 +57,7 @@ export interface ClientTunnelData {
   };
   staffKeyShares: {
     userId: string;
+    passkeyId: string;
     encryptedTunnelKey: string;
   }[];
   clientEncryptedTunnelKey: string;
@@ -757,7 +759,10 @@ export class AppointmentService {
   /**
    * Get all client tunnels for the tenant
    */
-  public async getClientTunnels(staffUserId?: string): Promise<ClientTunnelResponse[]> {
+  public async getClientTunnels(
+    staffUserId?: string,
+    passkeyId?: string,
+  ): Promise<ClientTunnelResponse[]> {
     const log = logger.setContext("AppointmentService");
     log.debug("Fetching client tunnels", { tenantId: this.tenantId, staffUserId });
     const db = await this.getDb();
@@ -776,17 +781,28 @@ export class AppointmentService {
     let encryptedTunnelKeyByTunnelId = new Map<string, string>();
 
     if (staffUserId) {
-      const staffKeyShares = await db
-        .select({
-          tunnelId: tenantSchema.clientTunnelStaffKeyShare.tunnelId,
-          encryptedTunnelKey: tenantSchema.clientTunnelStaffKeyShare.encryptedTunnelKey,
-        })
-        .from(tenantSchema.clientTunnelStaffKeyShare)
-        .where(eq(tenantSchema.clientTunnelStaffKeyShare.userId, staffUserId));
+      // Each passkey has its own Kyber keypair, so the tunnel key is wrapped separately per
+      // passkey. Otherwise the returned share maybe for a different passkey and fail to decrypt.
+      const recentPasskey = await WebAuthnService.getCurrentPasskey(staffUserId, passkeyId);
 
-      encryptedTunnelKeyByTunnelId = new Map(
-        staffKeyShares.map((share) => [share.tunnelId, share.encryptedTunnelKey]),
-      );
+      if (recentPasskey) {
+        const staffKeyShares = await db
+          .select({
+            tunnelId: tenantSchema.clientTunnelStaffKeyShare.tunnelId,
+            encryptedTunnelKey: tenantSchema.clientTunnelStaffKeyShare.encryptedTunnelKey,
+          })
+          .from(tenantSchema.clientTunnelStaffKeyShare)
+          .where(
+            and(
+              eq(tenantSchema.clientTunnelStaffKeyShare.userId, staffUserId),
+              eq(tenantSchema.clientTunnelStaffKeyShare.passkeyId, recentPasskey.id),
+            ),
+          );
+
+        encryptedTunnelKeyByTunnelId = new Map(
+          staffKeyShares.map((share) => [share.tunnelId, share.encryptedTunnelKey]),
+        );
+      }
     }
 
     log.debug("Client tunnels retrieved successfully", {
@@ -1031,6 +1047,7 @@ export class AppointmentService {
           clientData.staffKeyShares.map((share) => ({
             tunnelId: clientData.tunnelId,
             userId: share.userId,
+            passkeyId: share.passkeyId,
             encryptedTunnelKey: share.encryptedTunnelKey,
           })),
         );

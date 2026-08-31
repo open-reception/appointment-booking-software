@@ -80,9 +80,13 @@
         }
 
         const staffKeyShares = await getStaffKeyShares(tenant!.id, item.metaData.tunnelId);
+        const currentPasskeyId = page.data.passkeyId;
+        const staffKeyShare = staffKeyShares.find((share) => share.passkeyId === currentPasskeyId);
 
-        // TODO: When multiple staffKeyShares are supported, select the one currently in use
-        const staffKeyShare = staffKeyShares[0];
+        if (!staffKeyShare) {
+          console.error("No matching staff key share found for current passkey ID");
+          return;
+        }
 
         decrypted = await $staffCrypto.crypto.decryptStaff({
           data,

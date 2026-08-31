@@ -320,7 +320,8 @@ export const staffCrypto = pgTable(
     /** Whether this key is currently active */
     isActive: boolean("is_active").default(true).notNull(),
   },
-  (table) => [uniqueIndex("staff_crypto_ua_idx").on(table.userId, table.isActive)],
+  // One crypto row per (user, passkey): every passkey has its own Kyber keypair.
+  (table) => [uniqueIndex("staff_crypto_up_idx").on(table.userId, table.passkeyId)],
 );
 
 /**
@@ -359,7 +360,9 @@ export const clientTunnelStaffKeyShare = pgTable("client_tunnel_staff_key_share"
     .references(() => clientAppointmentTunnel.id),
   /** Foreign key to staff user */
   userId: uuid("user_id").notNull(),
-  /** Tunnel key encrypted with staff member's public key */
+  /** Passkey this key share is bound to (each passkey has its own Kyber keypair) */
+  passkeyId: text("passkey_id").notNull(),
+  /** Tunnel key encrypted with the passkey's public key */
   encryptedTunnelKey: text("encrypted_tunnel_key").notNull(),
   /** Timestamp when this key share was created */
   createdAt: timestamp("created_at").defaultNow().notNull(),

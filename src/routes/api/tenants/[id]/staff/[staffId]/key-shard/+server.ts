@@ -148,9 +148,12 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
     try {
       // Get the most recently used passkey for this authenticated user
-      const recentPasskey = await WebAuthnService.getMostRecentPasskey(locals.user.id);
+      const currentPasskey = await WebAuthnService.getCurrentPasskey(
+        locals.user.id,
+        locals.user?.passkeyId,
+      );
 
-      if (!recentPasskey) {
+      if (!currentPasskey) {
         log.warn("No passkey found for authenticated user - security violation", {
           tenantId,
           staffId,
@@ -160,12 +163,12 @@ export const GET: RequestHandler = async ({ params, locals }) => {
         throw new AuthorizationError("No valid passkey found for authenticated user");
       }
 
-      passkeyId = recentPasskey.id;
+      passkeyId = currentPasskey.id;
       log.debug("Using authenticated user's most recent passkey", {
         tenantId,
         staffId,
         passkeyId,
-        lastUsedAt: recentPasskey.lastUsedAt,
+        lastUsedAt: currentPasskey.lastUsedAt,
       });
     } catch (error) {
       if (error instanceof AuthorizationError) {

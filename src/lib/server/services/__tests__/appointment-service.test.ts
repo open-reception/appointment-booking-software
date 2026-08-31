@@ -35,6 +35,13 @@ vi.mock("../notification-service", () => ({
   },
 }));
 
+vi.mock("../../auth/webauthn-service", () => ({
+  WebAuthnService: {
+    // getClientTunnels scopes staff key shares to the caller's most recently used passkey.
+    getCurrentPasskey: vi.fn().mockResolvedValue({ id: "passkey-123", lastUsedAt: new Date() }),
+  },
+}));
+
 const { mockCleanAndRegenerateCache } = vi.hoisted(() => ({
   mockCleanAndRegenerateCache: vi.fn().mockResolvedValue(undefined),
 }));
@@ -89,6 +96,7 @@ const mockClientTunnelData = {
   staffKeyShares: [
     {
       userId: "staff-123",
+      passkeyId: "passkey-123",
       encryptedTunnelKey: "encrypted-tunnel-key",
     },
   ],

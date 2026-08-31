@@ -7,6 +7,7 @@ import {
 import type { TTenant } from "$lib/types/tenant";
 import type { LayoutServerLoad } from "./$types";
 import logger from "$lib/logger";
+import type { SupportedLocale } from "$lib/const/locales";
 
 const log = logger.setContext("/dashboard/+layout.server.ts");
 
@@ -25,6 +26,7 @@ export const load: LayoutServerLoad = async (event) => {
       name: event.locals.user.name,
       email: event.locals.user.email,
       role: event.locals.user.role,
+      language: event.locals.user.language as SupportedLocale,
       tenantId: event.locals.user.tenantId,
     };
     auth.setUser(user);
