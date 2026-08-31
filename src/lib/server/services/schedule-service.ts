@@ -169,10 +169,10 @@ export class ScheduleService {
       let staffKeyShares: Record<string, string> = {};
       // Tunnel keys are wrapped per passkey; scope the lookup to the passkey the user most
       // recently authenticated with (same definition getClientTunnels / key-shard use).
-      const recentPasskey = request.staffUserId
+      const currentPasskey = request.staffUserId
         ? await WebAuthnService.getCurrentPasskey(request.staffUserId, passkeyId)
         : null;
-      if (request.staffUserId && recentPasskey && appointments.length > 0) {
+      if (request.staffUserId && currentPasskey && appointments.length > 0) {
         const tunnelIds = [...new Set(appointments.map((apt) => apt.tunnelId))];
         const keyShares = await db
           .select()
@@ -180,7 +180,7 @@ export class ScheduleService {
           .where(
             and(
               eq(tenantSchema.clientTunnelStaffKeyShare.userId, request.staffUserId),
-              eq(tenantSchema.clientTunnelStaffKeyShare.passkeyId, recentPasskey.id),
+              eq(tenantSchema.clientTunnelStaffKeyShare.passkeyId, currentPasskey.id),
               inArray(tenantSchema.clientTunnelStaffKeyShare.tunnelId, tunnelIds),
             ),
           );
