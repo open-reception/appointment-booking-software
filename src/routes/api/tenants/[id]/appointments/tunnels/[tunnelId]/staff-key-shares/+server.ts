@@ -53,8 +53,9 @@ registerOpenAPIRoute("/tenants/{id}/appointments/tunnels/{tunnelId}/staff-key-sh
                   properties: {
                     encryptedTunnelKey: { type: "string", description: "Encrypted tunnel key" },
                     tunnelId: { type: "string", format: "uuid", description: "Tunnel ID" },
+                    passkeyId: { type: "string", format: "uuid", description: "Passkey ID" },
                   },
-                  required: ["encryptedTunnelKey", "tunnelId"],
+                  required: ["encryptedTunnelKey", "tunnelId", "passkeyId"],
                 },
                 description: "Retrieved key shares",
               },
@@ -167,6 +168,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
       .select({
         tunnelId: clientTunnelStaffKeyShare.tunnelId,
         encryptedTunnelKey: clientTunnelStaffKeyShare.encryptedTunnelKey,
+        passkeyId: clientTunnelStaffKeyShare.passkeyId,
       })
       .from(clientTunnelStaffKeyShare)
       .where(

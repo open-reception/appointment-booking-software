@@ -6,13 +6,17 @@ import {
   type SelectSlotTemplate,
   type SelectAppointment,
   type SelectAgentAbsence,
+  scheduleCache,
 } from "../db/tenant-schema";
 
 import { eq, and, between, sql, or, inArray } from "drizzle-orm";
 import logger from "$lib/logger";
 import { z } from "zod";
 import { ValidationError } from "../utils/errors";
+import { WebAuthnService } from "../auth/webauthn-service";
 import { isValidTimeZone, toLocalTime, toLocalTimeIgnoringDst } from "../utils/timezone";
+
+const CACHE_MAX_AHEAD_MONTHS = 14;
 
 const scheduleRequestSchema = z.object({
   startDate: z.string().datetime({ offset: true }), // ISO date string with timezone
@@ -63,6 +67,13 @@ export interface ScheduleResult {
 
 export class ScheduleService {
   #db: Awaited<ReturnType<typeof getTenantDb>> | null = null;
+  #buffer: Array<{
+    startDate: Date;
+    endDate: Date;
+    channelId: string;
+    timeZones: string[];
+  }> = [];
+  #isProcessingBuffer = false;
 
   private constructor(public readonly tenantId: string) {}
 
@@ -92,7 +103,10 @@ export class ScheduleService {
    * @param request Schedule request with date range
    * @returns Schedule result with available slots and appointments
    */
-  async getSchedule(request: ScheduleRequest): Promise<ScheduleResult> {
+  async getSchedule(
+    request: ScheduleRequest,
+    passkeyId?: string | undefined,
+  ): Promise<ScheduleResult> {
     const log = logger.setContext("ScheduleService");
 
     const validation = scheduleRequestSchema.safeParse(request);
@@ -153,7 +167,12 @@ export class ScheduleService {
 
       // 3a. If staffUserId is provided, get staffKeyShares for all appointment tunnels
       let staffKeyShares: Record<string, string> = {};
-      if (request.staffUserId && appointments.length > 0) {
+      // Tunnel keys are wrapped per passkey; scope the lookup to the passkey the user most
+      // recently authenticated with (same definition getClientTunnels / key-shard use).
+      const currentPasskey = request.staffUserId
+        ? await WebAuthnService.getCurrentPasskey(request.staffUserId, passkeyId)
+        : null;
+      if (request.staffUserId && currentPasskey && appointments.length > 0) {
         const tunnelIds = [...new Set(appointments.map((apt) => apt.tunnelId))];
         const keyShares = await db
           .select()
@@ -161,6 +180,7 @@ export class ScheduleService {
           .where(
             and(
               eq(tenantSchema.clientTunnelStaffKeyShare.userId, request.staffUserId),
+              eq(tenantSchema.clientTunnelStaffKeyShare.passkeyId, currentPasskey.id),
               inArray(tenantSchema.clientTunnelStaffKeyShare.tunnelId, tunnelIds),
             ),
           );
@@ -185,16 +205,19 @@ export class ScheduleService {
             and(
               sql`${tenantSchema.agentAbsence.startDate} >= ${request.startDate}`,
               sql`${tenantSchema.agentAbsence.startDate} <= ${request.endDate}`,
+              sql`${tenantSchema.agentAbsence.endDate} > now()`,
             ),
             // Absence ends within period
             and(
               sql`${tenantSchema.agentAbsence.endDate} >= ${request.startDate}`,
               sql`${tenantSchema.agentAbsence.endDate} <= ${request.endDate}`,
+              sql`${tenantSchema.agentAbsence.endDate} > now()`,
             ),
             // Absence spans entire period
             and(
               sql`${tenantSchema.agentAbsence.startDate} <= ${request.startDate}`,
               sql`${tenantSchema.agentAbsence.endDate} >= ${request.endDate}`,
+              sql`${tenantSchema.agentAbsence.endDate} > now()`,
             ),
           ),
         );
@@ -225,11 +248,6 @@ export class ScheduleService {
         channelAgents,
         staffKeyShares,
         timeZone: request.timeZone,
-      });
-
-      log.debug("Schedule generated successfully", {
-        tenantId: this.tenantId,
-        daysGenerated: schedule.length,
       });
 
       return {
@@ -320,7 +338,8 @@ export class ScheduleService {
           .map((ca) => ca.agent);
 
         // Generate available slots for this channel
-        const availableSlots = this.generateAvailableSlots({
+        const availableSlots = await this.generateAvailableSlots({
+          channelId: channel.id,
           date: currentDate,
           slotTemplates: channelSlotTemplates,
           appointments: dayAppointments,
@@ -348,7 +367,8 @@ export class ScheduleService {
   /**
    * Generate available time slots for a specific day and channel
    */
-  private generateAvailableSlots({
+  private async generateAvailableSlots({
+    channelId,
     date,
     slotTemplates,
     appointments,
@@ -356,14 +376,32 @@ export class ScheduleService {
     absences,
     timeZone,
   }: {
+    channelId: string;
     date: Date;
     slotTemplates: SelectSlotTemplate[];
     appointments: SelectAppointment[];
     agents: CalendarAgent[];
     absences: SelectAgentAbsence[];
     timeZone: string;
-  }): TimeSlot[] {
+  }): Promise<TimeSlot[]> {
     const availableSlots: TimeSlot[] = [];
+
+    // Can I read from cache?
+    const db = await this.getDb();
+    const cachedSchedule = await db
+      .select()
+      .from(scheduleCache)
+      .where(
+        and(
+          eq(scheduleCache.date, date.toISOString().split("T")[0]),
+          eq(scheduleCache.channel, channelId),
+          eq(scheduleCache.timezone, timeZone),
+        ),
+      )
+      .orderBy(scheduleCache.date);
+    if (cachedSchedule.length > 0) {
+      return cachedSchedule[0].data as TimeSlot[];
+    }
 
     for (const template of slotTemplates) {
       // Parse template times
@@ -405,6 +443,12 @@ export class ScheduleService {
           ),
         );
 
+        // Do not include slots that are in the past
+        if (slotEndDateTime.getTime() < new Date().getTime()) {
+          currentTime += slotDuration;
+          continue;
+        }
+
         const availableAgents = agents.filter((agent) => {
           if (
             this.isAgentAbsent(agent.id, slotStartDateTime, slotEndDateTime, absences, timeZone)
@@ -412,13 +456,15 @@ export class ScheduleService {
             return false;
           }
 
-          return !this.hasAgentAppointmentConflict(
+          const conflictResult = !this.hasAgentAppointmentConflict(
             agent.id,
             slotStartDateTime,
             slotEndDateTime,
             appointments,
             timeZone,
           );
+
+          return conflictResult;
         });
 
         // Only include slot if there are available agents
@@ -434,6 +480,20 @@ export class ScheduleService {
         currentTime += slotDuration;
       }
     }
+
+    // Save schedule to cache
+    await db
+      .insert(scheduleCache)
+      .values({
+        date: date.toISOString().split("T")[0],
+        timezone: timeZone,
+        channel: channelId,
+        data: availableSlots,
+      })
+      .onConflictDoUpdate({
+        target: [scheduleCache.date, scheduleCache.timezone, scheduleCache.channel],
+        set: { data: availableSlots },
+      });
 
     return availableSlots;
   }
@@ -487,6 +547,11 @@ export class ScheduleService {
       const absenceEnd = toLocalTime(new Date(absence.endDate), timeZone);
       const slotStart = toLocalTimeIgnoringDst(slotStartDateTime, timeZone);
       const slotEnd = toLocalTimeIgnoringDst(slotEndDateTime, timeZone);
+
+      // Quick way out
+      if (slotStart > absenceEnd || slotEnd < absenceStart) {
+        return false; // No overlap
+      }
 
       // For time-specific absences, check if the time slot overlaps
       const slotStartsDuringAbsence = slotStart >= absenceStart && slotStart < absenceEnd;
@@ -543,5 +608,227 @@ export class ScheduleService {
       this.#db = await getTenantDb(this.tenantId);
     }
     return this.#db;
+  }
+
+  private async cleanCache({
+    startDate,
+    endDate,
+    channelId,
+  }: {
+    startDate: Date;
+    endDate: Date;
+    channelId: string;
+  }): Promise<void> {
+    const db = await this.getDb();
+
+    // If endDate is far ahead, set it to 2999-12-31 to avoid not deleting future cache entries, that have become invalid because we only generate a certain number of months ahead, but users could generate a schedule cache for dates far in the future.
+    const usedEndDate =
+      endDate > new Date(new Date().setMonth(new Date().getMonth() + CACHE_MAX_AHEAD_MONTHS - 2))
+        ? new Date(2999, 11, 31)
+        : endDate;
+
+    await db
+      .delete(scheduleCache)
+      .where(
+        and(
+          eq(scheduleCache.channel, channelId),
+          between(
+            scheduleCache.date,
+            startDate.toISOString().split("T")[0],
+            usedEndDate.toISOString().split("T")[0],
+          ),
+        ),
+      );
+  }
+
+  private async generateCache({
+    startDate,
+    endDate,
+    channelId,
+    timeZones,
+  }: {
+    startDate: Date;
+    endDate: Date;
+    channelId: string;
+    timeZones: string[];
+  }): Promise<void> {
+    // Maximum end date is the last day of the month, 13 months from now
+    const now = new Date();
+    const maxEndDate = new Date(
+      Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth() + CACHE_MAX_AHEAD_MONTHS,
+        0,
+        23,
+        59,
+        59,
+        999,
+      ),
+    );
+    const usedEndDate = endDate > maxEndDate ? maxEndDate : endDate;
+
+    // Add to buffer
+    this.#buffer.push({
+      startDate,
+      endDate: usedEndDate,
+      channelId,
+      timeZones,
+    });
+
+    // Start buffer queue
+    this.processBufferQueue();
+  }
+
+  private async processBufferQueue(): Promise<void> {
+    if (this.#isProcessingBuffer || this.#buffer.length === 0) return;
+
+    this.#isProcessingBuffer = true;
+    try {
+      const log = logger.setContext("ScheduleService.Buffer");
+      while (this.#buffer.length > 0) {
+        const { startDate, endDate, channelId, timeZones } = this.#buffer[0];
+        try {
+          log.debug("Generating schedule cache", {
+            tenantId: this.tenantId,
+            channelId,
+            startDate: startDate.toISOString().split("T")[0],
+            endDate: endDate.toISOString().split("T")[0],
+          });
+
+          // Generate cache for each timezone
+          for (const timeZone of timeZones) {
+            await this.getSchedule({
+              startDate: startDate.toISOString(),
+              endDate: endDate.toISOString(),
+              tenantId: this.tenantId,
+              channelId,
+              timeZone,
+            });
+          }
+        } catch (error) {
+          log.error("Failed to generate schedule cache", {
+            tenantId: this.tenantId,
+            channelId,
+            startDate: startDate.toISOString().split("T")[0],
+            endDate: endDate.toISOString().split("T")[0],
+            error: String(error),
+          });
+        } finally {
+          // Remove the processed item from the buffer
+          this.#buffer.shift();
+        }
+      }
+    } finally {
+      this.#isProcessingBuffer = false;
+    }
+  }
+
+  private async usedTimeZones(): Promise<string[]> {
+    try {
+      // TODO: Once we have a tenant timezone setting, we can get that timezone instead of all timezones in the cache
+      const db = await this.getDb();
+      const timeZones = await db
+        .select({ timezone: scheduleCache.timezone })
+        .from(scheduleCache)
+        .groupBy(scheduleCache.timezone);
+      return timeZones.map((tz) => tz.timezone);
+    } catch (error) {
+      const log = logger.setContext("ScheduleService");
+      log.error("Failed to get used time zones", {
+        tenantId: this.tenantId,
+        error: String(error),
+      });
+      return [];
+    }
+  }
+
+  /**
+   * Clean and regenerate cache; used after actions that will invalidate the schedule cache, such as creating or deleting appointments, or changing agent availability.
+   * This method will clear the cache for the affected date range and channels, forcing a regeneration of available slots on the next request.
+   * @returns Promise<void>
+   */
+  async cleanAndRegenerateCache({
+    startDate,
+    endDate,
+    channelId,
+    awaitRebuild,
+  }: {
+    startDate: Date;
+    endDate: Date;
+    channelId: string;
+    awaitRebuild?: boolean;
+  }): Promise<void> {
+    const log = logger.setContext("ScheduleService");
+    log.debug("Cleaning and regenerating cache", {
+      tenantId: this.tenantId,
+      channelId,
+      startDate: startDate.toISOString().split("T")[0],
+      endDate: endDate.toISOString().split("T")[0],
+    });
+    // Get all time zones for the channel in the cache
+    const timeZones = await this.usedTimeZones();
+
+    // Clear cache
+    await this.cleanCache({ startDate, endDate, channelId });
+
+    // Optionally wait for rebuild
+    if (awaitRebuild) {
+      await this.generateCache({
+        startDate,
+        endDate,
+        channelId,
+        timeZones,
+      });
+      return;
+    }
+
+    // Rebuild cache in the background without awaiting
+    this.generateCache({
+      startDate,
+      endDate,
+      channelId,
+      timeZones,
+    });
+    return;
+  }
+
+  /**
+   * Removes cached schedule for dates in the past
+   */
+  async cleanPastCache(): Promise<void> {
+    const db = await this.getDb();
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    await db
+      .delete(scheduleCache)
+      .where(sql`${scheduleCache.date} < ${today.toISOString().split("T")[0]}`);
+  }
+
+  /**
+   * Creates the cache for dates in the future
+   */
+  async generateCacheAhead(): Promise<void> {
+    const timeZones = await this.usedTimeZones();
+    const log = logger.setContext("ScheduleService");
+
+    // Generate cache for next months
+    const db = await this.getDb();
+    const channels = await db.select().from(tenantSchema.channel);
+    for (const channel of channels) {
+      log.debug("Generating schedule cache ahead", {
+        tenantId: this.tenantId,
+        channelId: channel.id,
+        startDate: new Date().toISOString().split("T")[0],
+        endDate: new Date(new Date().setMonth(new Date().getMonth() + CACHE_MAX_AHEAD_MONTHS))
+          .toISOString()
+          .split("T")[0],
+      });
+      this.generateCache({
+        startDate: new Date(),
+        endDate: new Date(new Date().setMonth(new Date().getMonth() + CACHE_MAX_AHEAD_MONTHS)),
+        channelId: channel.id,
+        timeZones,
+      });
+    }
   }
 }

@@ -12,8 +12,107 @@ import {
 } from "$lib/server/utils/errors";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
+import { getTenantDb } from "$lib/server/db";
+import { clientTunnelStaffKeyShare } from "$lib/server/db/tenant-schema";
+import { and, eq } from "drizzle-orm";
 
 // Register OpenAPI documentation for DELETE
+registerOpenAPIRoute("/auth/passkeys/{passkeyId}", "PUT", {
+  summary: "Update WebAuthn passkey",
+  description:
+    "Allows authenticated users to change the deviceName of one of their WebAuthn passkeys.",
+  tags: ["Authentication"],
+  parameters: [
+    {
+      name: "passkeyId",
+      in: "path",
+      required: true,
+      schema: { type: "string" },
+      description: "The ID of the passkey",
+    },
+  ],
+  requestBody: {
+    content: {
+      "application/json": {
+        schema: {
+          type: "object",
+          properties: {
+            deviceName: {
+              type: "string",
+              description: "New recognizable name for the passkey",
+            },
+          },
+          required: ["deviceName"],
+        },
+      },
+    },
+  },
+  responses: {
+    "200": {
+      description: "Passkey updated successfully",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              deviceName: { type: "string", description: "New name" },
+            },
+            required: ["deviceName"],
+          },
+          example: {
+            deviceName: "My new name",
+          },
+        },
+      },
+    },
+    "400": {
+      description: "Cannot update passkey",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+          example: { error: "Cannot update passkey" },
+        },
+      },
+    },
+    "401": {
+      description: "Authentication required",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+          example: { error: "Authentication required" },
+        },
+      },
+    },
+    "403": {
+      description: "Not authorized to update this passkey",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+          example: { error: "You can only update your own passkeys" },
+        },
+      },
+    },
+    "404": {
+      description: "Passkey not found",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+          example: { error: "Passkey not found" },
+        },
+      },
+    },
+    "500": {
+      description: "Internal server error",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+          example: { error: "Internal server error" },
+        },
+      },
+    },
+  },
+});
+
 registerOpenAPIRoute("/auth/passkeys/{passkeyId}", "DELETE", {
   summary: "Delete a WebAuthn passkey from user account",
   description:
@@ -96,8 +195,8 @@ registerOpenAPIRoute("/auth/passkeys/{passkeyId}", "DELETE", {
   },
 });
 
-export async function DELETE({ params, locals }: RequestEvent) {
-  const log = logger.setContext("API.DeletePasskey");
+export async function PUT({ params, request, locals }: RequestEvent) {
+  const log = logger.setContext("API.PutPasskey");
   const { passkeyId } = params;
 
   try {
@@ -112,8 +211,78 @@ export async function DELETE({ params, locals }: RequestEvent) {
 
     const userId = locals.user.id;
 
+    log.debug("Attempting to update passkey", {
+      passkeyId,
+      userId,
+    });
+
+    // Get all passkeys for the user
+    const userPasskeys = await WebAuthnService.getUserPasskeys(userId);
+
+    // Check if passkey exists and belongs to the user
+    const passkeyToRename = userPasskeys.find((p) => p.id === passkeyId);
+
+    if (!passkeyToRename) {
+      throw new NotFoundError("Passkey not found or does not belong to you");
+    }
+
+    const body = await request.json();
+    if (!body.deviceName) {
+      throw new ValidationError("deviceName is required");
+    }
+
+    // Update the passkey
+    const updatedPasskey = await UserService.updatePasskey(passkeyId, {
+      deviceName: body.deviceName,
+    });
+
+    if (!updatedPasskey) {
+      throw new NotFoundError("Failed to update passkey");
+    }
+
+    log.info("Passkey updated successfully", {
+      passkeyId,
+      userId,
+    });
+
+    return json({
+      deviceName: updatedPasskey.deviceName,
+    });
+  } catch (error) {
+    logError(log)("Failed to update passkey", error, locals.user?.id, params.passkeyId);
+
+    if (error instanceof BackendError) {
+      return error.toJson();
+    }
+
+    return new InternalError().toJson();
+  }
+}
+
+export async function DELETE({ params, locals, request }: RequestEvent) {
+  const log = logger.setContext("API.DeletePasskey");
+  const { passkeyId } = params;
+
+  try {
+    // Check authentication
+    if (!locals.user) {
+      throw new AuthorizationError("Authentication required");
+    }
+
+    if (!passkeyId) {
+      throw new ValidationError("Passkey ID is required");
+    }
+
+    const body = await request.json();
+    const tenantId = body.tenantId;
+    if (!tenantId) {
+      throw new ValidationError("tenantId is required");
+    }
+
+    const userId = locals.user.id;
     log.debug("Attempting to delete passkey", {
       passkeyId,
+      tenantId: body.tenantId,
       userId,
     });
 
@@ -144,6 +313,21 @@ export async function DELETE({ params, locals }: RequestEvent) {
 
     if (!deletedPasskey) {
       throw new NotFoundError("Failed to delete passkey");
+    }
+
+    // Delete tenant-specific data (client tunnel key shares)
+    const tenantDb = await getTenantDb(tenantId);
+    const keyShareDeletionResult = await tenantDb
+      .delete(clientTunnelStaffKeyShare)
+      .where(
+        and(
+          eq(clientTunnelStaffKeyShare.userId, userId),
+          eq(clientTunnelStaffKeyShare.passkeyId, passkeyId),
+        ),
+      );
+
+    if (!keyShareDeletionResult) {
+      throw new NotFoundError("Failed to delete passkey key shares");
     }
 
     log.info("Passkey deleted successfully", {

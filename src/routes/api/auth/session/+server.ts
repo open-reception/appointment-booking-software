@@ -26,8 +26,9 @@ registerOpenAPIRoute("/auth/session", "GET", {
                   name: { type: "string", description: "User name" },
                   role: { type: "string", enum: ["GLOBAL_ADMIN", "TENANT_ADMIN", "STAFF"] },
                   tenantId: { type: "string", description: "Tenant ID (if applicable)" },
+                  language: { type: "string", description: "Language for E-Mails" },
                 },
-                required: ["id", "email", "name", "role"],
+                required: ["id", "email", "name", "role", "language"],
               },
               expiresAt: {
                 type: "string",
@@ -83,6 +84,7 @@ export const GET: RequestHandler = async ({ locals }) => {
         name: locals.user.name,
         role: locals.user.role,
         tenantId: locals.user.tenantId,
+        language: locals.user.language,
       },
       expiresAt: new Date(locals.user.session.exp ?? 0).toISOString(),
     });

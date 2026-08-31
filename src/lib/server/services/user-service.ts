@@ -444,7 +444,10 @@ export class UserService {
    */
   static async addAdditionalPasskey(userId: string, passkeyData: InsertUserPasskey): Promise<void> {
     const log = logger.setContext("UserService");
-    log.debug("Adding additional passkey to user", { userId, passkeyId: passkeyData.id });
+    log.debug("Adding additional passkey to user in Service", {
+      userId,
+      passkeyId: passkeyData.id,
+    });
 
     try {
       // Check if user exists and is active

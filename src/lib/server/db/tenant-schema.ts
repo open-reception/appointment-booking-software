@@ -1,10 +1,13 @@
 import type { InferSelectModel } from "drizzle-orm";
 import {
   boolean,
+  date,
   integer,
   json,
+  jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   time,
   timestamp,
@@ -317,7 +320,8 @@ export const staffCrypto = pgTable(
     /** Whether this key is currently active */
     isActive: boolean("is_active").default(true).notNull(),
   },
-  (table) => [uniqueIndex("staff_crypto_ua_idx").on(table.userId, table.isActive)],
+  // One crypto row per (user, passkey): every passkey has its own Kyber keypair.
+  (table) => [uniqueIndex("staff_crypto_up_idx").on(table.userId, table.passkeyId)],
 );
 
 /**
@@ -356,7 +360,9 @@ export const clientTunnelStaffKeyShare = pgTable("client_tunnel_staff_key_share"
     .references(() => clientAppointmentTunnel.id),
   /** Foreign key to staff user */
   userId: uuid("user_id").notNull(),
-  /** Tunnel key encrypted with staff member's public key */
+  /** Passkey this key share is bound to (each passkey has its own Kyber keypair) */
+  passkeyId: text("passkey_id").notNull(),
+  /** Tunnel key encrypted with the passkey's public key */
   encryptedTunnelKey: text("encrypted_tunnel_key").notNull(),
   /** Timestamp when this key share was created */
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -428,6 +434,35 @@ export const clientPinResetToken = pgTable("client_pin_reset_token", {
   used: boolean("used").default(false).notNull(),
 });
 
+/**
+ * Schedule Cache table - stores cached schedule data for channels on specific dates
+ * Used to improve performance of schedule queries in calendar and appointment booking
+ * @table cacheSchedule
+ */
+export const scheduleCache = pgTable(
+  "cache_schedule",
+  {
+    /** date of the cached schedule */
+    date: date("date").notNull(),
+    /** channel of the cached schedule */
+    channel: uuid("channel")
+      .notNull()
+      .references(() => channel.id),
+    /** timezone for this calculation */
+    timezone: text("timezone").notNull(),
+    /** cache data */
+    data: jsonb("data").notNull(),
+    /** When this entry was created */
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    /** When this entry was last updated */
+    updatedAt: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [primaryKey({ columns: [table.date, table.timezone, table.channel] })],
+);
+
 /** StaffCrypto record type for database queries */
 export type SelectStaffCrypto = InferSelectModel<typeof staffCrypto>;
 
@@ -442,3 +477,6 @@ export type SelectClientPinResetToken = InferSelectModel<typeof clientPinResetTo
 
 /** BookingAccessToken record type for database queries */
 export type SelectBookingAccessToken = InferSelectModel<typeof bookingAccessToken>;
+
+/** ScheduleCache record type for database queries */
+export type SelectScheduleCache = InferSelectModel<typeof scheduleCache>;

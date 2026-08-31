@@ -3,7 +3,7 @@
   import { m } from "$i18n/messages";
   import { MaxPageWidth } from "$lib/components/layouts/max-page-width";
   import { SidebarLayout } from "$lib/components/layouts/sidebar-layout";
-  import * as Item from "$lib/components/ui/item/index.js";
+  import * as Item from "$lib/components/ui/item";
   import { Headline, Text } from "$lib/components/ui/typography";
   import { ROUTES } from "$lib/const/routes";
   import { auth } from "$lib/stores/auth";
@@ -38,7 +38,7 @@
           </a>
         {/snippet}
       </Item.Root>
-      <Item.Root variant="outline">
+      <!-- <Item.Root variant="outline">
         {#snippet child({ props })}
           <a href={resolve(ROUTES.DASHBOARD.ACCOUNT.CHANGE_EMAIL)} {...props}>
             <Item.Content>
@@ -54,7 +54,7 @@
             </Item.Actions>
           </a>
         {/snippet}
-      </Item.Root>
+      </Item.Root> -->
       <Item.Root variant="outline">
         {#snippet child({ props })}
           <a href={resolve(ROUTES.DASHBOARD.ACCOUNT.PASSKEYS)} {...props}>

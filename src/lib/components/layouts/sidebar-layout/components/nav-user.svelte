@@ -62,12 +62,9 @@
         <DropdownMenu.Separator />
         <DropdownMenu.Group>
           <LanguageSwitch class="w-full" triggerClass="w-[100%] [&>svg]:ml-auto" />
-          <DropdownMenu.Item
-            onclick={() => goto(resolve(ROUTES.DASHBOARD.ACCOUNT.MAIN))}
-            disabled={true}
-          >
+          <DropdownMenu.Item onclick={() => goto(resolve(ROUTES.DASHBOARD.ACCOUNT.MAIN))}>
             <AccountIcon />
-            {m["nav.account"]()} (coming soon)
+            {m["nav.account"]()}
           </DropdownMenu.Item>
         </DropdownMenu.Group>
         <DropdownMenu.Separator />

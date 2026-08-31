@@ -64,6 +64,7 @@
 		"errors": {
 			"email": "Invalid format",
 			"passphrase": "Must be at least 30 characters long",
+			"passphraseMismatch": "Does not match the new passphrase",
 			"noPassAtAll": "Either passphrase or passkey is required",
 			"bothPassSet": "Only one of passphrase or passkey should be provided",
 			"name": "Must be at least 2 characters",
@@ -100,7 +101,9 @@
 		"pin": "PIN",
 		"pinHint": "Save your PIN in a secure place, like a password-manager.",
 		"locale": "Language",
-		"localePlaceholder": "Select Language"
+		"localePlaceholder": "Select Language",
+		"deviceName": "Passkey Name",
+		"deviceNameHint": "Etwas, das Du wiedererkennen wirst"
 	},
 	"login": {
 		"or": "Or",
@@ -140,8 +143,8 @@
 	"logout": {
 		"title": "Logout",
 		"success": {
-			"title": "You are logged out.",
-			"description": "You are logged-out."
+			"title": "Have a good day",
+			"description": "You are now logged out."
 		},
 		"error": {
 			"title": "Logout failed",
@@ -794,7 +797,15 @@
 		"general": {
 			"navItem": "Settings",
 			"title": "Account Settings",
-			"description": "Change your name."
+			"description": "Change your name and e-mail language.",
+			"language": {
+				"title": "E-Mail Language",
+				"placeholder": "Select a language",
+				"hint": "OpenReception will send e-mails in this language to you"
+			},
+			"action": "Save changes",
+			"success": "Account Settings saved",
+			"error": "Account Settings could not be saved"
 		},
 		"change-email": {
 			"navItem": "E-Mail Address",
@@ -804,12 +815,60 @@
 		"passkeys": {
 			"navItem": "Passkeys",
 			"title": "Manage Passkeys",
-			"description": "You can add up to three passkeys."
+			"description": "You can add up to three passkeys.",
+			"list": {
+				"loading": "Loading Passkeys",
+				"unnamedPasskey": "Unnamed Passkey",
+				"current": "Current Session",
+				"createdAt": "Created: {createdAt}.",
+				"lastUsedAt": "Last used: {lastUsedAt}.",
+				"empty": {
+					"title": "No Passkeys set",
+					"description": "You can add up to 3 Passkeys"
+				}
+			},
+			"add": {
+				"title": "Add Passkey",
+				"description": "Add a Passkey to your account",
+				"action": "Add Passkey",
+				"success": "Passkey added",
+				"error": "Passkey could not be added",
+				"errorDeleteSuccess": "Partially added Passkey deleted",
+				"maxReached": {
+					"title": "Maximum reached",
+					"description": "You've reached the maximum amount of Passkeys for this account"
+				}
+			},
+			"edit": {
+				"title": "Rename Passkey",
+				"description": "Rename it to something you will recognize",
+				"action": "Rename",
+				"success": "Passkey renamed",
+				"error": "Passkey could not be renamed"
+			},
+			"delete": {
+				"title": "Delete Passkey",
+				"description": "This action cannot be undone. Type {name} to delete this passkey.",
+				"forbidden": "You cannot delete the last passkey in your account",
+				"action": "Delete",
+				"success": "Passkey deleted",
+				"error": "Passkey could not be deleted"
+			}
 		},
 		"change-passphrase": {
 			"navItem": "Passphrase",
 			"title": "Change Passphrase",
-			"description": "Global Admins can set strong passphrases as a backup login method."
+			"description": "Global Admins can set strong passphrases as a backup login method.",
+			"currentPassphrase": "Current Passphrase",
+			"newPassphrase": "New Passphrase",
+			"repeatedPassphrase": "New Passphrase (repeat)",
+			"action": "Change Passphrase",
+			"success": "Passphrase changed",
+			"errors": {
+				"notAGlobalAdmin": "You are now allowed to add a passphrase",
+				"passphraseIncorrect": "Current Passphrase is incorrect",
+				"unknown": "Passphrase could not be updated"
+			}
 		}
 	},
 	"staff": {
@@ -902,6 +961,8 @@
 	"currentSelection": "current selection",
 	"yes": "Yes",
 	"no": "No",
+	"unknown": "unknown",
+	"never": "never",
 	"public": {
 		"links": {
 			"website": "Go to Website",

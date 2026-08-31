@@ -34,7 +34,7 @@ export const fetchClientTunnels = async (tenantId: string) => {
 export const addStaffKeyShares = async (
   tenantId: string,
   staffUserId: string,
-  keyShares: { tunnelId: string; encryptedTunnelKey: string }[],
+  keyShares: { tunnelId: string; passkeyId: string; encryptedTunnelKey: string }[],
 ) => {
   const resp = await fetch(`/api/tenants/${tenantId}/appointments/tunnels/add-staff-key-shares`, {
     method: "POST",

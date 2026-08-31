@@ -45,7 +45,7 @@
     "@eslint/js": "^9.39.2",
     "@inlang/paraglide-js": "2.15.0",
     "@internationalized/date": "^3.10.1",
-    "@lucide/svelte": "^0.562.0",
+    "@lucide/svelte": "^0.564.0",
     "@playwright/test": "^1.57.0",
     "@sveltejs/adapter-auto": "^7.0.0",
     "@sveltejs/kit": "^2.70.2",

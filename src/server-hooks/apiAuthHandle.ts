@@ -74,6 +74,7 @@ export const apiAuthHandle: Handle = async ({ event, resolve }) => {
         sessionId: sessionData.sessionId,
       },
       ...sessionData.user,
+      passkeyId: sessionData.passkeyId,
     };
   }
 

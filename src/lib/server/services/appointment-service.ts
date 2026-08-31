@@ -29,12 +29,14 @@ import {
   sendAppointmentUpdatedEmail,
 } from "../email/email-service";
 import { ConflictError, InternalError, NotFoundError, ValidationError } from "../utils/errors";
+import { WebAuthnService } from "../auth/webauthn-service";
 import { challengeStore } from "./challenge-store";
 import { challengeThrottleService } from "./challenge-throttle";
 import { NotificationService } from "./notification-service";
 import { TenantAdminService } from "./tenant-admin-service";
 import type { PgTransaction } from "drizzle-orm/pg-core";
 import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
+import { ScheduleService } from "./schedule-service";
 
 export interface ClientTunnelData {
   tunnelId: string;
@@ -55,6 +57,7 @@ export interface ClientTunnelData {
   };
   staffKeyShares: {
     userId: string;
+    passkeyId: string;
     encryptedTunnelKey: string;
   }[];
   clientEncryptedTunnelKey: string;
@@ -429,6 +432,16 @@ export class AppointmentService {
           tenantId: this.tenantId,
         });
       });
+
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    const date = new Date(result[0].appointmentDate);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: date,
+      endDate: date,
+      channelId: result[0].channelId,
+      awaitRebuild: true,
+    });
   }
 
   public async cancelAppointment(id: string): Promise<SelectAppointment> {
@@ -451,6 +464,16 @@ export class AppointmentService {
       throw new ValidationError("Appointment not found or in wrong state");
     }
 
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    const date = new Date(result[0].appointmentDate);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: date,
+      endDate: date,
+      channelId: result[0].channelId,
+      awaitRebuild: true,
+    });
+
     const row = result[0];
     return row;
   }
@@ -472,6 +495,16 @@ export class AppointmentService {
       });
       return false;
     }
+
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    const date = new Date(result[0].appointmentDate);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: date,
+      endDate: date,
+      channelId: result[0].channelId,
+      awaitRebuild: true,
+    });
 
     log.debug("Appointment deleted successfully", { appointmentId: id, tenantId: this.tenantId });
     return true;
@@ -553,6 +586,16 @@ export class AppointmentService {
         },
       );
     }
+
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    const date = new Date(appointmentResult[0].appointmentDate);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: date,
+      endDate: date,
+      channelId: appointmentResult[0].channelId,
+      awaitRebuild: true,
+    });
 
     log.info("Appointment deleted by staff successfully", {
       appointmentId,
@@ -688,13 +731,38 @@ export class AppointmentService {
       tenantId: this.tenantId,
     });
 
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    const date = new Date(appointmentResult[0].appointmentDate);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: date,
+      endDate: date,
+      channelId: appointmentResult[0].channelId,
+      awaitRebuild: true,
+    });
+    // Also update the cache if the appointment date has changed to a different day
+    if (
+      date.toISOString().split("T")[0] !==
+      newAppointment.appointmentDate.toISOString().split("T")[0]
+    ) {
+      await scheduleService.cleanAndRegenerateCache({
+        startDate: newAppointment.appointmentDate,
+        endDate: newAppointment.appointmentDate,
+        channelId: appointmentResult[0].channelId,
+        awaitRebuild: true,
+      });
+    }
+
     return newAppointment;
   }
 
   /**
    * Get all client tunnels for the tenant
    */
-  public async getClientTunnels(staffUserId?: string): Promise<ClientTunnelResponse[]> {
+  public async getClientTunnels(
+    staffUserId?: string,
+    passkeyId?: string,
+  ): Promise<ClientTunnelResponse[]> {
     const log = logger.setContext("AppointmentService");
     log.debug("Fetching client tunnels", { tenantId: this.tenantId, staffUserId });
     const db = await this.getDb();
@@ -713,17 +781,28 @@ export class AppointmentService {
     let encryptedTunnelKeyByTunnelId = new Map<string, string>();
 
     if (staffUserId) {
-      const staffKeyShares = await db
-        .select({
-          tunnelId: tenantSchema.clientTunnelStaffKeyShare.tunnelId,
-          encryptedTunnelKey: tenantSchema.clientTunnelStaffKeyShare.encryptedTunnelKey,
-        })
-        .from(tenantSchema.clientTunnelStaffKeyShare)
-        .where(eq(tenantSchema.clientTunnelStaffKeyShare.userId, staffUserId));
+      // Each passkey has its own Kyber keypair, so the tunnel key is wrapped separately per
+      // passkey. Otherwise the returned share maybe for a different passkey and fail to decrypt.
+      const recentPasskey = await WebAuthnService.getCurrentPasskey(staffUserId, passkeyId);
 
-      encryptedTunnelKeyByTunnelId = new Map(
-        staffKeyShares.map((share) => [share.tunnelId, share.encryptedTunnelKey]),
-      );
+      if (recentPasskey) {
+        const staffKeyShares = await db
+          .select({
+            tunnelId: tenantSchema.clientTunnelStaffKeyShare.tunnelId,
+            encryptedTunnelKey: tenantSchema.clientTunnelStaffKeyShare.encryptedTunnelKey,
+          })
+          .from(tenantSchema.clientTunnelStaffKeyShare)
+          .where(
+            and(
+              eq(tenantSchema.clientTunnelStaffKeyShare.userId, staffUserId),
+              eq(tenantSchema.clientTunnelStaffKeyShare.passkeyId, recentPasskey.id),
+            ),
+          );
+
+        encryptedTunnelKeyByTunnelId = new Map(
+          staffKeyShares.map((share) => [share.tunnelId, share.encryptedTunnelKey]),
+        );
+      }
     }
 
     log.debug("Client tunnels retrieved successfully", {
@@ -869,6 +948,15 @@ export class AppointmentService {
       appointmentId: result.id,
     });
 
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: result.appointmentDate,
+      endDate: result.appointmentDate,
+      channelId: appointmentData.channelId,
+      awaitRebuild: true,
+    });
+
     return response;
   }
 
@@ -959,6 +1047,7 @@ export class AppointmentService {
           clientData.staffKeyShares.map((share) => ({
             tunnelId: clientData.tunnelId,
             userId: share.userId,
+            passkeyId: share.passkeyId,
             encryptedTunnelKey: share.encryptedTunnelKey,
           })),
         );
@@ -1065,6 +1154,16 @@ export class AppointmentService {
         });
       });
     }
+
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    const date = new Date(result.appointment.appointmentDate);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: date,
+      endDate: date,
+      channelId: result.appointment.channelId,
+      awaitRebuild: true,
+    });
 
     return response;
   }
@@ -1359,6 +1458,16 @@ export class AppointmentService {
       tenantId: this.tenantId,
       appointmentId,
       channelId: appointment.channelId,
+    });
+
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    const date = new Date(appointmentResult[0].appointmentDate);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: date,
+      endDate: date,
+      channelId: appointmentResult[0].channelId,
+      awaitRebuild: true,
     });
   }
 

@@ -35,6 +35,25 @@ vi.mock("../notification-service", () => ({
   },
 }));
 
+vi.mock("../../auth/webauthn-service", () => ({
+  WebAuthnService: {
+    // getClientTunnels scopes staff key shares to the caller's most recently used passkey.
+    getCurrentPasskey: vi.fn().mockResolvedValue({ id: "passkey-123", lastUsedAt: new Date() }),
+  },
+}));
+
+const { mockCleanAndRegenerateCache } = vi.hoisted(() => ({
+  mockCleanAndRegenerateCache: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("../schedule-service", () => ({
+  ScheduleService: {
+    forTenant: vi.fn().mockResolvedValue({
+      cleanAndRegenerateCache: mockCleanAndRegenerateCache,
+    }),
+  },
+}));
+
 const mockAppointment = {
   id: "appointment-123",
   tunnelId: "tunnel-123",
@@ -77,6 +96,7 @@ const mockClientTunnelData = {
   staffKeyShares: [
     {
       userId: "staff-123",
+      passkeyId: "passkey-123",
       encryptedTunnelKey: "encrypted-tunnel-key",
     },
   ],
@@ -86,6 +106,7 @@ const mockClientTunnelData = {
 describe("AppointmentService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCleanAndRegenerateCache.mockResolvedValue(undefined);
   });
 
   describe("forTenant", () => {
@@ -289,6 +310,13 @@ describe("AppointmentService", () => {
         expect.objectContaining({ agentId: "agent-456" }),
         "Test Channel",
       );
+      expect(mockCleanAndRegenerateCache).toHaveBeenCalledTimes(1);
+      expect(mockCleanAndRegenerateCache).toHaveBeenCalledWith(
+        expect.objectContaining({
+          channelId: "channel-123",
+          awaitRebuild: true,
+        }),
+      );
     });
   });
 
@@ -329,6 +357,7 @@ describe("AppointmentService", () => {
                 returning: vi.fn().mockResolvedValue([
                   {
                     id: "appointment-123",
+                    channelId: "channel-123",
                     appointmentDate: new Date("2024-01-15T10:00:00Z"),
                     status: "NEW",
                   },
@@ -363,6 +392,13 @@ describe("AppointmentService", () => {
       expect(result.id).toBe("appointment-123");
       expect(result.status).toBe("NEW");
       expect(result.appointmentDate).toBe("2024-01-15T10:00:00.000Z");
+      expect(mockCleanAndRegenerateCache).toHaveBeenCalledTimes(1);
+      expect(mockCleanAndRegenerateCache).toHaveBeenCalledWith(
+        expect.objectContaining({
+          channelId: "channel-123",
+          awaitRebuild: true,
+        }),
+      );
     });
 
     it("should block creation when no authorized users exist", async () => {
@@ -512,6 +548,7 @@ describe("AppointmentService", () => {
                 returning: vi.fn().mockResolvedValue([
                   {
                     id: "apt-123",
+                    channelId: "channel-123",
                     appointmentDate: new Date("2024-01-01T10:00:00Z"),
                     status: "CONFIRMED",
                   },
@@ -545,6 +582,13 @@ describe("AppointmentService", () => {
 
       expect(result.status).toBe("CONFIRMED");
       expect(mockTransaction).toHaveBeenCalled();
+      expect(mockCleanAndRegenerateCache).toHaveBeenCalledTimes(1);
+      expect(mockCleanAndRegenerateCache).toHaveBeenCalledWith(
+        expect.objectContaining({
+          channelId: "channel-123",
+          awaitRebuild: true,
+        }),
+      );
     });
   });
 
@@ -611,6 +655,13 @@ describe("AppointmentService", () => {
       const result = await service.deleteAppointment("appointment-123");
 
       expect(result).toBe(true);
+      expect(mockCleanAndRegenerateCache).toHaveBeenCalledTimes(1);
+      expect(mockCleanAndRegenerateCache).toHaveBeenCalledWith(
+        expect.objectContaining({
+          channelId: "channel-123",
+          awaitRebuild: true,
+        }),
+      );
     });
 
     it("should return false when appointment not found", async () => {
@@ -688,6 +739,13 @@ describe("AppointmentService", () => {
 
       expect(mockDb.delete).toHaveBeenCalled();
       expect(mockGetChannelTitle).toHaveBeenCalledWith("tenant-123", "channel-123", "de");
+      expect(mockCleanAndRegenerateCache).toHaveBeenCalledTimes(1);
+      expect(mockCleanAndRegenerateCache).toHaveBeenCalledWith(
+        expect.objectContaining({
+          channelId: "channel-123",
+          awaitRebuild: true,
+        }),
+      );
     });
 
     it("should throw NotFoundError when appointment does not exist", async () => {
@@ -764,6 +822,13 @@ describe("AppointmentService", () => {
       await deletePromise;
 
       expect(mockGetChannelTitle).toHaveBeenCalledWith("tenant-123", "channel-123", "de");
+      expect(mockCleanAndRegenerateCache).toHaveBeenCalledTimes(1);
+      expect(mockCleanAndRegenerateCache).toHaveBeenCalledWith(
+        expect.objectContaining({
+          channelId: "channel-123",
+          awaitRebuild: true,
+        }),
+      );
     });
   });
 
@@ -948,6 +1013,13 @@ describe("AppointmentService", () => {
 
       expect(challengeStore.consume).toHaveBeenCalledWith("challenge-123", "tenant-123");
       expect(challengeThrottleService.clearThrottle).toHaveBeenCalledWith("email-hash-123", "pin");
+      expect(mockCleanAndRegenerateCache).toHaveBeenCalledTimes(1);
+      expect(mockCleanAndRegenerateCache).toHaveBeenCalledWith(
+        expect.objectContaining({
+          channelId: "channel-123",
+          awaitRebuild: true,
+        }),
+      );
     });
 
     it("should throw NotFoundError when challenge is not found", async () => {

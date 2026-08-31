@@ -43,7 +43,7 @@
         return;
       }
 
-      const keyShares = await Promise.all(
+      const nestedKeyShares = await Promise.all(
         tunnels.map(async (tunnel) => {
           if (!tunnel.currentStaffEncryptedTunnelKey) {
             throw new Error(`Missing current staff key share for tunnel ${tunnel.id}`);
@@ -62,14 +62,18 @@
             throw new Error(`Failed to encrypt tunnel key for new staff on tunnel ${tunnel.id}`);
           }
 
-          return {
+          // One key share per (tunnel, passkey): the target user may have several passkeys,
+          // each with its own public key the tunnel key must be wrapped for.
+          return encryptedForNewStaff.map((it) => ({
             tunnelId: tunnel.id,
-            encryptedTunnelKey: encryptedForNewStaff[0].encryptedTunnelKey,
-          };
+            passkeyId: it.passkeyId,
+            encryptedTunnelKey: it.encryptedTunnelKey,
+          }));
         }),
       );
 
       // Setting staff key shares
+      const keyShares = nestedKeyShares.flat();
       const isOk = await addStaffKeyShares(tenantId, entity.id, keyShares);
       if (isOk) {
         isSubmitting = false;
