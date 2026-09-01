@@ -72,6 +72,7 @@ function createSystemTenant(): SelectTenant {
     logo: null,
     links: { website: "", imprint: "", privacyStatement: "" },
     domain: "tenant.example.com",
+    features: [],
     databaseUrl: "",
     setupState: "SETTINGS",
     createdAt: new Date(),
