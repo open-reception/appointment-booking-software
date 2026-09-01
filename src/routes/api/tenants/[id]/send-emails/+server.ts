@@ -6,7 +6,6 @@ import { AppointmentService } from "$lib/server/services/appointment-service";
 import { TenantAdminService } from "$lib/server/services/tenant-admin-service";
 import {
   AuthenticationError,
-  AuthorizationError,
   BackendError,
   InternalError,
   logError,
@@ -135,10 +134,6 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
   }
 
   checkPermission(locals, tenantId, true);
-
-  if (!["STAFF", "TENANT_ADMIN"].includes(locals.user?.role || "")) {
-    throw new AuthorizationError("Forbidden", 403);
-  }
 
   try {
     const body = await request.json();
