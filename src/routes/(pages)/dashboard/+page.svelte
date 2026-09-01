@@ -16,6 +16,7 @@
   import { isSetupStateDone } from "$lib/utils/tenants";
   import MenuPositionIcon from "@lucide/svelte/icons/corner-left-up";
   import CloseIcon from "@lucide/svelte/icons/x";
+  import EmailReminder from "./(components)/EmailReminder.svelte";
 
   const tenant = $derived($tenants.currentTenant);
 </script>
@@ -154,6 +155,9 @@
           },
         ]}
       />
+    {/if}
+    {#if $auth.user && ["TENANT_ADMIN", "STAFF"].includes($auth.user?.role) && tenant && tenant.setupState === "READY"}
+      <EmailReminder />
     {/if}
   </div>
 </SidebarLayout>

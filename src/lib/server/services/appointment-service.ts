@@ -25,6 +25,7 @@ import {
   sendAppointmentCancelledEmail,
   sendAppointmentCreatedEmail,
   sendAppointmentRejectedEmail,
+  sendAppointmentReminderEmail,
   sendAppointmentRequestEmail,
   sendAppointmentUpdatedEmail,
 } from "../email/email-service";
@@ -37,6 +38,7 @@ import { TenantAdminService } from "./tenant-admin-service";
 import type { PgTransaction } from "drizzle-orm/pg-core";
 import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
 import { ScheduleService } from "./schedule-service";
+import type { SelectTenant } from "../db/central-schema";
 
 export interface ClientTunnelData {
   tunnelId: string;
@@ -1469,6 +1471,42 @@ export class AppointmentService {
       channelId: appointmentResult[0].channelId,
       awaitRebuild: true,
     });
+  }
+
+  public async sendAppointmentReminder(
+    tenant: SelectTenant,
+    appointmentId: string,
+    data: { email: string; name: string; locale: string },
+  ): Promise<SelectAppointment | null> {
+    const log = logger.setContext("AppointmentService");
+    try {
+      const appointment = await this.getAppointmentById(appointmentId);
+      await sendAppointmentReminderEmail(
+        {
+          name: data.name,
+          email: data.email,
+          language: data.locale,
+        },
+        tenant,
+        appointment,
+      );
+    } catch {
+      // Silent fail
+      log.warn("Failed to fetch appointment for reminder", {
+        appointmentId,
+        tenantId: this.tenantId,
+      });
+      return null;
+    }
+
+    const db = await this.getDb();
+    const result = await db
+      .update(tenantSchema.appointment)
+      .set({ remindedAt: new Date() })
+      .where(eq(tenantSchema.appointment.id, appointmentId))
+      .returning();
+
+    return result[0] ?? null;
   }
 
   /**

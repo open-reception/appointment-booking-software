@@ -24,6 +24,7 @@ import PinReset from "$lib/emails/PinReset.svelte";
 import { dev } from "$app/environment";
 import Notification from "$lib/emails/Notification.svelte";
 import AppointmentUpdated from "$lib/emails/AppointmentUpdated.svelte";
+import AppointmentReminder from "$lib/emails/AppointmentReminder.svelte";
 
 export type SelectClient = {
   email: string;
@@ -202,7 +203,7 @@ export async function sendAppointmentReminderEmail(
     },
     { locale },
   );
-  const emailRender = render(AppointmentBooked, {
+  const emailRender = render(AppointmentReminder, {
     props: {
       locale,
       channel: channelTitle || appointment.channelId,

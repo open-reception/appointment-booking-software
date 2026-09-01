@@ -432,6 +432,32 @@
 					"action": "Person hinzufügen"
 				}
 			}
+		},
+		"appointmentReminders": {
+			"title": "Termin-Erinnerungen",
+			"loading": "Lade Termine bis morgen Abend",
+			"noRemindersToSend": "Keine Erinnerungen zu senden",
+			"sending": [
+				{
+					"declarations": ["input length", "local lengthPlural = length: plural"],
+					"selectors": ["lengthPlural"],
+					"match": {
+						"lengthPlural=one": "Sende {length} Erinnerung",
+						"lengthPlural=other": "Sende {length} Erinnerungen"
+					}
+				}
+			],
+			"success": [
+				{
+					"declarations": ["input length", "local lengthPlural = length: plural"],
+					"selectors": ["lengthPlural"],
+					"match": {
+						"lengthPlural=one": "{length} Erinnerung gesendet",
+						"lengthPlural=other": "{length} Erinnerungen gesendet"
+					}
+				}
+			],
+			"error": "Fehler beim Senden"
 		}
 	},
 	"agents": {

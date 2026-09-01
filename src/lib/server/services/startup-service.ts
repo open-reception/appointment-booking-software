@@ -8,6 +8,7 @@ import { ClientPinResetService } from "./client-pin-reset-service";
 import { UniversalLogger } from "$lib/logger";
 import { AppointmentService } from "./appointment-service";
 import { ScheduleService } from "./schedule-service";
+import { redactDbUrl } from "../utils/url";
 
 const logger = new UniversalLogger().setContext("StartupService");
 const TWELVE_HOURS_IN_MS = 12 * 60 * 60 * 1000;
@@ -101,7 +102,7 @@ export class StartupService {
           logger.error("Failed to migrate tenant database", {
             tenantId: tenantData.id,
             shortName: tenantData.shortName,
-            databaseUrl: tenantData.databaseUrl,
+            databaseUrl: redactDbUrl(tenantData.databaseUrl),
             error: String(error),
           });
 
