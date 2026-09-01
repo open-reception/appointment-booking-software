@@ -190,6 +190,10 @@
 					"startEndDash": "Darf nicht mit einem Bindestrich beginnen oder enden"
 				}
 			},
+			"features": {
+				"title": "Feature Flags",
+				"placeholder": "Funktionen auswählen"
+			},
 			"domain": {
 				"description": "Muss einmalig auf diesem Server sein.",
 				"errors": {

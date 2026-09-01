@@ -198,6 +198,10 @@
 					"startEndDash": "Must not start or end with a dash"
 				}
 			},
+			"features": {
+				"title": "Feature Flags",
+				"placeholder": "Select Features"
+			},
 			"domain": {
 				"description": "Must be unique on this server.",
 				"errors": {

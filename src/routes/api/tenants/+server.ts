@@ -35,6 +35,11 @@ registerOpenAPIRoute("/tenants", "POST", {
               description: "Domain for the tenant",
               example: "https://acme-corp.example.com",
             },
+            features: {
+              type: "string",
+              description: "Feature flags for the tenant",
+              example: "feature1,feature2",
+            },
           },
           required: ["shortName", "domain"],
         },
@@ -56,6 +61,7 @@ registerOpenAPIRoute("/tenants", "POST", {
                   id: { type: "string", description: "Generated tenant ID" },
                   shortName: { type: "string", description: "Tenant short name" },
                   domain: { type: "string", format: "uri", description: "Tenant domain" },
+                  features: { type: "string", description: "Feature flags for the tenant" },
                 },
                 required: ["id", "shortName", "domain"],
               },
@@ -67,6 +73,8 @@ registerOpenAPIRoute("/tenants", "POST", {
             tenant: {
               id: "01234567-89ab-cdef-0123-456789abcdef",
               shortName: "acme-corp",
+              domain: "https://acme-corp.example.com",
+              features: "feature1,feature2",
             },
           },
         },
@@ -117,6 +125,7 @@ registerOpenAPIRoute("/tenants", "GET", {
                     longName: { type: "string", description: "Tenant long name" },
                     logo: { type: "string", format: "uri", description: "URL of the tenant logo" },
                     domain: { type: "string", format: "uri", description: "Tenant domain" },
+                    features: { type: "string", description: "Feature flags for the tenant" },
                     setupState: {
                       type: "string",
                       enum: ["NEW", "SETTINGS_CREATED", "AGENTS_SET_UP", "FIRST_CHANNEL_CREATED"],
@@ -135,6 +144,8 @@ registerOpenAPIRoute("/tenants", "GET", {
                 id: "01234567-89ab-cdef-0123-456789abcdef",
                 shortName: "acme-corp",
                 longName: "ACME Corporation",
+                domain: "https://acme-corp.example.com",
+                features: "feature1,feature2",
                 setupState: "FIRST_CHANNEL_CREATED",
               },
             ],
@@ -176,6 +187,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
     const tenantService = await TenantAdminService.createTenant({
       shortName: body.shortName,
       domain: body.domain,
+      features: body.features,
     });
 
     log.debug("Tenant created successfully", {
@@ -225,6 +237,7 @@ export const GET: RequestHandler = async ({ locals }) => {
         .select({
           id: tenant.id,
           domain: tenant.domain,
+          features: tenant.features,
           shortName: tenant.shortName,
           languages: tenant.languages,
           setupState: tenant.setupState,
@@ -246,6 +259,7 @@ export const GET: RequestHandler = async ({ locals }) => {
         .select({
           id: tenant.id,
           domain: tenant.domain,
+          features: tenant.features,
           shortName: tenant.shortName,
           languages: tenant.languages,
           setupState: tenant.setupState,

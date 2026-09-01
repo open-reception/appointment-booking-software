@@ -22,6 +22,7 @@ type UpdateTenantBody = Partial<
     | "domain"
     | "links"
     | "defaultLanguage"
+    | "features"
   >
 >;
 
@@ -41,6 +42,7 @@ const tenantCreationSchema = z.object({
     .max(253)
     .toLowerCase()
     .regex(/^([a-z0-9]+(-[a-z0-9]+)*\.)*[a-z0-9]+(-[a-z0-9]+)*$/, "Invalid domain format"),
+  features: z.array(z.string().min(1).max(25)).optional(),
 });
 
 export type TenantCreationRequest = z.infer<typeof tenantCreationSchema>;
@@ -120,6 +122,7 @@ export class TenantAdminService {
         privacyStatement: "",
       },
       domain: request.domain,
+      features: request.features || [],
     };
     newTenant.databaseUrl = urlParts.join("/") + "/" + newTenant.shortName;
 
@@ -243,6 +246,7 @@ export class TenantAdminService {
       logo: updateData.logo,
       links: updateData.links,
       domain: updateData.domain,
+      features: updateData.features,
     };
 
     const log = logger.setContext("TenantAdminService");
@@ -298,6 +302,7 @@ export class TenantAdminService {
           longName: centralSchema.tenant.longName,
           descriptions: centralSchema.tenant.descriptions || {},
           domain: centralSchema.tenant.domain,
+          features: centralSchema.tenant.features,
           logo: centralSchema.tenant.logo,
           setupState: centralSchema.tenant.setupState,
           links: centralSchema.tenant.links,

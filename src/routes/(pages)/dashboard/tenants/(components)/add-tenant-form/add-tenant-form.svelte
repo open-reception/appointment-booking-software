@@ -3,38 +3,48 @@
   import CheckboxWithLabel from "$lib/components/ui/checkbox-with-label/checkbox-with-label.svelte";
   import * as Form from "$lib/components/ui/form";
   import { Input } from "$lib/components/ui/input";
-  import { toast } from "svelte-sonner";
-  import { type Infer, superForm, type SuperValidated } from "sveltekit-superforms";
-  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
-  import { formSchema, type FormSchema } from ".";
   import { ERRORS } from "$lib/errors";
+  import * as Select from "$lib/components/ui/select";
+  import { toast } from "svelte-sonner";
+  import { superForm } from "sveltekit-superforms";
+  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
+  import { formSchema } from ".";
+  import { TENANT_FEATURE_FLAGS } from "$lib/const/tenants";
+  import { page } from "$app/state";
 
-  let { data, done }: { done: () => void; data: { form: SuperValidated<Infer<FormSchema>> } } =
-    $props();
+  let { done }: { done: () => void } = $props();
 
-  // svelte-ignore state_referenced_locally
-  const form = superForm($state.snapshot(data.form), {
-    validators: zodClient(formSchema),
-    onResult: async (event) => {
-      if (event.result.type === "success") {
-        toast.success(m["tenants.add.success"]());
-        done();
-      } else if (event.result.type === "failure") {
-        switch (event.result.data?.error) {
-          case ERRORS.USERS.EMAIL_EXISTS:
-            toast.error(m["tenants.add.errors.emailTaken"]());
-            break;
-          case ERRORS.TENANTS.NAME_EXISTS:
-            toast.error(m["tenants.add.errors.nameTaken"]());
-            break;
-          default:
-            toast.error(m["tenants.add.errors.unknown"]());
-        }
-      }
-      isSubmitting = false;
+  const form = superForm(
+    {
+      shortName: "",
+      domain: "",
+      features: [] as string[],
+      inviteAdmin: false,
+      email: "",
     },
-    onSubmit: () => (isSubmitting = true),
-  });
+    {
+      validators: zodClient(formSchema),
+      onResult: async (event) => {
+        if (event.result.type === "success") {
+          toast.success(m["tenants.add.success"]());
+          done();
+        } else if (event.result.type === "failure") {
+          switch (event.result.data?.error) {
+            case ERRORS.USERS.EMAIL_EXISTS:
+              toast.error(m["tenants.add.errors.emailTaken"]());
+              break;
+            case ERRORS.TENANTS.NAME_EXISTS:
+              toast.error(m["tenants.add.errors.nameTaken"]());
+              break;
+            default:
+              toast.error(m["tenants.add.errors.unknown"]());
+          }
+        }
+        isSubmitting = false;
+      },
+      onSubmit: () => (isSubmitting = true),
+    },
+  );
 
   let isSubmitting = $state(false);
 
@@ -59,6 +69,35 @@
     </Form.Description>
     <Form.FieldErrors />
   </Form.Field>
+  {#if page.data.streamed.hasFeatureFlags}
+    <Form.Field {form} name="features">
+      <Form.Control>
+        {#snippet children({ props })}
+          <Form.Label>{m["tenants.add.features.title"]()}</Form.Label>
+          <Select.Root
+            type="multiple"
+            bind:value={$formData.features}
+            name={props.name}
+            onValueChange={(v) => ($formData.features = v)}
+          >
+            <Select.Trigger {...props} class="w-full">
+              {$formData.features.length > 0
+                ? $formData.features
+                    .map((id) => TENANT_FEATURE_FLAGS.find((x) => x === id))
+                    .join(", ")
+                : m["tenants.add.features.placeholder"]()}
+            </Select.Trigger>
+            <Select.Content>
+              {#each TENANT_FEATURE_FLAGS as feature (feature)}
+                <Select.Item value={feature}>{feature}</Select.Item>
+              {/each}
+            </Select.Content>
+          </Select.Root>
+        {/snippet}
+      </Form.Control>
+      <Form.FieldErrors />
+    </Form.Field>
+  {/if}
   <Form.Field {form} name="domain">
     <Form.Control>
       {#snippet children({ props })}
