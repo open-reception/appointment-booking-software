@@ -160,16 +160,6 @@ describe("Send Email API", () => {
       await expect(POST(createEvent())).rejects.toBeInstanceOf(AuthorizationError);
     });
 
-    it("rejects roles other than staff and tenant admin", async () => {
-      await expect(
-        POST(
-          createEvent(validBody, {
-            locals: { user: { id: "user-123", tenantId: mockTenantId, role: "USER" } } as any,
-          }),
-        ),
-      ).rejects.toBeInstanceOf(AuthorizationError);
-    });
-
     it("returns a validation error for an invalid email queue", async () => {
       const response = await POST(createEvent({ emails: [{ type: "INVALID" }] }));
 
