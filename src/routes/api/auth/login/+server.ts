@@ -281,6 +281,8 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress,
 
       // Clear throttle on successful authentication
       await challengeThrottleService.clearThrottle(body.email, "passkey");
+
+      passkeyId = verificationResult.passkeyId;
     }
 
     const sessionData = await SessionService.createSession(

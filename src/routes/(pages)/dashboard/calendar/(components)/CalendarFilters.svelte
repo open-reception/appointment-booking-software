@@ -185,7 +185,6 @@
               <div>
                 <CheckboxWithLabel
                   value={shownChannels.includes(channel.id)}
-                  label={name}
                   onCheckedChange={(v) => {
                     if (v) {
                       shownChannels = [...shownChannels, channel.id];
@@ -194,7 +193,17 @@
                     }
                   }}
                   class="mt-2 mb-1"
-                />
+                >
+                  {#snippet label()}
+                    <div class="flex items-start gap-1">
+                      <div
+                        class="bg-primary mt-0.5 h-4 w-2 rounded-sm"
+                        style:background-color={channel.color}
+                      ></div>
+                      {name}
+                    </div>
+                  {/snippet}
+                </CheckboxWithLabel>
               </div>
             {/each}
           </div>
@@ -235,6 +244,7 @@
             changeView("week");
           }
         }}
+        class="min-h-82"
       />
     </HorizontalPagePadding>
   </Sidebar.Content>

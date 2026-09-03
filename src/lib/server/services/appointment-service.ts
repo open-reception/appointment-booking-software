@@ -25,15 +25,20 @@ import {
   sendAppointmentCancelledEmail,
   sendAppointmentCreatedEmail,
   sendAppointmentRejectedEmail,
+  sendAppointmentReminderEmail,
   sendAppointmentRequestEmail,
+  sendAppointmentUpdatedEmail,
 } from "../email/email-service";
 import { ConflictError, InternalError, NotFoundError, ValidationError } from "../utils/errors";
+import { WebAuthnService } from "../auth/webauthn-service";
 import { challengeStore } from "./challenge-store";
 import { challengeThrottleService } from "./challenge-throttle";
 import { NotificationService } from "./notification-service";
 import { TenantAdminService } from "./tenant-admin-service";
 import type { PgTransaction } from "drizzle-orm/pg-core";
 import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
+import { ScheduleService } from "./schedule-service";
+import type { SelectTenant } from "../db/central-schema";
 
 export interface ClientTunnelData {
   tunnelId: string;
@@ -54,6 +59,7 @@ export interface ClientTunnelData {
   };
   staffKeyShares: {
     userId: string;
+    passkeyId: string;
     encryptedTunnelKey: string;
   }[];
   clientEncryptedTunnelKey: string;
@@ -428,6 +434,16 @@ export class AppointmentService {
           tenantId: this.tenantId,
         });
       });
+
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    const date = new Date(result[0].appointmentDate);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: date,
+      endDate: date,
+      channelId: result[0].channelId,
+      awaitRebuild: true,
+    });
   }
 
   public async cancelAppointment(id: string): Promise<SelectAppointment> {
@@ -450,6 +466,16 @@ export class AppointmentService {
       throw new ValidationError("Appointment not found or in wrong state");
     }
 
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    const date = new Date(result[0].appointmentDate);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: date,
+      endDate: date,
+      channelId: result[0].channelId,
+      awaitRebuild: true,
+    });
+
     const row = result[0];
     return row;
   }
@@ -471,6 +497,16 @@ export class AppointmentService {
       });
       return false;
     }
+
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    const date = new Date(result[0].appointmentDate);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: date,
+      endDate: date,
+      channelId: result[0].channelId,
+      awaitRebuild: true,
+    });
 
     log.debug("Appointment deleted successfully", { appointmentId: id, tenantId: this.tenantId });
     return true;
@@ -495,7 +531,6 @@ export class AppointmentService {
     const log = logger.setContext("AppointmentService");
     log.debug("Deleting appointment by staff", {
       appointmentId,
-      clientEmail,
       tenantId: this.tenantId,
     });
 
@@ -554,25 +589,15 @@ export class AppointmentService {
       );
     }
 
-    // Create notifications for all staff members in the channel
-    const notificationService = await NotificationService.forTenant(this.tenantId);
-
-    // Create notifications (async, don't wait)
-    notificationService
-      .createNotification({
-        channelId,
-        type: "APPOINTMENT_CANCELLED",
-        metaData: {
-          appointmentId,
-        },
-      })
-      .catch((error) => {
-        log.error("Failed to create channel notifications", {
-          appointmentId,
-          channelId,
-          error: String(error),
-        });
-      });
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    const date = new Date(appointmentResult[0].appointmentDate);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: date,
+      endDate: date,
+      channelId: appointmentResult[0].channelId,
+      awaitRebuild: true,
+    });
 
     log.info("Appointment deleted by staff successfully", {
       appointmentId,
@@ -582,9 +607,164 @@ export class AppointmentService {
   }
 
   /**
+   * Updates an appointment by staff member
+   * This will:
+   * 1. Change agent or appointment datetime in the database
+   * 2. Send email to the client, if configured
+   * @param appointmentId - The appointment ID
+   * @param updateData - Appointment Data that can be updated
+   * @param clientEmail - The client's email address
+   * @param clientLanguage - The client's preferred language (optional, defaults to "de")
+   * @returns Promise<void>
+   */
+  public async updateAppointmentByStaff(
+    appointmentId: string,
+    updateData: { agentId: string; appointmentDate?: string },
+    clientEmail: string | undefined,
+    clientLanguage: string = "de",
+  ): Promise<{ agentId: string; appointmentDate?: Date }> {
+    const log = logger.setContext("AppointmentService");
+    log.debug("Updating appointment by staff", {
+      appointmentId,
+      tenantId: this.tenantId,
+    });
+
+    const db = await this.getDb();
+
+    // Get appointment details before deletion
+    const appointmentResult = await db
+      .select()
+      .from(tenantSchema.appointment)
+      .where(eq(tenantSchema.appointment.id, appointmentId))
+      .limit(1);
+
+    if (appointmentResult.length === 0) {
+      log.warn("Appointment not found", {
+        appointmentId,
+        tenantId: this.tenantId,
+      });
+      throw new NotFoundError("Appointment not found");
+    }
+
+    const appointment = appointmentResult[0];
+    const channelId = appointment.channelId;
+
+    const newAppointment = await db.transaction(async (tx) => {
+      await this.ensureAgentIsAvailableForSlot(tx, {
+        agentId: updateData.agentId,
+        appointmentDate: updateData.appointmentDate || appointment.appointmentDate.toISOString(),
+        duration: appointment.duration,
+      });
+
+      // Update the appointment
+      const newAppointments = await tx
+        .update(tenantSchema.appointment)
+        .set({
+          agentId: updateData.agentId,
+          appointmentDate: updateData.appointmentDate
+            ? new Date(updateData.appointmentDate)
+            : undefined,
+          updatedAt: new Date(),
+        })
+        .where(eq(tenantSchema.appointment.id, appointmentId))
+        .returning({
+          agentId: tenantSchema.appointment.agentId,
+          appointmentDate: tenantSchema.appointment.appointmentDate,
+        });
+
+      log.debug("Appointment updated", {
+        appointmentId,
+        tenantId: this.tenantId,
+        agentId: newAppointments[0].agentId,
+        appointmentDate: newAppointments[0].appointmentDate,
+      });
+      return newAppointments[0];
+    });
+
+    if (!newAppointment) {
+      log.error("Appointment could not be updated", {
+        appointmentId,
+        tenantId: this.tenantId,
+        agentId: appointment.agentId,
+        appointmentDate: appointment.appointmentDate,
+      });
+    }
+
+    // Get tenant and channel information for email and notifications
+    const tenantService = await TenantAdminService.getTenantById(this.tenantId);
+    const tenant = tenantService.tenantData;
+
+    if (!tenant) {
+      log.error("Tenant not found", { tenantId: this.tenantId });
+      throw new InternalError("Tenant not found");
+    }
+
+    // Get channel title
+    const channelTitle = await getChannelTitle(this.tenantId, channelId, clientLanguage);
+
+    // Send change email to client (async, don't wait)
+    if (clientEmail) {
+      const clientData = {
+        email: clientEmail,
+        language: clientLanguage,
+      };
+
+      sendAppointmentUpdatedEmail(
+        clientData,
+        tenant,
+        {
+          ...appointment,
+          agentId: newAppointment.agentId,
+          appointmentDate: newAppointment.appointmentDate,
+        },
+        channelTitle,
+      ).catch((error) => {
+        log.error("Failed to send appointment update email", {
+          appointmentId,
+          clientEmail,
+          error: String(error),
+        });
+      });
+    }
+
+    log.info("Appointment updated by staff successfully", {
+      appointmentId,
+      channelId,
+      tenantId: this.tenantId,
+    });
+
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    const date = new Date(appointmentResult[0].appointmentDate);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: date,
+      endDate: date,
+      channelId: appointmentResult[0].channelId,
+      awaitRebuild: true,
+    });
+    // Also update the cache if the appointment date has changed to a different day
+    if (
+      date.toISOString().split("T")[0] !==
+      newAppointment.appointmentDate.toISOString().split("T")[0]
+    ) {
+      await scheduleService.cleanAndRegenerateCache({
+        startDate: newAppointment.appointmentDate,
+        endDate: newAppointment.appointmentDate,
+        channelId: appointmentResult[0].channelId,
+        awaitRebuild: true,
+      });
+    }
+
+    return newAppointment;
+  }
+
+  /**
    * Get all client tunnels for the tenant
    */
-  public async getClientTunnels(staffUserId?: string): Promise<ClientTunnelResponse[]> {
+  public async getClientTunnels(
+    staffUserId?: string,
+    passkeyId?: string,
+  ): Promise<ClientTunnelResponse[]> {
     const log = logger.setContext("AppointmentService");
     log.debug("Fetching client tunnels", { tenantId: this.tenantId, staffUserId });
     const db = await this.getDb();
@@ -603,17 +783,28 @@ export class AppointmentService {
     let encryptedTunnelKeyByTunnelId = new Map<string, string>();
 
     if (staffUserId) {
-      const staffKeyShares = await db
-        .select({
-          tunnelId: tenantSchema.clientTunnelStaffKeyShare.tunnelId,
-          encryptedTunnelKey: tenantSchema.clientTunnelStaffKeyShare.encryptedTunnelKey,
-        })
-        .from(tenantSchema.clientTunnelStaffKeyShare)
-        .where(eq(tenantSchema.clientTunnelStaffKeyShare.userId, staffUserId));
+      // Each passkey has its own Kyber keypair, so the tunnel key is wrapped separately per
+      // passkey. Otherwise the returned share maybe for a different passkey and fail to decrypt.
+      const recentPasskey = await WebAuthnService.getCurrentPasskey(staffUserId, passkeyId);
 
-      encryptedTunnelKeyByTunnelId = new Map(
-        staffKeyShares.map((share) => [share.tunnelId, share.encryptedTunnelKey]),
-      );
+      if (recentPasskey) {
+        const staffKeyShares = await db
+          .select({
+            tunnelId: tenantSchema.clientTunnelStaffKeyShare.tunnelId,
+            encryptedTunnelKey: tenantSchema.clientTunnelStaffKeyShare.encryptedTunnelKey,
+          })
+          .from(tenantSchema.clientTunnelStaffKeyShare)
+          .where(
+            and(
+              eq(tenantSchema.clientTunnelStaffKeyShare.userId, staffUserId),
+              eq(tenantSchema.clientTunnelStaffKeyShare.passkeyId, recentPasskey.id),
+            ),
+          );
+
+        encryptedTunnelKeyByTunnelId = new Map(
+          staffKeyShares.map((share) => [share.tunnelId, share.encryptedTunnelKey]),
+        );
+      }
     }
 
     log.debug("Client tunnels retrieved successfully", {
@@ -759,6 +950,15 @@ export class AppointmentService {
       appointmentId: result.id,
     });
 
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: result.appointmentDate,
+      endDate: result.appointmentDate,
+      channelId: appointmentData.channelId,
+      awaitRebuild: true,
+    });
+
     return response;
   }
 
@@ -849,6 +1049,7 @@ export class AppointmentService {
           clientData.staffKeyShares.map((share) => ({
             tunnelId: clientData.tunnelId,
             userId: share.userId,
+            passkeyId: share.passkeyId,
             encryptedTunnelKey: share.encryptedTunnelKey,
           })),
         );
@@ -955,6 +1156,16 @@ export class AppointmentService {
         });
       });
     }
+
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    const date = new Date(result.appointment.appointmentDate);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: date,
+      endDate: date,
+      channelId: result.appointment.channelId,
+      awaitRebuild: true,
+    });
 
     return response;
   }
@@ -1121,6 +1332,7 @@ export class AppointmentService {
     emailHash: string,
     challengeId: string,
     challengeResponse: string,
+    encryptedPayload?: string,
   ): Promise<void> {
     const log = logger.setContext("AppointmentService");
     log.debug("Client deleting appointment with authentication", {
@@ -1237,6 +1449,10 @@ export class AppointmentService {
       type: "APPOINTMENT_CANCELLED",
       metaData: {
         appointmentId,
+        channelId: appointment.channelId,
+        appointmentDate: appointment.appointmentDate,
+        tunnelId: appointment.tunnelId,
+        encryptedPayload,
       },
     });
 
@@ -1245,6 +1461,52 @@ export class AppointmentService {
       appointmentId,
       channelId: appointment.channelId,
     });
+
+    // Regenerate schedule cache
+    const scheduleService = await ScheduleService.forTenant(this.tenantId);
+    const date = new Date(appointmentResult[0].appointmentDate);
+    await scheduleService.cleanAndRegenerateCache({
+      startDate: date,
+      endDate: date,
+      channelId: appointmentResult[0].channelId,
+      awaitRebuild: true,
+    });
+  }
+
+  public async sendAppointmentReminder(
+    tenant: SelectTenant,
+    appointmentId: string,
+    data: { email: string; name: string; locale: string },
+  ): Promise<SelectAppointment | null> {
+    const log = logger.setContext("AppointmentService");
+    try {
+      const appointment = await this.getAppointmentById(appointmentId);
+      await sendAppointmentReminderEmail(
+        {
+          name: data.name,
+          email: data.email,
+          language: data.locale,
+        },
+        tenant,
+        appointment,
+      );
+    } catch {
+      // Silent fail
+      log.warn("Failed to fetch appointment for reminder", {
+        appointmentId,
+        tenantId: this.tenantId,
+      });
+      return null;
+    }
+
+    const db = await this.getDb();
+    const result = await db
+      .update(tenantSchema.appointment)
+      .set({ remindedAt: new Date() })
+      .where(eq(tenantSchema.appointment.id, appointmentId))
+      .returning();
+
+    return result[0] ?? null;
   }
 
   /**

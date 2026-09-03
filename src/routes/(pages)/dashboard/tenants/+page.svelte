@@ -59,7 +59,6 @@
             <PlusIcon /> {m["tenants.add.title"]()}
           {/snippet}
           <AddTenantForm
-            {data}
             done={() => {
               invalidate(ROUTES.DASHBOARD.TENANTS);
               tenantsStore.reload();

@@ -37,7 +37,7 @@ vi.mock("$lib/server/services/staff-crypto.service", () => ({
 
 vi.mock("$lib/server/auth/webauthn-service", () => ({
   WebAuthnService: {
-    getMostRecentPasskey: vi.fn(async () => undefined),
+    getCurrentPasskey: vi.fn(async () => undefined),
   },
 }));
 
@@ -108,6 +108,7 @@ describe("Staff Key Shard API Route", () => {
       locals: {
         user: {
           id: mockUserId,
+          passkeyId: mockPasskeyId,
           session: {
             sessionId: "session-123",
           },
@@ -130,7 +131,7 @@ describe("Staff Key Shard API Route", () => {
         passkeyId: mockPasskeyId,
       };
 
-      (WebAuthnService.getMostRecentPasskey as any).mockResolvedValue(mockRecentPasskey);
+      (WebAuthnService.getCurrentPasskey as any).mockResolvedValue(mockRecentPasskey);
       mockStaffCryptoService.getStaffCryptoForPasskey.mockResolvedValue(mockStaffCrypto);
 
       const event = createMockRequestEvent();
@@ -144,7 +145,7 @@ describe("Staff Key Shard API Route", () => {
         passkeyId: mockStaffCrypto.passkeyId,
       });
 
-      expect(WebAuthnService.getMostRecentPasskey).toHaveBeenCalledWith(mockUserId);
+      expect(WebAuthnService.getCurrentPasskey).toHaveBeenCalledWith(mockUserId, mockPasskeyId);
       expect(mockStaffCryptoService.getStaffCryptoForPasskey).toHaveBeenCalledWith(
         mockTenantId,
         mockStaffId,
@@ -157,6 +158,7 @@ describe("Staff Key Shard API Route", () => {
         locals: {
           user: {
             id: "different-user-id",
+            passkeyId: mockPasskeyId,
             session: { sessionId: "session-123" },
           },
         } as any,
@@ -168,7 +170,7 @@ describe("Staff Key Shard API Route", () => {
       expect(response.status).toBe(403);
       expect(data.error).toBe("You can only access your own key shard");
 
-      expect(WebAuthnService.getMostRecentPasskey).not.toHaveBeenCalled();
+      expect(WebAuthnService.getCurrentPasskey).not.toHaveBeenCalled();
       expect(mockStaffCryptoService.getStaffCryptoForPasskey).not.toHaveBeenCalled();
     });
 
@@ -187,7 +189,7 @@ describe("Staff Key Shard API Route", () => {
     });
 
     it("should reject access when no recent passkey is found", async () => {
-      (WebAuthnService.getMostRecentPasskey as any).mockResolvedValue(null);
+      (WebAuthnService.getCurrentPasskey as any).mockResolvedValue(null);
 
       const event = createMockRequestEvent();
       const response = await GET(event);
@@ -196,7 +198,7 @@ describe("Staff Key Shard API Route", () => {
       expect(response.status).toBe(403);
       expect(data.error).toBe("No valid passkey found for authenticated user");
 
-      expect(WebAuthnService.getMostRecentPasskey).toHaveBeenCalledWith(mockUserId);
+      expect(WebAuthnService.getCurrentPasskey).toHaveBeenCalledWith(mockUserId, mockPasskeyId);
       expect(mockStaffCryptoService.getStaffCryptoForPasskey).not.toHaveBeenCalled();
     });
 
@@ -206,7 +208,7 @@ describe("Staff Key Shard API Route", () => {
         lastUsedAt: new Date("2024-01-15T10:00:00Z"),
       };
 
-      (WebAuthnService.getMostRecentPasskey as any).mockResolvedValue(mockRecentPasskey);
+      (WebAuthnService.getCurrentPasskey as any).mockResolvedValue(mockRecentPasskey);
       mockStaffCryptoService.getStaffCryptoForPasskey.mockResolvedValue(null);
 
       const event = createMockRequestEvent();
@@ -216,7 +218,7 @@ describe("Staff Key Shard API Route", () => {
       expect(response.status).toBe(404);
       expect(data.error).toBe("Staff crypto data not found for the authenticated passkey");
 
-      expect(WebAuthnService.getMostRecentPasskey).toHaveBeenCalledWith(mockUserId);
+      expect(WebAuthnService.getCurrentPasskey).toHaveBeenCalledWith(mockUserId, mockPasskeyId);
       expect(mockStaffCryptoService.getStaffCryptoForPasskey).toHaveBeenCalledWith(
         mockTenantId,
         mockStaffId,
@@ -249,7 +251,7 @@ describe("Staff Key Shard API Route", () => {
     });
 
     it("should handle WebAuthn service errors gracefully", async () => {
-      (WebAuthnService.getMostRecentPasskey as any).mockRejectedValue(
+      (WebAuthnService.getCurrentPasskey as any).mockRejectedValue(
         new Error("Database connection failed"),
       );
 
@@ -260,7 +262,7 @@ describe("Staff Key Shard API Route", () => {
       expect(response.status).toBe(500);
       expect(data.error).toBe("Failed to determine passkey ID");
 
-      expect(WebAuthnService.getMostRecentPasskey).toHaveBeenCalledWith(mockUserId);
+      expect(WebAuthnService.getCurrentPasskey).toHaveBeenCalledWith(mockUserId, mockPasskeyId);
       expect(mockStaffCryptoService.getStaffCryptoForPasskey).not.toHaveBeenCalled();
     });
 
@@ -270,7 +272,7 @@ describe("Staff Key Shard API Route", () => {
         lastUsedAt: new Date("2024-01-15T10:00:00Z"),
       };
 
-      (WebAuthnService.getMostRecentPasskey as any).mockResolvedValue(mockRecentPasskey);
+      (WebAuthnService.getCurrentPasskey as any).mockResolvedValue(mockRecentPasskey);
       mockStaffCryptoService.getStaffCryptoForPasskey.mockRejectedValue(
         new Error("Database connection failed"),
       );
@@ -282,7 +284,7 @@ describe("Staff Key Shard API Route", () => {
       expect(response.status).toBe(500);
       expect(data.error).toBe("Internal server error");
 
-      expect(WebAuthnService.getMostRecentPasskey).toHaveBeenCalledWith(mockUserId);
+      expect(WebAuthnService.getCurrentPasskey).toHaveBeenCalledWith(mockUserId, mockPasskeyId);
       expect(mockStaffCryptoService.getStaffCryptoForPasskey).toHaveBeenCalledWith(
         mockTenantId,
         mockStaffId,
@@ -302,7 +304,7 @@ describe("Staff Key Shard API Route", () => {
         passkeyId: mockPasskeyId,
       };
 
-      (WebAuthnService.getMostRecentPasskey as any).mockResolvedValue(mockRecentPasskey);
+      (WebAuthnService.getCurrentPasskey as any).mockResolvedValue(mockRecentPasskey);
       mockStaffCryptoService.getStaffCryptoForPasskey.mockResolvedValue(mockStaffCrypto);
 
       const event = createMockRequestEvent();
@@ -352,10 +354,23 @@ describe("Staff Key Shard API Route", () => {
           locals: {
             user: {
               id: testCase.requestingUserId,
+              passkeyId: mockPasskeyId,
               session: { sessionId: "session-123" },
             },
           } as any,
         });
+
+        if (testCase.shouldAllow) {
+          (WebAuthnService.getCurrentPasskey as any).mockResolvedValue({
+            id: mockPasskeyId,
+            lastUsedAt: new Date("2024-01-15T10:00:00Z"),
+          });
+          mockStaffCryptoService.getStaffCryptoForPasskey.mockResolvedValue({
+            publicKey: "base64-encoded-ml-kem-768-public-key==",
+            privateKeyShare: "base64-encoded-private-key-shard==",
+            passkeyId: mockPasskeyId,
+          });
+        }
 
         const response = await GET(event);
 
@@ -371,7 +386,7 @@ describe("Staff Key Shard API Route", () => {
 
     it("should require valid passkey authentication", async () => {
       // Mock no recent passkey (security violation)
-      (WebAuthnService.getMostRecentPasskey as any).mockResolvedValue(null);
+      (WebAuthnService.getCurrentPasskey as any).mockResolvedValue(null);
 
       const event = createMockRequestEvent();
       const response = await GET(event);
@@ -387,7 +402,7 @@ describe("Staff Key Shard API Route", () => {
         lastUsedAt: new Date("2024-01-15T10:00:00Z"),
       };
 
-      (WebAuthnService.getMostRecentPasskey as any).mockResolvedValue(mockRecentPasskey);
+      (WebAuthnService.getCurrentPasskey as any).mockResolvedValue(mockRecentPasskey);
       // Mock no crypto data for this passkey (security violation)
       mockStaffCryptoService.getStaffCryptoForPasskey.mockResolvedValue(null);
 

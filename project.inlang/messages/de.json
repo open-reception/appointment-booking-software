@@ -49,6 +49,7 @@
 		"errors": {
 			"email": "Ungültiges Format",
 			"passphrase": "Muss mindestens 30 Zeichen lang sein",
+			"passphraseMismatch": "Ist nicht mit dem Passphrase identisch",
 			"noPassAtAll": "Either passphrase or passkey is required",
 			"bothPassSet": "Nur Passphrase oder Passkey darf gesetzt sein",
 			"name": "Muss mindestens 2 Zeichen lang sein",
@@ -84,13 +85,16 @@
 		"pin": "PIN",
 		"pinHint": "Speichere Deine PIN an einem sicheren Ort, z.B. in einem Passwort-Manager.",
 		"locale": "Sprache",
-		"localePlaceholder": "Sprache wählen"
+		"localePlaceholder": "Sprache wählen",
+		"deviceName": "Passkey Name",
+		"deviceNameHint": "Something you will recognize"
 	},
 	"login": {
 		"or": "Oder",
 		"usePasskey": "Passkey verwenden",
 		"usePassphrase": "Passphrase verwenden",
 		"title": "Anmelden",
+		"description_passkey": "Gib Deine E-Mail-Adresse ein und klicke/tippe um Passkey hinzuzufügen.",
 		"description_passphrase": "Gib Deine E-Mail-Adresse und Deinen Passphrase ein, um Dich anzumelden.",
 		"action": "Anmelden",
 		"error": "Anmeldung fehlgeschlagen. Bitte erneut versuchen"
@@ -131,7 +135,7 @@
 	"logout": {
 		"title": "Abmelden",
 		"success": {
-			"title": "Du wurdest abgemeldet.",
+			"title": "Bis bald",
 			"description": "Du wurdest abgemeldet."
 		},
 		"error": {
@@ -186,6 +190,10 @@
 				"errors": {
 					"startEndDash": "Darf nicht mit einem Bindestrich beginnen oder enden"
 				}
+			},
+			"features": {
+				"title": "Feature Flags",
+				"placeholder": "Funktionen auswählen"
 			},
 			"domain": {
 				"description": "Muss einmalig auf diesem Server sein.",
@@ -367,6 +375,7 @@
 	"delete": "Löschen",
 	"select": "Auswählen",
 	"close": "Schließen",
+	"unkown": "Unbekannt",
 	"dashboard": {
 		"title": "Übersicht",
 		"hello": "Hallo",
@@ -424,6 +433,32 @@
 					"action": "Person hinzufügen"
 				}
 			}
+		},
+		"appointmentReminders": {
+			"title": "Termin-Erinnerungen",
+			"loading": "Lade Termine bis morgen Abend",
+			"noRemindersToSend": "Keine Erinnerungen zu senden",
+			"sending": [
+				{
+					"declarations": ["input length", "local lengthPlural = length: plural"],
+					"selectors": ["lengthPlural"],
+					"match": {
+						"lengthPlural=one": "Sende {length} Erinnerung",
+						"lengthPlural=other": "Sende {length} Erinnerungen"
+					}
+				}
+			],
+			"success": [
+				{
+					"declarations": ["input length", "local lengthPlural = length: plural"],
+					"selectors": ["lengthPlural"],
+					"match": {
+						"lengthPlural=one": "{length} Erinnerung gesendet",
+						"lengthPlural=other": "{length} Erinnerungen gesendet"
+					}
+				}
+			],
+			"error": "Fehler beim Senden"
 		}
 	},
 	"agents": {
@@ -491,6 +526,7 @@
 	},
 	"channels": {
 		"title": "Kanäle",
+		"singular": "Kanal",
 		"empty": {
 			"title": "Bisher keine Kanäle",
 			"description": "Kanäle sind Ihre Möglichkeit, verschiedene Arten von Terminen zu sammeln"
@@ -758,7 +794,15 @@
 		"general": {
 			"navItem": "Einstellungen",
 			"title": "Kontoeinstellungen",
-			"description": "Ändere Deinen Namen."
+			"description": "Ändere Deinen Namen oder die Sprache für E-Mails.",
+			"language": {
+				"title": "E-Mail Sprache",
+				"placeholder": "Wähle eine Sprache",
+				"hint": "OpenReception sendet E-Mails in dieser Sprache an Dich"
+			},
+			"action": "Änderungen speichern",
+			"success": "Konto-Einstellungen gespeichert",
+			"error": "Konto-Einstellungen konnten nicht gespeichert werden"
 		},
 		"change-email": {
 			"navItem": "E-Mail Adresse",
@@ -768,12 +812,60 @@
 		"passkeys": {
 			"navItem": "Passkeys",
 			"title": "Passkeys verwalten",
-			"description": "Du kannst bis zu drei Passkeys für Dein Konto hinzufügen."
+			"description": "Du kannst bis zu drei Passkeys für Dein Konto hinzufügen.",
+			"list": {
+				"loading": "Lade Passkeys",
+				"unnamedPasskey": "Unbenannter Passkey",
+				"current": "Aktuelle Session",
+				"createdAt": "Erstellt: {createdAt}.",
+				"lastUsedAt": "Zuletzt verwendet: {lastUsedAt}.",
+				"empty": {
+					"title": "Keine Passkeys hinterlegt",
+					"description": "Du kannst bis zu 3 Passkeys hinterlgen"
+				}
+			},
+			"add": {
+				"title": "Passkey hinzufügen",
+				"description": "Füge Deinem Account einen Passkey hinzu",
+				"action": "Hinzufügen",
+				"success": "Passkey hinzugefügt",
+				"error": "Passkey konnte nicht hinzugefügt werden",
+				"errorDeleteSuccess": "Teilweise hinzugefügter Passkey gelöscht",
+				"maxReached": {
+					"title": "Maximum erreicht",
+					"description": "Du hast bereits die maximale Anzahl von Passkeys für Deinen Account erreicht"
+				}
+			},
+			"edit": {
+				"title": "Passkey umbenennen",
+				"description": "Gib' Deinem Passkey einen Namen, den Du wieder erkennst",
+				"action": "Umbenennen",
+				"success": "Passkey umbenannt",
+				"error": "Passkey konnte nicht umbenannt werden"
+			},
+			"delete": {
+				"title": "Passkey löschen",
+				"description": "Diese Aktion kann nicht rückgängig gemacht werden. Tippe {name} um den Passkey zu löschen.",
+				"forbidden": "Du kannst den letzten Passkey in Deinem Account nicht löschen",
+				"action": "Löschen",
+				"success": "Passkey gelöscht",
+				"error": "Passkey konnte nicht gelöscht werden"
+			}
 		},
 		"change-passphrase": {
 			"navItem": "Passphrase",
 			"title": "Change Passphrase",
-			"description": "Globale Admins können einen Passphrase als Backup-Methode verwenden."
+			"description": "Globale Admins können einen Passphrase als Backup-Methode verwenden.",
+			"currentPassphrase": "Aktueller Passphrase",
+			"newPassphrase": "Neuer Passphrase",
+			"repeatedPassphrase": "Neuer Passphrase (Wiederholung)",
+			"action": "Passphrase ändern",
+			"success": "Passphrase geändert",
+			"errors": {
+				"notAGlobalAdmin": "Du darfst keinen Passphrase einrichten",
+				"passphraseIncorrect": "Aktueller Passphrase falsch",
+				"unknown": "Passphrase konnte nicht geändert werden"
+			}
 		}
 	},
 	"staff": {
@@ -863,8 +955,11 @@
 		},
 		"loading": "Lade Personal"
 	},
+	"currentSelection": "Aktuelle Auswahl",
 	"yes": "Ja",
 	"no": "Nein",
+	"unknown": "unbekannt",
+	"never": "niemals",
 	"public": {
 		"links": {
 			"website": "Webseite aufrufen",
@@ -1001,6 +1096,17 @@
 				"reserved": "reserviert"
 			}
 		},
+		"moveAppointment": {
+			"action": "Termin verschieben",
+			"success": "Termin erfolgreich verschoben",
+			"error": "Fehler beim Verschieben des Termins"
+		},
+		"addFollowUpAppointment": {
+			"action": "Folgetermin hinzufügen"
+		},
+		"addAppointmentAfterFail": {
+			"action": "Nach anderem Termin suchen"
+		},
 		"cancelAppointment": {
 			"confirm": "Sind Sie sicher, dass Sie diesen Termin absagen möchten?",
 			"action": "Termin absagen",
@@ -1037,6 +1143,7 @@
 					"action": "Daten hinzufügen"
 				},
 				"summary": {
+					"hint": "Das Hinzufügen dieses Termins erstellt einen neuen Klienten. Dieser Vorgang dauert etwas länger.",
 					"action": "Termin hinzufügen"
 				},
 				"error": {
@@ -1078,6 +1185,11 @@
 			"introduction": "Ihr Termin wurde abgelehnt.",
 			"reason": "Sie erhalten diese E-Mail, weil jemand mit Ihrer E-Mail Adresse einen Termin bei angefragt hat."
 		},
+		"appointmentUpdated": {
+			"subject": "Ihr Termin für {channel} bei {tenant} wurde aktualisiert",
+			"introduction": "Ihr Termin wurde aktualisiert.",
+			"reason": "Sie erhalten diese E-Mail, weil mit Ihrer E-Mail Adresse einen Termin gebucht wurde."
+		},
 		"appointmentCancelled": {
 			"subject": "Ihr Termin für {channel} bei {tenant} wurde abgesagt",
 			"introduction": "Ihr Termin wurde abgesagt.",
@@ -1115,16 +1227,13 @@
 		"empty": "Keine Benachrichtigungen vorhanden",
 		"types": {
 			"APPOINTMENT_REQUESTED": {
-				"title": "Neue Terminanfrage",
-				"description": "Ein neuer Termin wurde in {channel} angefragt."
+				"title": "Neue Terminanfrage"
 			},
 			"APPOINTMENT_CONFIRMED": {
-				"title": "Termin bestätigt",
-				"description": "Terminanfrage in {channel} wurde bestätigt."
+				"title": "Termin bestätigt"
 			},
 			"APPOINTMENT_CANCELLED": {
-				"title": "Termin abgesagt",
-				"description": "Der Klient hat den Termin in {channel} abgesagt."
+				"title": "Termin abgesagt"
 			}
 		}
 	},

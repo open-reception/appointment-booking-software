@@ -9,12 +9,6 @@
   import type { PasskeyState } from "$lib/components/ui/passkey/state.svelte";
   import { ROUTES } from "$lib/const/routes";
   import logger from "$lib/logger";
-  import {
-    arrayBufferToBase64,
-    fetchChallenge,
-    generatePasskey,
-    getPRFOutputAfterRegistration,
-  } from "$lib/utils/passkey";
   import { toast } from "svelte-sonner";
   import { writable, type Writable } from "svelte/store";
   import { type Infer, type SuperValidated } from "sveltekit-superforms";
@@ -24,6 +18,7 @@
   import { onMount } from "svelte";
   import { UnifiedAppointmentCrypto } from "$lib/client/appointment-crypto";
   import { resolve } from "$app/paths";
+  import { getPasskeyFormData } from "$lib/utils/passkey";
 
   let {
     data,
@@ -36,7 +31,6 @@
   let passkeyId: string | undefined = $state();
   let prfOutput: ArrayBuffer | undefined = $state();
   let kyberKeyPair: { publicKey: Uint8Array; privateKey: Uint8Array } | undefined = $state();
-  let registrationChallenge: string | undefined = $state();
 
   // svelte-ignore state_referenced_locally
   const form = superForm(data.form, {
@@ -73,109 +67,23 @@
   };
 
   const onSetPasskey = async () => {
-    $passkeyLoading = "loading";
+    const data = await getPasskeyFormData({
+      email: $formData.email,
+      userId: $formData.userId,
+      setPasskeyFieldState: (v) => ($passkeyLoading = v),
+    });
 
-    // Generate Kyber keypair BEFORE passkey registration
-    // This keypair will be used to create the dbShard after PRF output is available
-    const { KyberCrypto } = await import("$lib/crypto/utils");
-    kyberKeyPair = KyberCrypto.generateKeyPair();
-
-    const challenge = await fetchChallenge($formData.email, $formData.userId);
-
-    if (!challenge) {
-      logger.error("Failed to fetch challenge", { email: $formData.email });
-      $passkeyLoading = "error";
+    if (!data) {
+      console.error("Unable to getPasskeyFormData");
     } else {
-      // Store the registration challenge - will be sent with form to avoid cookie overwrite by PRF challenge
-      registrationChallenge = challenge.challenge;
+      passkeyId = data.passkeyId;
+      kyberKeyPair = data.kyberKeyPair;
+      prfOutput = data.prfOutput;
 
-      $passkeyLoading = "user";
-      const passkeyResp = await generatePasskey({
-        ...challenge,
-        email: $formData.email,
-        enablePRF: true, // CRITICAL: Enable PRF extension for zero-knowledge key derivation
-      }).catch((error) => {
-        $passkeyLoading = "error";
-        logger.error("Failed to generate passkey", { ...challenge, error });
-      });
-
-      if (!passkeyResp) {
-        $passkeyLoading = "error";
-        logger.error("Passkey response is falsy");
-        return;
-      }
-
-      // Verify PRF extension is enabled
-      const extensionResults = passkeyResp.getClientExtensionResults();
-      if (!extensionResults.prf?.enabled) {
-        $passkeyLoading = "error";
-        logger.error("PRF extension not enabled - passkey rejected", {
-          email: $formData.email,
-          extensions: extensionResults,
-        });
-        toast.warning(m["setupPasskey.errorAuthenticatorNotSupported"]());
-        return;
-      }
-
-      // Get attestationObject and clientDataJSON for @simplewebauthn/server verification
-      const attestationObjectResp = passkeyResp.response.attestationObject;
-      const clientDataJSONResp = passkeyResp.response.clientDataJSON;
-
-      // UX Primer for second passkey UI
-      const isConfirmed = confirm(m["setupPasskey.confirmPrfRetrival"]());
-      if (!isConfirmed) {
-        $passkeyLoading = "error";
-        toast.error(m["setupPasskey.errorPrfOutputNotTriggered"]());
-        logger.warn("PRF challenge primer not confirmed");
-        return;
-      }
-
-      // CRITICAL: Get PRF output immediately after passkey creation
-      // This is the only time we can retrieve the PRF output
-      // Uses email as salt for multi-passkey support
-      try {
-        const prfChallenge = await fetchChallenge($formData.email, $formData.userId);
-        if (!prfChallenge) {
-          throw new Error("Failed to fetch PRF challenge");
-        }
-
-        const prfOutputResp = await getPRFOutputAfterRegistration({
-          passkeyId: passkeyResp.id,
-          rpId: prfChallenge.id,
-          challengeBase64: prfChallenge.challenge,
-          email: $formData.email, // Use email as PRF salt for multi-passkey support
-        });
-
-        prfOutput = prfOutputResp;
-        logger.info("PRF output retrieved successfully", {
-          prfOutputLength: prfOutputResp.byteLength,
-        });
-      } catch (error) {
-        $passkeyLoading = "error";
-        logger.error("Failed to get PRF output", {
-          email: $formData.email,
-          error,
-        });
-        toast.error(m["setupPasskey.errorGettingPrfOutput"]());
-        return;
-      }
-
-      // Update form data with passkey info - send full attestation for proper COSE key extraction
-      const attestationObjectBase64 = arrayBufferToBase64(attestationObjectResp);
-      const clientDataJSONBase64 = arrayBufferToBase64(clientDataJSONResp);
-      $formData = {
-        ...$formData,
-        id: passkeyResp.id,
-        attestationObjectBase64,
-        clientDataJSONBase64,
-        challenge: registrationChallenge!, // Send original registration challenge (not PRF challenge)
-      };
-
-      // Set for later use
-      passkeyId = passkeyResp.id;
-
-      // Update UI to show passkey is ready
-      $passkeyLoading = "success";
+      $formData.id = data.formData.id;
+      $formData.attestationObjectBase64 = data.formData.attestationObjectBase64;
+      $formData.clientDataJSONBase64 = data.formData.clientDataJSONBase64;
+      $formData.challenge = data.formData.challenge;
     }
   };
 

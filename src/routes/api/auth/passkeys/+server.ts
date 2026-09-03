@@ -6,8 +6,77 @@ import type { RequestHandler } from "./$types";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import { checkPermission } from "$lib/server/utils/permissions";
 import logger from "$lib/logger";
+import type { RedactedPasskey } from "$lib/types/passkeys";
 
 // Register OpenAPI documentation
+registerOpenAPIRoute("/auth/passkeys", "GET", {
+  summary: "Get WebAuthn passkeys for user account",
+  description: "Allows authenticated users to get their WebAuthn keys",
+  tags: ["Authentication"],
+  responses: {
+    "200": {
+      description: "WebAuthn passkeys",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              id: { type: "string", description: "ID of the added passkey" },
+              deviceName: { type: "string", description: "Recognizable Name of the passkey" },
+              createdAt: {
+                type: "string",
+                description: "When this passkey was created. ISO-Date string",
+              },
+              lastUsedAt: {
+                type: "string",
+                description: "When this passkey was last used. ISO-Date string",
+              },
+            },
+            required: ["message", "passkeyId"],
+          },
+          example: {
+            passkeys: [
+              {
+                id: "passkey-id",
+                deviceName: "My Device",
+                createdAt: "2026-01-01T01:01:01.000Z",
+                lastUsedAt: "2026-01-01T01:01:01.000Z",
+              },
+            ],
+          },
+        },
+      },
+    },
+    "401": {
+      description: "Unauthorized",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+          example: { error: "User must be logged in to view their passkeys" },
+        },
+      },
+    },
+    "403": {
+      description: "Forbidden",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+          example: { error: "User is forbidden to access their passkeys" },
+        },
+      },
+    },
+    "500": {
+      description: "Internal server error",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/Error" },
+          example: { error: "Internal server error" },
+        },
+      },
+    },
+  },
+});
+
 registerOpenAPIRoute("/auth/passkeys", "POST", {
   summary: "Add additional WebAuthn passkey to user account",
   description: "Allows authenticated users to add additional WebAuthn keys to their accounts",
@@ -24,15 +93,22 @@ registerOpenAPIRoute("/auth/passkeys", "POST", {
               description: "WebAuthn passkey data",
               properties: {
                 id: { type: "string", description: "Credential ID from WebAuthn" },
-                publicKey: { type: "string", description: "Base64 encoded public key" },
-                counter: { type: "integer", description: "Signature counter", default: 0 },
+                attestationObject: {
+                  type: "string",
+                  description:
+                    "Base64 encoded WebAuthn attestation object (contains the public key)",
+                },
+                clientDataJSON: {
+                  type: "string",
+                  description: "Base64 encoded WebAuthn client data JSON",
+                },
                 deviceName: {
                   type: "string",
                   description: "Device name for identification",
                   example: "iPhone 15",
                 },
               },
-              required: ["id", "publicKey"],
+              required: ["id", "attestationObject", "clientDataJSON"],
             },
           },
           required: ["passkey"],
@@ -81,6 +157,46 @@ registerOpenAPIRoute("/auth/passkeys", "POST", {
   },
 });
 
+export const GET: RequestHandler = async ({ locals }) => {
+  const log = logger.setContext("API");
+
+  try {
+    if (!locals.user) {
+      throw new AuthenticationError();
+    }
+    checkPermission(locals, locals.user.tenantId, false, false);
+
+    const passkeys = await WebAuthnService.getUserPasskeys(locals.user.id);
+
+    const redactedPasskeys: RedactedPasskey[] = passkeys.map((it) => ({
+      id: it.id,
+      deviceName: it.deviceName,
+      createdAt: it.createdAt ? it.createdAt.toISOString() : null,
+      lastUsedAt: it.lastUsedAt ? it.lastUsedAt.toISOString() : null,
+    }));
+
+    log.debug("Returning user passkeys", {
+      userId: locals.user.id,
+      passkeys: redactedPasskeys,
+    });
+
+    return json(
+      {
+        passkeys: redactedPasskeys,
+      },
+      { status: 200 },
+    );
+  } catch (error) {
+    log.error("Getting passkey error:", JSON.stringify(error || "?"));
+
+    if (error instanceof BackendError) {
+      return error.toJson();
+    }
+
+    return json({ error: "Internal server error" }, { status: 500 });
+  }
+};
+
 export const POST: RequestHandler = async ({ request, locals, cookies, url }) => {
   const log = logger.setContext("API");
 
@@ -97,11 +213,17 @@ export const POST: RequestHandler = async ({ request, locals, cookies, url }) =>
       throw new ValidationError("Missing registration challenge");
     }
 
-    // Validate required fields
+    // Validate required fields. The public key is NOT sent by the client: it is extracted from
+    // the attestation object during verifyRegistration below. The client must therefore provide
+    // the raw WebAuthn registration response (attestationObject + clientDataJSON).
     if (!body.passkey) {
       throw new ValidationError("passkey is required");
-    } else if (!body.passkey.id || !body.passkey.publicKey) {
-      throw new ValidationError("Passkey must include id and publicKey");
+    } else if (
+      !body.passkey.id ||
+      !body.passkey.attestationObject ||
+      !body.passkey.clientDataJSON
+    ) {
+      throw new ValidationError("Passkey must include id, attestationObject and clientDataJSON");
     }
 
     log.debug("Adding additional passkey to user", {

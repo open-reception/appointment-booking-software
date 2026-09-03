@@ -3,21 +3,24 @@
   import { m } from "$i18n/messages.js";
   import type { DecryptedAppointment } from "$lib/client/appointment-crypto";
   import * as Alert from "$lib/components/ui/alert";
+  import { AppointmentDetails } from "$lib/components/ui/appointment-details";
   import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
   import * as Item from "$lib/components/ui/item";
+  import { LocalizedText } from "$lib/components/ui/public";
   import { openDialog, ResponsiveDialog } from "$lib/components/ui/responsive-dialog";
   import { Skeleton } from "$lib/components/ui/skeleton";
-  import { Headline, Text } from "$lib/components/ui/typography";
+  import { Headline } from "$lib/components/ui/typography";
   import { ROUTES } from "$lib/const/routes";
   import { publicStore } from "$lib/stores/public";
-  import { toDisplayDateTime, utcToLocalWithoutDST } from "$lib/utils/datetime";
-  import { getLocalTimeZone } from "@internationalized/date";
-  import { Calendar, CircleAlert } from "@lucide/svelte";
+  import { toDisplayDateTime } from "$lib/utils/datetime";
+  import { getCurrentTranlslation } from "$lib/utils/localizations";
+  import { CircleAlert } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
   import { appointmentStatusToBadge } from "./utils";
 
+  let channels = $derived($publicStore.channels);
   let tenant = $derived($publicStore.tenant);
   let step: "loading" | "list" | "error" = $state("loading");
   let appointments: DecryptedAppointment[] = $state([]);
@@ -43,6 +46,8 @@
       ?.cancelAppointmentByClient({
         appointment: cancelling.id,
         tenant: tenant.id,
+        name: cancelling.name,
+        phone: cancelling.phone,
         email: cancelling.email,
       })
       .then(() => {
@@ -72,10 +77,13 @@
     {#if appointments.length > 0}
       <div class="flex flex-col gap-1">
         {#each appointments as item (item)}
+          {@const channel = channels?.find((it) => it.id === item.channelId)}
           <Item.Root variant="outline">
             <Item.Content>
               <Item.Title>
-                <!-- TODO: Add channel and agent; ids needed -->
+                {#if channel}
+                  <LocalizedText translations={channel.names} />
+                {/if}
                 {@const badge = appointmentStatusToBadge(item.status)}
                 {#if badge}
                   <Badge>{badge.label.toLocaleUpperCase()}</Badge>
@@ -118,26 +126,25 @@
 </div>
 
 {#if cancelling}
+  {@const channel = channels?.find((it) => it.id === cancelling?.channelId)}
   <ResponsiveDialog
     id="cancel-appointment"
     title={m["clients.appointments.cancel.title"]()}
     description={m["clients.appointments.cancel.description"]()}
     triggerHidden={true}
   >
-    <div class="flex gap-2 p-1">
-      <Calendar class="size-4 " />
-      <Text style="sm">
-        {toDisplayDateTime(utcToLocalWithoutDST(new Date(cancelling.appointmentDate)), {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-          weekday: "short",
-          hour: "2-digit",
-          minute: "2-digit",
-          timeZone: getLocalTimeZone().toString(),
-        })}
-      </Text>
-    </div>
+    <AppointmentDetails
+      items={[
+        {
+          type: "channel",
+          value: channel && getCurrentTranlslation(channel.names),
+        },
+        {
+          type: "date",
+          value: new Date(cancelling.appointmentDate),
+        },
+      ]}
+    />
 
     <Button
       variant="destructive"

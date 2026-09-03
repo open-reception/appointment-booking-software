@@ -23,6 +23,8 @@ import Confirmation from "$lib/emails/Confirmation.svelte";
 import PinReset from "$lib/emails/PinReset.svelte";
 import { dev } from "$app/environment";
 import Notification from "$lib/emails/Notification.svelte";
+import AppointmentUpdated from "$lib/emails/AppointmentUpdated.svelte";
+import AppointmentReminder from "$lib/emails/AppointmentReminder.svelte";
 
 export type SelectClient = {
   email: string;
@@ -204,7 +206,7 @@ export async function sendAppointmentReminderEmail(
     },
     { locale },
   );
-  const emailRender = render(AppointmentBooked, {
+  const emailRender = render(AppointmentReminder, {
     props: {
       locale,
       channel: channelTitle || appointment.channelId,
@@ -428,6 +430,50 @@ export async function sendConfirmationEmail(
       user: user as SelectUserEmail,
       confirmUrl,
       expirationMinutes,
+    },
+  });
+  const html = renderOutputToHtml(emailRender);
+  const text = htmlToText(html);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await sendEmail(recipient as any, subject, html, text, tenant.longName);
+}
+
+/**
+ * Send appointment update email
+ * @param {SelectClient | SelectUser} user - Database user object or client data
+ * @param {SelectTenant} tenant - Tenant information for branding
+ * @param {SelectAppointment} appointment - Cancelled appointment details
+ * @param {string} [channelTitle] - Optional channel title/name
+ * @throws {Error} When email sending fails
+ * @returns {Promise<void>}
+ */
+export async function sendAppointmentUpdatedEmail(
+  user: SelectClient | SelectUser,
+  tenant: SelectTenant,
+  appointment: SelectAppointment,
+  channelTitle?: string,
+): Promise<void> {
+  const agentService = await AgentService.forTenant(tenant.id);
+  const agent = await agentService.getAgentById(appointment.agentId);
+  // Create recipient directly for SelectClient type, use helper for SelectUser
+  const { recipient, locale } = await getRecipient(user);
+  // Generate email
+  const subject = m["emails.appointmentUpdated.subject"](
+    {
+      channel: channelTitle || appointment.channelId,
+      tenant: tenant.longName,
+    },
+    { locale },
+  );
+  const emailRender = render(AppointmentUpdated, {
+    props: {
+      locale,
+      channel: channelTitle || appointment.channelId,
+      user,
+      tenant,
+      appointment: { ...appointment, agentName: agent?.name ?? "---" },
+      address: await getAddressFromTenant(tenant.id),
     },
   });
   const html = renderOutputToHtml(emailRender);

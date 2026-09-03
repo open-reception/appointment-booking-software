@@ -20,7 +20,7 @@
     cancelUrl,
   }: {
     locale: SupportedLocale;
-    user: SelectClient;
+    user: SelectClient & { name?: string };
     tenant: SelectTenant;
     channel: string;
     appointment: SelectAppointment & { agentName: string };
@@ -36,7 +36,9 @@
 </script>
 
 <EmailLayout {locale}>
-  <EmailText variant="md">{m["emails.greeting"]({ name: user.email }, { locale })}</EmailText>
+  <EmailText variant="md">
+    {m["emails.greeting"]({ name: user.name || user.email }, { locale })}
+  </EmailText>
   <EmailText variant="md">
     {m["emails.appointmentReminder.introduction"]({ tenant: tenant.longName }, { locale })}
   </EmailText>

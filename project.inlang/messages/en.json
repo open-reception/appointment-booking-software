@@ -64,6 +64,7 @@
 		"errors": {
 			"email": "Invalid format",
 			"passphrase": "Must be at least 30 characters long",
+			"passphraseMismatch": "Does not match the new passphrase",
 			"noPassAtAll": "Either passphrase or passkey is required",
 			"bothPassSet": "Only one of passphrase or passkey should be provided",
 			"name": "Must be at least 2 characters",
@@ -100,7 +101,9 @@
 		"pin": "PIN",
 		"pinHint": "Save your PIN in a secure place, like a password-manager.",
 		"locale": "Language",
-		"localePlaceholder": "Select Language"
+		"localePlaceholder": "Select Language",
+		"deviceName": "Passkey Name",
+		"deviceNameHint": "Etwas, das Du wiedererkennen wirst"
 	},
 	"login": {
 		"or": "Or",
@@ -108,6 +111,7 @@
 		"usePassphrase": "use passphrase",
 		"orUse": "Or {button}",
 		"title": "Login",
+		"description_passkey": "Enter your email and click/tap to add passkey.",
 		"description_passphrase": "Enter your email and passphrase below to access your account.",
 		"action": "Login",
 		"error": "Login failed. Please retry",
@@ -139,8 +143,8 @@
 	"logout": {
 		"title": "Logout",
 		"success": {
-			"title": "You are logged out.",
-			"description": "You are logged-out."
+			"title": "Have a good day",
+			"description": "You are now logged out."
 		},
 		"error": {
 			"title": "Logout failed",
@@ -194,6 +198,10 @@
 				"errors": {
 					"startEndDash": "Must not start or end with a dash"
 				}
+			},
+			"features": {
+				"title": "Feature Flags",
+				"placeholder": "Select Features"
 			},
 			"domain": {
 				"description": "Must be unique on this server.",
@@ -374,6 +382,8 @@
 	"pause": "Deactivate",
 	"delete": "Delete",
 	"select": "Select",
+	"close": "Close",
+	"unkown": "Unkown",
 	"dashboard": {
 		"title": "Dashboard",
 		"hello": "Hello",
@@ -431,9 +441,34 @@
 					"action": "Add Staff Member"
 				}
 			}
+		},
+		"appointmentReminders": {
+			"title": "Appointment Reminders",
+			"loading": "Loading appointments until tomorrow evening",
+			"noRemindersToSend": "No reminders to send",
+			"sending": [
+				{
+					"declarations": ["input length", "local lengthPlural = length: plural"],
+					"selectors": ["lengthPlural"],
+					"match": {
+						"lengthPlural=one": "Sending {length} reminder",
+						"lengthPlural=other": "Sending {length} reminders"
+					}
+				}
+			],
+			"success": [
+				{
+					"declarations": ["input length", "local lengthPlural = length: plural"],
+					"selectors": ["lengthPlural"],
+					"match": {
+						"lengthPlural=one": "{length} reminder sent",
+						"lengthPlural=other": "{length} reminders sent"
+					}
+				}
+			],
+			"error": "Failed to send reminders"
 		}
 	},
-	"close": "Close",
 	"agents": {
 		"title": "Agents",
 		"empty": {
@@ -499,6 +534,7 @@
 	},
 	"channels": {
 		"title": "Channels",
+		"singular": "Channel",
 		"empty": {
 			"title": "No channels yet",
 			"description": "Channels are your way to collect different types of appointments"
@@ -766,7 +802,15 @@
 		"general": {
 			"navItem": "Settings",
 			"title": "Account Settings",
-			"description": "Change your name."
+			"description": "Change your name and e-mail language.",
+			"language": {
+				"title": "E-Mail Language",
+				"placeholder": "Select a language",
+				"hint": "OpenReception will send e-mails in this language to you"
+			},
+			"action": "Save changes",
+			"success": "Account Settings saved",
+			"error": "Account Settings could not be saved"
 		},
 		"change-email": {
 			"navItem": "E-Mail Address",
@@ -776,12 +820,60 @@
 		"passkeys": {
 			"navItem": "Passkeys",
 			"title": "Manage Passkeys",
-			"description": "You can add up to three passkeys."
+			"description": "You can add up to three passkeys.",
+			"list": {
+				"loading": "Loading Passkeys",
+				"unnamedPasskey": "Unnamed Passkey",
+				"current": "Current Session",
+				"createdAt": "Created: {createdAt}.",
+				"lastUsedAt": "Last used: {lastUsedAt}.",
+				"empty": {
+					"title": "No Passkeys set",
+					"description": "You can add up to 3 Passkeys"
+				}
+			},
+			"add": {
+				"title": "Add Passkey",
+				"description": "Add a Passkey to your account",
+				"action": "Add Passkey",
+				"success": "Passkey added",
+				"error": "Passkey could not be added",
+				"errorDeleteSuccess": "Partially added Passkey deleted",
+				"maxReached": {
+					"title": "Maximum reached",
+					"description": "You've reached the maximum amount of Passkeys for this account"
+				}
+			},
+			"edit": {
+				"title": "Rename Passkey",
+				"description": "Rename it to something you will recognize",
+				"action": "Rename",
+				"success": "Passkey renamed",
+				"error": "Passkey could not be renamed"
+			},
+			"delete": {
+				"title": "Delete Passkey",
+				"description": "This action cannot be undone. Type {name} to delete this passkey.",
+				"forbidden": "You cannot delete the last passkey in your account",
+				"action": "Delete",
+				"success": "Passkey deleted",
+				"error": "Passkey could not be deleted"
+			}
 		},
 		"change-passphrase": {
 			"navItem": "Passphrase",
 			"title": "Change Passphrase",
-			"description": "Global Admins can set strong passphrases as a backup login method."
+			"description": "Global Admins can set strong passphrases as a backup login method.",
+			"currentPassphrase": "Current Passphrase",
+			"newPassphrase": "New Passphrase",
+			"repeatedPassphrase": "New Passphrase (repeat)",
+			"action": "Change Passphrase",
+			"success": "Passphrase changed",
+			"errors": {
+				"notAGlobalAdmin": "You are now allowed to add a passphrase",
+				"passphraseIncorrect": "Current Passphrase is incorrect",
+				"unknown": "Passphrase could not be updated"
+			}
 		}
 	},
 	"staff": {
@@ -871,8 +963,11 @@
 		},
 		"loading": "Loading staff members"
 	},
+	"currentSelection": "current selection",
 	"yes": "Yes",
 	"no": "No",
+	"unknown": "unknown",
+	"never": "never",
 	"public": {
 		"links": {
 			"website": "Go to Website",
@@ -1009,6 +1104,17 @@
 				"reserved": "reserved"
 			}
 		},
+		"moveAppointment": {
+			"action": "Move appointment",
+			"success": "Appointment moved successfully",
+			"error": "Failed to move appointment"
+		},
+		"addFollowUpAppointment": {
+			"action": "Add follow-up"
+		},
+		"addAppointmentAfterFail": {
+			"action": "Look for another appointment"
+		},
 		"cancelAppointment": {
 			"confirm": "Are you sure you want to cancel this appointment?",
 			"action": "Cancel Appointment",
@@ -1045,6 +1151,7 @@
 					"action": "Add Client Details"
 				},
 				"summary": {
+					"hint": "Adding this appointment will create a new client. This process will take a bit longer.",
 					"action": "Add Appointment"
 				},
 				"error": {
@@ -1086,6 +1193,11 @@
 			"introduction": "your appointment was requested. You will be notified once it is confirmed.",
 			"reason": "You are receiving this email because someone requested an appointment with your e-mail address."
 		},
+		"appointmentUpdated": {
+			"subject": "Your appointment for {channel} at {tenant} was updated",
+			"introduction": "Your appointment was updated.",
+			"reason": "You are receiving this email because someone booked an appointment with your e-mail address."
+		},
 		"appointmentCancelled": {
 			"subject": "Your appointment for {channel} at {tenant} was cancelled",
 			"introduction": "Your appointment was cancelled.",
@@ -1123,16 +1235,13 @@
 		"empty": "No notifications available",
 		"types": {
 			"APPOINTMENT_REQUESTED": {
-				"title": "New appointment request",
-				"description": "A new appointment has been requested in {channel}."
+				"title": "New appointment request"
 			},
 			"APPOINTMENT_CONFIRMED": {
-				"title": "Appointment confirmed",
-				"description": "Appointment in {channel} was confirmed."
+				"title": "Appointment confirmed"
 			},
 			"APPOINTMENT_CANCELLED": {
-				"title": "Appointment cancelled",
-				"description": "Client cancelled appointment in {channel}."
+				"title": "Appointment cancelled"
 			}
 		}
 	},

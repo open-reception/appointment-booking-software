@@ -10,6 +10,7 @@
     toCalendarDateTime,
     today,
   } from "@internationalized/date";
+  import { isAfterOperatingHours, isBeforeOperatingHours } from "./utils";
 
   let {
     day = $bindable(),
@@ -32,10 +33,13 @@
   const curTimeIndicator = $derived(
     today(getLocalTimeZone()).toString() === day.toString() ? $clock : undefined,
   );
+  const isBeforeHours = $derived(isBeforeOperatingHours(curTimeIndicator, earliestStartHour));
+  const isAfterHours = $derived(isAfterOperatingHours(curTimeIndicator, latestEndHour));
 </script>
 
 {#if !isLoading}
   <div class="absolute flex w-[calc(100%-2rem)] flex-col">
+    <!-- First half hour line before day starts -->
     <div
       class="relative flex w-full items-start justify-between transition-all duration-200"
       style:height={`${focusAdjustment}px`}
@@ -43,14 +47,10 @@
       <Separator class="bg-secondary absolute top-0 right-0 left-16 h-px w-auto!" />
     </div>
 
-    <!-- Current Time Indicator -->
+    <!-- Current Time Indicator Line -->
     {#if !isLoading && curTimeIndicator}
       {@const isToday = toCalendarDate($clock).toString() === today(getLocalTimeZone()).toString()}
-      {@const isNotAfterHours =
-        latestEndHour * hourSize + hourSize / 2 > curTimeIndicator.hour * hourSize}
-      {@const isNotBeforeHours =
-        earliestStartHour * hourSize - hourSize * 2 < curTimeIndicator.hour * hourSize}
-      {#if isToday && isNotAfterHours && isNotBeforeHours}
+      {#if isToday && !isAfterHours && !isBeforeHours}
         {@const top =
           focusAdjustment +
           curTimeIndicator.hour * hourSize +

@@ -49,7 +49,13 @@
 
 import type { BootstrapChallengeResponse, BootstrapVerifyResponse } from "$lib/types/appointment";
 import { OptimizedArgon2 } from "$lib/crypto/hashing";
-import { AESCrypto, BufferUtils, KyberCrypto, ShamirSecretSharing } from "$lib/crypto/utils";
+import {
+  AESCrypto,
+  BufferUtils,
+  encryptedDataToString,
+  KyberCrypto,
+  ShamirSecretSharing,
+} from "$lib/crypto/utils";
 import type { ClientTunnelResponse } from "$lib/server/services/appointment-service";
 import { pinThrottleStore } from "$lib/stores/pin-throttle";
 
@@ -64,7 +70,7 @@ interface StaffKeyPair {
   privateKey: Uint8Array;
 }
 
-interface EncryptedData {
+export interface EncryptedData {
   encryptedPayload: string;
   iv: string;
   authTag: string;
@@ -85,11 +91,13 @@ export type AppointmentDataByStaff = Omit<AppointmentData, "email"> & {
 
 interface StaffPublicKey {
   userId: string;
+  passkeyId: string;
   publicKey: string;
 }
 
 export interface DecryptedAppointment {
   id: string;
+  channelId?: string;
   appointmentDate: string;
   status: string;
   name: string;
@@ -103,11 +111,12 @@ interface MyAppointmentsResponse {
     id: string;
     appointmentDate: string;
     status: string;
+    channelId: string;
     encryptedData: EncryptedData;
   }>;
 }
 
-type StaffKeyShares = Array<{ userId: string; encryptedTunnelKey: string }>;
+type StaffKeyShares = Array<{ userId: string; passkeyId: string; encryptedTunnelKey: string }>;
 
 type EncryptableTunnelConfig = {
   emailHash: string;
@@ -246,7 +255,9 @@ export class UnifiedAppointmentCrypto {
   async cancelAppointmentByClient(opts: {
     tenant: string;
     appointment: string;
+    name: string;
     email: string;
+    phone?: string;
   }): Promise<void> {
     try {
       if (this.pin === null) {
@@ -305,6 +316,13 @@ export class UnifiedAppointmentCrypto {
             emailHash: this.emailHash,
             challengeId: challengeData.challengeId,
             challengeResponse: decryptedChallenge,
+            encryptedPayload: encryptedDataToString(
+              await this.encryptData({
+                name: opts.name,
+                email: opts.email,
+                phone: opts.phone,
+              }),
+            ),
           }),
         },
       );
@@ -709,6 +727,7 @@ export class UnifiedAppointmentCrypto {
             id: encryptedAppt.id,
             appointmentDate: encryptedAppt.appointmentDate,
             status: encryptedAppt.status,
+            channelId: encryptedAppt.channelId,
             ...decryptedData,
           });
         } catch (error) {
@@ -787,6 +806,16 @@ export class UnifiedAppointmentCrypto {
     encryptedAppointment: EncryptedData;
     staffKeyShare: string;
   }): Promise<AppointmentData> {
+    return this.decryptStaff<AppointmentData>({
+      data: encryptedData.encryptedAppointment,
+      staffKeyShare: encryptedData.staffKeyShare,
+    });
+  }
+
+  /**
+   * Decrypt appointment data for staff members
+   */
+  async decryptStaff<T>(encryptedData: { data: EncryptedData; staffKeyShare: string }): Promise<T> {
     if (!this.staffAuthenticated || !this.staffKeyPair) {
       throw new Error("Staff not authenticated");
     }
@@ -848,9 +877,9 @@ export class UnifiedAppointmentCrypto {
       );
 
       // 5. Now decrypt the actual appointment data
-      const appointmentIv = this.hexToUint8Array(encryptedData.encryptedAppointment.iv);
-      const ciphertext = this.hexToUint8Array(encryptedData.encryptedAppointment.encryptedPayload);
-      const authTag = this.hexToUint8Array(encryptedData.encryptedAppointment.authTag);
+      const appointmentIv = this.hexToUint8Array(encryptedData.data.iv);
+      const ciphertext = this.hexToUint8Array(encryptedData.data.encryptedPayload);
+      const authTag = this.hexToUint8Array(encryptedData.data.authTag);
 
       // Combine ciphertext and auth tag for Web Crypto API
       const encrypted = new Uint8Array(ciphertext.length + authTag.length);
@@ -1039,6 +1068,133 @@ export class UnifiedAppointmentCrypto {
     console.log("✅ Staff keypair stored with PRF-based security");
   }
 
+  /**
+   * Store the key pair for an ADDITIONAL passkey of an already-registered staff member.
+   *
+   * Uses the same zero-knowledge XOR derivation as {@link storeStaffKeyPair}, but targets the
+   * per-passkey crypto endpoint (which also verifies the PRF output) instead of the initial
+   * staff crypto endpoint. Each passkey gets its own Kyber keypair and its own database shard.
+   *
+   * @param tenantId - Tenant ID
+   * @param staffId - Staff member ID (must match the domain separation used at reconstruction)
+   * @param newPasskeyId - Credential ID of the newly registered passkey
+   * @param prfOutput - 32-byte PRF output from a WebAuthn assertion with the NEW passkey (secret!)
+   * @param keyPair - Freshly generated ML-KEM-768 keypair for the new passkey
+   * @throws Error if the API call fails
+   */
+  public async storeStaffKeyPairForNewPasskey(
+    tenantId: string,
+    staffId: string,
+    newPasskeyId: string,
+    prfOutput: ArrayBuffer,
+    keyPair: { publicKey: Uint8Array; privateKey: Uint8Array },
+  ): Promise<void> {
+    // Derive passkey-based shard from PRF output and create the database shard via XOR.
+    const passkeyBasedShard = await this.derivePasskeyBasedShardWithPRF(prfOutput, staffId);
+
+    const dbShard = new Uint8Array(keyPair.privateKey.length);
+    for (let i = 0; i < keyPair.privateKey.length; i++) {
+      dbShard[i] = keyPair.privateKey[i] ^ passkeyBasedShard[i];
+    }
+
+    const response = await fetch(`/api/auth/passkeys/${newPasskeyId}/crypto`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tenantId,
+        publicKey: this.uint8ArrayToBase64(keyPair.publicKey),
+        privateKeyShare: this.uint8ArrayToBase64(dbShard),
+        // The endpoint re-verifies the PRF output (32 bytes) as a zero-knowledge sanity check.
+        prfOutput: this.uint8ArrayToBase64(new Uint8Array(prfOutput)),
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to store crypto keys for new passkey: ${response.status}`);
+    }
+  }
+
+  /**
+   * Re-wrap every existing client tunnel key for a newly added passkey.
+   *
+   * Requires the staff member to be authenticated with an EXISTING passkey, so the current Kyber
+   * private key is available to decrypt each tunnel key. Every tunnel key is decrypted with the
+   * current passkey and re-encrypted for the new passkey's public key, then persisted as a
+   * (tunnel, passkey) key share. Safe to re-run: the server deduplicates on (tunnel, passkey), so
+   * a partial failure can be recovered by simply calling this again.
+   *
+   * @param tenantId - Tenant ID
+   * @param staffId - Staff member ID (the caller themselves)
+   * @param newPasskeyId - Credential ID of the newly registered passkey
+   * @param newPublicKey - Base64-encoded ML-KEM-768 public key of the new passkey
+   * @throws Error if not authenticated or an API call fails
+   */
+  public async rewrapAllTunnelsForNewPasskey(
+    tenantId: string,
+    staffId: string,
+    newPasskeyId: string,
+    newPublicKey: string,
+  ): Promise<void> {
+    if (!this.staffAuthenticated || !this.staffKeyPair) {
+      throw new Error("Staff must be authenticated with an existing passkey to add a new one");
+    }
+
+    // 1. Fetch all tunnels. currentStaffEncryptedTunnelKey is wrapped for the current passkey.
+    const tunnelsResponse = await fetch(`/api/tenants/${tenantId}/appointments/tunnels`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!tunnelsResponse.ok) {
+      throw new Error(`Failed to fetch client tunnels: ${tunnelsResponse.status}`);
+    }
+    const { tunnels } = (await tunnelsResponse.json()) as {
+      tunnels: Array<{ id: string; currentStaffEncryptedTunnelKey?: string }>;
+    };
+
+    // 2. Decrypt each tunnel key with the current passkey, re-wrap it for the new passkey.
+    const newStaffKey: StaffPublicKey = {
+      userId: staffId,
+      passkeyId: newPasskeyId,
+      publicKey: newPublicKey,
+    };
+    const keyShares: Array<{ tunnelId: string; passkeyId: string; encryptedTunnelKey: string }> =
+      [];
+
+    for (const tunnel of tunnels) {
+      if (!tunnel.currentStaffEncryptedTunnelKey) {
+        // No share for the current passkey means there is nothing to re-wrap from here.
+        continue;
+      }
+      const tunnelKey = await this.decryptTunnelKeyByStaff(tunnel.currentStaffEncryptedTunnelKey);
+      const wrapped = await this.encryptTunnelKeyForStaff([newStaffKey], tunnelKey);
+      if (wrapped.length === 0) {
+        throw new Error(`Failed to wrap tunnel key for new passkey on tunnel ${tunnel.id}`);
+      }
+      keyShares.push({
+        tunnelId: tunnel.id,
+        passkeyId: newPasskeyId,
+        encryptedTunnelKey: wrapped[0].encryptedTunnelKey,
+      });
+    }
+
+    if (keyShares.length === 0) {
+      return;
+    }
+
+    // 3. Persist the new (tunnel, passkey) shares.
+    const response = await fetch(
+      `/api/tenants/${tenantId}/appointments/tunnels/add-staff-key-shares`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ staffUserId: staffId, keyShares }),
+      },
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to persist tunnel key shares for new passkey: ${response.status}`);
+    }
+  }
+
   private uint8ArrayToBase64(array: Uint8Array): string {
     return btoa(String.fromCharCode.apply(null, Array.from(array)));
   }
@@ -1137,6 +1293,13 @@ export class UnifiedAppointmentCrypto {
     data: AppointmentData | AppointmentDataByStaff,
     tunnelKey?: CryptoKey,
   ): Promise<EncryptedData> {
+    return this.encryptData<AppointmentData | AppointmentDataByStaff>(data, tunnelKey);
+  }
+
+  /**
+   * Encrypt data with the tunnel key
+   */
+  private async encryptData<T>(data: T, tunnelKey?: CryptoKey): Promise<EncryptedData> {
     const usedTunnelKey = tunnelKey ?? this.tunnelKey;
     if (!usedTunnelKey) throw new Error("No tunnel key available");
 
@@ -1364,7 +1527,7 @@ export class UnifiedAppointmentCrypto {
   async encryptTunnelKeyForStaff(
     staffKeys: StaffPublicKey[],
     externalTunnelKey?: CryptoKey,
-  ): Promise<Array<{ userId: string; encryptedTunnelKey: string }>> {
+  ): Promise<Array<{ userId: string; passkeyId: string; encryptedTunnelKey: string }>> {
     const usedKey = externalTunnelKey ?? this.tunnelKey;
     if (!usedKey) throw new Error("No tunnel key available");
 
@@ -1412,6 +1575,7 @@ export class UnifiedAppointmentCrypto {
 
       results.push({
         userId: staff.userId,
+        passkeyId: staff.passkeyId,
         encryptedTunnelKey: this.uint8ArrayToHex(combined),
       });
     }

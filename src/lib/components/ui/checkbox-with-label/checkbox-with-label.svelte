@@ -7,6 +7,7 @@
   import { Text } from "../typography";
   import { Info } from "@lucide/svelte/icons";
   import { buttonVariants } from "../button";
+  import type { Snippet } from "svelte";
 
   let {
     class: className,
@@ -17,7 +18,7 @@
     ...restProps
   }: HTMLAttributes<HTMLButtonElement> & {
     value: boolean;
-    label: string;
+    label: string | Snippet;
     tooltip?: string;
     id?: string;
     onCheckedChange?: OnChangeFn<boolean>;
@@ -33,7 +34,13 @@
       {onCheckedChange}
       class="mt-0.5"
     />
-    <Text style="sm" class="font-normal select-none">{label}</Text>
+    <Text style="sm" class="font-normal select-none">
+      {#if typeof label === "string"}
+        {label}
+      {:else if typeof label === "function"}
+        {@render label()}
+      {/if}
+    </Text>
   </div>
   {#if tooltip}
     <Popover.Root>

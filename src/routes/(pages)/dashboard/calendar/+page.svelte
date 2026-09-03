@@ -4,15 +4,13 @@
   import { m } from "$i18n/messages";
   import { SidebarLayout } from "$lib/components/layouts/sidebar-layout";
   import { Button } from "$lib/components/ui/button";
-  import { ResponsiveDialog } from "$lib/components/ui/responsive-dialog";
+  import { closeDialog, ResponsiveDialog } from "$lib/components/ui/responsive-dialog";
   import { ROUTES } from "$lib/const/routes";
-  import { agents as agentsStore } from "$lib/stores/agents";
   import { auth } from "$lib/stores/auth";
   import { calendarStore } from "$lib/stores/calendar";
   import { channels as channelsStore } from "$lib/stores/channels";
   import { sidebar } from "$lib/stores/sidebar";
-  import type { TAppointmentFilter } from "$lib/types/calendar";
-  import { timeUTCToLocalWithoutOffset } from "$lib/utils/datetime";
+  import type { TAppointmentFilter, TCalendarMode } from "$lib/types/calendar";
   import { getCurrentTranlslation } from "$lib/utils/localizations";
   import { getLocalTimeZone, today, type CalendarDate } from "@internationalized/date";
   import { SlidersHorizontal } from "@lucide/svelte";
@@ -26,8 +24,9 @@
   import CalendarLegend from "./(components)/CalendarLegend.svelte";
   import CalendarLines from "./(components)/CalendarLines.svelte";
   import CalendarWeek from "./(components)/CalendarWeek.svelte";
+  import MoveAppointment from "./(components)/MoveAppointment.svelte";
   import { calendarMonthQuery } from "./(components)/queries";
-  import { convertDate, openAppointmentById } from "./(components)/utils";
+  import { convertDate, getOperatingHours, openAppointmentById } from "./(components)/utils";
   import type { CalendarView } from "./types";
 
   const queryClient = useQueryClient();
@@ -35,7 +34,6 @@
   const curEmptySlot = $derived($calendarStore.curEmptySlot);
   const curItem = $derived($calendarStore.curItem);
   const channels = $derived($channelsStore.channels);
-  const agents = $derived($agentsStore.agents);
   let selectedDate: CalendarDate = $state(
     "date" in page.state
       ? convertDate(history?.state["sveltekit:states"].date)
@@ -46,24 +44,11 @@
   let shownAppointments: TAppointmentFilter = $state("all");
   let shownChannels: string[] = $state([]);
   let shownAgents: string[] = $state([]);
-  let view: CalendarView = $state(page.data.calendarView);
-  let hours = $derived.by(() => {
-    const from = channels
-      .map((c) => c.slotTemplates.map((t) => t.from))
-      .flat()
-      .map((time) => {
-        const [hourStr] = timeUTCToLocalWithoutOffset(time).split(":");
-        return parseInt(hourStr, 10);
-      });
-    const to = channels
-      .map((c) => c.slotTemplates.map((t) => t.to))
-      .flat()
-      .map((time) => {
-        const [hourStr] = timeUTCToLocalWithoutOffset(time).split(":");
-        return parseInt(hourStr, 10);
-      });
-    return { from: Math.min(...from), to: Math.max(...to) };
+  let mode: TCalendarMode = $state({
+    mode: "VIEW",
   });
+  let view: CalendarView = $state(page.data.calendarView);
+  let hours = $derived.by(() => getOperatingHours(channels, calendar));
   let scale = $state(page.data.calendarZoom);
 
   $effect(() => {
@@ -138,10 +123,17 @@
 
 <SidebarLayout breakcrumbs={[{ label: m["nav.calendar"](), href: ROUTES.DASHBOARD.CALENDAR }]}>
   <div class="flex flex-col gap-10">
-    <CalendarHeader bind:selectedDate bind:view {shownAppointments} {shownAgents} {shownChannels} />
+    <CalendarHeader
+      bind:selectedDate
+      bind:view
+      bind:mode
+      bind:shownAppointments
+      bind:shownAgents
+      bind:shownChannels
+    />
     <div
       class="flex transition-all duration-200"
-      style:min-height={`${(hours.to * 30 + 60) * scale}px`}
+      style:min-height={`${(hours.to - hours.from) * 60 * scale + 90 * scale}px`}
     >
       {#if view === "day"}
         <CalendarLegend
@@ -208,26 +200,48 @@
 </SidebarLayout>
 
 {#if curItem && tenantId}
-  {@const channel = channels.find((c) => c.id === curItem.appointment.channelId)}
-  {@const agent = agents.find((a) => a.id === curItem.appointment.appointment?.agentId)}
-  <ResponsiveDialog
-    id="current-calendar-item"
-    title={agent?.name || "unkown agent"}
-    description={channel ? getCurrentTranlslation(channel.names) : undefined}
-    triggerHidden={true}
-  >
-    <Appointment {tenantId} item={curItem} {updateCalendar} close={closeAppointmentDetail} />
-  </ResponsiveDialog>
+  <Appointment
+    {tenantId}
+    bind:mode
+    bind:shownAppointments
+    bind:shownChannels
+    item={curItem}
+    {updateCalendar}
+    close={closeAppointmentDetail}
+  />
 {/if}
 
 {#if curEmptySlot && tenantId}
   {@const channel = channels.find((c) => c.id === curEmptySlot.channelId)}
-  <ResponsiveDialog
-    id="current-calendar-slot"
-    title={m["calendar.addAppointment.title"]()}
-    description={channel ? getCurrentTranlslation(channel.names) : undefined}
-    triggerHidden={true}
-  >
-    <AddAppointment {tenantId} item={curEmptySlot} {updateCalendar} />
-  </ResponsiveDialog>
+  {#if ["VIEW", "ADD_FOLLOW_UP", "ADD_AFTER_FAIL"].includes(mode.mode)}
+    <ResponsiveDialog
+      id="current-calendar-slot"
+      title={m["calendar.addAppointment.title"]()}
+      description={channel ? getCurrentTranlslation(channel.names) : undefined}
+      triggerHidden={true}
+    >
+      <AddAppointment
+        {tenantId}
+        item={curEmptySlot}
+        bind:mode
+        bind:shownAppointments
+        bind:shownChannels
+        bind:shownAgents
+        {updateCalendar}
+      />
+    </ResponsiveDialog>
+  {:else if mode.mode === "MOVE"}
+    <MoveAppointment
+      bind:mode
+      {tenantId}
+      item={curEmptySlot}
+      updateCalendar={() => {
+        closeDialog("current-calendar-slot");
+        shownAppointments = "all";
+        shownChannels = [];
+        mode = { mode: "VIEW" };
+        updateCalendar();
+      }}
+    />
+  {/if}
 {/if}

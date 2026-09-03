@@ -93,6 +93,7 @@ describe("TenantAdminService", () => {
         description: "A test clinic",
         links: { website: "", imprint: "", privacyStatement: "" },
         domain: "tenant.example.com",
+        features: [],
       };
 
       const mockCreatedTenant = {

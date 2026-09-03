@@ -52,6 +52,7 @@ describe("Create New Client API Route", () => {
     staffKeyShares: [
       {
         userId: "staff-123",
+        passkeyId: "passkey-123",
         encryptedTunnelKey: "encrypted-tunnel-key",
       },
     ],

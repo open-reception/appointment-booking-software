@@ -26,6 +26,7 @@ const mockAppointmentId = "appointment-456";
 const mockEmailHash = "email-hash-abc123";
 const mockChallengeId = "challenge-789";
 const mockChallengeResponse = "decrypted-challenge";
+const mockEncryptedPayload = "encrypted-payload-string";
 
 describe("DELETE /api/tenants/[id]/appointments/[appointmentId]/delete-by-client", () => {
   beforeEach(() => {
@@ -40,6 +41,7 @@ describe("DELETE /api/tenants/[id]/appointments/[appointmentId]/delete-by-client
             emailHash: mockEmailHash,
             challengeId: mockChallengeId,
             challengeResponse: mockChallengeResponse,
+            encryptedPayload: mockEncryptedPayload,
           },
         ),
       } as any,
@@ -66,6 +68,7 @@ describe("DELETE /api/tenants/[id]/appointments/[appointmentId]/delete-by-client
       mockEmailHash,
       mockChallengeId,
       mockChallengeResponse,
+      mockEncryptedPayload,
     );
   });
 

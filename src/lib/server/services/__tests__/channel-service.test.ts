@@ -32,6 +32,18 @@ vi.mock("../../db", () => ({
     })),
     insert: vi.fn(),
     update: vi.fn(),
+  },
+  db: {
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({
+        where: vi.fn(() => ({
+          limit: vi.fn(() => Promise.resolve([])),
+        })),
+        groupBy: vi.fn(() => ({
+          limit: vi.fn(() => Promise.resolve([])),
+        })),
+      })),
+    })),
     delete: vi.fn(),
   },
 }));
@@ -67,6 +79,7 @@ vi.mock("../../db/tenant-config", () => ({
 // Import after mocking
 import { ChannelService } from "../channel-service";
 import { getTenantDb } from "../../db";
+import { ScheduleService } from "../schedule-service";
 
 // Mock data with valid UUIDs
 const mockChannel = {
@@ -102,7 +115,9 @@ const mockDb = {
   insert: vi.fn(),
   select: vi.fn(),
   update: vi.fn(),
-  delete: vi.fn(),
+  delete: vi.fn(() => ({
+    where: vi.fn(() => ({})),
+  })),
 };
 
 describe("ChannelService", () => {
@@ -128,9 +143,13 @@ describe("ChannelService", () => {
 
   describe("createChannel", () => {
     let service: ChannelService;
+    let cleanAndRegenerateCacheSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(async () => {
       service = await ChannelService.forTenant("tenant-123");
+      cleanAndRegenerateCacheSpy = vi
+        .spyOn(ScheduleService.prototype, "cleanAndRegenerateCache")
+        .mockResolvedValue(undefined);
     });
 
     it("should create channel successfully", async () => {
@@ -145,12 +164,21 @@ describe("ChannelService", () => {
       // Use minimal valid request that matches schema exactly
       const request = {
         names: { en: "Test Channel" },
+        slotTemplates: [
+          {
+            weekdays: 1,
+            from: "09:00:00",
+            to: "17:00:00",
+            duration: 30,
+          },
+        ],
       };
 
       const result = await service.createChannel(request as any);
 
       expect(result).toEqual(expectedResult);
       expect(mockDb.transaction).toHaveBeenCalled();
+      expect(cleanAndRegenerateCacheSpy).toHaveBeenCalled();
     });
 
     it("should create channel with slot templates and agents", async () => {
@@ -245,16 +273,52 @@ describe("ChannelService", () => {
 
   describe("updateChannel", () => {
     let service: ChannelService;
+    let cleanAndRegenerateCacheSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(async () => {
       service = await ChannelService.forTenant("tenant-123");
+      cleanAndRegenerateCacheSpy = vi
+        .spyOn(ScheduleService.prototype, "cleanAndRegenerateCache")
+        .mockResolvedValue(undefined);
     });
 
     it("should update channel successfully", async () => {
       const expectedResult = {
         ...mockChannel,
         names: { en: "Updated Channel" },
-        agents: [],
+        agents: [mockAgent],
+        slotTemplates: [mockSlotTemplate],
+      };
+
+      mockDb.transaction.mockResolvedValue(expectedResult);
+
+      const updateData = {
+        names: { en: "Updated Channel" },
+        slotTemplates: [
+          {
+            weekdays: 1,
+            from: "09:00:00",
+            to: "17:00:00",
+            duration: 30,
+          },
+        ],
+      };
+
+      const result = await service.updateChannel(
+        "550e8400-e29b-41d4-a716-446655440000",
+        updateData,
+      );
+
+      expect(result).toEqual(expectedResult);
+      expect(mockDb.transaction).toHaveBeenCalled();
+      expect(cleanAndRegenerateCacheSpy).toHaveBeenCalled();
+    });
+
+    it("should not rebuild schedule cache if not needed", async () => {
+      const expectedResult = {
+        ...mockChannel,
+        names: { en: "Updated Channel" },
+        agents: [mockAgent],
         slotTemplates: [],
       };
 
@@ -271,6 +335,7 @@ describe("ChannelService", () => {
 
       expect(result).toEqual(expectedResult);
       expect(mockDb.transaction).toHaveBeenCalled();
+      expect(cleanAndRegenerateCacheSpy).not.toHaveBeenCalled();
     });
 
     it("should handle validation error for invalid name", async () => {
@@ -391,18 +456,52 @@ describe("ChannelService", () => {
 
   describe("deleteChannel", () => {
     let service: ChannelService;
+    let cleanAndRegenerateCacheSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(async () => {
       service = await ChannelService.forTenant("tenant-123");
+      cleanAndRegenerateCacheSpy = vi
+        .spyOn(ScheduleService.prototype, "cleanAndRegenerateCache")
+        .mockResolvedValue(undefined);
     });
 
     it("should delete channel successfully", async () => {
-      mockDb.transaction.mockResolvedValue(true);
+      mockDb.transaction.mockImplementation(async (callback: any) => {
+        let selectCall = 0;
+        const tx = {
+          select: vi.fn(() => ({
+            from: vi.fn(() => ({
+              where: vi.fn(() => {
+                selectCall++;
+                if (selectCall === 1) {
+                  return [{ slotTemplateId: "550e8400-e29b-41d4-a716-446655440002" }];
+                }
+                return {
+                  limit: vi.fn().mockResolvedValue([]),
+                };
+              }),
+            })),
+          })),
+          delete: vi.fn(() => ({
+            where: vi.fn().mockResolvedValue(undefined),
+          })),
+          update: vi.fn(() => ({
+            set: vi.fn(() => ({
+              where: vi.fn(() => ({
+                returning: vi.fn().mockResolvedValue([{ id: mockChannel.id }]),
+              })),
+            })),
+          })),
+        };
+
+        return callback(tx);
+      });
 
       const result = await service.deleteChannel("550e8400-e29b-41d4-a716-446655440000");
 
       expect(result).toBe(true);
       expect(mockDb.transaction).toHaveBeenCalled();
+      expect(cleanAndRegenerateCacheSpy).toHaveBeenCalled();
     });
 
     it("should return false when channel not found", async () => {

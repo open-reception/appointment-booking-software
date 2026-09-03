@@ -7,8 +7,10 @@ import { formSchema as addFormSchema } from "./(components)/add-tenant-form";
 import { formSchema as editFormSchema } from "./(components)/edit-tenant-form";
 import { formSchema as deleteFormSchema } from "./(components)/delete-tenant-form";
 import type { TTenant } from "$lib/types/tenant";
+import { env } from "$env/dynamic/private";
 
 const log = logger.setContext(import.meta.filename);
+const hasFeatureFlags = env.ALLOW_FEATURE_FLAGS === "true";
 
 export const load = async (event) => {
   const list = event
@@ -34,9 +36,9 @@ export const load = async (event) => {
     });
 
   return {
-    form: await superValidate(zod(addFormSchema)),
     streamed: {
       list,
+      hasFeatureFlags,
     },
   };
 };
@@ -63,6 +65,7 @@ export const actions: Actions = {
       body: JSON.stringify({
         shortName: form.data.shortName,
         domain: form.data.domain,
+        ...(hasFeatureFlags ? { features: form.data.features } : {}),
       }),
     });
 
@@ -129,7 +132,10 @@ export const actions: Actions = {
         "Content-Type": "application/json",
       },
       credentials: "same-origin",
-      body: JSON.stringify({ domain: form.data.domain }),
+      body: JSON.stringify({
+        domain: form.data.domain,
+        ...(hasFeatureFlags ? { features: form.data.features } : {}),
+      }),
     });
 
     if (resp.status < 400) {

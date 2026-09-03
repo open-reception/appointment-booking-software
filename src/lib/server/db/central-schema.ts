@@ -69,6 +69,8 @@ export const tenant = pgTable(
       .$type<{ imprint?: string; privacyStatement?: string; website?: string }>()
       .notNull()
       .default({}),
+    /** Active features for this tenant (array of feature codes) */
+    features: json("features").$type<string[]>().notNull(),
     /** Domain for the tenant */
     domain: text("domain").notNull().unique(),
     createdAt: timestamp("created_at").defaultNow(),

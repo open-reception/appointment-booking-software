@@ -9,10 +9,15 @@ import { staffCrypto } from "$lib/stores/staff-crypto";
 import type { TCalendar, TCalendarItem } from "$lib/types/calendar";
 import type { TChannel } from "$lib/types/channel";
 import { serverAppointmentStatusToUiFilterStatus } from "$lib/utils/appointments";
-import { getWeekStartsOn, localToUTCWithoutDST } from "$lib/utils/datetime";
+import {
+  getWeekStartsOn,
+  localToUTCWithoutDST,
+  timeUTCToLocalWithoutOffset,
+} from "$lib/utils/datetime";
 import {
   getLocalTimeZone,
   parseAbsoluteToLocal,
+  parseAbsolute,
   toCalendarDate,
   type CalendarDate,
 } from "@internationalized/date";
@@ -173,6 +178,115 @@ export function positionItems(items: TCalendarItem[] | undefined) {
 
   return processedItems;
 }
+
+export const getOperatingHours = (channels: TChannel[], calendar: TCalendar | undefined) => {
+  const earliestSlotStartHour = channels
+    .map((c) => c.slotTemplates.map((t) => t.from))
+    .flat()
+    .map((time) => {
+      const [hourStr] = timeUTCToLocalWithoutOffset(time).split(":");
+      return parseInt(hourStr, 10);
+    });
+  const lastSlotEndHour = channels
+    .map((c) => c.slotTemplates.map((t) => t.to))
+    .flat()
+    .map((time) => {
+      const [hourStr, minuteStr] = timeUTCToLocalWithoutOffset(time).split(":");
+      let hour = parseInt(hourStr, 10);
+      if (minuteStr !== "00") {
+        hour += 1;
+      }
+      return hour;
+    });
+  const earliestAppointmentStartHour = (calendar?.calendar || [])
+    .map((day) =>
+      Array.from(
+        Object.values(day.channels)
+          .map((it) =>
+            it.appointments.map(
+              (a) =>
+                // @ts-expect-error appointmentDate is not typed correctly
+                parseAbsolute(a.appointmentDate, getLocalTimeZone()).hour,
+            ),
+          )
+          .flat(),
+      ),
+    )
+    .flat();
+  const lastAppointmentEndHour = (calendar?.calendar || [])
+    .map((day) =>
+      Array.from(
+        Object.values(day.channels)
+          .map((it) =>
+            it.appointments.map(
+              (a) =>
+                // @ts-expect-error appointmentDate is not typed correctly
+                parseAbsolute(a.appointmentDate, getLocalTimeZone()).add({
+                  minutes: a.duration,
+                }).hour,
+            ),
+          )
+          .flat(),
+      ),
+    )
+    .flat();
+  return {
+    from: Math.min(...earliestSlotStartHour, ...earliestAppointmentStartHour),
+    to: Math.max(...lastSlotEndHour, ...lastAppointmentEndHour),
+  };
+};
+
+export const isBeforeOperatingHours = (
+  curTimeIndicator: { hour: number; minute: number } | undefined,
+  earliestStartHour: number,
+) => {
+  if (!curTimeIndicator) return true;
+  const result = earliestStartHour * 60 - 0.5 > curTimeIndicator.hour * 60;
+  return result;
+};
+
+export const isAfterOperatingHours = (
+  curTimeIndicator: { hour: number; minute: number } | undefined,
+  latestEndHour: number,
+) => {
+  if (!curTimeIndicator) return true;
+  const result = latestEndHour * 60 + 30 < curTimeIndicator.hour * 60 + curTimeIndicator.minute;
+  return result;
+};
+
+export const moveAppointment = async (opts: {
+  tenant: string;
+  appointment: string;
+  updateData: { agentId: string; appointmentDate: string };
+  email?: string;
+  locale: string;
+}) => {
+  if (!browser) return;
+
+  let body: { [key: string]: string } = opts.updateData;
+  if (opts.email) {
+    body = {
+      ...body,
+      clientEmail: opts.email,
+      clientLanguage: opts.locale,
+    };
+  }
+  const res = await fetch(`/api/tenants/${opts.tenant}/appointments/${opts.appointment}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+
+  if (res.status < 400) {
+    return true;
+  } else {
+    if (res.status === 401) {
+      goto(resolve(ROUTES.LOGIN));
+    } else {
+      console.error("Unable to update appointment", opts, res.status, res.statusText);
+    }
+    return false;
+  }
+};
 
 export const cancelAppointment = async (opts: {
   tenant: string;

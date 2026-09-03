@@ -45,6 +45,10 @@
           auth.setUser(event.result.data?.user);
           await goto(resolve(ROUTES.DASHBOARD.MAIN));
         } else {
+          if ($formData.type === "passkey" && $formData.id === "") {
+            onEvent({ isSubmitting: false });
+            return; // Don't show error if passkey is not set yet
+          }
           toast.error(m["login.error"]());
         }
         onEvent({ isSubmitting: false });
@@ -64,6 +68,7 @@
         type: "passphrase",
         passphrase: "",
       };
+      onEvent({ isHidingSubmit: false });
     } else {
       $formData = {
         ...$formData,
@@ -74,6 +79,7 @@
         signatureBase64: "",
       };
       setProperPasskeyState();
+      onEvent({ isHidingSubmit: true });
     }
   };
 
@@ -242,7 +248,7 @@
         {m["login.or"]()}
         <Button variant="link" size="xs" onclick={onToggle} class="text-inherit">
           {m["login.usePassphrase"]()}
-        </Button>.
+        </Button>
       </Text>
     </div>
   {/if}

@@ -29,4 +29,8 @@ export type AppointmentDetailItem =
   | {
       type: "agent";
       value: string | undefined;
+    }
+  | {
+      type: "channel";
+      value: string | undefined;
     };

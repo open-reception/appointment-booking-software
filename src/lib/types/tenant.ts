@@ -2,7 +2,7 @@ import type { SelectTenant } from "$lib/server/db/central-schema";
 
 export type TTenant = Pick<
   SelectTenant,
-  "id" | "shortName" | "languages" | "setupState" | "domain"
+  "id" | "shortName" | "languages" | "setupState" | "domain" | "features"
 > & {
   logo: string | null;
 };

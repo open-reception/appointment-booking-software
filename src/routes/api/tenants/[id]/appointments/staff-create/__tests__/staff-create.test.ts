@@ -81,6 +81,7 @@ describe("POST /api/tenants/[id]/appointments/staff-create", () => {
           staffKeyShares: [
             {
               userId: "staff-123",
+              passkeyId: "passkey-123",
               encryptedTunnelKey: "encrypted-for-staff",
             },
           ],
@@ -126,6 +127,7 @@ describe("POST /api/tenants/[id]/appointments/staff-create", () => {
           staffKeyShares: [
             {
               userId: "staff-123",
+              passkeyId: "passkey-123",
               encryptedTunnelKey: "encrypted-for-staff",
             },
           ],
@@ -166,6 +168,7 @@ describe("POST /api/tenants/[id]/appointments/staff-create", () => {
           staffKeyShares: [
             {
               userId: "staff-123",
+              passkeyId: "passkey-123",
               encryptedTunnelKey: "encrypted-for-staff",
             },
           ],
@@ -356,6 +359,7 @@ describe("POST /api/tenants/[id]/appointments/staff-create", () => {
           staffKeyShares: [
             {
               userId: "staff-123",
+              passkeyId: "passkey-123",
               encryptedTunnelKey: "encrypted-for-staff",
             },
           ],
@@ -497,6 +501,7 @@ describe("POST /api/tenants/[id]/appointments/staff-create", () => {
           staffKeyShares: [
             {
               userId: "staff-123",
+              passkeyId: "passkey-123",
               encryptedTunnelKey: "encrypted-for-staff",
             },
           ],
@@ -548,6 +553,7 @@ describe("POST /api/tenants/[id]/appointments/staff-create", () => {
           staffKeyShares: [
             {
               userId: "staff-123",
+              passkeyId: "passkey-123",
               encryptedTunnelKey: "encrypted-for-staff",
             },
           ],

@@ -3,7 +3,10 @@
   import type { Action } from "svelte/action";
   import type { HTMLAttributes } from "svelte/elements";
 
-  export type EventReporter = (params: { isSubmitting?: boolean }) => void;
+  export type EventReporter = (params: {
+    isSubmitting?: boolean;
+    isHidingSubmit?: boolean;
+  }) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   type EnhanceFunction = Action<HTMLFormElement, any>;
 
