@@ -52,6 +52,7 @@
     triggerHidden = false,
     triggerVariant = "default",
     isActionLoading = false,
+    isDismissable = true,
     actions,
     children,
   }: HTMLAttributes<HTMLDivElement> & {
@@ -62,6 +63,7 @@
     description?: string;
     triggerVariant?: ButtonVariant;
     isActionLoading?: boolean;
+    isDismissable?: boolean;
     actions?: ListItemAction[];
   } = $props();
 
@@ -153,9 +155,13 @@
     <Dialog.Content
       class={cn(
         "max-h-[95vh] sm:max-w-106.25",
-        actions && actions.length > 0 && "[&>button:last-child]:hidden", // hides default close button
+        // hides default close button
+        actions && actions.length > 0 ? "[&>button:last-child]:hidden" : "",
       )}
       onOpenAutoFocus={(e) => e.preventDefault()}
+      escapeKeydownBehavior={isDismissable === false ? "ignore" : "close"}
+      interactOutsideBehavior={isDismissable === false ? "ignore" : "close"}
+      showCloseButton={isDismissable === true}
     >
       <Dialog.Header class="flex flex-row items-start justify-between gap-2">
         <div class="flex flex-col gap-1 text-left">
@@ -183,7 +189,7 @@
     </Dialog.Content>
   </Dialog.Root>
 {:else}
-  <Drawer.Root bind:open>
+  <Drawer.Root bind:open dismissible={isDismissable}>
     {#if !triggerHidden}
       <Drawer.Trigger class={buttonVariants({ variant: triggerVariant })}>
         {#if typeof triggerLabel === "string"}
@@ -196,6 +202,8 @@
     <Drawer.Content
       class="data-[vaul-drawer-direction=bottom]:max-h-[95vh] data-[vaul-drawer-direction=top]:max-h-[95vh]"
       onOpenAutoFocus={(e) => e.preventDefault()}
+      escapeKeydownBehavior={isDismissable === false ? "ignore" : "close"}
+      interactOutsideBehavior={isDismissable === false ? "ignore" : "close"}
     >
       <Drawer.Header class="flex flex-row justify-between gap-2 text-left">
         <div>
@@ -213,9 +221,11 @@
       <HorizontalPagePadding class="max-h-[95vh] overflow-y-scroll pt-2">
         {@render children?.()}
       </HorizontalPagePadding>
-      <Drawer.Footer class="pt-2">
-        <Drawer.Close class={buttonVariants({ variant: "outline" })}>{m.cancel()}</Drawer.Close>
-      </Drawer.Footer>
+      {#if isDismissable !== false}
+        <Drawer.Footer class="pt-2">
+          <Drawer.Close class={buttonVariants({ variant: "outline" })}>{m.cancel()}</Drawer.Close>
+        </Drawer.Footer>
+      {/if}
     </Drawer.Content>
   </Drawer.Root>
 {/if}

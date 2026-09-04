@@ -9,6 +9,8 @@
   import { staff } from "$lib/stores/staff";
   import { QueryClient, QueryClientProvider } from "@tanstack/svelte-query";
   import { browser } from "$app/environment";
+  import MissingStaffCrypto from "./(components)/MissingStaffCrypto.svelte";
+  import { openDialog } from "$lib/components/ui/responsive-dialog";
 
   let { data, children }: LayoutProps = $props();
 
@@ -80,6 +82,7 @@
       if (success) {
         console.log("✅ Staff crypto initialized successfully");
       } else {
+        openDialog("missing-staff-crypto");
         console.log("ℹ️ Staff crypto not initialized (no session data or error)");
       }
     }
@@ -88,4 +91,5 @@
 
 <QueryClientProvider client={queryClient}>
   {@render children()}
+  <MissingStaffCrypto />
 </QueryClientProvider>

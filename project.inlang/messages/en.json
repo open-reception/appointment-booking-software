@@ -466,6 +466,13 @@
 				}
 			],
 			"error": "Failed to send reminders"
+		},
+		"missingCryptoKeys": {
+			"title": "Cryptography Keys Missing",
+			"description": "This tab is missing the cryptographic keys to decrypt and encrypt data. Load keys to view and add appointments/data.",
+			"cancel": "I just want to change settings",
+			"success": "Cryptography keys loaded",
+			"error": "Failed to load cryptography keys"
 		}
 	},
 	"agents": {

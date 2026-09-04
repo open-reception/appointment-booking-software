@@ -458,6 +458,13 @@
 				}
 			],
 			"error": "Fehler beim Senden"
+		},
+		"missingCryptoKeys": {
+			"title": "Kryptografische Schlüssel fehlen",
+			"description": "Dieser Tab enthält nicht die kryptografischen Schlüssel zum Entschlüsseln und Verschlüsseln von Daten. Lade die Schlüssel, um Termine/Daten anzuzeigen und hinzuzufügen.",
+			"cancel": "Ich will nur Einstellungen ändern",
+			"success": "Kryptografische Schlüssel geladen",
+			"error": "Fehler beim Laden der kryptografischen Schlüssel"
 		}
 	},
 	"agents": {
