@@ -136,6 +136,8 @@ export async function sendPinResetEmail(
   user: SelectClient | SelectUser,
   tenant: SelectTenant,
   requestUrl: URL,
+  token: string,
+  expirationMinutes: number,
 ): Promise<void> {
   const recipient = createEmailRecipient(user);
   const locale = (recipient.language as Language) || "en";
@@ -151,7 +153,8 @@ export async function sendPinResetEmail(
       locale,
       user,
       tenant,
-      loginUrl: generateBaseUrl(requestUrl),
+      resetUri: `${generateBaseUrl(requestUrl)}/set-pin/${token}`,
+      expirationMinutes,
     },
   });
   const html = renderOutputToHtml(emailRender);

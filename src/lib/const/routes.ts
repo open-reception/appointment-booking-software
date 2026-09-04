@@ -23,6 +23,7 @@ export const ROUTES = {
     AGENTS: "/dashboard/agents",
     CHANNELS: "/dashboard/channels",
     ABSENCES: "/dashboard/absences",
+    CLIENTS: "/dashboard/clients",
     SETTINGS: "/dashboard/settings",
     ACCOUNT: {
       MAIN: "/dashboard/account",

@@ -12,6 +12,7 @@
   import AgentsIcon from "@lucide/svelte/icons/user-star";
   import { m } from "$i18n/messages";
   import type { NavItem } from "..";
+  import { UserIcon } from "@lucide/svelte";
 
   const items: NavItem[] = [
     {
@@ -55,6 +56,13 @@
       isTenantOnly: true,
       icon: AbsencesIcon,
       roles: ["GLOBAL_ADMIN", "TENANT_ADMIN", "STAFF"],
+    },
+    {
+      title: m["nav.clients"](),
+      url: ROUTES.DASHBOARD.CLIENTS,
+      isTenantOnly: true,
+      icon: UserIcon,
+      roles: ["TENANT_ADMIN", "STAFF"],
     },
   ];
 </script>

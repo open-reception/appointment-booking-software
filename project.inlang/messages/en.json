@@ -172,6 +172,7 @@
 		"agents": "Agents",
 		"channels": "Channels",
 		"absences": "Absences",
+		"clients": "Clients",
 		"account": "Account",
 		"settings": "Settings",
 		"documentation": "Documentation",
@@ -1216,10 +1217,11 @@
 			"reason": "You are receiving this email because you have notifications enabled for a channel."
 		},
 		"pinReset": {
-			"subject": "PIN successfully changed",
-			"introduction": "you've successfully changed your PIN on the {tenant} appointment booking platform. You can now log-in with your new PIN.",
-			"action": "Login",
-			"reason": "You are receiving this email because someone changed the PIN-Code for your account."
+			"subject": "Reset your PIN for {tenant}",
+			"introduction": "follow this link to set a new PIN:",
+			"action": "Set PIN",
+			"hint": "This link is only valid for {expirationMinutes} minutes.",
+			"reason": "You are receiving this email because someone asked for your PIN to be reset."
 		}
 	},
 	"notifications": {
@@ -1268,6 +1270,26 @@
 			"types": {
 				"NEW": "requested",
 				"CONFIRMED": "confirmed"
+			}
+		},
+		"pinReset": {
+			"title": "Send PIN-Reset",
+			"description": "Sends an E-Mail to a client to enable them to reset their PIN. Link is valid for 60 minutes.",
+			"fields": {
+				"language": {
+					"placeholder": "Select language",
+					"description": "Will be used in the PIN-Reset e-mail."
+				}
+			},
+			"action": "Send PIN-Reset",
+			"success": "PIN-Reset e-mail sent",
+			"error": "Could not send E-Mail. Address probably not listed/incorrect.",
+			"page": {
+				"title": "Set new PIN",
+				"description": "Set you new PIN here.",
+				"action": "Set PIN",
+				"success": "New PIN was set",
+				"error": "Could not set new PIN. Link may already have expired."
 			}
 		}
 	}

@@ -9,17 +9,44 @@ vi.mock("$lib/server/services/client-pin-reset-service", () => ({
   },
 }));
 
+vi.mock("$lib/server/email/email-service", () => ({
+  sendPinResetEmail: vi.fn(),
+}));
+
 vi.mock("$lib/server/utils/permissions", () => ({
   checkPermission: vi.fn(),
 }));
 
-vi.mock("$lib/server/db", () => ({
-  getTenant: vi.fn(),
-}));
+vi.mock("$lib/server/db", () => {
+  const rows = [
+    {
+      tenantId: "tenant-123",
+      longName: "tenant",
+    },
+  ];
+  return {
+    getTenant: vi.fn(),
+    centralDb: {
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            then: (resolve: any) => resolve(rows),
+            limit: vi.fn(() => Promise.resolve(rows)),
+          })),
+        })),
+      })),
+      update: vi.fn(() => ({
+        where: vi.fn(() => {}),
+      })),
+      where: vi.fn(),
+    },
+  };
+});
 
 vi.mock("$env/dynamic/private", () => ({
   env: {
     PUBLIC_APP_URL: "http://localhost:5173",
+    DATABASE_URL: "postgresql://test:test@localhost:5432/test",
   },
 }));
 
@@ -56,7 +83,7 @@ describe("POST /api/tenants/[id]/clients/pin-reset/request", () => {
     const request = new Request("http://localhost/api", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ emailHash, clientLanguage: "de" }),
+      body: JSON.stringify({ emailHash, email: "hi@example.com", clientLanguage: "de" }),
     });
 
     const result = await POST({
@@ -70,8 +97,6 @@ describe("POST /api/tenants/[id]/clients/pin-reset/request", () => {
 
     expect(data).toHaveProperty("message");
     expect(data).toHaveProperty("emailHash", emailHash.slice(0, 8));
-    expect(data).toHaveProperty("resetUrl");
-    expect(data.resetUrl).toContain(mockToken);
 
     expect(checkPermission).toHaveBeenCalledWith(
       { user: { id: "staff-123", role: "STAFF" } },
@@ -87,7 +112,7 @@ describe("POST /api/tenants/[id]/clients/pin-reset/request", () => {
     const request = new Request("http://localhost/api", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ emailHash }),
+      body: JSON.stringify({ emailHash, email: "hi@example.com" }),
     });
 
     const result = await POST({
@@ -97,15 +122,13 @@ describe("POST /api/tenants/[id]/clients/pin-reset/request", () => {
     } as any);
 
     expect(result.status).toBe(200);
-    const data = await result.json();
-    expect(data).toHaveProperty("resetUrl");
   });
 
   it("should return 400 for invalid email hash", async () => {
     const request = new Request("http://localhost/api", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ emailHash: "invalid" }),
+      body: JSON.stringify({ email: "hello@example.com", emailHash: "invalid" }),
     });
 
     const result = await POST({
@@ -125,19 +148,19 @@ describe("POST /api/tenants/[id]/clients/pin-reset/request", () => {
     const request = new Request("http://localhost/api", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ emailHash }),
+      body: JSON.stringify({ emailHash, email: "hello@example.com" }),
     });
 
     const response = await POST({
       params: { id: tenantId },
       request,
-      locals: { user: { id: "user-123", role: "STAFF" } } as any,
+      locals: { user: { id: "user-123", role: "GLOBAL_ADMIN" } } as any,
     } as any);
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(403);
 
     expect(checkPermission).toHaveBeenCalledWith(
-      { user: { id: "user-123", role: "STAFF" } },
+      { user: { id: "user-123", role: "GLOBAL_ADMIN" } },
       tenantId,
     );
   });
