@@ -27,12 +27,30 @@
         onEvent({ isSubmitting: true });
         const validation = await validateForm();
         if (validation.valid && $publicStore.tenant) {
-          console.log(
-            "ready to generate new newClientPublicKey, newPrivateKeyShare,newClientEncryptedTunnelKey + POST /tenants/-id-/clients/pin-reset/complete",
+          if (!page.params.token) {
+            console.error("Missing token in URL params");
+            toast.error(m["clients.pinReset.page.error"]());
+            cancel();
+            return;
+          }
+
+          if (!$publicStore.crypto) {
+            console.error("Crypto module is not available");
+            toast.error(m["clients.pinReset.page.error"]());
+            cancel();
+            return;
+          }
+
+          // TODO: Get email from reset request
+          const email = "";
+          await $publicStore.crypto.setNewPin(
+            email,
+            $formData.pin,
+            $publicStore.tenant?.id,
+            page.params.token,
           );
-          console.log("token", page.params.token);
-          console.log("pin", $formData.pin);
-          console.log("tenant", $publicStore.tenant?.id);
+
+          // TODO: Handle success
           toast.error(m["clients.pinReset.page.error"]());
           cancel();
         }

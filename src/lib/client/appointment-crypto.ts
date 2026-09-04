@@ -249,6 +249,23 @@ export class UnifiedAppointmentCrypto {
     }
   }
 
+  async setNewPin(email: string, pin: string, tenantId: string, token: string): Promise<void> {
+    await this.initNewClient(email, pin, tenantId);
+
+    const resp = await fetch(`/tenants/${tenantId}/clients/pin-reset/complete`, {
+      method: "POST",
+      body: JSON.stringify({
+        token,
+        newClientPublicKey: this.clientKeyPair?.publicKey,
+        newPrivateKeyShare: this.serverPrivateKeyShare,
+        newClientEncryptedTunnelKey: this.tunnelKey,
+        email: email,
+      }),
+    });
+
+    // TODO: Send proper response
+  }
+
   /**
    * Cancel an appointment for a client
    */
