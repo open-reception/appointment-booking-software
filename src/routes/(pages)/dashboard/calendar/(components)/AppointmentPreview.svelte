@@ -9,6 +9,7 @@
   import { Button } from "$lib/components/ui/button";
   import { m } from "$i18n/messages";
   import { cn } from "$lib/utils";
+  import { auth } from "$lib/stores/auth";
 
   let {
     item,
@@ -29,7 +30,7 @@
     missingKeyShare: "Missing key share",
   };
 
-  const decrypt = async () => {
+  const decrypt = async (retry = true) => {
     if (!item.appointment) {
       console.error("Unable to decrypt appointment data - no appointment data in item.", item.id);
       error = "Missing data";
@@ -52,7 +53,7 @@
 
     // Wait for crypto to be initialized (max 5 seconds)
     if (!$staffCrypto.isAuthenticated || !$staffCrypto.crypto) {
-      const maxWaitTime = 5000; // 5 seconds
+      const maxWaitTime = 2000;
       const startTime = Date.now();
 
       while (!$staffCrypto.isAuthenticated && Date.now() - startTime < maxWaitTime) {
@@ -60,6 +61,14 @@
       }
 
       if (!$staffCrypto.isAuthenticated || !$staffCrypto.crypto) {
+        const user = $auth.user;
+        if (retry && user && user.tenantId) {
+          console.warn("Staff crypto not initialized, retrying decryption...");
+          // TODO: This should only be done once, not in every instance
+          await staffCrypto.authenticate(user.id, user.tenantId);
+          decrypt(false);
+          return;
+        }
         error = "Crypto not initialized";
         console.error("Staff crypto not initialized after waiting");
         return;

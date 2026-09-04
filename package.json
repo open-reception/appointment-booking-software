@@ -57,7 +57,7 @@
     "@types/dotenv": "^6.1.1",
     "@types/node": "^24",
     "@types/nodemailer": "^6.4.17",
-    "bits-ui": "^2.15.4",
+    "bits-ui": "^2.19.0",
     "clsx": "^2.1.1",
     "drizzle-kit": "^0.31.1",
     "eslint": "^9.29.0",
