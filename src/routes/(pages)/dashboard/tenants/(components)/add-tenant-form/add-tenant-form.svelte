@@ -83,12 +83,12 @@
             <Select.Trigger {...props} class="w-full">
               {$formData.features.length > 0
                 ? $formData.features
-                    .map((id) => TENANT_FEATURE_FLAGS.find((x) => x === id))
+                    .map((id) => Object.keys(TENANT_FEATURE_FLAGS).find((x) => x === id))
                     .join(", ")
                 : m["tenants.add.features.placeholder"]()}
             </Select.Trigger>
             <Select.Content>
-              {#each TENANT_FEATURE_FLAGS as feature (feature)}
+              {#each Object.keys(TENANT_FEATURE_FLAGS) as feature (feature)}
                 <Select.Item value={feature}>{feature}</Select.Item>
               {/each}
             </Select.Content>
