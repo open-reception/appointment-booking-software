@@ -74,7 +74,6 @@
   };
 
   onMount(() => {
-    console.log("item.start", item.start);
     if (mode.agentId && item.availableAgents) {
       const availableAgents = item.availableAgents.map((it) => it.id);
       if (availableAgents.includes(mode.agentId)) {

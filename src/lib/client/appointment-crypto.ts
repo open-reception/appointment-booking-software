@@ -153,9 +153,7 @@ export class UnifiedAppointmentCrypto {
   // Staff-specific properties
   private staffKeyPair: StaffKeyPair | null = null;
   private staffId: string | null = null;
-  private tenantId: string | null = null;
   private staffAuthenticated: boolean = false;
-  private keyExpiry: number | null = null;
 
   // Shared crypto utilities
   private kyberCrypto: KyberCrypto = new KyberCrypto();
@@ -786,9 +784,7 @@ export class UnifiedAppointmentCrypto {
       };
 
       this.staffId = staffId;
-      this.tenantId = tenantId;
       this.staffAuthenticated = true;
-      this.keyExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
 
       console.log("✅ Staff authentication successful with PRF");
     } catch (error) {
@@ -818,10 +814,6 @@ export class UnifiedAppointmentCrypto {
   async decryptStaff<T>(encryptedData: { data: EncryptedData; staffKeyShare: string }): Promise<T> {
     if (!this.staffAuthenticated || !this.staffKeyPair) {
       throw new Error("Staff not authenticated");
-    }
-
-    if (this.keyExpiry && Date.now() > this.keyExpiry) {
-      throw new Error("Staff session expired - please authenticate again");
     }
 
     try {
@@ -958,9 +950,7 @@ export class UnifiedAppointmentCrypto {
   logoutStaff(): void {
     this.staffKeyPair = null;
     this.staffId = null;
-    this.tenantId = null;
     this.staffAuthenticated = false;
-    this.keyExpiry = null;
   }
 
   /**
@@ -1725,10 +1715,6 @@ export class UnifiedAppointmentCrypto {
   async decryptTunnelKeyByStaff(staffKeyShare: string): Promise<CryptoKey> {
     if (!this.staffAuthenticated || !this.staffKeyPair) {
       throw new Error("Staff not authenticated");
-    }
-
-    if (this.keyExpiry && Date.now() > this.keyExpiry) {
-      throw new Error("Staff session expired - please authenticate again");
     }
 
     try {

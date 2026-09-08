@@ -1,9 +1,10 @@
-import { writable } from "svelte/store";
+import { get, writable } from "svelte/store";
 import { UnifiedAppointmentCrypto } from "$lib/client/appointment-crypto";
 import { auth } from "./auth";
 
 interface StaffCryptoState {
   crypto: UnifiedAppointmentCrypto | null;
+  isAuthenticating: boolean;
   isAuthenticated: boolean;
   error: string | null;
 }
@@ -11,6 +12,7 @@ interface StaffCryptoState {
 const createStaffCryptoStore = () => {
   const store = writable<StaffCryptoState>({
     crypto: null,
+    isAuthenticating: false,
     isAuthenticated: false,
     error: null,
   });
@@ -37,11 +39,18 @@ const createStaffCryptoStore = () => {
      */
     async authenticate(staffId: string, tenantId: string): Promise<boolean> {
       try {
+        store.set({
+          ...get(store),
+          isAuthenticating: true,
+          error: null,
+        });
+
         const crypto = new UnifiedAppointmentCrypto();
         await crypto.authenticateStaff(staffId, tenantId);
 
         store.set({
           crypto,
+          isAuthenticating: false,
           isAuthenticated: true,
           error: null,
         });
@@ -51,11 +60,30 @@ const createStaffCryptoStore = () => {
         const errorMessage = error instanceof Error ? error.message : "Authentication failed";
         store.set({
           crypto: null,
+          isAuthenticating: false,
           isAuthenticated: false,
           error: errorMessage,
         });
         console.error("Failed to authenticate staff crypto:", error);
         return false;
+      }
+    },
+
+    async authenticateAndWait(staffId: string, tenantId: string): Promise<boolean> {
+      const isAuthenticating = get(store).isAuthenticating;
+      if (isAuthenticating) {
+        // Wait for the ongoing authentication to complete
+        return new Promise((resolve) => {
+          const unsubscribe = store.subscribe((state) => {
+            if (!state.isAuthenticating) {
+              unsubscribe();
+              resolve(state.isAuthenticated);
+            }
+          });
+        });
+      } else {
+        // Start a new authentication process
+        return await this.authenticate(staffId, tenantId);
       }
     },
 
@@ -66,6 +94,7 @@ const createStaffCryptoStore = () => {
       auth.clearPasskeyAuthData();
       store.set({
         crypto: null,
+        isAuthenticating: false,
         isAuthenticated: false,
         error: null,
       });
