@@ -60,7 +60,7 @@
 
     // Wait for crypto to be initialized (max 5 seconds)
     if (!$staffCrypto.isAuthenticated || !$staffCrypto.crypto) {
-      const maxWaitTime = 2000;
+      const maxWaitTime = 5000;
       const startTime = Date.now();
 
       while (!$staffCrypto.isAuthenticated && Date.now() - startTime < maxWaitTime) {
