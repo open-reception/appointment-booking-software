@@ -45,7 +45,7 @@
           auth.setUser(event.result.data?.user);
 
           // Wait for cookies to be set before navigating to dashboard
-          await new Promise((resolve) => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 200));
 
           await goto(resolve(ROUTES.DASHBOARD.MAIN));
         } else {

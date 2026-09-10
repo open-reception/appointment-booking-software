@@ -4,6 +4,7 @@
   import Button from "$lib/components/ui/button/button.svelte";
   import { ResponsiveDialog } from "$lib/components/ui/responsive-dialog";
   import { Text } from "$lib/components/ui/typography";
+  import { auth } from "$lib/stores/auth";
   import { channels as channelsStore } from "$lib/stores/channels";
   import type { TCalendarModeMove, TCalendarSlot } from "$lib/types/calendar";
   import { utcToLocalWithoutDST } from "$lib/utils/datetime";
@@ -66,14 +67,15 @@
     });
     if (success) {
       toast.success(m["calendar.moveAppointment.success"]());
-      isSubmitting = false;
       updateCalendar();
     } else {
       toast.error(m["calendar.moveAppointment.error"]());
     }
+    isSubmitting = false;
   };
 
   onMount(() => {
+    auth.refreshLastActive();
     if (mode.agentId && item.availableAgents) {
       const availableAgents = item.availableAgents.map((it) => it.id);
       if (availableAgents.includes(mode.agentId)) {

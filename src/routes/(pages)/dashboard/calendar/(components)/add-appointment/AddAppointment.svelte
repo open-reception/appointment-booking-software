@@ -16,6 +16,7 @@
   import SelectAgent from "./SelectAgent.svelte";
   import Summary from "./Summary.svelte";
   import type { TAddAppointment, TAddAppointmentStep } from "./types";
+  import { auth } from "$lib/stores/auth";
 
   let {
     tenantId,
@@ -46,6 +47,7 @@
   let isSubmitting = $state(false);
 
   const proceed = (data: TAddAppointment) => {
+    auth.refreshLastActive();
     switch (true) {
       case !data.agentId: {
         newAppointment = {
@@ -77,6 +79,7 @@
   };
 
   const addAppointment = async () => {
+    auth.refreshLastActive();
     if (
       newAppointment.name &&
       newAppointment.agentId &&

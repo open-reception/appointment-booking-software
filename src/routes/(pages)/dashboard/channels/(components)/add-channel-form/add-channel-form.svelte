@@ -10,6 +10,7 @@
   import { Textarea } from "$lib/components/ui/textarea";
   import { Headline, Text } from "$lib/components/ui/typography";
   import { agents as agentsStore } from "$lib/stores/agents";
+  import { auth } from "$lib/stores/auth";
   import { staff as staffStore } from "$lib/stores/staff";
   import { tenants } from "$lib/stores/tenants";
   import { toast } from "svelte-sonner";
@@ -44,6 +45,7 @@
       dataType: "json",
       validators: zodClient(formSchema),
       onResult: async (event) => {
+        auth.refreshLastActive();
         if (event.result.type === "success") {
           toast.success(m["channels.add.success"]());
           done();

@@ -9,8 +9,11 @@
   import { staff } from "$lib/stores/staff";
   import { QueryClient, QueryClientProvider } from "@tanstack/svelte-query";
   import { browser } from "$app/environment";
+  import { page } from "$app/state";
   import MissingStaffCrypto from "./(components)/MissingStaffCrypto.svelte";
   import { openDialog } from "$lib/components/ui/responsive-dialog";
+  import { clock } from "$lib/stores/time";
+  import InactivityWarning from "./(components)/InactivityWarning.svelte";
 
   let { data, children }: LayoutProps = $props();
 
@@ -61,6 +64,18 @@
     };
   });
 
+  $effect(() => {
+    if (page.url.pathname) {
+      auth.refreshLastActive();
+    }
+  });
+
+  $effect(() => {
+    if ($clock) {
+      auth.checkLastActive();
+    }
+  });
+
   const updateStores = async () => {
     staff.load();
     notifications.load();
@@ -92,4 +107,5 @@
 <QueryClientProvider client={queryClient}>
   {@render children()}
   <MissingStaffCrypto />
+  <InactivityWarning />
 </QueryClientProvider>

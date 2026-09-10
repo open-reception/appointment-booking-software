@@ -5,13 +5,14 @@
   import { Input } from "$lib/components/ui/input";
   import { TranslationWithComponent } from "$lib/components/ui/translation-with-component";
   import { Text } from "$lib/components/ui/typography";
+  import { auth } from "$lib/stores/auth";
+  import type { TChannelWithFullAgents } from "$lib/types/channel";
+  import { getCurrentTranlslation } from "$lib/utils/localizations";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { z } from "zod";
   import { formSchema } from ".";
-  import type { TChannelWithFullAgents } from "$lib/types/channel";
-  import { getCurrentTranlslation } from "$lib/utils/localizations";
 
   let { entity, done }: { entity: TChannelWithFullAgents; done: () => void } = $props();
 
@@ -31,6 +32,7 @@
         ),
       ),
       onResult: async (event) => {
+        auth.refreshLastActive();
         if (event.result.type === "success") {
           toast.success(m["channels.delete.success"]());
           done();

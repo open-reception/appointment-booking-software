@@ -465,6 +465,11 @@
 			"cancel": "Ich will nur Einstellungen ändern",
 			"success": "Kryptografische Schlüssel geladen",
 			"error": "Fehler beim Laden der kryptografischen Schlüssel"
+		},
+		"inactiveSession": {
+			"title": "Bist du noch da?",
+			"description": "Du wirst in Kürze automatisch abgemeldet.",
+			"cancel": "Ich bin noch da"
 		}
 	},
 	"agents": {

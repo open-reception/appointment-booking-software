@@ -10,6 +10,7 @@
   import { formSchema } from ".";
   import RolePermissions from "../role-permissions.svelte";
   import { roles } from "../utils";
+  import { auth } from "$lib/stores/auth";
 
   let { entity, done }: { entity: TStaff; done: () => void } = $props();
 
@@ -27,6 +28,7 @@
       dataType: "json",
       validators: zodClient(formSchema),
       onResult: async (event) => {
+        auth.refreshLastActive();
         if (event.result.type === "success") {
           toast.success(m["staff.edit.success"]());
           done();
