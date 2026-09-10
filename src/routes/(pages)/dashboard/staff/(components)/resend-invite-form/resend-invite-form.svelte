@@ -5,6 +5,7 @@
   import { Input } from "$lib/components/ui/input";
   import { TranslationWithComponent } from "$lib/components/ui/translation-with-component";
   import { Text } from "$lib/components/ui/typography";
+  import { auth } from "$lib/stores/auth";
   import type { TStaff } from "$lib/types/users";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
@@ -19,6 +20,7 @@
     {
       validators: zodClient(formSchema),
       onResult: async (event) => {
+        auth.refreshLastActive();
         if (event.result.type === "success") {
           toast.success(m["staff.resendInvite.success"]());
           done();

@@ -4,11 +4,11 @@
   import { staffCrypto } from "$lib/stores/staff-crypto";
   import { type TCalendarItem } from "$lib/types/calendar";
   import Loader2Icon from "@lucide/svelte/icons/loader-2";
-  import { onMount } from "svelte";
   import { calendarStore } from "$lib/stores/calendar";
   import { Button } from "$lib/components/ui/button";
   import { m } from "$i18n/messages";
   import { cn } from "$lib/utils";
+  import { auth } from "$lib/stores/auth";
 
   let {
     item,
@@ -21,15 +21,23 @@
   let decrypted = $state<AppointmentData | undefined>();
   let error = $state<string | undefined>();
 
-  onMount(() => {
-    decrypt();
+  $effect(() => {
+    if (!decrypted) {
+      if ($staffCrypto.isAuthenticated) {
+        decrypt();
+      } else {
+        error = "Keys missing";
+      }
+    }
   });
 
   const errors = {
     missingKeyShare: "Missing key share",
   };
 
-  const decrypt = async () => {
+  const decrypt = async (retry = true) => {
+    error = undefined;
+
     if (!item.appointment) {
       console.error("Unable to decrypt appointment data - no appointment data in item.", item.id);
       error = "Missing data";
@@ -52,7 +60,7 @@
 
     // Wait for crypto to be initialized (max 5 seconds)
     if (!$staffCrypto.isAuthenticated || !$staffCrypto.crypto) {
-      const maxWaitTime = 5000; // 5 seconds
+      const maxWaitTime = 5000;
       const startTime = Date.now();
 
       while (!$staffCrypto.isAuthenticated && Date.now() - startTime < maxWaitTime) {
@@ -60,6 +68,13 @@
       }
 
       if (!$staffCrypto.isAuthenticated || !$staffCrypto.crypto) {
+        const user = $auth.user;
+        if (retry && user && user.tenantId) {
+          console.warn("Staff crypto not initialized, retrying decryption...");
+          await staffCrypto.authenticateAndWait(user.id, user.tenantId);
+          decrypt(false);
+          return;
+        }
         error = "Crypto not initialized";
         console.error("Staff crypto not initialized after waiting");
         return;

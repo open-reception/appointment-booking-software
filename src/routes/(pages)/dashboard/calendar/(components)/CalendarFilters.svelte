@@ -12,6 +12,7 @@
   import * as Sidebar from "$lib/components/ui/sidebar";
   import { Text } from "$lib/components/ui/typography";
   import { agents as agentsStore } from "$lib/stores/agents";
+  import { auth } from "$lib/stores/auth";
   import { channels as channelsStore } from "$lib/stores/channels";
   import { sidebar as sidebarStore } from "$lib/stores/sidebar";
   import type { TAppointmentFilter } from "$lib/types/calendar";
@@ -52,6 +53,7 @@
   let agents = $derived($agentsStore.agents.filter((x) => !x.archived));
 
   const zoom = (direction: number) => {
+    auth.refreshLastActive();
     const currentIndex = CALENDAR_ZOOM_STEPS.indexOf(scale);
     if (currentIndex === -1) return;
     const nextIndex = currentIndex + direction;
@@ -60,11 +62,13 @@
   };
 
   const changeView = (newView: CalendarView) => {
+    auth.refreshLastActive();
     view = newView;
     document.cookie = `calendarView=${newView}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Strict`;
   };
 
   const clearFilters = () => {
+    auth.refreshLastActive();
     shownAppointments = "all";
     shownChannels = [];
     shownAgents = [];
@@ -239,6 +243,7 @@
         {shownAgents}
         {shownChannels}
         onSelectDay={(v: DateValue | undefined) => {
+          auth.refreshLastActive();
           sidebarStore.setCalendarExpanded(!sidebar.isCalendarExpanded);
           if (view === "week-workdays" && v && isWeekend(v, getLocale())) {
             changeView("week");

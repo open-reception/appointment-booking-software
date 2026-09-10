@@ -1,16 +1,17 @@
 <script lang="ts">
+  import { page } from "$app/state";
   import { m } from "$i18n/messages.js";
   import CheckboxWithLabel from "$lib/components/ui/checkbox-with-label/checkbox-with-label.svelte";
   import * as Form from "$lib/components/ui/form";
   import { Input } from "$lib/components/ui/input";
-  import { ERRORS } from "$lib/errors";
   import * as Select from "$lib/components/ui/select";
+  import { TENANT_FEATURE_FLAGS } from "$lib/const/tenants";
+  import { ERRORS } from "$lib/errors";
+  import { auth } from "$lib/stores/auth";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from ".";
-  import { TENANT_FEATURE_FLAGS } from "$lib/const/tenants";
-  import { page } from "$app/state";
 
   let { done }: { done: () => void } = $props();
 
@@ -25,6 +26,7 @@
     {
       validators: zodClient(formSchema),
       onResult: async (event) => {
+        auth.refreshLastActive();
         if (event.result.type === "success") {
           toast.success(m["tenants.add.success"]());
           done();

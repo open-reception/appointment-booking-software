@@ -19,6 +19,7 @@
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from ".";
   import { DEFAULT_SLOT_TEMPLATE } from "../utils";
+  import { auth } from "$lib/stores/auth";
 
   let { entity, done }: { entity: TChannelWithFullAgents; done: () => void } = $props();
   const agents = $derived($agentsStore.agents ?? []);
@@ -47,6 +48,7 @@
       dataType: "json",
       validators: zodClient(formSchema),
       onResult: async (event) => {
+        auth.refreshLastActive();
         if (event.result.type === "success") {
           toast.success(m["channels.edit.success"]());
           done();

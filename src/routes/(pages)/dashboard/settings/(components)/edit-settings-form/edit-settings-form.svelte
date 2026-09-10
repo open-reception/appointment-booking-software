@@ -9,13 +9,14 @@
   import * as Select from "$lib/components/ui/select";
   import { Textarea } from "$lib/components/ui/textarea";
   import { supportedLocales, translatedLocales } from "$lib/const/locales";
+  import { auth } from "$lib/stores/auth";
+  import { tenants } from "$lib/stores/tenants";
   import type { TTenantSettings } from "$lib/types/tenant";
   import DefaultOrgIcon from "@lucide/svelte/icons/landmark";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from "./schema";
-  import { tenants } from "$lib/stores/tenants";
 
   let { entity }: { entity: TTenantSettings } = $props();
 
@@ -57,6 +58,7 @@
       dataType: "json",
       validators: zodClient(formSchema),
       onResult: async (event) => {
+        auth.refreshLastActive();
         if (event.result.type === "success") {
           tenants.reload();
           toast.success(m["tenants.edit.success"]());

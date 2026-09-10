@@ -4,6 +4,7 @@
   import { Input } from "$lib/components/ui/input";
   import * as Select from "$lib/components/ui/select";
   import { supportedLocales, translatedLocales } from "$lib/const/locales";
+  import { auth } from "$lib/stores/auth";
   import { tenants } from "$lib/stores/tenants";
   import type { TStaff } from "$lib/types/users";
   import { toast } from "svelte-sonner";
@@ -29,6 +30,7 @@
       dataType: "json",
       validators: zodClient(formSchema),
       onResult: async (event) => {
+        auth.refreshLastActive();
         if (event.result.type === "success") {
           toast.success(m["staff.add.success"]());
           done();

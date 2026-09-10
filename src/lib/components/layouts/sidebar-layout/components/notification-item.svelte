@@ -52,10 +52,10 @@
     }
   };
 
-  const decryptPayload = async () => {
+  const decryptPayload = async (retry = true) => {
     if (item.metaData?.encryptedPayload) {
       if (!$staffCrypto.isAuthenticated || !$staffCrypto.crypto) {
-        const maxWaitTime = 5000; // 5 seconds
+        const maxWaitTime = 5000;
         const startTime = Date.now();
 
         while (!$staffCrypto.isAuthenticated && Date.now() - startTime < maxWaitTime) {
@@ -63,6 +63,13 @@
         }
 
         if (!$staffCrypto.isAuthenticated || !$staffCrypto.crypto) {
+          const user = $auth.user;
+          if (retry && user && user.tenantId) {
+            console.warn("Staff crypto not initialized, retrying notification item decryption...");
+            await staffCrypto.authenticateAndWait(user.id, user.tenantId);
+            decryptPayload(false);
+            return;
+          }
           console.error("Staff crypto not initialized after waiting");
           return;
         }

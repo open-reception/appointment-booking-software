@@ -6,8 +6,11 @@
   import { InputDateTime } from "$lib/components/ui/input-date-time";
   import RadioCards from "$lib/components/ui/radio-cards/radio-cards.svelte";
   import * as Select from "$lib/components/ui/select";
+  import { times } from "$lib/components/ui/slot-template/utils";
   import { Text } from "$lib/components/ui/typography";
   import { agents as agentsStore } from "$lib/stores/agents";
+  import { auth } from "$lib/stores/auth";
+  import { cn } from "$lib/utils";
   import {
     getDefaultEndTime,
     getDefaultStartTime,
@@ -24,8 +27,6 @@
   import type { AbsenceType } from "../types";
   import { reasons, types } from "../utils";
   import { formSchema } from "./schema";
-  import { cn } from "$lib/utils";
-  import { times } from "$lib/components/ui/slot-template/utils";
 
   let { done }: { done: () => void } = $props();
 
@@ -46,6 +47,7 @@
       dataType: "json",
       validators: zodClient(formSchema),
       onResult: async (event) => {
+        auth.refreshLastActive();
         if (event.result.type === "success") {
           toast.success(m["absences.add.success"]());
           done();

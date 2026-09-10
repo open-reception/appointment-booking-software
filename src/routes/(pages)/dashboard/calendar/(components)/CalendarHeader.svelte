@@ -3,6 +3,7 @@
   import { getLocale } from "$i18n/runtime";
   import { Button, buttonVariants } from "$lib/components/ui/button";
   import * as Popover from "$lib/components/ui/popover/index.js";
+  import { auth } from "$lib/stores/auth";
   import type { TAppointmentFilter, TCalendarMode } from "$lib/types/calendar";
   import { cn } from "$lib/utils";
   import {
@@ -37,6 +38,7 @@
   let isWeekView = $derived(view !== "day");
 
   const prev = () => {
+    auth.refreshLastActive();
     const nextDate = new CalendarDate(
       selectedDate.year,
       selectedDate.month,
@@ -48,6 +50,7 @@
   };
 
   const next = () => {
+    auth.refreshLastActive();
     const nextDate = new CalendarDate(selectedDate.year, selectedDate.month, selectedDate.day).add({
       days: isWeekView ? 7 : 1,
     });
@@ -55,10 +58,12 @@
   };
 
   const setToToday = () => {
+    auth.refreshLastActive();
     selectedDate = today(getLocalTimeZone());
   };
 
   const onSelectDay = (v: DateValue | undefined) => {
+    auth.refreshLastActive();
     open = false;
     if (view === "week-workdays" && v && isWeekend(v, getLocale())) {
       view = "week";

@@ -19,6 +19,7 @@
       dataType: "json",
       validators: zodClient(formSchema),
       onResult: async (event) => {
+        auth.refreshLastActive();
         if (event.result.type === "success") {
           toast.success(m["account.change-passphrase.success"]());
         } else if (event.result.type === "failure") {

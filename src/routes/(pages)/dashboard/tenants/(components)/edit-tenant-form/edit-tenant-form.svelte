@@ -10,6 +10,7 @@
   import * as Select from "$lib/components/ui/select";
   import { TENANT_FEATURE_FLAGS } from "$lib/const/tenants";
   import { page } from "$app/state";
+  import { auth } from "$lib/stores/auth";
 
   let { entity, done }: { entity: TTenant; done: () => void } = $props();
 
@@ -19,6 +20,7 @@
     {
       validators: zodClient(formSchema),
       onResult: async (event) => {
+        auth.refreshLastActive();
         if (event.result.type === "success") {
           toast.success(m["tenants.edit.success"]());
           done();

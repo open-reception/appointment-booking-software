@@ -33,6 +33,7 @@
         ),
       ),
       onResult: async (event) => {
+        auth.refreshLastActive();
         if (event.result.type === "success") {
           toast.success(m["tenants.delete.success"]());
           done();
