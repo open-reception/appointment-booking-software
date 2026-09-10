@@ -303,6 +303,7 @@ export const cancelAppointment = async (opts: {
       clientLanguage: opts.locale,
     };
   }
+  // ok
   const res = await fetch(`/api/tenants/${opts.tenant}/appointments/${opts.appointment}/delete`, {
     method: "DELETE",
     body: JSON.stringify(body),
