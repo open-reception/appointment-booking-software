@@ -84,6 +84,7 @@
     "vitest": "^4.1.11"
   },
   "dependencies": {
+    "@date-fns/tz": "^1.5.0",
     "@noble/hashes": "^1.8.0",
     "@noble/post-quantum": "^0.4.1",
     "@simplewebauthn/server": "^11.0.0",
