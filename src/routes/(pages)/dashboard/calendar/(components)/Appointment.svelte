@@ -15,6 +15,7 @@
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
   import { cancelAppointment, confirmAppointment, denyAppointment } from "./utils";
+  import { getClientTunnel } from "./add-appointment/utils";
 
   let {
     tenantId,
@@ -126,21 +127,30 @@
       type: "action",
       label: m["calendar.addFollowUpAppointment.action"](),
       icon: CalendarPlus,
-      onClick: () => {
-        mode = {
-          mode: "ADD_FOLLOW_UP",
-          appointment: {
-            email: item.decrypted.email,
-            shareEmail: item.decrypted.shareEmail,
-            dateTime: item.appointment.appointment?.dateTime,
-            hasNoEmail: Boolean(item.decrypted.email),
-            phone: item.decrypted.phone,
-            name: item.decrypted.name,
-            locale: item.decrypted.locale || getLocale(),
-          },
-        };
-        shownAppointments = "available";
-        close();
+      onClick: async () => {
+        const tunnel = item.decrypted.email
+          ? await getClientTunnel(tenantId, item.decrypted.email)
+          : // Client without email
+            null;
+        if (tunnel !== undefined) {
+          mode = {
+            mode: "ADD_FOLLOW_UP",
+            appointment: {
+              email: item.decrypted.email,
+              shareEmail: item.decrypted.shareEmail,
+              dateTime: item.appointment.appointment?.dateTime,
+              hasNoEmail: Boolean(item.decrypted.email),
+              phone: item.decrypted.phone,
+              name: item.decrypted.name,
+              locale: item.decrypted.locale || getLocale(),
+              tunnel: tunnel || undefined,
+            },
+          };
+          shownAppointments = "available";
+          close();
+        } else {
+          console.error("Error getting client tunnel for follow-up appointment");
+        }
       },
     },
     {

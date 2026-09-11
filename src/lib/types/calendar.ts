@@ -1,3 +1,4 @@
+import type { ClientTunnelResponse } from "$lib/server/services/appointment-service";
 import type { CalendarAgent, DaySchedule } from "$lib/server/services/schedule-service";
 
 export type AppointmentStatus = "available" | "booked" | "reserved" | "rejected";
@@ -48,6 +49,7 @@ export type TAppointmentInClipboard = {
   email?: string;
   phone?: string;
   dateTime?: Date;
+  tunnel?: ClientTunnelResponse;
 };
 
 export type TCalendarItem = TCalendarSlot & {

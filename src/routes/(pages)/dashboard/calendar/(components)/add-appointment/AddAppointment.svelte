@@ -136,6 +136,7 @@
           phone: appointment.phone,
           locale: appointment.locale,
           hasNoEmail: Boolean(appointment.email),
+          tunnel: appointment.tunnel,
         });
       }
     }
@@ -149,7 +150,7 @@
   <SelectAgent availableAgents={item.availableAgents} {newAppointment} {proceed} />
 {:else if step === "summary"}
   <div class="flex flex-col gap-2">
-    {#if newAppointment.hasNoEmail || !newAppointment.tunnel}
+    {#if !newAppointment.tunnel}
       <Text style="sm" color="light" class="text-center">
         {m["calendar.addAppointment.steps.summary.hint"]()}
       </Text>
