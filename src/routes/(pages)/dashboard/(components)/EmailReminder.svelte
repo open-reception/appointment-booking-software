@@ -10,6 +10,7 @@
   import { onMount } from "svelte";
   import { getNextAppointments, sendAppointmentReminders } from "./utils";
   import { m } from "$i18n/messages";
+  import { auth } from "$lib/stores/auth";
 
   let status: "init" | "loading" | "sending" | "success" | "error" = $state("init");
   let appointments: TEmailAppointmentReminder[] = $state([]);
@@ -26,6 +27,8 @@
       // Wait a moment for staff to recognize
       // Also gives staff crypto time to load, if not already loaded
       await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      await auth.waitForRefresh();
 
       const allAppointments = await getNextAppointments(tenantId);
       const decryptPromises = allAppointments.map(async (appointment) => {

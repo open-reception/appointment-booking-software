@@ -4,6 +4,7 @@
   import { Input } from "$lib/components/ui/input";
   import { Text } from "$lib/components/ui/typography";
   import { agents as agentsStore } from "$lib/stores/agents";
+  import { auth } from "$lib/stores/auth";
   import type { TAbsence } from "$lib/types/absence";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
@@ -20,6 +21,7 @@
     {
       validators: zodClient(formSchema),
       onResult: async (event) => {
+        auth.refreshLastActive();
         if (event.result.type === "success") {
           toast.success(m["absences.delete.success"]());
           done();

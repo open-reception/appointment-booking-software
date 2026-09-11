@@ -38,6 +38,9 @@
     },
     {
       validators: zodClient(formSchema),
+      onResult: () => {
+        auth.refreshLastActive();
+      },
       onChange: (event) => {
         if (event.paths.includes("email")) {
           setProperPasskeyState();

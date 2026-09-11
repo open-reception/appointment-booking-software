@@ -6,13 +6,16 @@
   import { ResponsiveDialog } from "$lib/components/ui/responsive-dialog";
   import { type SupportedLocale } from "$lib/const/locales";
   import { agents as agentsStore } from "$lib/stores/agents";
+  import { auth } from "$lib/stores/auth";
   import { type CurAppointmentItem } from "$lib/stores/calendar";
   import { channels as channelsStore } from "$lib/stores/channels";
   import type { TAppointmentFilter, TCalendarMode } from "$lib/types/calendar";
   import { getCurrentTranlslation } from "$lib/utils/localizations";
   import { CalendarPlus, Move, Trash2 } from "@lucide/svelte";
+  import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
   import { cancelAppointment, confirmAppointment, denyAppointment } from "./utils";
+  import { getClientTunnel } from "./add-appointment/utils";
 
   let {
     tenantId,
@@ -41,6 +44,7 @@
   let isDeleting = $state(false);
 
   const denyItem = async () => {
+    auth.refreshLastActive();
     const proceed = confirm(
       `${m["calendar.notificationHint"]()} ${m["calendar.denyAppointment.confirm"]()}`,
     );
@@ -64,6 +68,7 @@
   };
 
   const confirmItem = async () => {
+    auth.refreshLastActive();
     isConfirming = true;
     const success = await confirmAppointment({
       tenant: tenantId,
@@ -80,6 +85,10 @@
     }
     isConfirming = false;
   };
+
+  onMount(() => {
+    auth.refreshLastActive();
+  });
 </script>
 
 <ResponsiveDialog
@@ -118,21 +127,30 @@
       type: "action",
       label: m["calendar.addFollowUpAppointment.action"](),
       icon: CalendarPlus,
-      onClick: () => {
-        mode = {
-          mode: "ADD_FOLLOW_UP",
-          appointment: {
-            email: item.decrypted.email,
-            shareEmail: item.decrypted.shareEmail,
-            dateTime: item.appointment.appointment?.dateTime,
-            hasNoEmail: Boolean(item.decrypted.email),
-            phone: item.decrypted.phone,
-            name: item.decrypted.name,
-            locale: item.decrypted.locale || getLocale(),
-          },
-        };
-        shownAppointments = "available";
-        close();
+      onClick: async () => {
+        const tunnel = item.decrypted.email
+          ? await getClientTunnel(tenantId, item.decrypted.email)
+          : // Client without email
+            null;
+        if (tunnel !== undefined) {
+          mode = {
+            mode: "ADD_FOLLOW_UP",
+            appointment: {
+              email: item.decrypted.email,
+              shareEmail: item.decrypted.shareEmail,
+              dateTime: item.appointment.appointment?.dateTime,
+              hasNoEmail: Boolean(item.decrypted.email),
+              phone: item.decrypted.phone,
+              name: item.decrypted.name,
+              locale: item.decrypted.locale || getLocale(),
+              tunnel: tunnel || undefined,
+            },
+          };
+          shownAppointments = "available";
+          close();
+        } else {
+          console.error("Error getting client tunnel for follow-up appointment");
+        }
       },
     },
     {

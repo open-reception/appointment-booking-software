@@ -2,6 +2,7 @@
   import { m } from "$i18n/messages.js";
   import * as Form from "$lib/components/ui/form";
   import { Input } from "$lib/components/ui/input";
+  import { auth } from "$lib/stores/auth";
   import type { RedactedPasskeyHydrated } from "$lib/types/passkeys";
   import { untrack } from "svelte";
   import { toast } from "svelte-sonner";
@@ -20,6 +21,7 @@
       dataType: "json",
       validators: zodClient(formSchema),
       onResult: async (event) => {
+        auth.refreshLastActive();
         if (event.result.type === "success") {
           toast.success(m["account.passkeys.edit.success"]());
           done();

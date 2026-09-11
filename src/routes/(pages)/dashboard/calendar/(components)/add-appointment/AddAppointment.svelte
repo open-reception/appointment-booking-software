@@ -16,6 +16,7 @@
   import SelectAgent from "./SelectAgent.svelte";
   import Summary from "./Summary.svelte";
   import type { TAddAppointment, TAddAppointmentStep } from "./types";
+  import { auth } from "$lib/stores/auth";
 
   let {
     tenantId,
@@ -46,6 +47,7 @@
   let isSubmitting = $state(false);
 
   const proceed = (data: TAddAppointment) => {
+    auth.refreshLastActive();
     switch (true) {
       case !data.agentId: {
         newAppointment = {
@@ -77,6 +79,7 @@
   };
 
   const addAppointment = async () => {
+    auth.refreshLastActive();
     if (
       newAppointment.name &&
       newAppointment.agentId &&
@@ -133,6 +136,7 @@
           phone: appointment.phone,
           locale: appointment.locale,
           hasNoEmail: Boolean(appointment.email),
+          tunnel: appointment.tunnel,
         });
       }
     }
@@ -146,7 +150,7 @@
   <SelectAgent availableAgents={item.availableAgents} {newAppointment} {proceed} />
 {:else if step === "summary"}
   <div class="flex flex-col gap-2">
-    {#if newAppointment.hasNoEmail || !newAppointment.tunnel}
+    {#if !newAppointment.tunnel}
       <Text style="sm" color="light" class="text-center">
         {m["calendar.addAppointment.steps.summary.hint"]()}
       </Text>

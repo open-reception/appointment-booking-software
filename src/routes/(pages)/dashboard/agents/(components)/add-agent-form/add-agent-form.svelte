@@ -5,13 +5,14 @@
   import { InputCroppedImageBlob } from "$lib/components/ui/input-cropped-image-blob";
   import { LanguageTabs } from "$lib/components/ui/language-tabs";
   import { Textarea } from "$lib/components/ui/textarea";
+  import { auth } from "$lib/stores/auth";
+  import { tenants } from "$lib/stores/tenants";
   import ItemIcon from "@lucide/svelte/icons/user-star";
   import { toast } from "svelte-sonner";
+  import { get } from "svelte/store";
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from ".";
-  import { tenants } from "$lib/stores/tenants";
-  import { get } from "svelte/store";
 
   let { done }: { done: () => void } = $props();
 
@@ -29,6 +30,7 @@
       dataType: "json",
       validators: zodClient(formSchema),
       onResult: async (event) => {
+        auth.refreshLastActive();
         if (event.result.type === "success") {
           toast.success(m["agents.add.success"]());
           done();

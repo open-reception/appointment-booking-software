@@ -11,6 +11,7 @@
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { z } from "zod";
   import { formSchema } from ".";
+  import { auth } from "$lib/stores/auth";
 
   let { entity, done }: { entity: TAgent; done: () => void } = $props();
 
@@ -30,6 +31,7 @@
         ),
       ),
       onResult: async (event) => {
+        auth.refreshLastActive();
         if (event.result.type === "success") {
           toast.success(m["agents.delete.success"]());
           done();

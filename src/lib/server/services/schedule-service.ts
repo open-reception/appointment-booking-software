@@ -2,18 +2,20 @@ import { getTenantDb } from "../db";
 import * as tenantSchema from "../db/tenant-schema";
 import {
   type SelectAgent,
+  type SelectAgentAbsence,
+  type SelectAppointment,
   type SelectChannel,
   type SelectSlotTemplate,
-  type SelectAppointment,
-  type SelectAgentAbsence,
   scheduleCache,
 } from "../db/tenant-schema";
 
-import { eq, and, between, sql, or, inArray } from "drizzle-orm";
 import logger from "$lib/logger";
+import { tz } from "@date-fns/tz";
+import { endOfDay, startOfDay } from "date-fns";
+import { and, between, eq, inArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
-import { ValidationError } from "../utils/errors";
 import { WebAuthnService } from "../auth/webauthn-service";
+import { ValidationError } from "../utils/errors";
 import { isValidTimeZone, toLocalTime, toLocalTimeIgnoringDst } from "../utils/timezone";
 
 const CACHE_MAX_AHEAD_MONTHS = 14;
@@ -698,8 +700,12 @@ export class ScheduleService {
           // Generate cache for each timezone
           for (const timeZone of timeZones) {
             await this.getSchedule({
-              startDate: startDate.toISOString(),
-              endDate: endDate.toISOString(),
+              startDate: startOfDay(startDate, { in: tz(timeZone) })
+                .withTimeZone("UTC")
+                .toISOString(),
+              endDate: endOfDay(endDate, { in: tz(timeZone) })
+                .withTimeZone("UTC")
+                .toISOString(),
               tenantId: this.tenantId,
               channelId,
               timeZone,

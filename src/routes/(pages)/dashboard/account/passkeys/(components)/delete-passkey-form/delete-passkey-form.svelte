@@ -5,6 +5,7 @@
   import { Input } from "$lib/components/ui/input";
   import { TranslationWithComponent } from "$lib/components/ui/translation-with-component";
   import { Text } from "$lib/components/ui/typography";
+  import { auth } from "$lib/stores/auth";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
@@ -29,6 +30,7 @@
         ),
       ),
       onResult: async (event) => {
+        auth.refreshLastActive();
         if (event.result.type === "success") {
           toast.success(m["account.passkeys.delete.success"]());
           done();

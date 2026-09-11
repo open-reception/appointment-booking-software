@@ -1,4 +1,5 @@
 import type { SelectTenant } from "$lib/server/db/central-schema";
+import { TENANT_FEATURE_FLAGS } from "$lib/const/tenants";
 
 export type TTenant = Pick<
   SelectTenant,
@@ -28,3 +29,5 @@ export type TTenantSettings = Omit<SelectTenant, "databaseUrl" | "setupState" | 
     requirePhone: boolean;
   };
 };
+
+export type TTenantFeatureFlag = keyof typeof TENANT_FEATURE_FLAGS;

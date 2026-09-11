@@ -1,7 +1,10 @@
 import { browser } from "$app/environment";
+import { goto } from "$app/navigation";
+import { resolve } from "$app/paths";
 import type { SupportedLocale } from "$lib/const/locales";
+import { ROUTES } from "$lib/const/routes";
 import type { UserRole } from "$lib/server/auth/authorization-service";
-import { writable } from "svelte/store";
+import { get, writable } from "svelte/store";
 
 export interface PasskeyAuthData {
   authenticatorData: string;
@@ -15,6 +18,8 @@ export interface AuthState {
   refreshPromise: Promise<Response> | null;
   user?: AuthStateUser;
   passkeyAuthData?: PasskeyAuthData;
+  lastActive?: Date | undefined;
+  isInactive?: boolean;
 }
 
 export type AuthStateUser = {
@@ -31,6 +36,7 @@ function createAuthStore() {
   const store = writable<AuthState>({
     isAuthenticated: false,
     refreshPromise: null,
+    isInactive: false,
   });
 
   return {
@@ -64,6 +70,7 @@ function createAuthStore() {
         refreshPromise: null,
         user: undefined,
         passkeyAuthData: undefined,
+        lastActive: undefined,
       });
     },
     setPasskeyAuthData: (data: PasskeyAuthData) => {
@@ -97,6 +104,26 @@ function createAuthStore() {
       });
       unsubscribe();
       return authState!.user?.tenantId || null;
+    },
+    refreshLastActive: () => {
+      store.update((state) => ({ ...state, lastActive: new Date(), isInactive: false }));
+    },
+    checkLastActive: () => {
+      const lastActive = get(store).lastActive;
+      if (!lastActive) return;
+
+      const now = new Date();
+      const diff = now.getTime() - lastActive.getTime();
+
+      // Logs user out after 15 minutes of inactivity
+      if (diff > 15 * 60 * 1000) {
+        goto(resolve(ROUTES.LOGOUT));
+      }
+
+      // Triggers inactivity modal after 10 minutes
+      if (diff > 10 * 60 * 1000) {
+        store.update((state) => ({ ...state, isInactive: true }));
+      }
     },
     waitForRefresh: async () => {
       let authState: AuthState;

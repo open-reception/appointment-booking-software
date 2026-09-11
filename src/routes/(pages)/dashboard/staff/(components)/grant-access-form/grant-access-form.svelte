@@ -23,6 +23,7 @@
   let tunnels: ClientTunnelResponse[] = $state([]);
 
   const grantAccess = async () => {
+    auth.refreshLastActive();
     if (!tenantId || !$staffCrypto.crypto) return;
     const cryptoClient = $staffCrypto.crypto;
 

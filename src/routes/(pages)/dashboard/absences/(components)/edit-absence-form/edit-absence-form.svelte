@@ -4,14 +4,13 @@
   import * as Form from "$lib/components/ui/form";
   import { Input } from "$lib/components/ui/input";
   import { InputDateTime } from "$lib/components/ui/input-date-time";
+  import { RadioCards } from "$lib/components/ui/radio-cards";
   import * as Select from "$lib/components/ui/select";
+  import { times } from "$lib/components/ui/slot-template/utils";
   import { agents as agentsStore } from "$lib/stores/agents";
+  import { auth } from "$lib/stores/auth";
   import type { TAbsence } from "$lib/types/absence";
-  import { toast } from "svelte-sonner";
-  import { superForm } from "sveltekit-superforms";
-  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
-  import { formSchema } from ".";
-  import { reasons, types } from "../utils";
+  import { cn } from "$lib/utils";
   import {
     timeLocalWithoutOffsetToUTC,
     timeUTCToLocalWithoutOffset,
@@ -19,10 +18,12 @@
     toWeekdaysLabel,
     weekdays,
   } from "$lib/utils/datetime";
+  import { toast } from "svelte-sonner";
   import { SvelteDate } from "svelte/reactivity";
-  import { times } from "$lib/components/ui/slot-template/utils";
-  import { RadioCards } from "$lib/components/ui/radio-cards";
-  import { cn } from "$lib/utils";
+  import { superForm } from "sveltekit-superforms";
+  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
+  import { formSchema } from ".";
+  import { reasons, types } from "../utils";
 
   let { entity, done }: { entity: TAbsence; done: () => void } = $props();
 
@@ -45,6 +46,7 @@
       dataType: "json",
       validators: zodClient(formSchema),
       onResult: async (event) => {
+        auth.refreshLastActive();
         if (event.result.type === "success") {
           toast.success(m["absences.edit.success"]());
           done();

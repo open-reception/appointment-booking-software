@@ -12,6 +12,7 @@
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from ".";
   import { Checkbox } from "$lib/components/ui/checkbox";
+  import { auth } from "$lib/stores/auth";
 
   let { entity, done }: { entity: TChannelWithFullAgents; done: () => void } = $props();
 
@@ -21,6 +22,7 @@
     {
       validators: zodClient(formSchema),
       onResult: async (event) => {
+        auth.refreshLastActive();
         if (event.result.type === "success") {
           toast.success(
             $formData.pause ? m["channels.pause.success"]() : m["channels.unpause.success"](),

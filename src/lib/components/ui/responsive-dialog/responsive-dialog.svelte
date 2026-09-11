@@ -52,6 +52,7 @@
     triggerHidden = false,
     triggerVariant = "default",
     isActionLoading = false,
+    isDismissable = true,
     actions,
     children,
   }: HTMLAttributes<HTMLDivElement> & {
@@ -62,6 +63,7 @@
     description?: string;
     triggerVariant?: ButtonVariant;
     isActionLoading?: boolean;
+    isDismissable?: boolean;
     actions?: ListItemAction[];
   } = $props();
 
@@ -150,40 +152,49 @@
         {/if}
       </Dialog.Trigger>
     {/if}
-    <Dialog.Content
-      class={cn(
-        "max-h-[95vh] sm:max-w-106.25",
-        actions && actions.length > 0 && "[&>button:last-child]:hidden", // hides default close button
-      )}
-      onOpenAutoFocus={(e) => e.preventDefault()}
-    >
-      <Dialog.Header class="flex flex-row items-start justify-between gap-2">
-        <div class="flex flex-col gap-1 text-left">
-          <Dialog.Title class={cn(description ? "" : "-mb-1")}>{title}</Dialog.Title>
-          {#if description}
-            <Dialog.Description>
-              {description}
-            </Dialog.Description>
-          {/if}
-        </div>
-        {#if actions && actions.length > 0}
-          <div class="flex items-center gap-2">
-            {@render actionsSnippet?.()}
-            <Dialog.Close>
-              <X class="size-4" />
-            </Dialog.Close>
+    <Dialog.Portal>
+      <Dialog.Overlay class={cn(isDismissable === true ? "" : "z-60!")} />
+      <Dialog.Content
+        class={cn(
+          "max-h-[95vh] sm:max-w-106.25",
+          // pull non-dismissable dialogs to the top
+          isDismissable === true ? "" : "z-70!",
+          // hides default close button
+          actions && actions.length > 0 ? "[&>button:last-child]:hidden" : "",
+        )}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        escapeKeydownBehavior={isDismissable === false ? "ignore" : "close"}
+        interactOutsideBehavior={isDismissable === false ? "ignore" : "close"}
+        showCloseButton={isDismissable === true}
+      >
+        <Dialog.Header class="flex flex-row items-start justify-between gap-2">
+          <div class="flex flex-col gap-1 text-left">
+            <Dialog.Title class={cn(description ? "" : "-mb-1")}>{title}</Dialog.Title>
+            {#if description}
+              <Dialog.Description>
+                {description}
+              </Dialog.Description>
+            {/if}
           </div>
-        {/if}
-      </Dialog.Header>
-      <ScrollArea class="-mx-1 max-h-[75vh] overflow-hidden">
-        <div class="px-1 pt-2 pb-3">
-          {@render children?.()}
-        </div>
-      </ScrollArea>
-    </Dialog.Content>
+          {#if actions && actions.length > 0}
+            <div class="flex items-center gap-2">
+              {@render actionsSnippet?.()}
+              <Dialog.Close>
+                <X class="size-4" />
+              </Dialog.Close>
+            </div>
+          {/if}
+        </Dialog.Header>
+        <ScrollArea class="-mx-1 max-h-[75vh] overflow-hidden">
+          <div class="px-1 pt-2 pb-3">
+            {@render children?.()}
+          </div>
+        </ScrollArea>
+      </Dialog.Content>
+    </Dialog.Portal>
   </Dialog.Root>
 {:else}
-  <Drawer.Root bind:open>
+  <Drawer.Root bind:open dismissible={isDismissable}>
     {#if !triggerHidden}
       <Drawer.Trigger class={buttonVariants({ variant: triggerVariant })}>
         {#if typeof triggerLabel === "string"}
@@ -193,29 +204,40 @@
         {/if}
       </Drawer.Trigger>
     {/if}
-    <Drawer.Content
-      class="data-[vaul-drawer-direction=bottom]:max-h-[95vh] data-[vaul-drawer-direction=top]:max-h-[95vh]"
-      onOpenAutoFocus={(e) => e.preventDefault()}
-    >
-      <Drawer.Header class="flex flex-row justify-between gap-2 text-left">
-        <div>
-          <Drawer.Title class={cn(description ? "" : "-mb-1")}>{title}</Drawer.Title>
-          {#if description}
-            <Drawer.Description>
-              {description}
-            </Drawer.Description>
-          {/if}
-        </div>
-        <div>
-          {@render actionsSnippet?.()}
-        </div>
-      </Drawer.Header>
-      <HorizontalPagePadding class="max-h-[95vh] overflow-y-scroll pt-2">
-        {@render children?.()}
-      </HorizontalPagePadding>
-      <Drawer.Footer class="pt-2">
-        <Drawer.Close class={buttonVariants({ variant: "outline" })}>{m.cancel()}</Drawer.Close>
-      </Drawer.Footer>
-    </Drawer.Content>
+    <Drawer.Portal>
+      <Drawer.Overlay class={cn(isDismissable === true ? "" : "z-60!")} />
+      <Drawer.Content
+        class={cn(
+          "data-[vaul-drawer-direction=bottom]:max-h-[95vh] data-[vaul-drawer-direction=top]:max-h-[95vh]",
+          // pull non-dismissable dialogs to the top
+          isDismissable === true ? "" : "z-70!",
+        )}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        escapeKeydownBehavior={isDismissable === false ? "ignore" : "close"}
+        interactOutsideBehavior={isDismissable === false ? "ignore" : "close"}
+      >
+        <Drawer.Header class="flex flex-row justify-between gap-2 text-left">
+          <div>
+            <Drawer.Title class={cn(description ? "" : "-mb-1")}>{title}</Drawer.Title>
+            {#if description}
+              <Drawer.Description>
+                {description}
+              </Drawer.Description>
+            {/if}
+          </div>
+          <div>
+            {@render actionsSnippet?.()}
+          </div>
+        </Drawer.Header>
+        <HorizontalPagePadding class="max-h-[95vh] overflow-y-scroll pt-2">
+          {@render children?.()}
+        </HorizontalPagePadding>
+        {#if isDismissable !== false}
+          <Drawer.Footer class="pt-2">
+            <Drawer.Close class={buttonVariants({ variant: "outline" })}>{m.cancel()}</Drawer.Close>
+          </Drawer.Footer>
+        {/if}
+      </Drawer.Content>
+    </Drawer.Portal>
   </Drawer.Root>
 {/if}

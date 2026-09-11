@@ -1,15 +1,14 @@
 <script lang="ts">
   import { m } from "$i18n/messages.js";
+  import Button from "$lib/components/ui/button/button.svelte";
   import * as Form from "$lib/components/ui/form";
   import { Input } from "$lib/components/ui/input";
+  import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from ".";
   import type { TAddAppointment } from "../types";
-  import Button from "$lib/components/ui/button/button.svelte";
-  import { hashEmail } from "$lib/client/appointment-crypto";
-  import { fetchClientTunnels } from "../../../../staff/(components)/utils";
-  import { toast } from "svelte-sonner";
+  import { getClientTunnel } from "../utils";
 
   let {
     tenantId,
@@ -32,9 +31,7 @@
           isSubmitting = true;
 
           // Find client tunnel, if it exists
-          const tunnels = await fetchClientTunnels(tenantId);
-          const hashedEmail = await hashEmail($formData.email);
-          const tunnel = tunnels.find((t) => t.emailHash === hashedEmail);
+          const tunnel = await getClientTunnel(tenantId, $formData.email);
 
           if (tunnel) {
             toast.success(m["calendar.addAppointment.steps.selectClient.proceedExistingClient"]());

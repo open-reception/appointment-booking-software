@@ -57,7 +57,7 @@
     "@types/dotenv": "^6.1.1",
     "@types/node": "^24",
     "@types/nodemailer": "^6.4.17",
-    "bits-ui": "^2.15.4",
+    "bits-ui": "^2.19.0",
     "clsx": "^2.1.1",
     "drizzle-kit": "^0.31.1",
     "eslint": "^9.29.0",
@@ -81,9 +81,10 @@
     "typescript-eslint": "^8.34.1",
     "vaul-svelte": "^1.0.0-next.7",
     "vite": "^6.4.2",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.11"
   },
   "dependencies": {
+    "@date-fns/tz": "^1.5.0",
     "@noble/hashes": "^1.8.0",
     "@noble/post-quantum": "^0.4.1",
     "@simplewebauthn/server": "^11.0.0",
@@ -98,7 +99,7 @@
     "drizzle-orm": "^0.45.2",
     "jose": "^6.0.11",
     "mode-watcher": "^1.0.8",
-    "nodemailer": "^9.0.1",
+    "nodemailer": "^9.1.1",
     "postgres": "^3.4.7",
     "secrets.js-34r7h": "^2.0.2",
     "uuidv7": "^1.0.2",
