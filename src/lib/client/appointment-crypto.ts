@@ -203,10 +203,15 @@ export class UnifiedAppointmentCrypto {
   /**
    * Initializes a new client with E2E encryption
    */
-  async initNewClient(email: string, pin: string, tenantId: string): Promise<void> {
+  async initNewClient(
+    email: string,
+    pin: string,
+    tenantId: string,
+    isEmailHash: boolean = false,
+  ): Promise<void> {
     try {
       // 1. Generate email hash for privacy-preserving lookup
-      this.emailHash = await hashEmail(email);
+      this.emailHash = isEmailHash ? email : await hashEmail(email);
 
       // 2. Generate tunnel ID
       this.tunnelId = this.generateTunnelId();
@@ -238,12 +243,37 @@ export class UnifiedAppointmentCrypto {
       // Note: clientKeyShare will be used during actual appointment creation
       await this.encryptTunnelKeyForClient();
 
-      console.log("✅ New client initialized", {});
+      console.log("✅ New client initialized");
 
       this.clientAuthenticated = true;
     } catch (error) {
       console.error("❌ Error during client initialization:", error);
       throw error;
+    }
+  }
+
+  async setNewPin(
+    emailHash: string,
+    pin: string,
+    tenantId: string,
+    token: string,
+  ): Promise<boolean> {
+    await this.initNewClient(emailHash, pin, tenantId, true);
+
+    const resp = await fetch(`/api/tenants/${tenantId}/clients/pin-reset/complete`, {
+      method: "POST",
+      body: JSON.stringify({
+        token,
+        newClientPublicKey: this.clientKeyPair?.publicKey,
+        newPrivateKeyShare: this.serverPrivateKeyShare,
+        newClientEncryptedTunnelKey: await this.encryptTunnelKeyForClient(),
+      }),
+    });
+
+    if (resp.status < 400) {
+      return true;
+    } else {
+      return false;
     }
   }
 

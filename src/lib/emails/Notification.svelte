@@ -22,7 +22,9 @@
   <EmailText variant="md">
     {m["emails.notification.introduction"]({}, { locale })}
   </EmailText>
-  <EmailButton href={dashboardUrl}>{m["emails.notification.action"]({}, { locale })}</EmailButton>
+  <EmailButton {locale} href={dashboardUrl}>
+    {m["emails.notification.action"]({}, { locale })}
+  </EmailButton>
   <EmailText variant="md" color="text-light">
     {m["emails.notification.reason"]({}, { locale })}
   </EmailText>

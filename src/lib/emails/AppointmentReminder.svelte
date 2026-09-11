@@ -56,7 +56,7 @@
     {address.zip}
     {address.city}
   </EmailText>
-  <EmailButton href={cancelUrl}>
+  <EmailButton {locale} href={cancelUrl}>
     {m["emails.appointmentReminder.action"]({}, { locale })}
   </EmailButton>
   <EmailText variant="md" color="text-light">

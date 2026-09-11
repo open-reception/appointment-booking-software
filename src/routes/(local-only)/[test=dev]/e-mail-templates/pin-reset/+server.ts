@@ -13,7 +13,8 @@ export const GET: RequestHandler = async () => {
         language: "en",
       },
       tenant: { longName: "Praxis Dr. Jane Doe" } as SelectTenant,
-      loginUrl: "https://open-reception.org/login",
+      resetUri: "https://open-reception.org/clients/pin-reset/token",
+      expirationMinutes: 60,
     },
   });
   const html = renderOutputToHtml(emailRender);
