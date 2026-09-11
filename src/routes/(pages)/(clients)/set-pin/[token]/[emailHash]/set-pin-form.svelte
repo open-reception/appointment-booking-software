@@ -14,6 +14,7 @@
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from "./schema";
+  import { UnifiedAppointmentCrypto } from "$lib/client/appointment-crypto";
 
   let { formId, onEvent }: { formId: string; onEvent: EventReporter } = $props();
 
@@ -34,6 +35,15 @@
             return;
           }
 
+          if (!page.params.emailHash) {
+            console.error("Missing email hash in URL params");
+            toast.error(m["clients.pinReset.page.error"]());
+            cancel();
+            return;
+          }
+
+          $publicStore.crypto = new UnifiedAppointmentCrypto();
+
           if (!$publicStore.crypto) {
             console.error("Crypto module is not available");
             toast.error(m["clients.pinReset.page.error"]());
@@ -41,17 +51,21 @@
             return;
           }
 
-          // TODO: Get email from reset request
-          const email = "";
-          await $publicStore.crypto.setNewPin(
-            email,
+          const success = await $publicStore.crypto.setNewPin(
+            page.params.emailHash,
             $formData.pin,
             $publicStore.tenant?.id,
             page.params.token,
           );
 
-          // TODO: Handle success
-          toast.error(m["clients.pinReset.page.error"]());
+          $publicStore.crypto?.logoutClient();
+          if (success) {
+            toast.success(m["clients.pinReset.page.success"]());
+            goto(resolve(ROUTES.CLIENTS.MAIN));
+          } else {
+            console.error("Failed to set new PIN");
+            toast.error(m["clients.pinReset.page.error"]());
+          }
           cancel();
         }
         onEvent({ isSubmitting: false });

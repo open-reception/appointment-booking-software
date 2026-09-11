@@ -77,7 +77,7 @@
         isLoading={isSubmitting}
         disabled={isSubmitting}
       >
-        {m["login.action"]()}
+        {m["clients.pinReset.page.action"]()}
       </Form.Button>
     {/await}
   </CenteredCard.Action>

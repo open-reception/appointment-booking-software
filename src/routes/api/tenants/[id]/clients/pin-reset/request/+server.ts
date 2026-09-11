@@ -184,6 +184,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
         new URL(`https://${tenant.tenantData.domain}`),
         token,
         expirationMinutes,
+        validatedData.emailHash,
       );
     } else {
       logger.warn("PIN reset email not sent - tenant data not available", {
