@@ -47,6 +47,14 @@ export const actions: Actions = {
       };
     }
 
+    // Try to resolve issues around the login being followed by a logout right away
+    event.cookies.delete("access_token", {
+      path: "/",
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+    });
+
     const resp = await event.fetch("/api/auth/login", {
       method: "POST",
       headers: {
