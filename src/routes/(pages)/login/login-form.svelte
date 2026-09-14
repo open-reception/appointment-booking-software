@@ -164,6 +164,7 @@
 
       // Update UI to show passkey is ready
       $passkeyLoading = "success";
+      onEvent({ isHidingSubmit: false });
 
       const isValid = await form.validateForm();
       if (isValid) {
