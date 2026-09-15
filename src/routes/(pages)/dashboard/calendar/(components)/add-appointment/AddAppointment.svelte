@@ -108,6 +108,9 @@
         .then(() => {
           submitErrorMessage = null;
           step = "success";
+          if (["ADD_FOLLOW_UP"].includes(mode.mode)) {
+            shownAppointments = "all";
+          }
           mode = { mode: "VIEW" };
           updateCalendar();
         })
