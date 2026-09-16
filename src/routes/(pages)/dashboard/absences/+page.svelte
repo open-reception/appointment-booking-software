@@ -82,7 +82,8 @@
               {@const agent = agents.find((a) => a.id === item.agentId)}
               <ListItem
                 title={agent?.name || item.agentId}
-                image={agent?.image || UnknownItemIcon}
+                image={agent?.image}
+                fallbackImage={UnknownItemIcon}
                 description={renderDescription(item)}
                 icons={item.type === "RECURRING" ? [RefreshCw] : []}
                 actions={[
@@ -90,6 +91,7 @@
                     type: "action",
                     icon: EditIcon,
                     label: m["edit"](),
+                    isMainAction: true,
                     onClick: () => {
                       curItem = item;
                       openDialog("edit");

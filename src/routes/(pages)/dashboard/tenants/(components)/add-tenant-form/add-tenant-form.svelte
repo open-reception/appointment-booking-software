@@ -71,7 +71,7 @@
     </Form.Description>
     <Form.FieldErrors />
   </Form.Field>
-  {#if page.data.streamed.hasFeatureFlags}
+  {#if page.data.streamed.hasFeatureFlags && Object.keys(TENANT_FEATURE_FLAGS).length > 0}
     <Form.Field {form} name="features">
       <Form.Control>
         {#snippet children({ props })}

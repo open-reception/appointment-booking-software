@@ -20,6 +20,7 @@
   import { AddTenantForm } from "./(components)/add-tenant-form";
   import DeleteTenantForm from "./(components)/delete-tenant-form/delete-tenant-form.svelte";
   import EditTenantForm from "./(components)/edit-tenant-form/edit-tenant-form.svelte";
+  import { GlobeIcon } from "@lucide/svelte";
 
   const { data } = $props();
   let curItem: TTenant | null = $state(null);
@@ -71,16 +72,27 @@
           <List>
             {#each items as item (item.id)}
               <ListItem
-                image={item.logo || UnknownItemIcon}
+                image={item.logo}
+                fallbackImage={UnknownItemIcon}
                 title={item.shortName}
                 description={item.domain}
-                descriptionOnClick={() =>
-                  window.open(`https://${item.domain}`, "_blank", "noopener,noreferrer")}
                 actions={[
+                  {
+                    type: "action",
+                    icon: GlobeIcon,
+                    label: m["view"](),
+                    onClick: () => {
+                      window.open(`https://${item.domain}`, "_blank", "noopener,noreferrer");
+                    },
+                  },
+                  {
+                    type: "divider",
+                  },
                   {
                     type: "action",
                     icon: EditIcon,
                     label: m["edit"](),
+                    isMainAction: true,
                     onClick: () => {
                       curItem = item;
                       openDialog("edit");

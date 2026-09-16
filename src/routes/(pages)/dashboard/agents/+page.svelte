@@ -72,13 +72,15 @@
           <List>
             {#each items as item (item.id)}
               <ListItem
-                image={item.image || UnknownItemIcon}
+                image={item.image}
+                fallbackImage={UnknownItemIcon}
                 title={item.name}
                 actions={[
                   {
                     type: "action",
                     icon: EditIcon,
                     label: m["edit"](),
+                    isMainAction: true,
                     onClick: () => {
                       curItem = item;
                       openDialog("edit");

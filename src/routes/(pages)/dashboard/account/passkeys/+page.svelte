@@ -12,7 +12,7 @@
   import type { RedactedPasskeyHydrated } from "$lib/types/passkeys";
   import { toDisplayDateTime } from "$lib/utils/datetime";
   import { getLocalTimeZone } from "@internationalized/date";
-  import { UserKey, Pen, PlusIcon, Trash2, OctagonX } from "@lucide/svelte";
+  import { Pen, PlusIcon, Trash2, OctagonX, Key } from "@lucide/svelte";
   import { EditPasskeyForm } from "./(components)/edit-passkey-form";
   import { AddPasskeyForm } from "./(components)/add-passkey-form";
   import { DeletePasskeyForm } from "./(components)/delete-passkey-form";
@@ -68,6 +68,7 @@
           <List>
             {#each items as item (item.id)}
               <ListItem
+                fallbackImage={Key}
                 title={item.deviceName || m["account.passkeys.list.unnamedPasskey"]()}
                 description={`${m["account.passkeys.list.createdAt"]({
                   createdAt: item.createdAt
@@ -97,6 +98,7 @@
                     type: "action",
                     icon: Pen,
                     label: m["edit"](),
+                    isMainAction: true,
                     onClick: () => {
                       curItem = item;
                       openDialog("edit");
@@ -163,7 +165,7 @@
         {:else}
           <div class="flex w-full flex-col items-center">
             <EmptyState
-              Icon={UserKey}
+              Icon={Key}
               headline={m["account.passkeys.list.empty.title"]()}
               description={m["account.passkeys.list.empty.description"]()}
             />
