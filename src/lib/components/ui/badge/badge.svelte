@@ -1,3 +1,9 @@
+<!--
+
+  Custom changes:
+  * Added size variant
+
+-->
 <script lang="ts" module>
   import { type VariantProps, tv } from "tailwind-variants";
 
@@ -12,13 +18,19 @@
           "bg-destructive [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/70 border-transparent text-white",
         outline: "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
       },
+      size: {
+        default: "",
+        sm: "text-[0.6rem] leading-[0.5rem] px-1",
+      },
     },
     defaultVariants: {
       variant: "default",
+      size: "default",
     },
   });
 
   export type BadgeVariant = VariantProps<typeof badgeVariants>["variant"];
+  export type BadgeSize = VariantProps<typeof badgeVariants>["size"];
 </script>
 
 <script lang="ts">
@@ -30,10 +42,12 @@
     href,
     class: className,
     variant = "default",
+    size = "default",
     children,
     ...restProps
   }: WithElementRef<HTMLAnchorAttributes> & {
     variant?: BadgeVariant;
+    size?: BadgeSize;
   } = $props();
 </script>
 
@@ -42,7 +56,7 @@
   bind:this={ref}
   data-slot="badge"
   {href}
-  class={cn(badgeVariants({ variant }), className)}
+  class={cn(badgeVariants({ variant, size }), className)}
   {...restProps}
 >
   {@render children?.()}

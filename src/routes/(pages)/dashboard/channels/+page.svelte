@@ -23,6 +23,7 @@
   import EditChannelForm from "./(components)/edit-channel-form/edit-channel-form.svelte";
   import { PauseChannelForm } from "./(components)/pause-channel-form";
   import { channels } from "$lib/stores/channels";
+  import ChannelColor from "./(components)/channel-color.svelte";
 
   const { data } = $props();
   let curItem: TChannelWithFullAgents | null = $state(null);
@@ -74,11 +75,13 @@
               {@const name = getCurrentTranlslation(item.names)}
               <ListItem
                 title={name}
+                description={item.agents.map((a) => a.name).join(", ")}
                 actions={[
                   {
                     type: "action",
                     icon: EditIcon,
                     label: m["edit"](),
+                    isMainAction: true,
                     onClick: () => {
                       curItem = item;
                       openDialog("edit");
@@ -111,6 +114,9 @@
                   ? [{ label: m["channels.list.badges.paused"](), variant: "outline" }]
                   : []}
               >
+                {#snippet image()}
+                  <ChannelColor entity={item} />
+                {/snippet}
                 {name}
               </ListItem>
             {/each}

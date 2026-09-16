@@ -16,7 +16,7 @@
   import EditIcon from "@lucide/svelte/icons/pencil";
   import PlusIcon from "@lucide/svelte/icons/plus";
   import DeleteIcon from "@lucide/svelte/icons/trash-2";
-  import UnknownItemIcon from "@lucide/svelte/icons/user-star";
+  import UnknownItemIcon from "@lucide/svelte/icons/user-key";
   import { onMount } from "svelte";
   import { AddStaffMemberForm } from "./(components)/add-staff-member-form";
   import { DeleteStaffMemberForm } from "./(components)/delete-staff-member-form";
@@ -81,6 +81,7 @@
               <ListItem
                 title={item.name}
                 description={`${item.email} • ${role}`}
+                fallbackImage={UnknownItemIcon}
                 actions={item.id === myUserId
                   ? undefined
                   : [
@@ -88,6 +89,7 @@
                         type: "action",
                         icon: EditIcon,
                         label: m["edit"](),
+                        isMainAction: true,
                         onClick: () => {
                           curItem = item;
                           openDialog("edit");

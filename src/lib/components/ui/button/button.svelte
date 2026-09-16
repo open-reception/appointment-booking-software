@@ -1,3 +1,9 @@
+<!--
+
+  Custom changes:
+  * Added listItem variant
+
+-->
 <script lang="ts" module>
   import { cn, type WithElementRef } from "$lib/utils.js";
   import Loader2Icon from "@lucide/svelte/icons/loader-2";
@@ -16,6 +22,8 @@
         secondary: "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-1 !p-0 !ml-0.5 !mr-0 underline cursor-pointer",
+        listItem:
+          "bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 border box-border hover:border-light grow hover:bg-muted justify-start !p-0 min-h-14 h-auto! cursor-pointer whitespace-normal! max-w-full shrink",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3 text-sm",
