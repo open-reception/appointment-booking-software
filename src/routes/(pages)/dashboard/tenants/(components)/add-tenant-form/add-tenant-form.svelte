@@ -24,6 +24,7 @@
       email: "",
     },
     {
+      dataType: "json",
       validators: zodClient(formSchema),
       onResult: async (event) => {
         auth.refreshLastActive();

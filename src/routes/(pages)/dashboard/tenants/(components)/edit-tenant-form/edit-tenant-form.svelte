@@ -18,6 +18,7 @@
   const form = superForm(
     { id: entity.id, domain: entity.domain, features: entity.features ?? ([] as string[]) },
     {
+      dataType: "json",
       validators: zodClient(formSchema),
       onResult: async (event) => {
         auth.refreshLastActive();

@@ -15,7 +15,7 @@ export const formSchema = z.object({
     .max(253)
     .toLowerCase()
     .regex(/^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/, m["tenants.add.domain.errors.urlFormat"]()),
-  features: z.array(z.string()).optional(),
+  features: z.array(z.string()).min(0).default([]),
   inviteAdmin: z.boolean(),
   email: z.email(m["form.errors.email"]()).optional().or(z.literal("")),
 });
