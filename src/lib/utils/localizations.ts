@@ -12,7 +12,7 @@ export const removeEmptyTranslations = (object: { [key: string]: string } | unde
   return object;
 };
 
-export const getCurrentTranlslation = (object: { [key: string]: string } | undefined) => {
+export const getCurrentTranslation = (object: { [key: string]: string } | undefined) => {
   if (!object) return "[No Translation]";
 
   return object[getLocale()] || Object.values(object)[0];

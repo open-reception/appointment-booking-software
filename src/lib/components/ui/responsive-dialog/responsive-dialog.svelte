@@ -30,7 +30,7 @@
 <script lang="ts">
   import { m } from "$i18n/messages";
   import type { ListItemAction } from "$lib/components/templates/list/list-item.svelte";
-  import { buttonVariants, type ButtonVariant } from "$lib/components/ui/button";
+  import { buttonVariants, type ButtonVariant, type ButtonSize } from "$lib/components/ui/button";
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Dialog from "$lib/components/ui/dialog";
   import * as Drawer from "$lib/components/ui/drawer";
@@ -51,17 +51,19 @@
     description,
     triggerHidden = false,
     triggerVariant = "default",
+    triggerSize = "default",
     isActionLoading = false,
     isDismissable = true,
     actions,
     children,
   }: HTMLAttributes<HTMLDivElement> & {
     id: string;
-    triggerHidden: boolean;
+    triggerHidden?: boolean;
     triggerLabel?: Snippet | string;
     title: string;
     description?: string;
     triggerVariant?: ButtonVariant;
+    triggerSize?: ButtonSize;
     isActionLoading?: boolean;
     isDismissable?: boolean;
     actions?: ListItemAction[];
@@ -144,7 +146,7 @@
 {#if isDesktop.current}
   <Dialog.Root bind:open>
     {#if !triggerHidden && triggerLabel}
-      <Dialog.Trigger class={buttonVariants({ variant: triggerVariant })}>
+      <Dialog.Trigger class={buttonVariants({ variant: triggerVariant, size: triggerSize })}>
         {#if typeof triggerLabel === "string"}
           {triggerLabel}
         {:else}
@@ -196,7 +198,7 @@
 {:else}
   <Drawer.Root bind:open dismissible={isDismissable}>
     {#if !triggerHidden}
-      <Drawer.Trigger class={buttonVariants({ variant: triggerVariant })}>
+      <Drawer.Trigger class={buttonVariants({ variant: triggerVariant, size: triggerSize })}>
         {#if typeof triggerLabel === "string"}
           {triggerLabel}
         {:else}

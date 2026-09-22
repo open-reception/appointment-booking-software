@@ -11,7 +11,7 @@
   import { channels as channelsStore } from "$lib/stores/channels";
   import { sidebar } from "$lib/stores/sidebar";
   import type { TAppointmentFilter, TCalendarMode } from "$lib/types/calendar";
-  import { getCurrentTranlslation } from "$lib/utils/localizations";
+  import { getCurrentTranslation } from "$lib/utils/localizations";
   import { getLocalTimeZone, today, type CalendarDate } from "@internationalized/date";
   import { SlidersHorizontal } from "@lucide/svelte";
   import { createQuery, useQueryClient } from "@tanstack/svelte-query";
@@ -217,7 +217,7 @@
     <ResponsiveDialog
       id="current-calendar-slot"
       title={m["calendar.addAppointment.title"]()}
-      description={channel ? getCurrentTranlslation(channel.names) : undefined}
+      description={channel ? getCurrentTranslation(channel.names) : undefined}
       triggerHidden={true}
     >
       <AddAppointment

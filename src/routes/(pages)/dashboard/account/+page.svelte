@@ -3,8 +3,9 @@
   import { m } from "$i18n/messages";
   import { MaxPageWidth } from "$lib/components/layouts/max-page-width";
   import { SidebarLayout } from "$lib/components/layouts/sidebar-layout";
+  import { PageHeadline } from "$lib/components/templates/page-headline";
   import * as Item from "$lib/components/ui/item";
-  import { Headline, Text } from "$lib/components/ui/typography";
+  import { Text } from "$lib/components/ui/typography";
   import { ROUTES } from "$lib/const/routes";
   import { auth } from "$lib/stores/auth";
   import { ChevronRight } from "@lucide/svelte/icons";
@@ -19,7 +20,7 @@
   ]}
 >
   <MaxPageWidth maxWidth="md" class="flex flex-col gap-6">
-    <Headline level="h1" style="h3">{m["account.overview.title"]()}</Headline>
+    <PageHeadline title={m["account.overview.title"]()} />
     <Item.Group class="gap-2">
       <Item.Root variant="outline">
         {#snippet child({ props })}

@@ -13,10 +13,10 @@ export const formSchema = z.object({
     )
     .optional(),
   descriptions: z.record(z.string(), z.string()).optional(),
-  agentIds: z.array(z.string()).default([]),
-  staffIds: z.array(z.string()).default([]),
-  isPublic: z.boolean().optional().default(false),
-  requiresConfirmation: z.boolean().optional().default(false),
+  agentIds: z.array(z.string()).optional(),
+  staffIds: z.array(z.string()).optional(),
+  isPublic: z.boolean().optional(),
+  requiresConfirmation: z.boolean().optional(),
   slotTemplates: z
     .array(
       z.object({
@@ -27,8 +27,7 @@ export const formSchema = z.object({
         duration: z.number().int().min(1).max(1440),
       }),
     )
-    .optional()
-    .default([]),
+    .optional(),
 });
 
 export type FormSchema = typeof formSchema;

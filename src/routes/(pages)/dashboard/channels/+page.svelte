@@ -1,16 +1,20 @@
 <script lang="ts">
+  import { goto } from "$app/navigation";
+  import { resolve } from "$app/paths";
   import { m } from "$i18n/messages";
   import { MaxPageWidth } from "$lib/components/layouts/max-page-width";
   import { SidebarLayout } from "$lib/components/layouts/sidebar-layout";
   import EmptyState from "$lib/components/templates/empty-state/center-state.svelte";
   import { List, ListItem } from "$lib/components/templates/list";
   import { LoadingList } from "$lib/components/templates/loading";
+  import { type BadgeVariant } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
   import { ResponsiveDialog, closeDialog, openDialog } from "$lib/components/ui/responsive-dialog";
-  import { ROUTES } from "$lib/const/routes";
+  import { ROUTES, getChannelRoute } from "$lib/const/routes";
+  import { channels } from "$lib/stores/channels";
   import { tenants } from "$lib/stores/tenants";
   import { type TChannelWithFullAgents } from "$lib/types/channel";
-  import { getCurrentTranlslation } from "$lib/utils/localizations";
+  import { getCurrentTranslation } from "$lib/utils/localizations";
   import PauseIcon from "@lucide/svelte/icons/pause";
   import EditIcon from "@lucide/svelte/icons/pencil";
   import PlayIcon from "@lucide/svelte/icons/play";
@@ -19,11 +23,9 @@
   import DeleteIcon from "@lucide/svelte/icons/trash-2";
   import { onMount } from "svelte";
   import { AddChannelForm } from "./(components)/add-channel-form";
-  import DeleteChannelForm from "./(components)/delete-channel-form/delete-channel-form.svelte";
-  import EditChannelForm from "./(components)/edit-channel-form/edit-channel-form.svelte";
-  import { PauseChannelForm } from "./(components)/pause-channel-form";
-  import { channels } from "$lib/stores/channels";
   import ChannelColor from "./(components)/channel-color.svelte";
+  import DeleteChannelForm from "./(components)/delete-channel-form/delete-channel-form.svelte";
+  import { PauseChannelForm } from "./(components)/pause-channel-form";
 
   const { data } = $props();
   let curItem: TChannelWithFullAgents | null = $state(null);
@@ -72,7 +74,7 @@
         {#if items.length > 0}
           <List>
             {#each items as item (item.id)}
-              {@const name = getCurrentTranlslation(item.names)}
+              {@const name = getCurrentTranslation(item.names)}
               <ListItem
                 title={name}
                 description={item.agents.map((a) => a.name).join(", ")}
@@ -83,8 +85,12 @@
                     label: m["edit"](),
                     isMainAction: true,
                     onClick: () => {
-                      curItem = item;
-                      openDialog("edit");
+                      goto(
+                        resolve(
+                          // @ts-expect-error disabled, due to no better option to fix this type issue
+                          getChannelRoute(ROUTES.DASHBOARD.CHANNEL, item.id),
+                        ),
+                      );
                     },
                   },
                   {
@@ -110,9 +116,24 @@
                     },
                   },
                 ]}
-                badges={item.pause
-                  ? [{ label: m["channels.list.badges.paused"](), variant: "outline" }]
-                  : []}
+                badges={[
+                  ...(item.pause
+                    ? [
+                        {
+                          label: m["channels.list.badges.paused"](),
+                          variant: "outline" as BadgeVariant,
+                        },
+                      ]
+                    : []),
+                  ...(item.agents.length === 0 || item.slotTemplates.length === 0
+                    ? [
+                        {
+                          label: m["channels.list.badges.incomplete"](),
+                          variant: "destructive" as BadgeVariant,
+                        },
+                      ]
+                    : []),
+                ]}
               >
                 {#snippet image()}
                   <ChannelColor entity={item} />
@@ -121,23 +142,6 @@
               </ListItem>
             {/each}
           </List>
-          <ResponsiveDialog
-            id="edit"
-            title={m["channels.edit.title"]()}
-            description={m["channels.edit.description"]()}
-            triggerHidden={true}
-          >
-            {#if curItem}
-              <EditChannelForm
-                entity={curItem}
-                done={() => {
-                  closeDialog("edit");
-                  curItem = null;
-                  channels.load();
-                }}
-              />
-            {/if}
-          </ResponsiveDialog>
           {#if curItem}
             <ResponsiveDialog
               id="pause"
@@ -149,6 +153,7 @@
                 done={() => {
                   closeDialog("pause");
                   curItem = null;
+                  tenants.reload();
                   channels.load();
                 }}
               />
@@ -159,10 +164,10 @@
               <DeleteChannelForm
                 entity={curItem}
                 done={() => {
-                  closeDialog("delete");
-                  curItem = null;
                   tenants.reload();
                   channels.load();
+                  closeDialog("delete");
+                  curItem = null;
                 }}
               />
             {/if}

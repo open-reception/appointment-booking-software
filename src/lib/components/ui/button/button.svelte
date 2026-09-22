@@ -2,6 +2,7 @@
 
   Custom changes:
   * Added listItem variant
+  * Added groupItem variant
 
 -->
 <script lang="ts" module>
@@ -24,6 +25,8 @@
         link: "text-primary underline-offset-1 !p-0 !ml-0.5 !mr-0 underline cursor-pointer",
         listItem:
           "bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 border box-border hover:border-light grow hover:bg-muted justify-start !p-0 min-h-14 h-auto! cursor-pointer whitespace-normal! max-w-full shrink",
+        groupItem:
+          "group/item hover:bg-accent/50 focus-visible:border-ring focus-visible:ring-ring/50 border-border flex flex-wrap items-center gap-4 rounded-md border p-4 text-sm transition-colors duration-100 outline-none focus-visible:ring-[3px] transition-colors h-auto! text-left cursor-pointer",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3 text-sm",

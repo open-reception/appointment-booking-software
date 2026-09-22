@@ -383,7 +383,8 @@
 	"delete": "Delete",
 	"select": "Select",
 	"close": "Close",
-	"unkown": "Unkown",
+	"back": "Back",
+	"required": "required",
 	"dashboard": {
 		"title": "Dashboard",
 		"hello": "Hello",
@@ -431,9 +432,10 @@
 					"action": "Add Agent"
 				},
 				"channels": {
-					"title": "Set up your first channel",
+					"title": "Set up and configure your first channel",
 					"description": "Channels are your way to collect different types of appointments",
-					"action": "Add channel"
+					"action": "Add channel",
+					"actionView": "Configure channels"
 				},
 				"staff": {
 					"title": "Add & Activate Staff Members",
@@ -563,30 +565,9 @@
 				},
 				"description": {
 					"title": "Description (optional)"
-				},
-				"agents": {
-					"title": "Agents",
-					"description": "Add agents and we will manage the calendar and availability of your agents.",
-					"placeholder": "Select agents"
-				},
-				"staff": {
-					"title": "Staff",
-					"description": "These staff members will get notifications about appointment changes in this channel.",
-					"placeholder": "Select staff members"
-				},
-				"isPublic": {
-					"title": "Public",
-					"label": "Anyone can book an appointment"
-				},
-				"requiresConfirmation": {
-					"title": "Requires Confirmation",
-					"label": "Appointments will have to be manually confirmed by staff"
-				},
-				"slotTemplates": {
-					"title": "Schedule",
-					"description": "Slots for appointments will be created based on your schedule."
 				}
 			},
+			"hint": "You can configure details after creating the channel.",
 			"action": "Add Channel",
 			"success": "Channel added",
 			"errors": {
@@ -599,7 +580,8 @@
 				"description": "Channels are your way to collect different types of appointments"
 			},
 			"badges": {
-				"paused": "deactivated"
+				"paused": "deactivated",
+				"incomplete": "incomplete"
 			}
 		},
 		"delete": {
@@ -610,23 +592,58 @@
 			"error": "Could not delete channel."
 		},
 		"loading": "Loading channels",
+		"loadingDetail": "Loading channel",
 		"edit": {
 			"title": "Edit Channel",
-			"description": "Update the channels public details.",
 			"success": "Channel updated",
 			"error": "Could not update channel.",
-			"action": "Edit Channel"
+			"action": "Save",
+			"notFound": {
+				"title": "Channel not found",
+				"description": "The channel you are looking for does not exist (anymore).",
+				"action": "Go back to channels"
+			},
+			"basics": {
+				"title": "Name & Description",
+				"description": "Helps your clients to understand when to book in this channel."
+			},
+			"agents": {
+				"title": "Agents",
+				"description": "Add agents to manage their calendar and availability.",
+				"placeholder": "Select agents"
+			},
+			"slotTemplates": {
+				"title": "Schedule",
+				"description": "Slots for appointments will be created based on your schedule."
+			},
+			"publicBooking": {
+				"title": "Public Booking",
+				"description": "Settings for public booking in this channel.",
+				"isPublic": {
+					"title": "Public",
+					"label": "Anyone can book an appointment"
+				},
+				"requiresConfirmation": {
+					"title": "Requires Confirmation",
+					"label": "Appointments will have to be manually confirmed by staff"
+				}
+			},
+			"notifications": {
+				"title": "Notifications",
+				"description": "Configure which staff members are notified for this channel.",
+				"placeholder": "Select staff members"
+			}
 		},
 		"pause": {
 			"title": "Deactivate Channel",
-			"description": "Deactivating {name} will prevent clients from booking new appointments in this channel.",
+			"description": "Deactivating {name} will prevent new appointments in this channel.",
 			"action": "Deactivate Channel",
 			"success": "Channel deactivated",
 			"error": "Could not deactivate channel."
 		},
 		"unpause": {
 			"title": "Activate Channel",
-			"description": "Activating {name} will allow clients to book new appointments in this channel.",
+			"description": "Activating {name} will allow new appointments in this channel.",
 			"action": "Activate Channel",
 			"success": "Channel activated",
 			"error": "Could not activate channel."

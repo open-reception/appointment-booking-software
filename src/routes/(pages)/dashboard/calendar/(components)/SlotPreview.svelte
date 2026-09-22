@@ -5,7 +5,7 @@
   import { channels as channelsStore } from "$lib/stores/channels";
   import { type TCalendarItem } from "$lib/types/calendar";
   import { toDisplayDateTime, utcToLocalWithoutDST } from "$lib/utils/datetime";
-  import { getCurrentTranlslation } from "$lib/utils/localizations";
+  import { getCurrentTranslation } from "$lib/utils/localizations";
 
   let {
     item,
@@ -33,7 +33,7 @@
         hour: "2-digit",
         minute: "2-digit",
       }),
-      channel: channel ? getCurrentTranlslation(channel.names) : "unkown channel",
+      channel: channel ? getCurrentTranslation(channel.names) : m["unknown"](),
     })}
   </span>
 </Button>

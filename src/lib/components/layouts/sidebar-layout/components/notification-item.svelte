@@ -15,7 +15,7 @@
   import type { TAppointment } from "$lib/types/appointments";
   import type { TNotification } from "$lib/types/notification";
   import { toDisplayDateTime } from "$lib/utils/datetime";
-  import { getCurrentTranlslation } from "$lib/utils/localizations";
+  import { getCurrentTranslation } from "$lib/utils/localizations";
   import { getLocalTimeZone } from "@internationalized/date";
   import { useQueryClient } from "@tanstack/svelte-query";
   import { onMount } from "svelte";
@@ -182,14 +182,14 @@
   {@const possibleChannelIds = [item.metaData?.channelId, appointment?.channelId]}
   {@const channel = channels.find((c) => possibleChannelIds.includes(c.id))}
   {#if channel}
-    {@const channelName = getCurrentTranlslation(channel.names)}
+    {@const channelName = getCurrentTranslation(channel.names)}
     <Text style="xs" class="text-muted-foreground flex w-full text-start whitespace-break-spaces">
       {m["channels.singular"]()}: {channelName}
     </Text>
   {/if}
   {#if decrypted?.name}
     <Text style="xs" class="text-muted-foreground flex w-full text-start whitespace-break-spaces">
-      {m["form.name"]()}: {decrypted.name || m["unkown"]()}
+      {m["form.name"]()}: {decrypted.name || m["unknown"]()}
     </Text>
   {/if}
   {#if decrypted?.email}

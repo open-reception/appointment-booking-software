@@ -202,6 +202,7 @@ describe("ChannelService", () => {
           },
         ],
         staffIds: [],
+        pause: false,
       };
 
       const result = await service.createChannel(request);
@@ -216,6 +217,7 @@ describe("ChannelService", () => {
         agentIds: [],
         slotTemplates: [],
         staffIds: [],
+        pause: false,
       };
 
       await expect(service.createChannel(request)).rejects.toThrow(ValidationError);
@@ -234,6 +236,7 @@ describe("ChannelService", () => {
           },
         ],
         staffIds: [],
+        pause: false,
       };
 
       await expect(service.createChannel(request)).rejects.toThrow(ValidationError);
@@ -252,6 +255,7 @@ describe("ChannelService", () => {
           },
         ],
         staffIds: [],
+        pause: false,
       };
 
       await expect(service.createChannel(request)).rejects.toThrow(ValidationError);
@@ -265,6 +269,7 @@ describe("ChannelService", () => {
         agentIds: [],
         slotTemplates: [],
         staffIds: [],
+        pause: false,
       };
 
       await expect(service.createChannel(request)).rejects.toThrow("Transaction failed");

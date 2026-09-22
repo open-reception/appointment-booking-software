@@ -1,22 +1,22 @@
 <script lang="ts">
+  import { invalidate } from "$app/navigation";
   import { m } from "$i18n/messages";
   import { MaxPageWidth } from "$lib/components/layouts/max-page-width";
   import { SidebarLayout } from "$lib/components/layouts/sidebar-layout";
   import EmptyState from "$lib/components/templates/empty-state/center-state.svelte";
   import { List, ListItem } from "$lib/components/templates/list";
   import { LoadingList } from "$lib/components/templates/loading";
+  import { PageHeadline } from "$lib/components/templates/page-headline";
   import { Button } from "$lib/components/ui/button";
   import { closeDialog, openDialog, ResponsiveDialog } from "$lib/components/ui/responsive-dialog";
-  import { Headline } from "$lib/components/ui/typography";
   import { ROUTES } from "$lib/const/routes";
   import type { RedactedPasskeyHydrated } from "$lib/types/passkeys";
   import { toDisplayDateTime } from "$lib/utils/datetime";
   import { getLocalTimeZone } from "@internationalized/date";
-  import { Pen, PlusIcon, Trash2, OctagonX, Key } from "@lucide/svelte";
-  import { EditPasskeyForm } from "./(components)/edit-passkey-form";
+  import { Key, OctagonX, Pen, PlusIcon, Trash2 } from "@lucide/svelte";
   import { AddPasskeyForm } from "./(components)/add-passkey-form";
   import { DeletePasskeyForm } from "./(components)/delete-passkey-form";
-  import { invalidate } from "$app/navigation";
+  import { EditPasskeyForm } from "./(components)/edit-passkey-form";
 
   const { data } = $props();
   let curItem: RedactedPasskeyHydrated | null = $state(null);
@@ -39,7 +39,7 @@
   ]}
 >
   <MaxPageWidth maxWidth="md" class="flex flex-col gap-6">
-    <Headline level="h1" style="h3">{m["account.passkeys.title"]()}</Headline>
+    <PageHeadline title={m["account.passkeys.title"]()} backHref={ROUTES.DASHBOARD.ACCOUNT.MAIN} />
     {#await data.streamed.list}
       <LoadingList title={m["account.passkeys.list.loading"]()} />
     {:then items}

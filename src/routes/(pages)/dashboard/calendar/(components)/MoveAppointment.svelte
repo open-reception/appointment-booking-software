@@ -8,7 +8,7 @@
   import { channels as channelsStore } from "$lib/stores/channels";
   import type { TCalendarModeMove, TCalendarSlot } from "$lib/types/calendar";
   import { utcToLocalWithoutDST } from "$lib/utils/datetime";
-  import { getCurrentTranlslation } from "$lib/utils/localizations";
+  import { getCurrentTranslation } from "$lib/utils/localizations";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
   import SelectAgent from "./add-appointment/SelectAgent.svelte";
@@ -96,7 +96,7 @@
 <ResponsiveDialog
   id="current-calendar-slot"
   title={m["calendar.moveAppointment.action"]()}
-  description={channel ? getCurrentTranlslation(channel.names) : undefined}
+  description={channel ? getCurrentTranslation(channel.names) : undefined}
   triggerHidden={true}
 >
   <Summary {step} {newAppointment} />

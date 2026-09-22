@@ -68,6 +68,11 @@ registerOpenAPIRoute("/tenants/{id}/channels", "POST", {
               description: "IDs of staff members to assign to this channel",
               example: ["12345678-90ab-cdef-0123-456789abcdef"],
             },
+            pause: {
+              type: "boolean",
+              description: "Whether the channel is paused (appointments cannot be booked)",
+              example: false,
+            },
             slotTemplates: {
               type: "array",
               items: {

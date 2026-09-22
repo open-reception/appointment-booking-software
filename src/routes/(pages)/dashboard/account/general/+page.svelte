@@ -2,7 +2,7 @@
   import { m } from "$i18n/messages";
   import { MaxPageWidth } from "$lib/components/layouts/max-page-width";
   import { SidebarLayout } from "$lib/components/layouts/sidebar-layout";
-  import { Headline } from "$lib/components/ui/typography";
+  import { PageHeadline } from "$lib/components/templates/page-headline";
   import { ROUTES } from "$lib/const/routes";
   import { AccountSettingsForm } from "./(components)/account-settings-form";
 </script>
@@ -20,7 +20,7 @@
   ]}
 >
   <MaxPageWidth maxWidth="md" class="flex flex-col gap-6">
-    <Headline level="h1" style="h3">{m["account.general.title"]()}</Headline>
+    <PageHeadline title={m["account.general.title"]()} backHref={ROUTES.DASHBOARD.ACCOUNT.MAIN} />
     <AccountSettingsForm />
   </MaxPageWidth>
 </SidebarLayout>

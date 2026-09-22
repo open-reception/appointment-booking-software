@@ -10,7 +10,7 @@
   import { type CurAppointmentItem } from "$lib/stores/calendar";
   import { channels as channelsStore } from "$lib/stores/channels";
   import type { TAppointmentFilter, TCalendarMode } from "$lib/types/calendar";
-  import { getCurrentTranlslation } from "$lib/utils/localizations";
+  import { getCurrentTranslation } from "$lib/utils/localizations";
   import { CalendarPlus, Move, Trash2 } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
@@ -93,8 +93,8 @@
 
 <ResponsiveDialog
   id="current-calendar-item"
-  title={agent?.name || "unkown agent"}
-  description={channel ? getCurrentTranlslation(channel.names) : undefined}
+  title={agent?.name || m["unknown"]()}
+  description={channel ? getCurrentTranslation(channel.names) : undefined}
   triggerHidden={true}
   isActionLoading={isDeleting}
   actions={[

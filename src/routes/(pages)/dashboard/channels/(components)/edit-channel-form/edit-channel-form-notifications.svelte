@@ -1,15 +1,12 @@
 <script lang="ts">
   import { m } from "$i18n/messages.js";
-  import { Checkbox } from "$lib/components/ui/checkbox";
   import * as Form from "$lib/components/ui/form";
-  import { InlineCode } from "$lib/components/ui/inline-code";
   import { Input } from "$lib/components/ui/input";
-  import { TranslationWithComponent } from "$lib/components/ui/translation-with-component";
-  import { Text } from "$lib/components/ui/typography";
+  import * as Select from "$lib/components/ui/select";
   import { ROUTES } from "$lib/const/routes";
   import { auth } from "$lib/stores/auth";
+  import { staff as staffStore } from "$lib/stores/staff";
   import type { TChannelWithFullAgents } from "$lib/types/channel";
-  import { getCurrentTranslation } from "$lib/utils/localizations";
   import { untrack } from "svelte";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
@@ -17,22 +14,23 @@
   import { formSchema } from ".";
 
   let { entity, done }: { entity: TChannelWithFullAgents; done: () => void } = $props();
+  const staff = $derived($staffStore.staff ?? []);
 
   const form = superForm(
-    untrack(() => ({ id: entity.id, pause: !entity.pause })),
+    untrack(() => ({
+      id: entity.id,
+      staffIds: entity.staffIds,
+    })),
     {
+      dataType: "json",
       validators: zodClient(formSchema),
       onResult: async (event) => {
         auth.refreshLastActive();
         if (event.result.type === "success") {
-          toast.success(
-            $formData.pause ? m["channels.pause.success"]() : m["channels.unpause.success"](),
-          );
+          toast.success(m["channels.edit.success"]());
           done();
         } else if (event.result.type === "failure") {
-          toast.error(
-            $formData.pause ? m["channels.pause.error"]() : m["channels.unpause.error"](),
-          );
+          toast.error(m["channels.edit.error"]());
         }
         isSubmitting = false;
       },
@@ -45,17 +43,7 @@
   const { form: formData, enhance } = form;
 </script>
 
-<Form.Root {enhance} action={`${ROUTES.DASHBOARD.CHANNELS}?/pause`}>
-  <Text style="sm" class="text-muted-foreground -mt-2 font-normal">
-    <TranslationWithComponent
-      translation={$formData.pause
-        ? m["channels.pause.description"]({ name: "{name}" })
-        : m["channels.unpause.description"]({ name: "{name}" })}
-      interpolations={[
-        { param: "{name}", value: getCurrentTranslation(entity.names), snippet: inlineCode },
-      ]}
-    />
-  </Text>
+<Form.Root {enhance} action={`${ROUTES.DASHBOARD.CHANNELS}?/edit`}>
   <Form.Field {form} name="id" class="hidden">
     <Form.Control>
       {#snippet children({ props })}
@@ -63,21 +51,34 @@
       {/snippet}
     </Form.Control>
   </Form.Field>
-  <Form.Field {form} name="pause" class="hidden">
+  <Form.Field {form} name="staffIds">
     <Form.Control>
       {#snippet children({ props })}
-        <Checkbox {...props} bind:checked={$formData.pause} />
+        <Form.Label>{m["channels.edit.notifications.title"]()}</Form.Label>
+        <Select.Root
+          type="multiple"
+          bind:value={$formData.staffIds}
+          name={props.name}
+          onValueChange={(v) => ($formData.staffIds = v)}
+        >
+          <Select.Trigger {...props} class="w-full">
+            {$formData.staffIds.length > 0
+              ? $formData.staffIds.map((id) => staff.find((x) => x.id === id)?.name).join(", ")
+              : m["channels.edit.notifications.placeholder"]()}
+          </Select.Trigger>
+          <Select.Content>
+            {#each staff as member (member.id)}
+              <Select.Item value={member.id}>{member.name}</Select.Item>
+            {/each}
+          </Select.Content>
+        </Select.Root>
       {/snippet}
     </Form.Control>
+    <Form.FieldErrors />
   </Form.Field>
-
   <div class="mt-6 flex flex-col gap-4">
     <Form.Button size="lg" type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
-      {$formData.pause ? m["channels.pause.action"]() : m["channels.unpause.action"]()}
+      {m["channels.edit.action"]()}
     </Form.Button>
   </div>
 </Form.Root>
-
-{#snippet inlineCode(value: string | number)}
-  <InlineCode>{value}</InlineCode>
-{/snippet}
