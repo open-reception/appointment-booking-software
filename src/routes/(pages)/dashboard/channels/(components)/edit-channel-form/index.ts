@@ -1,5 +1,15 @@
-import EditChannelForm from "./edit-channel-form.svelte";
+import EditChannelFormBasics from "./edit-channel-form-basics.svelte";
+import EditChannelFormAgents from "./edit-channel-form-agents.svelte";
+import EditChannelFormNotifications from "./edit-channel-form-notifications.svelte";
+import EditChannelFormPublicBooking from "./edit-channel-form-public-booking.svelte";
+import EditChannelFormSlots from "./edit-channel-form-slots.svelte";
 
-export { EditChannelForm };
+export {
+  EditChannelFormBasics,
+  EditChannelFormAgents,
+  EditChannelFormNotifications,
+  EditChannelFormPublicBooking,
+  EditChannelFormSlots,
+};
 export { formSchema } from "./schema";
 export type { FormSchema } from "./schema";

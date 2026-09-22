@@ -375,7 +375,8 @@
 	"delete": "Löschen",
 	"select": "Auswählen",
 	"close": "Schließen",
-	"unkown": "Unbekannt",
+	"back": "Zurück",
+	"required": "erforderlich",
 	"dashboard": {
 		"title": "Übersicht",
 		"hello": "Hallo",
@@ -423,9 +424,10 @@
 					"action": "Add Agent"
 				},
 				"channels": {
-					"title": "Ersten Kanal hinzufügen",
+					"title": "Ersten Kanal hinzufügen und konfigurieren",
 					"description": "Kanäle sind Deine Möglichkeit, verschiedene Arten von Terminen anzubieten.",
-					"action": "Kanal hinzufügen"
+					"action": "Kanal hinzufügen",
+					"actionView": "Kanäle konfigurieren"
 				},
 				"staff": {
 					"title": "Personal hinzufügen & aktivieren",
@@ -555,30 +557,9 @@
 				},
 				"description": {
 					"title": "Beschreibung (optional)"
-				},
-				"agents": {
-					"title": "Akteure",
-					"description": "Wähle die Akteure aus, die Termine in diesem Kanal entgegennehmen können.",
-					"placeholder": "Akteure auswählen"
-				},
-				"staff": {
-					"title": "Personal",
-					"description": "Diese Mitarbeiter:innen erhalten Benachrichtigungen über Terminänderungen in diesem Kanal.",
-					"placeholder": "Mitarbeiter:innen auswählen"
-				},
-				"isPublic": {
-					"title": "Öffentlich",
-					"label": "Dieser Kanal kann von Klienten direkt gebucht werden"
-				},
-				"requiresConfirmation": {
-					"title": "Bestätigung erforderlich",
-					"label": "Termine müssen vom Personal bestätigt werden"
-				},
-				"slotTemplates": {
-					"title": "Zeitvorlagen",
-					"description": "Termine werden basierend auf Ihrem Zeitplan erstellt."
 				}
 			},
+			"hint": "Du kannst weitere Details nach dem Erstellen des Kanals konfigurieren.",
 			"action": "Kanal hinzufügen",
 			"success": "Kanal hinzugefügt",
 			"errors": {
@@ -591,7 +572,8 @@
 				"description": "Kanäle sind Ihre Möglichkeit, verschiedene Arten von Terminen zu sammeln"
 			},
 			"badges": {
-				"paused": "deaktiviert"
+				"paused": "deaktiviert",
+				"incomplete": "unvollständig"
 			}
 		},
 		"delete": {
@@ -602,23 +584,58 @@
 			"error": "Konnte Kanal nicht löschen."
 		},
 		"loading": "Lade Kanäle",
+		"loadingDetail": "Lade Kanal",
 		"edit": {
 			"title": "Kanal bearbeiten",
-			"description": "Aktualisiere die öffentlichen Informationen des Kanals.",
 			"success": "Kanal aktualisiert",
 			"error": "Konnte Kanal nicht aktualisieren.",
-			"action": "Übernehmen"
+			"action": "Übernehmen",
+			"notFound": {
+				"title": "Kanal nicht gefunden",
+				"description": "Der Kanal, den Du suchst, existiert nicht (mehr).",
+				"action": "Zurück zu den Kanälen"
+			},
+			"basics": {
+				"title": "Name & Beschreibung",
+				"description": "Hilft Ihren Klienten zu verstehen, wann sie in diesem Kanal buchen können."
+			},
+			"agents": {
+				"title": "Akteure",
+				"description": "Füge Akteure hinzu, um deren Kalender und Verfügbarkeit zu verwalten.",
+				"placeholder": "Akteure auswählen"
+			},
+			"slotTemplates": {
+				"title": "Zeitplan",
+				"description": "Termine werden basierend auf dem Zeitplan erstellt."
+			},
+			"publicBooking": {
+				"title": "Öffentliche Buchung",
+				"description": "Einstellungen für die öffentliche Buchung in diesem Kanal.",
+				"isPublic": {
+					"title": "Öffentlich",
+					"label": "Jeder kann einen Termin buchen"
+				},
+				"requiresConfirmation": {
+					"title": "Bestätigung erforderlich",
+					"label": "Termine müssen vom Personal manuell bestätigt werden"
+				}
+			},
+			"notifications": {
+				"title": "Benachrichtigungen",
+				"description": "Lege fest, welche Mitarbeiter:innen für diesen Kanal benachrichtigt werden.",
+				"placeholder": "Mitarbeiter:in auswählen"
+			}
 		},
 		"pause": {
 			"title": "Kanal deaktivieren",
-			"description": "Das Deaktivieren von {name} verhindert, dass Klienten neue Termine in diesem Kanal buchen.",
+			"description": "Das Deaktivieren von {name} verhindert, dass neue Termine in diesem Kanal gebucht werden.",
 			"action": "Kanal deaktivieren",
 			"success": "Kanal deaktiviert",
 			"error": "Konnte Kanal nicht deaktivieren."
 		},
 		"unpause": {
 			"title": "Kanal reaktivieren",
-			"description": "Das Reaktivieren von {name} ermöglicht es Klienten, neue Termine in diesem Kanal zu buchen.",
+			"description": "Das Reaktivieren von {name} ermöglicht, dass neue Termine in diesem Kanal gebucht werden.",
 			"action": "Kanal reaktivieren",
 			"success": "Kanal reaktiviert",
 			"error": "Konnte Kanal nicht reaktivieren."

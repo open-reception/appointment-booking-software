@@ -5,7 +5,7 @@
   import { channels as channelsStore } from "$lib/stores/channels";
   import type { TAppointmentFilter, TCalendarMode } from "$lib/types/calendar";
   import { toDisplayDateTime } from "$lib/utils/datetime";
-  import { getCurrentTranlslation } from "$lib/utils/localizations";
+  import { getCurrentTranslation } from "$lib/utils/localizations";
   import { X } from "@lucide/svelte";
 
   let {
@@ -48,7 +48,7 @@
         <Card.Description class="text-left">
           {mode.appointment.name}
           {#if channel}
-            ({getCurrentTranlslation(channel.names)})
+            ({getCurrentTranslation(channel.names)})
           {/if}
           {#if mode.mode === "MOVE" && mode.appointment.dateTime}
             <br />

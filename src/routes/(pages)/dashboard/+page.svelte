@@ -17,6 +17,8 @@
   import MenuPositionIcon from "@lucide/svelte/icons/corner-left-up";
   import CloseIcon from "@lucide/svelte/icons/x";
   import EmailReminder from "./(components)/EmailReminder.svelte";
+  import { MaxPageWidth } from "$lib/components/layouts/max-page-width";
+  import { channels } from "$lib/stores/channels";
 
   const tenant = $derived($tenants.currentTenant);
 </script>
@@ -33,7 +35,7 @@
     },
   ]}
 >
-  <div class="flex flex-col gap-4">
+  <MaxPageWidth maxWidth="lg" class="flex flex-col gap-6">
     {#if !$sidebar.isEducated}
       <div
         class="bg-muted -mt-4 mb-4 -ml-1 flex w-auto items-center gap-3 self-start rounded-md p-2"
@@ -130,9 +132,14 @@
             description: m["dashboard.onboarding.sections.channels.description"](),
             actions: [
               {
-                label: m["dashboard.onboarding.sections.channels.action"](),
+                label:
+                  $channels.channels.length === 0
+                    ? m["dashboard.onboarding.sections.channels.action"]()
+                    : m["dashboard.onboarding.sections.channels.actionView"](),
                 onClick: () => {
-                  goto(resolve(ROUTES.DASHBOARD.CHANNELS), { state: { action: "add" } });
+                  goto(resolve(ROUTES.DASHBOARD.CHANNELS), {
+                    state: { action: $channels.channels.length === 0 ? "add" : undefined },
+                  });
                 },
               },
             ],
@@ -159,7 +166,7 @@
     {#if $auth.user && ["TENANT_ADMIN", "STAFF"].includes($auth.user?.role) && tenant && tenant.setupState === "READY"}
       <EmailReminder />
     {/if}
-  </div>
+  </MaxPageWidth>
 </SidebarLayout>
 
 {#snippet inlineCode(value: string | number)}

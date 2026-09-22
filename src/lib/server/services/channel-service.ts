@@ -38,6 +38,7 @@ const channelCreationSchema = z.object({
   descriptions: z.partialRecord(z.enum(supportedLocales), z.string().min(1)).optional(),
   isPublic: z.boolean().optional(),
   requiresConfirmation: z.boolean().optional(),
+  pause: z.boolean().optional().default(false),
   agentIds: z.array(z.uuid()).optional().default([]),
   staffIds: z.array(z.uuid()).optional().default([]),
   slotTemplates: z.array(slotTemplateSchema).optional().default([]),
@@ -151,7 +152,7 @@ export class ChannelService {
             color: request.color,
             descriptions: request.descriptions || {},
             isPublic: request.isPublic ?? false,
-            pause: false,
+            pause: request.pause ?? false,
             requiresConfirmation: request.requiresConfirmation,
           })
           .returning();
@@ -546,6 +547,9 @@ export class ChannelService {
         agentCount: result.agents.length,
         slotTemplateCount: result.slotTemplates.length,
       });
+
+      const adminService = await TenantAdminService.getTenantById(this.tenantId);
+      adminService.validateSetupState();
 
       if (updateData.slotTemplates !== undefined && result.agents.length > 0) {
         // Regenerate schedule cache

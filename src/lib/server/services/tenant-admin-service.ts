@@ -462,7 +462,9 @@ export class TenantAdminService {
       const db = await this.getDb();
 
       // Check for agents
-      const { agent, channel } = await import("../db/tenant-schema");
+      const { agent, channel, channelAgent, channelSlotTemplate } = await import(
+        "../db/tenant-schema"
+      );
 
       const agentCount = await db
         .select({ count: count() })
@@ -473,30 +475,42 @@ export class TenantAdminService {
         newState = "AGENTS";
       } else {
         // Check for channels
-        const channelCount = await db
-          .select({ count: count() })
-          .from(channel)
-          .where(eq(channel.archived, false));
-        if (channelCount[0].count === 0) {
+        const channels = await db.select().from(channel).where(eq(channel.archived, false));
+        if (channels.length === 0) {
           newState = "CHANNELS";
         } else {
-          // Check for staff members
-          const staffCount = await centralDb
-            .select({ count: count() })
-            .from(centralSchema.user)
-            .where(
-              and(
-                eq(centralSchema.user.tenantId, this.tenantId),
-                or(
-                  eq(centralSchema.user.role, "STAFF"),
-                  eq(centralSchema.user.role, "TENANT_ADMIN"),
-                ),
-              ),
-            );
-          if (staffCount[0].count === 0) {
-            newState = "STAFF";
-          } else {
-            newState = "READY";
+          if (channels.length > 0) {
+            const channelAgents = await db.select().from(channelAgent);
+            const channelSlots = await db.select().from(channelSlotTemplate);
+            const completeChannel = channels.some((ch) => {
+              const hasAgent = channelAgents.some((ca) => ca.channelId === ch.id);
+              const hasSlotTemplate = channelSlots.some((cs) => cs.channelId === ch.id);
+              const activeChannel = ch.pause === false;
+              return activeChannel && hasAgent && hasSlotTemplate;
+            });
+
+            if (!completeChannel) {
+              newState = "CHANNELS";
+            } else {
+              // Check for staff members
+              const staffCount = await centralDb
+                .select({ count: count() })
+                .from(centralSchema.user)
+                .where(
+                  and(
+                    eq(centralSchema.user.tenantId, this.tenantId),
+                    or(
+                      eq(centralSchema.user.role, "STAFF"),
+                      eq(centralSchema.user.role, "TENANT_ADMIN"),
+                    ),
+                  ),
+                );
+              if (staffCount[0].count === 0) {
+                newState = "STAFF";
+              } else {
+                newState = "READY";
+              }
+            }
           }
         }
       }

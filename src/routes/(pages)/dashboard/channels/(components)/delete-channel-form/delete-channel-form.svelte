@@ -7,7 +7,8 @@
   import { Text } from "$lib/components/ui/typography";
   import { auth } from "$lib/stores/auth";
   import type { TChannelWithFullAgents } from "$lib/types/channel";
-  import { getCurrentTranlslation } from "$lib/utils/localizations";
+  import { getCurrentTranslation } from "$lib/utils/localizations";
+  import { untrack } from "svelte";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
@@ -16,16 +17,15 @@
 
   let { entity, done }: { entity: TChannelWithFullAgents; done: () => void } = $props();
 
-  // svelte-ignore state_referenced_locally
   const form = superForm(
-    { id: entity.id, name: "" },
+    untrack(() => ({ id: entity.id, name: "" })),
     {
       validators: zodClient(
         formSchema.merge(
           z.object({
-            name: z.string().refine((val) => val === getCurrentTranlslation(entity.names), {
+            name: z.string().refine((val) => val === getCurrentTranslation(entity.names), {
               message: m["form.errors.deleteConfirmation"]({
-                expectedValue: getCurrentTranlslation(entity.names),
+                expectedValue: getCurrentTranslation(untrack(() => entity.names)),
               }),
             }),
           }),
@@ -55,7 +55,7 @@
     <TranslationWithComponent
       translation={m["channels.delete.description"]({ name: "{name}" })}
       interpolations={[
-        { param: "{name}", value: getCurrentTranlslation(entity.names), snippet: inlineCode },
+        { param: "{name}", value: getCurrentTranslation(entity.names), snippet: inlineCode },
       ]}
     />
   </Text>

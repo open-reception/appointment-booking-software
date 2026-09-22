@@ -7,21 +7,27 @@
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { ROUTES } from "$lib/const/routes";
   import { publicStore } from "$lib/stores/public.js";
+  import type { TChannel } from "$lib/types/channel";
   import { CircleX } from "@lucide/svelte/icons";
   import { AddPersonalDataForm } from "./(components)/add-personal-data-form";
+  import AuthTabs from "./(components)/auth/auth-tabs.svelte";
   import SelectAgent from "./(components)/select-agent.svelte";
   import SelectChannel from "./(components)/select-channel.svelte";
   import SelectSlot from "./(components)/select-slot.svelte";
-  import { proceed } from "./(components)/utils";
-  import AuthTabs from "./(components)/auth/auth-tabs.svelte";
   import Summary from "./(components)/summary.svelte";
+  import { proceed } from "./(components)/utils";
 
   const { data } = $props();
   const appointment = $derived($publicStore.newAppointment);
 
   $effect(() => {
     if (data.channelId && appointment?.step === "SELECT_CHANNEL") {
-      proceed({ ...appointment, channel: data.channelId });
+      data.streaming.channels.then((channels) => {
+        const channel = channels.find((c: TChannel) => c.id === data.channelId);
+        if (channel) {
+          proceed({ ...appointment, channel: channel.id });
+        }
+      });
     }
   });
 </script>

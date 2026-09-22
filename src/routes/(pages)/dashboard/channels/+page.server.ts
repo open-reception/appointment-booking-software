@@ -8,7 +8,7 @@ import { formSchema as editFormSchema } from "./(components)/edit-channel-form";
 import { formSchema as deleteFormSchema } from "./(components)/delete-channel-form";
 import { formSchema as pauseFormSchema } from "./(components)/pause-channel-form";
 import type { TChannel } from "$lib/types/channel";
-import { getCurrentTranlslation, removeEmptyTranslations } from "$lib/utils/localizations";
+import { getCurrentTranslation, removeEmptyTranslations } from "$lib/utils/localizations";
 
 const log = logger.setContext(import.meta.filename);
 
@@ -36,7 +36,7 @@ export const load = async (event) => {
         const body = await res.json();
         const list = body.channels as TChannel[];
         return list.sort((a, b) =>
-          getCurrentTranlslation(a.names).localeCompare(getCurrentTranlslation(b.names)),
+          getCurrentTranslation(a.names).localeCompare(getCurrentTranslation(b.names)),
         );
       } catch (error) {
         log.error("Failed to parse channels response", { error });
@@ -75,12 +75,13 @@ export const actions: Actions = {
       credentials: "same-origin",
       body: JSON.stringify({
         names: form.data.names,
+        pause: true,
         descriptions: removeEmptyTranslations(form.data.descriptions),
-        agentIds: form.data.agentIds,
-        staffIds: form.data.staffIds,
-        isPublic: form.data.isPublic,
-        requiresConfirmation: form.data.requiresConfirmation,
-        slotTemplates: form.data.slotTemplates,
+        agentIds: [],
+        staffIds: [],
+        isPublic: true,
+        requiresConfirmation: false,
+        slotTemplates: [],
       }),
     });
 
@@ -125,13 +126,10 @@ export const actions: Actions = {
         },
         credentials: "same-origin",
         body: JSON.stringify({
-          names: form.data.names,
-          descriptions: removeEmptyTranslations(form.data.descriptions),
-          agentIds: form.data.agentIds,
-          staffIds: form.data.staffIds,
-          isPublic: form.data.isPublic,
-          requiresConfirmation: form.data.requiresConfirmation,
-          slotTemplates: form.data.slotTemplates,
+          ...form.data,
+          ...(form.data.descriptions
+            ? { descriptions: removeEmptyTranslations(form.data.descriptions) }
+            : {}),
         }),
       },
     );

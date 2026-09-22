@@ -22,6 +22,9 @@ export const ROUTES = {
     STAFF: "/dashboard/staff",
     AGENTS: "/dashboard/agents",
     CHANNELS: "/dashboard/channels",
+    CHANNEL: "/dashboard/channels/[channelId]",
+    CHANNEL_SLOTS: "/dashboard/channels/[channelId]/slots",
+    CHANNEL_PUBLIC_BOOKING: "/dashboard/channels/[channelId]/public-booking",
     ABSENCES: "/dashboard/absences",
     SETTINGS: "/dashboard/settings",
     ACCOUNT: {
@@ -33,3 +36,13 @@ export const ROUTES = {
     },
   },
 } as const;
+
+export const getChannelRoute = (
+  channelRoute:
+    | typeof ROUTES.DASHBOARD.CHANNEL
+    | typeof ROUTES.DASHBOARD.CHANNEL_SLOTS
+    | typeof ROUTES.DASHBOARD.CHANNEL_PUBLIC_BOOKING,
+  channelId: string,
+): string => {
+  return channelRoute.replace("[channelId]", channelId);
+};

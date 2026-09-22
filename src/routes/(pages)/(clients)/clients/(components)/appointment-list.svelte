@@ -14,7 +14,7 @@
   import { ROUTES } from "$lib/const/routes";
   import { publicStore } from "$lib/stores/public";
   import { toDisplayDateTime } from "$lib/utils/datetime";
-  import { getCurrentTranlslation } from "$lib/utils/localizations";
+  import { getCurrentTranslation } from "$lib/utils/localizations";
   import { CircleAlert } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
@@ -137,7 +137,7 @@
       items={[
         {
           type: "channel",
-          value: channel && getCurrentTranlslation(channel.names),
+          value: channel && getCurrentTranslation(channel.names),
         },
         {
           type: "date",
