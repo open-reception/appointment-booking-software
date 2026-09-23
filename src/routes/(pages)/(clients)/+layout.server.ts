@@ -1,5 +1,6 @@
 import logger from "$lib/logger";
 import type { TPublicChannel, TPublicTenant } from "$lib/types/public";
+import { getCurrentTranslation } from "$lib/utils/localizations";
 import type { LayoutServerLoad } from "./$types";
 
 const log = logger.setContext(import.meta.filename);
@@ -33,7 +34,11 @@ export const load: LayoutServerLoad = async (event) => {
     .then(async (res) => {
       try {
         const body = await res.json();
-        return body.channels || ([] as TPublicChannel[]);
+        return (
+          body.channels.sort((a: TPublicChannel, b: TPublicChannel) =>
+            getCurrentTranslation(a.names).localeCompare(getCurrentTranslation(b.names)),
+          ) || ([] as TPublicChannel[])
+        );
       } catch (error) {
         log.error("Failed to parse settings base response", { error });
       }
