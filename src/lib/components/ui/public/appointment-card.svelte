@@ -3,20 +3,17 @@
   import * as Card from "$lib/components/ui/card";
   import { Headline, Text } from "$lib/components/ui/typography";
   import { publicStore } from "$lib/stores/public";
-  import type { TPublicAppointment } from "$lib/types/public";
   import { cn } from "$lib/utils";
+  import { toDisplayDateTime } from "$lib/utils/datetime";
   import { Calendar, Eye, FileText, User } from "@lucide/svelte";
   import type { HTMLAttributes } from "svelte/elements";
   import { resest } from "../../../../routes/(pages)/(clients)/book-appointment/[[id]]/(components)/utils";
   import { Button } from "../button";
   import LocalizedText from "./localized-text.svelte";
-  import { toDisplayDateTime } from "$lib/utils/datetime";
 
-  let {
-    class: className,
-    appointment,
-  }: HTMLAttributes<HTMLDivElement> & { appointment?: TPublicAppointment } = $props();
+  let { class: className }: HTMLAttributes<HTMLDivElement> = $props();
   const tenant = $derived($publicStore.tenant);
+  const appointment = $derived($publicStore.newAppointment);
   const channels = $derived($publicStore.channels || []);
   const channel = $derived(channels.find((ch) => ch.id === appointment?.channel));
 </script>
@@ -47,14 +44,16 @@
               <Text style="sm">
                 <LocalizedText translations={channel.names} />
               </Text>
-              <Button
-                onclick={() => resest()}
-                variant="link"
-                size="xs"
-                class="text-normal text-muted-foreground h-auto p-0 font-normal"
-              >
-                {m.edit()}
-              </Button>
+              {#if appointment.step !== "COMPLETE"}
+                <Button
+                  onclick={() => resest()}
+                  variant="link"
+                  size="xs"
+                  class="text-normal text-muted-foreground h-auto p-0 font-normal"
+                >
+                  {m.edit()}
+                </Button>
+              {/if}
             </div>
             {#if channel.requiresConfirmation}
               <div class="flex max-w-4/5 items-start gap-2">

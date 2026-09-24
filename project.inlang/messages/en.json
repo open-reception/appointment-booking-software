@@ -1087,7 +1087,12 @@
 					"title": "Appointment requested",
 					"description": "{name} will confirm or deny your request soon. You will be informed via e-mail."
 				},
-				"action": "Proceed to Homepage"
+				"download": {
+					"confirmationPending": "Confirmation pending",
+					"action": "Download ics file",
+					"error": "Failed to prepare download"
+				},
+				"action": "Book another appointment"
 			}
 		},
 		"anyAgent": "Anyone available",
@@ -1300,5 +1305,8 @@
 				"CONFIRMED": "confirmed"
 			}
 		}
+	},
+	"ics": {
+		"manageAppointment": "Move/ cancel appointment"
 	}
 }

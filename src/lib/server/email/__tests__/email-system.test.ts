@@ -57,7 +57,7 @@ describe("Email System", () => {
       const htmlContent = "<h1>Test HTML</h1>";
       const textContent = "Test Text";
 
-      await sendEmail(recipient, subject, htmlContent, textContent);
+      await sendEmail(recipient, subject, htmlContent, textContent, "Tenant Name");
 
       expect(mockCreateTransporter).toHaveBeenCalledWith({
         host: "smtp.test.com",
@@ -71,7 +71,7 @@ describe("Email System", () => {
 
       expect(mockSendMail).toHaveBeenCalledWith({
         from: {
-          name: "OpenReception",
+          name: "Tenant Name",
           address: "noreply@test.com",
         },
         to: {
