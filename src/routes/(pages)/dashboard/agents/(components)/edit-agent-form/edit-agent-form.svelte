@@ -62,7 +62,7 @@
     </Form.Control>
     <Form.FieldErrors />
   </Form.Field>
-  <LanguageTabs>
+  <LanguageTabs showSeparator={true}>
     {#snippet children({ locale })}
       <Form.Field {form} name={`descriptions.${locale}`}>
         <Form.Control>

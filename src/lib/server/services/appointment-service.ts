@@ -14,8 +14,12 @@ import {
   sql,
   type ExtractTablesWithRelations,
 } from "drizzle-orm";
+import type { PgTransaction } from "drizzle-orm/pg-core";
+import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
 import { timingSafeEqual } from "node:crypto";
+import { WebAuthnService } from "../auth/webauthn-service";
 import { centralDb, getTenantDb } from "../db";
+import type { SelectTenant } from "../db/central-schema";
 import * as centralSchema from "../db/central-schema";
 import * as tenantSchema from "../db/tenant-schema";
 import { type SelectAppointment } from "../db/tenant-schema";
@@ -30,15 +34,11 @@ import {
   sendAppointmentUpdatedEmail,
 } from "../email/email-service";
 import { ConflictError, InternalError, NotFoundError, ValidationError } from "../utils/errors";
-import { WebAuthnService } from "../auth/webauthn-service";
 import { challengeStore } from "./challenge-store";
 import { challengeThrottleService } from "./challenge-throttle";
 import { NotificationService } from "./notification-service";
-import { TenantAdminService } from "./tenant-admin-service";
-import type { PgTransaction } from "drizzle-orm/pg-core";
-import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
 import { ScheduleService } from "./schedule-service";
-import type { SelectTenant } from "../db/central-schema";
+import { TenantAdminService } from "./tenant-admin-service";
 
 export interface ClientTunnelData {
   tunnelId: string;
@@ -670,6 +670,7 @@ export class AppointmentService {
         .returning({
           agentId: tenantSchema.appointment.agentId,
           appointmentDate: tenantSchema.appointment.appointmentDate,
+          timezone: tenantSchema.appointment.timezone,
         });
 
       log.debug("Appointment updated", {
@@ -735,11 +736,11 @@ export class AppointmentService {
 
     // Regenerate schedule cache
     const scheduleService = await ScheduleService.forTenant(this.tenantId);
-    const date = new Date(appointmentResult[0].appointmentDate);
+    const date = new Date(appointment.appointmentDate);
     await scheduleService.cleanAndRegenerateCache({
       startDate: date,
       endDate: date,
-      channelId: appointmentResult[0].channelId,
+      channelId: appointment.channelId,
       awaitRebuild: true,
     });
     // Also update the cache if the appointment date has changed to a different day
@@ -750,7 +751,7 @@ export class AppointmentService {
       await scheduleService.cleanAndRegenerateCache({
         startDate: newAppointment.appointmentDate,
         endDate: newAppointment.appointmentDate,
-        channelId: appointmentResult[0].channelId,
+        channelId: appointment.channelId,
         awaitRebuild: true,
       });
     }

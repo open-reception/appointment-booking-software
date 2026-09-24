@@ -1078,7 +1078,8 @@
 				},
 				"download": {
 					"confirmationPending": "Bestätigung ausstehend",
-					"action": "ICS-Datei herunterladen",
+					"action": "Zum Kalender hinzufügen",
+					"hint": "Lädt eine ics-Datei herunter, die Sie in Ihren Kalender importieren können.",
 					"error": "Download konnte nicht vorbereitet werden"
 				},
 				"action": "Weiteren Termin buchen"

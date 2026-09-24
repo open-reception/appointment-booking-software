@@ -1,7 +1,7 @@
 <script lang="ts">
   import { m } from "$i18n/messages";
   import { publicStore } from "$lib/stores/public.js";
-  import { CalendarArrowDown, Check } from "@lucide/svelte/icons";
+  import { CalendarPlus, Check } from "@lucide/svelte/icons";
 
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
@@ -38,36 +38,41 @@
           : m["public.steps.complete.book.description"]()}
       </Text>
     </div>
-    <div class="flex flex-col-reverse items-center gap-2 sm:flex-row">
+    <div class="grid gap-2 sm:grid-cols-2">
+      <div class="row-start-2 flex w-full grow flex-col items-center gap-1 sm:row-start-1">
+        <Button
+          onclick={() => {
+            if (tenant && channel && appointment.slot && appointment.id) {
+              downloadIcs(new URL(window.location.host), [
+                {
+                  id: appointment.id,
+                  isRequested: channel.requiresConfirmation,
+                  title: `${tenant?.longName || m["unknown"]()}: ${channel ? getCurrentTranslation(channel!.names) : m["unknown"]()}`,
+                  location: tenantAddressToIcsLocation(tenant.address),
+                  start: appointment.slot.datetime.toDate("UTC"),
+                  duration: appointment.slot.duration,
+                },
+              ]);
+            } else {
+              toast.error(m["public.steps.complete.download.error"]());
+            }
+          }}
+          class="w-full grow"
+        >
+          <CalendarPlus class="size-4" />
+          {m["public.steps.complete.download.action"]()}
+        </Button>
+        <Text style="xs" class="text-muted-foreground px-4 text-center font-normal">
+          {m["public.steps.complete.download.hint"]()}
+        </Text>
+      </div>
       <Button
-        onclick={() => {
-          if (tenant && channel && appointment.slot && appointment.id) {
-            downloadIcs(new URL(window.location.host), [
-              {
-                id: appointment.id,
-                isRequested: channel.requiresConfirmation,
-                title: `${tenant?.longName || m["unknown"]()}: ${channel ? getCurrentTranslation(channel!.names) : m["unknown"]()}`,
-                location: tenantAddressToIcsLocation(tenant.address),
-                start: appointment.slot.datetime.toDate("UTC"),
-                duration: appointment.slot.duration,
-              },
-            ]);
-          } else {
-            toast.error(m["public.steps.complete.download.error"]());
-          }
-        }}
-        class="w-full sm:w-auto sm:self-start"
-      >
-        <CalendarArrowDown class="size-4" />
-        {m["public.steps.complete.download.action"]()}
-      </Button>
-      <Button
-        variant="ghost"
+        variant="outline"
         onclick={() => {
           resest();
           goto(resolve(ROUTES.BOOK_APPOINTMENT));
         }}
-        class="w-full sm:w-auto sm:self-start"
+        class="row-start-1 w-full"
       >
         {m["public.steps.complete.action"]()}
       </Button>

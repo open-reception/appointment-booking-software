@@ -395,7 +395,12 @@ export class ScheduleService {
       .from(scheduleCache)
       .where(
         and(
-          eq(scheduleCache.date, date.toISOString().split("T")[0]),
+          eq(
+            scheduleCache.date,
+            startOfDay(date, { in: tz(timeZone) })
+              .toISOString()
+              .split("T")[0],
+          ),
           eq(scheduleCache.channel, channelId),
           eq(scheduleCache.timezone, timeZone),
         ),
@@ -690,22 +695,19 @@ export class ScheduleService {
       while (this.#buffer.length > 0) {
         const { startDate, endDate, channelId, timeZones } = this.#buffer[0];
         try {
-          log.debug("Generating schedule cache", {
-            tenantId: this.tenantId,
-            channelId,
-            startDate: startDate.toISOString().split("T")[0],
-            endDate: endDate.toISOString().split("T")[0],
-          });
-
           // Generate cache for each timezone
           for (const timeZone of timeZones) {
+            log.debug("Generating schedule cache for timezone", {
+              tenantId: this.tenantId,
+              channelId,
+              startDate: startOfDay(startDate, { in: tz(timeZone) }).toUTCString(),
+              endDate: endOfDay(endDate, { in: tz(timeZone) }).toUTCString(),
+              timeZone,
+            });
+
             await this.getSchedule({
-              startDate: startOfDay(startDate, { in: tz(timeZone) })
-                .withTimeZone("UTC")
-                .toISOString(),
-              endDate: endOfDay(endDate, { in: tz(timeZone) })
-                .withTimeZone("UTC")
-                .toISOString(),
+              startDate: startOfDay(startDate, { in: tz(timeZone) }).toUTCString(),
+              endDate: endOfDay(endDate, { in: tz(timeZone) }).toUTCString(),
               tenantId: this.tenantId,
               channelId,
               timeZone,

@@ -8,9 +8,10 @@
   type Props = {
     languages?: string[];
     children: Snippet<[{ locale: string }]>;
+    showSeparator?: boolean;
   };
 
-  let { languages, children }: Props = $props();
+  let { languages, children, showSeparator = false }: Props = $props();
 
   let tenantLanguages = $derived(
     (languages ? languages : $tenants.currentTenant?.languages || []).map((it) => ({
@@ -33,7 +34,9 @@
       </Tabs.Content>
     {/each}
   </Tabs.Root>
-  <Separator class="mb-3" />
+  {#if showSeparator}
+    <Separator class="mb-3" />
+  {/if}
 {:else if tenantLanguages.length === 1}
   {@render children({ locale: tenantLanguages[0].key })}
 {/if}

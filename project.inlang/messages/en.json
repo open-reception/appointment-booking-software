@@ -1086,7 +1086,8 @@
 				},
 				"download": {
 					"confirmationPending": "Confirmation pending",
-					"action": "Download ics file",
+					"action": "Add to Calendar",
+					"hint": "Downloads an ICS-File to add the appointment to your calendar.",
 					"error": "Failed to prepare download"
 				},
 				"action": "Book another appointment"
