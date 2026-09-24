@@ -12,6 +12,20 @@ export const proceed = (
 ): Partial<TPublicAppointment> => {
   const curAppointment = get(publicStore).newAppointment;
   switch (true) {
+    case newAppointment.step === "COMPLETE": {
+      const updatedAppointment: TPublicAppointment = {
+        ...newAppointment,
+        step: "COMPLETE",
+        id: newAppointment.id,
+      };
+      if (curAppointment.step !== "COMPLETE") {
+        publicStore.update((state) => ({
+          ...state,
+          newAppointment: updatedAppointment,
+        }));
+      }
+      return updatedAppointment;
+    }
     case newAppointment.step === "SUMMARY": {
       const updatedAppointment: TPublicAppointment = {
         ...newAppointment,

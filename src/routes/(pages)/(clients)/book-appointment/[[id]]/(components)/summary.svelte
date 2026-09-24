@@ -1,14 +1,14 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
-  import { resolve } from "$app/paths";
   import { m } from "$i18n/messages";
   import { getLocale } from "$i18n/runtime";
   import { Button } from "$lib/components/ui/button";
   import { Text } from "$lib/components/ui/typography";
-  import { ROUTES } from "$lib/const/routes";
   import { ERRORS } from "$lib/errors";
   import { publicStore } from "$lib/stores/public.js";
+  import type { TPublicAppointment } from "$lib/types/public";
   import { toast } from "svelte-sonner";
+
+  const { proceed }: { proceed: (a: Partial<TPublicAppointment>) => void } = $props();
 
   const tenant = $derived($publicStore.tenant);
   const channels = $derived($publicStore.channels);
@@ -38,9 +38,12 @@
           Boolean(appointment.isNewClient),
           getLocale() || "en",
         )
-        .then(() => {
-          const isRequest = channel.requiresConfirmation;
-          goto(resolve(ROUTES.APPOINTMENT_BOOKED), { state: { isRequest } });
+        .then((id) => {
+          proceed({
+            ...appointment,
+            id,
+            step: "COMPLETE",
+          });
         })
         .catch((error: unknown) => {
           if (error instanceof Error && error.message === ERRORS.APPOINTMENTS.AGENT_NOT_AVAILABLE) {

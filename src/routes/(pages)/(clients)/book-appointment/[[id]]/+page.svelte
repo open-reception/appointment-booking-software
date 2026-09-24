@@ -11,6 +11,7 @@
   import { CircleX } from "@lucide/svelte/icons";
   import { AddPersonalDataForm } from "./(components)/add-personal-data-form";
   import AuthTabs from "./(components)/auth/auth-tabs.svelte";
+  import Complete from "./(components)/complete.svelte";
   import SelectAgent from "./(components)/select-agent.svelte";
   import SelectChannel from "./(components)/select-channel.svelte";
   import SelectSlot from "./(components)/select-slot.svelte";
@@ -58,7 +59,7 @@
   {#if tenant}
     {#if tenant.setupState === "READY" && tenant.longName}
       <SideBySide>
-        <AppointmentCard {appointment} class="md:flex-1/3" />
+        <AppointmentCard class="md:flex-1/3" />
         <div class="p-3 md:flex-2/3">
           {#await data.streaming.channels}
             <div class="flex flex-col gap-2">
@@ -67,8 +68,10 @@
               <Skeleton class="h-12 w-full opacity-35" />
             </div>
           {:then channels}
-            {#if appointment.step === "SUMMARY"}
-              <Summary />
+            {#if appointment.step === "COMPLETE"}
+              <Complete />
+            {:else if appointment.step === "SUMMARY"}
+              <Summary {proceed} />
             {:else if appointment.step === "LOGIN"}
               <AuthTabs {proceed} />
             {:else if appointment.step === "ADD_PERSONAL_DATA"}

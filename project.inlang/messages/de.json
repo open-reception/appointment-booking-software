@@ -1079,7 +1079,12 @@
 					"title": "Termin angefragt",
 					"description": "{name} wird Ihren Termin in Kürze bestätigen oder absagen. Sie werden per E-Mail informiert."
 				},
-				"action": "Weiter zur Startseite"
+				"download": {
+					"confirmationPending": "Bestätigung ausstehend",
+					"action": "ICS-Datei herunterladen",
+					"error": "Download konnte nicht vorbereitet werden"
+				},
+				"action": "Weiteren Termin buchen"
 			}
 		},
 		"anyAgent": "Jede verfügbare Person",
@@ -1292,5 +1297,8 @@
 				"CONFIRMED": "bestätigt"
 			}
 		}
+	},
+	"ics": {
+		"manageAppointment": "Termin verschieben/ absagen"
 	}
 }

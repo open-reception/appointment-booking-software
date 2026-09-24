@@ -91,7 +91,8 @@ export async function sendEmail(
   subject: string,
   htmlContent: string,
   textContent: string,
-  tenantName?: string,
+  tenantName: string | undefined,
+  attachments?: Mail.Attachment[],
 ): Promise<void> {
   const transporter = createTransporter();
   logger.setContext("sendMail");
@@ -120,6 +121,7 @@ export async function sendEmail(
     subject,
     html: htmlContent,
     text: textContent,
+    attachments: attachments,
   };
 
   try {

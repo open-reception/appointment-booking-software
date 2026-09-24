@@ -25,10 +25,19 @@ import { dev } from "$app/environment";
 import Notification from "$lib/emails/Notification.svelte";
 import AppointmentUpdated from "$lib/emails/AppointmentUpdated.svelte";
 import AppointmentReminder from "$lib/emails/AppointmentReminder.svelte";
+import type Mail from "nodemailer/lib/mailer";
+import { createIcsFile, tenantAddressToIcsLocation } from "$lib/utils/ics";
 
 export type SelectClient = {
   email: string;
   language: string;
+};
+
+export type TenantAddress = {
+  street: string;
+  number: string;
+  zip: string;
+  city: string;
 };
 
 export type SelectUserEmail = Pick<SelectUser, "email" | "name" | "language">;
@@ -65,6 +74,33 @@ export async function getChannelTitle(
     // Return undefined on error, don't throw - this is optional information for emails
     return undefined;
   }
+}
+
+function generateAttachmentsForAppointment(
+  tenant: SelectTenant,
+  channelTitle: string | undefined,
+  appointment: SelectAppointment,
+  address: TenantAddress,
+) {
+  const attachments: Mail.Attachment[] = [];
+  const content = createIcsFile(new URL(`https://${tenant.domain}`), [
+    {
+      id: appointment.id,
+      isRequested: false,
+      title: `${tenant.longName}: ${channelTitle || m["unknown"]()}`,
+      location: tenantAddressToIcsLocation(address),
+      start: new Date(appointment.appointmentDate),
+      duration: appointment.duration,
+    },
+  ]).value;
+  if (content) {
+    attachments.push({
+      filename: `${tenant.longName}: ${channelTitle}.ics`,
+      content,
+      contentType: "text/calendar",
+    });
+  }
+  return attachments;
 }
 
 /**
@@ -203,6 +239,9 @@ export async function sendAppointmentReminderEmail(
     },
     { locale },
   );
+
+  const address = await getAddressFromTenant(tenant.id);
+  const attachments = generateAttachmentsForAppointment(tenant, channelTitle, appointment, address);
   const emailRender = render(AppointmentReminder, {
     props: {
       locale,
@@ -210,14 +249,14 @@ export async function sendAppointmentReminderEmail(
       user,
       tenant,
       appointment: { ...appointment, agentName: agent?.name ?? "---" },
-      address: await getAddressFromTenant(tenant.id),
+      address,
       cancelUrl: dev ? `http://localhost:5173/clients` : `https://${tenant.domain}/clients`,
     },
   });
   const html = renderOutputToHtml(emailRender);
   const text = htmlToText(html);
 
-  await sendEmail(recipient, subject, html, text, tenant.longName);
+  await sendEmail(recipient, subject, html, text, tenant.longName, attachments);
 }
 
 const getRecipient = async (user: SelectClient | SelectUser) => {
@@ -230,7 +269,7 @@ const getRecipient = async (user: SelectClient | SelectUser) => {
 };
 
 const getAddressFromTenant = async (tenantId: string) => {
-  const tenantService = await new TenantService(tenantId);
+  const tenantService = new TenantService(tenantId);
   const tenant = await tenantService.getConfig();
   return {
     street: (tenant["address.street"] || "") as string,
@@ -319,6 +358,8 @@ export async function sendAppointmentCreatedEmail(
     },
     { locale },
   );
+  const address = await getAddressFromTenant(tenant.id);
+  const attachments = generateAttachmentsForAppointment(tenant, channelTitle, appointment, address);
   const emailRender = render(AppointmentBooked, {
     props: {
       locale,
@@ -326,14 +367,14 @@ export async function sendAppointmentCreatedEmail(
       user,
       tenant,
       appointment: { ...appointment, agentName: agent?.name ?? "---" },
-      address: await getAddressFromTenant(tenant.id),
+      address,
       cancelUrl: dev ? `http://localhost:5173/clients` : `https://${tenant.domain}/clients`,
     },
   });
   const html = renderOutputToHtml(emailRender);
   const text = htmlToText(html);
 
-  await sendEmail(recipient, subject, html, text, tenant.longName);
+  await sendEmail(recipient, subject, html, text, tenant.longName, attachments);
 }
 
 /**
@@ -363,6 +404,8 @@ export async function sendAppointmentRequestEmail(
     },
     { locale },
   );
+  const address = await getAddressFromTenant(tenant.id);
+  const attachments = generateAttachmentsForAppointment(tenant, channelTitle, appointment, address);
   const emailRender = render(AppointmentRequest, {
     props: {
       locale,
@@ -370,13 +413,13 @@ export async function sendAppointmentRequestEmail(
       user,
       tenant,
       appointment: { ...appointment, agentName: agent?.name ?? "---" },
-      address: await getAddressFromTenant(tenant.id),
+      address,
     },
   });
   const html = renderOutputToHtml(emailRender);
   const text = htmlToText(html);
 
-  await sendEmail(recipient, subject, html, text, tenant.longName);
+  await sendEmail(recipient, subject, html, text, tenant.longName, attachments);
 }
 
 /**
@@ -463,6 +506,8 @@ export async function sendAppointmentUpdatedEmail(
     },
     { locale },
   );
+  const address = await getAddressFromTenant(tenant.id);
+  const attachments = generateAttachmentsForAppointment(tenant, channelTitle, appointment, address);
   const emailRender = render(AppointmentUpdated, {
     props: {
       locale,
@@ -470,14 +515,14 @@ export async function sendAppointmentUpdatedEmail(
       user,
       tenant,
       appointment: { ...appointment, agentName: agent?.name ?? "---" },
-      address: await getAddressFromTenant(tenant.id),
+      address,
     },
   });
   const html = renderOutputToHtml(emailRender);
   const text = htmlToText(html);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await sendEmail(recipient as any, subject, html, text, tenant.longName);
+  await sendEmail(recipient as any, subject, html, text, tenant.longName, attachments);
 }
 
 /**

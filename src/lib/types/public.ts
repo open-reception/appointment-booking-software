@@ -28,6 +28,7 @@ export type TPublicAppointment = {
     | "LOGIN"
     | "SUMMARY"
     | "COMPLETE";
+  id?: string;
   channel?: string;
   agent?: {
     id: string;
