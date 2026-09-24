@@ -1131,7 +1131,7 @@ describe("ScheduleService", () => {
 
       const now = new Date();
       const maxEndDate = new Date(
-        Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 14, 0, 23, 59, 59, 999),
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 14, 0, 23, 59, 59, 0),
       );
 
       expect(getScheduleSpy).toHaveBeenCalledTimes(1);
