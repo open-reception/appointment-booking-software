@@ -531,13 +531,6 @@
 		"en": "Englisch",
 		"de": "Deutsch"
 	},
-	"staff": {
-		"title": "Personal",
-		"empty": {
-			"title": "Bisher kein Personal",
-			"description": "Personal sind die Personen, die Zugriff auf Ihre Termine haben."
-		}
-	},
 	"channels": {
 		"title": "Kanäle",
 		"singular": "Kanal",
@@ -899,6 +892,10 @@
 	},
 	"staff": {
 		"title": "Personal",
+		"empty": {
+			"title": "Bisher kein Personal",
+			"description": "Personal sind die Personen, die Zugriff auf Ihre Termine haben."
+		},
 		"roles": {
 			"GLOBAL_ADMIN": "Globaler Admin",
 			"TENANT_ADMIN": "Mandanten-Admin",

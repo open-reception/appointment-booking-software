@@ -539,13 +539,6 @@
 		"en": "English",
 		"de": "German"
 	},
-	"staff": {
-		"title": "Staff",
-		"empty": {
-			"title": "No staff members yet",
-			"description": "Staff members manage your appointments"
-		}
-	},
 	"channels": {
 		"title": "Channels",
 		"singular": "Channel",
@@ -907,6 +900,10 @@
 	},
 	"staff": {
 		"title": "Staff",
+		"empty": {
+			"title": "No staff members yet",
+			"description": "Staff members manage your appointments"
+		},
 		"roles": {
 			"GLOBAL_ADMIN": "Global Admin",
 			"TENANT_ADMIN": "Tenant Admin",
