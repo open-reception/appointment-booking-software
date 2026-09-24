@@ -628,17 +628,17 @@
 		},
 		"pause": {
 			"title": "Kanal deaktivieren",
-			"description": "Das Deaktivieren von {name} verhindert, dass neue Termine in diesem Kanal gebucht werden.",
+			"description": "Das Deaktivieren von {name} verhindert, dass neue Termine in diesem Kanal gebucht werden können.",
 			"action": "Kanal deaktivieren",
 			"success": "Kanal deaktiviert",
 			"error": "Konnte Kanal nicht deaktivieren."
 		},
 		"unpause": {
-			"title": "Kanal reaktivieren",
-			"description": "Das Reaktivieren von {name} ermöglicht, dass neue Termine in diesem Kanal gebucht werden.",
-			"action": "Kanal reaktivieren",
-			"success": "Kanal reaktiviert",
-			"error": "Konnte Kanal nicht reaktivieren."
+			"title": "Kanal aktivieren",
+			"description": "Das Aktivieren von {name} ermöglicht, dass neue Termine in diesem Kanal gebucht werden können.",
+			"action": "Kanal aktivieren",
+			"success": "Kanal aktiviert",
+			"error": "Konnte Kanal nicht aktivieren."
 		}
 	},
 	"unpause": "Aktivieren",
