@@ -1073,11 +1073,11 @@
 			"complete": {
 				"book": {
 					"title": "Termin gebucht",
-					"description": "Wir haben Ihnen eine E-Mail mit den Details gesendet."
+					"description": "Wir haben Ihnen eine E-Mail mit den Details gesendet, sofern Sie Benachrichtigungen aktiviert haben."
 				},
 				"request": {
 					"title": "Termin angefragt",
-					"description": "{name} wird Ihren Termin in Kürze bestätigen oder absagen. Sie werden per E-Mail informiert."
+					"description": "{name} wird Ihren Termin in Kürze bestätigen oder absagen. Sie werden per E-Mail informiert, sofern Sie Benachrichtigungen aktiviert haben."
 				},
 				"download": {
 					"confirmationPending": "Bestätigung ausstehend",

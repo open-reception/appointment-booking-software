@@ -1081,11 +1081,11 @@
 			"complete": {
 				"book": {
 					"title": "Appointment booked",
-					"description": "We’ve sent you an e-mail with the details."
+					"description": "We’ve sent you an e-mail with the details, if you have enabled notifications."
 				},
 				"request": {
 					"title": "Appointment requested",
-					"description": "{name} will confirm or deny your request soon. You will be informed via e-mail."
+					"description": "{name} will confirm or deny your request soon. You will be informed via e-mail, if you have enabled notifications."
 				},
 				"download": {
 					"confirmationPending": "Confirmation pending",
