@@ -77,10 +77,12 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            openreception/open-reception:latest
-            openreception/open-reception:${{ github.ref_name }}
+            ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_IMAGE }}:latest
+            ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_IMAGE }}:${{ github.ref_name }}
 
       - name: Commit and push version update
+        # Only commit if repository is public and not a fork to avoid permission issues
+        if: ${{ github.event.repository.private == false && github.event.repository.fork == false }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
