@@ -1136,6 +1136,9 @@
 		"addFollowUpAppointment": {
 			"action": "Folgetermin hinzufügen"
 		},
+		"downloadIcsFile": {
+			"action": "Als Datei laden"
+		},
 		"addAppointmentAfterFail": {
 			"action": "Nach anderem Termin suchen"
 		},
@@ -1297,6 +1300,7 @@
 		}
 	},
 	"ics": {
+		"viewAppointment": "Termin aufrufen",
 		"manageAppointment": "Termin verschieben/ absagen"
 	}
 }

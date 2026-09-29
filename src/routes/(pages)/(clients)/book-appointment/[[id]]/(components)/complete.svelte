@@ -8,7 +8,7 @@
   import { Button } from "$lib/components/ui/button";
   import { Headline, Text } from "$lib/components/ui/typography";
   import { ROUTES } from "$lib/const/routes.js";
-  import { downloadIcs, tenantAddressToIcsLocation } from "$lib/utils/ics";
+  import { downloadIcsForClient, tenantAddressToIcsLocation } from "$lib/utils/ics";
   import { resest } from "./utils";
   import { getCurrentTranslation } from "$lib/utils/localizations";
   import { toast } from "svelte-sonner";
@@ -43,7 +43,7 @@
         <Button
           onclick={() => {
             if (tenant && channel && appointment.slot && appointment.id) {
-              downloadIcs(new URL(window.location.host), [
+              downloadIcsForClient(new URL(window.location.host), [
                 {
                   id: appointment.id,
                   isRequested: channel.requiresConfirmation,
@@ -51,6 +51,12 @@
                   location: tenantAddressToIcsLocation(tenant.address),
                   start: appointment.slot.datetime.toDate("UTC"),
                   duration: appointment.slot.duration,
+                  attendees: [
+                    {
+                      name: appointment.agent?.name || m["unknown"](),
+                      email: "user@openreception",
+                    },
+                  ],
                 },
               ]);
             } else {

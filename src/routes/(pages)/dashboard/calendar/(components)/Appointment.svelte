@@ -10,12 +10,14 @@
   import { type CurAppointmentItem } from "$lib/stores/calendar";
   import { channels as channelsStore } from "$lib/stores/channels";
   import type { TAppointmentFilter, TCalendarMode } from "$lib/types/calendar";
+  import { utcToLocalWithoutDST } from "$lib/utils/datetime";
+  import { downloadIcsForStaff } from "$lib/utils/ics";
   import { getCurrentTranslation } from "$lib/utils/localizations";
-  import { CalendarPlus, Move, Trash2 } from "@lucide/svelte";
+  import { CalendarArrowDown, CalendarPlus, Move, Trash2 } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
-  import { cancelAppointment, confirmAppointment, denyAppointment } from "./utils";
   import { getClientTunnel } from "./add-appointment/utils";
+  import { cancelAppointment, confirmAppointment, denyAppointment } from "./utils";
 
   let {
     tenantId,
@@ -151,6 +153,36 @@
         } else {
           console.error("Error getting client tunnel for follow-up appointment");
         }
+      },
+    },
+    {
+      type: "divider",
+    },
+    {
+      type: "action",
+      label: m["calendar.downloadIcsFile.action"](),
+      icon: CalendarArrowDown,
+      onClick: async () => {
+        const appointments = [
+          {
+            id: item.appointment.id,
+            title: `${item.decrypted.name} - ${channel ? getCurrentTranslation(channel.names) : m["unknown"]()}`,
+            // Using the slot start in "UTC without DST", which is always available
+            start: utcToLocalWithoutDST(new Date(item.appointment.start)),
+            duration: item.appointment.duration,
+            attendees: [
+              {
+                name: item.appointment.appointment?.agentId
+                  ? agents.find((a) => a.id === item.appointment.appointment?.agentId)?.name ||
+                    m["unknown"]()
+                  : m["unknown"](),
+                email: "user@openreception",
+              },
+            ],
+          },
+        ];
+        const tenantUrl = new URL(window.location.origin);
+        downloadIcsForStaff(tenantUrl, appointments);
       },
     },
     {

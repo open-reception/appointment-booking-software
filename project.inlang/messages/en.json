@@ -1144,6 +1144,9 @@
 		"addFollowUpAppointment": {
 			"action": "Add follow-up"
 		},
+		"downloadIcsFile": {
+			"action": "Download as file"
+		},
 		"addAppointmentAfterFail": {
 			"action": "Look for another appointment"
 		},
@@ -1305,6 +1308,7 @@
 		}
 	},
 	"ics": {
+		"viewAppointment": "View appointment",
 		"manageAppointment": "Move/ cancel appointment"
 	}
 }

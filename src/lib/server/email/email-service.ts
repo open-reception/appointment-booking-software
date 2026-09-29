@@ -1,32 +1,32 @@
-import { sendEmail, type EmailRecipient, createEmailRecipient } from "./mailer";
+import { dev } from "$app/environment";
+import { m } from "$i18n/messages";
+import AppointmentBooked from "$lib/emails/AppointmentBooked.svelte";
+import AppointmentCancelled from "$lib/emails/AppointmentCancelled.svelte";
+import AppointmentRejected from "$lib/emails/AppointmentRejected.svelte";
+import AppointmentReminder from "$lib/emails/AppointmentReminder.svelte";
+import AppointmentRequest from "$lib/emails/AppointmentRequest.svelte";
+import AppointmentUpdated from "$lib/emails/AppointmentUpdated.svelte";
+import Confirmation from "$lib/emails/Confirmation.svelte";
+import Notification from "$lib/emails/Notification.svelte";
+import PinReset from "$lib/emails/PinReset.svelte";
+import { htmlToText, renderOutputToHtml } from "$lib/emails/utils";
+import { getTenantDb } from "$lib/server/db";
+import type { SelectTenant, SelectUser } from "$lib/server/db/central-schema";
+import type { SelectAgent, SelectAppointment } from "$lib/server/db/tenant-schema";
+import * as tenantSchema from "$lib/server/db/tenant-schema";
+import { createIcsFileForClient, tenantAddressToIcsLocation } from "$lib/utils/ics";
+import { eq } from "drizzle-orm";
+import type Mail from "nodemailer/lib/mailer";
+import { render } from "svelte/server";
+import { TenantService } from "../db/tenant-service";
+import { AgentService } from "../services/agent-service";
+import { createEmailRecipient, sendEmail, type EmailRecipient } from "./mailer";
 import {
   templateEngine,
   type EmailTemplateType,
-  type TemplateData,
   type Language,
+  type TemplateData,
 } from "./template-engine";
-import type { SelectAppointment } from "$lib/server/db/tenant-schema";
-import type { SelectTenant, SelectUser } from "$lib/server/db/central-schema";
-import { getTenantDb } from "$lib/server/db";
-import * as tenantSchema from "$lib/server/db/tenant-schema";
-import { eq } from "drizzle-orm";
-import { m } from "$i18n/messages";
-import { render } from "svelte/server";
-import AppointmentBooked from "$lib/emails/AppointmentBooked.svelte";
-import AppointmentRequest from "$lib/emails/AppointmentRequest.svelte";
-import AppointmentRejected from "$lib/emails/AppointmentRejected.svelte";
-import AppointmentCancelled from "$lib/emails/AppointmentCancelled.svelte";
-import { htmlToText, renderOutputToHtml } from "$lib/emails/utils";
-import { AgentService } from "../services/agent-service";
-import { TenantService } from "../db/tenant-service";
-import Confirmation from "$lib/emails/Confirmation.svelte";
-import PinReset from "$lib/emails/PinReset.svelte";
-import { dev } from "$app/environment";
-import Notification from "$lib/emails/Notification.svelte";
-import AppointmentUpdated from "$lib/emails/AppointmentUpdated.svelte";
-import AppointmentReminder from "$lib/emails/AppointmentReminder.svelte";
-import type Mail from "nodemailer/lib/mailer";
-import { createIcsFile, tenantAddressToIcsLocation } from "$lib/utils/ics";
 
 export type SelectClient = {
   email: string;
@@ -79,11 +79,12 @@ export async function getChannelTitle(
 function generateAttachmentsForAppointment(
   tenant: SelectTenant,
   channelTitle: string | undefined,
+  agent: SelectAgent | null,
   appointment: SelectAppointment,
   address: TenantAddress,
 ) {
   const attachments: Mail.Attachment[] = [];
-  const content = createIcsFile(new URL(`https://${tenant.domain}`), [
+  const content = createIcsFileForClient(new URL(`https://${tenant.domain}`), [
     {
       id: appointment.id,
       isRequested: false,
@@ -91,6 +92,7 @@ function generateAttachmentsForAppointment(
       location: tenantAddressToIcsLocation(address),
       start: new Date(appointment.appointmentDate),
       duration: appointment.duration,
+      attendees: [{ name: agent?.name || m["unknown"](), email: "user@openreception" }],
     },
   ]).value;
   if (content) {
@@ -241,7 +243,13 @@ export async function sendAppointmentReminderEmail(
   );
 
   const address = await getAddressFromTenant(tenant.id);
-  const attachments = generateAttachmentsForAppointment(tenant, channelTitle, appointment, address);
+  const attachments = generateAttachmentsForAppointment(
+    tenant,
+    channelTitle,
+    agent,
+    appointment,
+    address,
+  );
   const emailRender = render(AppointmentReminder, {
     props: {
       locale,
@@ -359,7 +367,13 @@ export async function sendAppointmentCreatedEmail(
     { locale },
   );
   const address = await getAddressFromTenant(tenant.id);
-  const attachments = generateAttachmentsForAppointment(tenant, channelTitle, appointment, address);
+  const attachments = generateAttachmentsForAppointment(
+    tenant,
+    channelTitle,
+    agent,
+    appointment,
+    address,
+  );
   const emailRender = render(AppointmentBooked, {
     props: {
       locale,
@@ -405,7 +419,13 @@ export async function sendAppointmentRequestEmail(
     { locale },
   );
   const address = await getAddressFromTenant(tenant.id);
-  const attachments = generateAttachmentsForAppointment(tenant, channelTitle, appointment, address);
+  const attachments = generateAttachmentsForAppointment(
+    tenant,
+    channelTitle,
+    agent,
+    appointment,
+    address,
+  );
   const emailRender = render(AppointmentRequest, {
     props: {
       locale,
@@ -507,7 +527,13 @@ export async function sendAppointmentUpdatedEmail(
     { locale },
   );
   const address = await getAddressFromTenant(tenant.id);
-  const attachments = generateAttachmentsForAppointment(tenant, channelTitle, appointment, address);
+  const attachments = generateAttachmentsForAppointment(
+    tenant,
+    channelTitle,
+    agent,
+    appointment,
+    address,
+  );
   const emailRender = render(AppointmentUpdated, {
     props: {
       locale,
