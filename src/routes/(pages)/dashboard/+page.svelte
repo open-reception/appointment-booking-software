@@ -35,32 +35,32 @@
     },
   ]}
 >
-  <MaxPageWidth maxWidth="lg" class="flex flex-col gap-6">
-    {#if !$sidebar.isEducated}
-      <div
-        class="bg-muted -mt-4 mb-4 -ml-1 flex w-auto items-center gap-3 self-start rounded-md p-2"
+  {#if !$sidebar.isEducated}
+    <div
+      class="bg-muted -mt-4 mb-8 -ml-1 inline-flex w-auto items-center gap-3 self-start rounded-md p-2"
+    >
+      <MenuPositionIcon class="size-4" />
+      <Text style="sm">
+        {m["dashboard.sidebar.title"]()}<br />
+        <span class="font-normal">
+          <TranslationWithComponent
+            translation={m["dashboard.sidebar.description"]({ name: "{name}" })}
+            interpolations={[{ param: "{name}", value: m["nav.toggleSidebar"]() }]}
+          />
+        </span>
+      </Text>
+      <Button
+        variant="ghost"
+        size="xs"
+        class="cursor-pointer px-0! pt-px"
+        onclick={() => sidebar.setEducated(true, true)}
       >
-        <MenuPositionIcon class="size-4" />
-        <Text style="sm">
-          {m["dashboard.sidebar.title"]()}<br />
-          <span class="font-normal">
-            <TranslationWithComponent
-              translation={m["dashboard.sidebar.description"]({ name: "{name}" })}
-              interpolations={[{ param: "{name}", value: m["nav.toggleSidebar"]() }]}
-            />
-          </span>
-        </Text>
-        <Button
-          variant="ghost"
-          size="xs"
-          class="cursor-pointer px-0! pt-px"
-          onclick={() => sidebar.setEducated(true, true)}
-        >
-          <CloseIcon />
-          <span class="sr-only">{m.close()}</span>
-        </Button>
-      </div>
-    {/if}
+        <CloseIcon />
+        <span class="sr-only">{m.close()}</span>
+      </Button>
+    </div>
+  {/if}
+  <MaxPageWidth maxWidth="lg" class="flex flex-col gap-6">
     <Headline level="h1" style="h2">{m["dashboard.hello"]()} 👋</Headline>
     {#if $auth.user?.role === "GLOBAL_ADMIN"}
       {#if $tenants.isLoading}
