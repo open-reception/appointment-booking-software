@@ -251,7 +251,7 @@
 			"description": "Update the tenant's domain.",
 			"success": "Tenant updated",
 			"error": "Could not update tenant.",
-			"action": "Edit Tenant"
+			"action": "Save"
 		}
 	},
 	"components": {
