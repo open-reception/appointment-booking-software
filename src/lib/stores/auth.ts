@@ -110,7 +110,7 @@ function createAuthStore() {
     },
     checkLastActive: async () => {
       // Wait for a little bit to avoid false positives right after login
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       const lastActive = get(store).lastActive;
       if (!lastActive) return;
