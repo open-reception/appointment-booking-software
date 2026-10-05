@@ -2,6 +2,7 @@ import { SETUP_STATES_LIST } from "$lib/const/tenants";
 import type { TTenant, TTenantFeatureFlag } from "$lib/types/tenant";
 import { get } from "svelte/store";
 import { tenants } from "$lib/stores/tenants";
+import { publicStore } from "$lib/stores/public";
 
 export const changeTenantUsingApi = async (tenantId: string | null): Promise<boolean> => {
   const response = await fetch("/api/admin/tenant", {
@@ -27,8 +28,17 @@ export const isSetupStateDone = (tenant: TTenant, step: TTenant["setupState"]): 
 };
 
 export const hasFeatureFlag = (flag: TTenantFeatureFlag): boolean => {
+  // Try dashboard
   const curTenant = get(tenants).currentTenant;
-  if (!curTenant) return false;
+  if (curTenant) {
+    return curTenant.features.includes(flag) || false;
+  }
 
-  return curTenant.features.includes(flag) || false;
+  // Try public site
+  const publicTenant = get(publicStore).tenant;
+  if (publicTenant) {
+    return publicTenant.features.includes(flag) || false;
+  }
+
+  return false;
 };

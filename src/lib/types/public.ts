@@ -5,7 +5,7 @@ import type { CalendarDateTime } from "@internationalized/date";
 
 export type TPublicTenant = Pick<
   SelectTenant,
-  "descriptions" | "id" | "links" | "logo" | "longName" | "setupState" | "shortName"
+  "descriptions" | "id" | "links" | "logo" | "longName" | "setupState" | "shortName" | "features"
 > & {
   defaultLanguage: typeof supportedLocales;
   languages: (typeof supportedLocales)[];

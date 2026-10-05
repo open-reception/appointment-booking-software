@@ -100,6 +100,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
           city: config["address.city"] || "",
         },
         logo: tenantData.logo,
+        features: tenantData.features,
       },
     });
   } catch (error) {
