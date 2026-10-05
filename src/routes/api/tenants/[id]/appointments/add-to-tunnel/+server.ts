@@ -5,7 +5,6 @@ import {
   verifyBookingAccessToken,
 } from "$lib/server/auth/booking-access-token";
 import {
-  getChannelTitle,
   sendAppointmentCreatedEmail,
   sendAppointmentRequestEmail,
 } from "$lib/server/email/email-service";
@@ -314,13 +313,6 @@ export const POST: RequestHandler = async ({ request, params }) => {
       if (!tenant) {
         logger.warn("Cannot send email: Tenant not found", { tenantId });
       } else {
-        // Get channel title for the email
-        const channelTitle = await getChannelTitle(
-          tenantId,
-          validatedData.channelId,
-          validatedData.clientLanguage,
-        );
-
         // Send appropriate email based on whether confirmation is required
         if (requiresConfirmation) {
           // send notification to tenant staff about new appointment request
@@ -339,14 +331,14 @@ export const POST: RequestHandler = async ({ request, params }) => {
           };
 
           if (requiresConfirmation) {
-            await sendAppointmentRequestEmail(clientData, tenant, createdAppointment, channelTitle);
+            await sendAppointmentRequestEmail(clientData, tenant, createdAppointment);
             logger.debug("Appointment request email sent", {
               tunnelId: validatedData.tunnelId,
               appointmentId: response.id,
               tenantId,
             });
           } else {
-            await sendAppointmentCreatedEmail(clientData, tenant, createdAppointment, channelTitle);
+            await sendAppointmentCreatedEmail(clientData, tenant, createdAppointment);
             logger.debug("Appointment confirmation email sent", {
               tunnelId: validatedData.tunnelId,
               appointmentId: response.id,

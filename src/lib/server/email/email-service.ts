@@ -10,16 +10,14 @@ import Confirmation from "$lib/emails/Confirmation.svelte";
 import Notification from "$lib/emails/Notification.svelte";
 import PinReset from "$lib/emails/PinReset.svelte";
 import { htmlToText, renderOutputToHtml } from "$lib/emails/utils";
-import { getTenantDb } from "$lib/server/db";
 import type { SelectTenant, SelectUser } from "$lib/server/db/central-schema";
-import type { SelectAgent, SelectAppointment } from "$lib/server/db/tenant-schema";
-import * as tenantSchema from "$lib/server/db/tenant-schema";
+import type { SelectAgent, SelectAppointment, SelectChannel } from "$lib/server/db/tenant-schema";
 import { createIcsFileForClient, tenantAddressToIcsLocation } from "$lib/utils/ics";
-import { eq } from "drizzle-orm";
 import type Mail from "nodemailer/lib/mailer";
 import { render } from "svelte/server";
 import { TenantService } from "../db/tenant-service";
 import { AgentService } from "../services/agent-service";
+import { ChannelService } from "../services/channel-service";
 import { createEmailRecipient, sendEmail, type EmailRecipient } from "./mailer";
 import {
   templateEngine,
@@ -43,52 +41,30 @@ export type TenantAddress = {
 export type SelectUserEmail = Pick<SelectUser, "email" | "name" | "language">;
 
 /**
- * Get channel title in the user's preferred language
- * @param {string} tenantId - Tenant ID
- * @param {string} channelId - Channel ID
+ * Get channel name in the user's preferred language
+ * @param {SelectChannel} channel - Channel object
  * @param {string} [userLanguage="de"] - User's preferred language
- * @returns {Promise<string | undefined>} Channel title or undefined if not found
+ * @returns {string} Channel title
  */
-export async function getChannelTitle(
-  tenantId: string,
-  channelId: string,
-  userLanguage: string = "de",
-): Promise<string | undefined> {
-  try {
-    const db = await getTenantDb(tenantId);
-    const channelResult = await db
-      .select({
-        names: tenantSchema.channel.names,
-      })
-      .from(tenantSchema.channel)
-      .where(eq(tenantSchema.channel.id, channelId))
-      .limit(1);
-
-    if (channelResult.length === 0 || !channelResult[0].names) {
-      return undefined;
-    }
-
-    const names = channelResult[0].names as Record<string, string>;
-    return names[userLanguage] || names["de"] || names["en"] || Object.values(names)[0];
-  } catch {
-    // Return undefined on error, don't throw - this is optional information for emails
-    return undefined;
-  }
+export function getChannelName(channel: SelectChannel | null, userLanguage: string = "en"): string {
+  const names = channel?.names as Record<string, string> | undefined;
+  return names?.[userLanguage] || names?.["en"] || Object.values(names || {})[0] || m["unknown"]();
 }
 
 function generateAttachmentsForAppointment(
   tenant: SelectTenant,
-  channelTitle: string | undefined,
+  channel: SelectChannel | null,
   agent: SelectAgent | null,
   appointment: SelectAppointment,
   address: TenantAddress,
+  locale: string,
 ) {
   const attachments: Mail.Attachment[] = [];
   const content = createIcsFileForClient(new URL(`https://${tenant.domain}`), [
     {
       id: appointment.id,
       isRequested: false,
-      title: `${tenant.longName}: ${channelTitle || m["unknown"]()}`,
+      title: `${tenant.longName}: ${getChannelName(channel, locale)}`,
       location: tenantAddressToIcsLocation(address),
       start: new Date(appointment.appointmentDate),
       duration: appointment.duration,
@@ -97,7 +73,7 @@ function generateAttachmentsForAppointment(
   ]).value;
   if (content) {
     attachments.push({
-      filename: `${tenant.longName}: ${channelTitle}.ics`,
+      filename: `${tenant.longName} - ${getChannelName(channel, locale)}.ics`,
       content,
       contentType: "text/calendar",
     });
@@ -232,8 +208,9 @@ export async function sendAppointmentReminderEmail(
 ): Promise<void> {
   const agentService = await AgentService.forTenant(tenant.id);
   const agent = await agentService.getAgentById(appointment.agentId);
+  const channelService = await ChannelService.forTenant(tenant.id);
+  const channel = await channelService.getChannelById(appointment.channelId);
   const { recipient, locale } = await getRecipient(user);
-  const channelTitle = await getChannelTitle(tenant.id, appointment.channelId, locale);
   // Generate email
   const subject = m["emails.appointmentReminder.subject"](
     {
@@ -245,15 +222,16 @@ export async function sendAppointmentReminderEmail(
   const address = await getAddressFromTenant(tenant.id);
   const attachments = generateAttachmentsForAppointment(
     tenant,
-    channelTitle,
+    channel,
     agent,
     appointment,
     address,
+    locale,
   );
   const emailRender = render(AppointmentReminder, {
     props: {
       locale,
-      channel: channelTitle || appointment.channelId,
+      channel,
       user,
       tenant,
       appointment: { ...appointment, agentName: agent?.name ?? "---" },
@@ -293,8 +271,6 @@ const getAddressFromTenant = async (tenantId: string) => {
  * @param {SelectClient | SelectUser} user - Database user object or client data
  * @param {SelectTenant} tenant - Tenant information for branding
  * @param {SelectAppointment} appointment - Appointment details
- * @param {string} [channelTitle] - Optional channel title/name
- * @param {string} [cancelUrl] - Optional URL to cancel appointment
  * @throws {Error} When email sending fails
  * @returns {Promise<void>}
  */
@@ -302,19 +278,20 @@ export async function sendAppointmentRejectedEmail(
   user: SelectClient | SelectUser,
   tenant: SelectTenant,
   appointment: SelectAppointment,
-  channelTitle?: string,
 ): Promise<void> {
   // Create recipient directly for SelectClient type, use helper for SelectUser
 
   // Set language
   const agentService = await AgentService.forTenant(tenant.id);
   const agent = await agentService.getAgentById(appointment.agentId);
+  const channelService = await ChannelService.forTenant(tenant.id);
+  const channel = await channelService.getChannelById(appointment.channelId);
   const { recipient, locale } = await getRecipient(user);
 
   // Generate email
   const subject = m["emails.appointmentRejected.subject"](
     {
-      channel: channelTitle || appointment.channelId,
+      channel: getChannelName(channel),
       tenant: tenant.longName,
     },
     { locale },
@@ -322,7 +299,7 @@ export async function sendAppointmentRejectedEmail(
   const emailRender = render(AppointmentRejected, {
     props: {
       locale,
-      channel: channelTitle || appointment.channelId,
+      channel,
       user,
       tenant,
       appointment: { ...appointment, agentName: agent?.name ?? "---" },
@@ -340,8 +317,6 @@ export async function sendAppointmentRejectedEmail(
  * @param {SelectClient | SelectUser} user - Database user object or client data
  * @param {SelectTenant} tenant - Tenant information for branding
  * @param {SelectAppointment} appointment - Appointment details
- * @param {string} [channelTitle] - Optional channel title/name
- * @param {string} [cancelUrl] - Optional URL to cancel appointment
  * @throws {Error} When email sending fails
  * @returns {Promise<void>}
  */
@@ -349,19 +324,20 @@ export async function sendAppointmentCreatedEmail(
   user: SelectClient | SelectUser,
   tenant: SelectTenant,
   appointment: SelectAppointment,
-  channelTitle?: string,
 ): Promise<void> {
   // Create recipient directly for SelectClient type, use helper for SelectUser
 
   // Set language
   const agentService = await AgentService.forTenant(tenant.id);
   const agent = await agentService.getAgentById(appointment.agentId);
+  const channelService = await ChannelService.forTenant(tenant.id);
+  const channel = await channelService.getChannelById(appointment.channelId);
   const { recipient, locale } = await getRecipient(user);
 
   // Generate email
   const subject = m["emails.appointmentBooked.subject"](
     {
-      channel: channelTitle || appointment.channelId,
+      channel: getChannelName(channel),
       tenant: tenant.longName,
     },
     { locale },
@@ -369,15 +345,16 @@ export async function sendAppointmentCreatedEmail(
   const address = await getAddressFromTenant(tenant.id);
   const attachments = generateAttachmentsForAppointment(
     tenant,
-    channelTitle,
+    channel,
     agent,
     appointment,
     address,
+    locale,
   );
   const emailRender = render(AppointmentBooked, {
     props: {
       locale,
-      channel: channelTitle || appointment.channelId,
+      channel,
       user,
       tenant,
       appointment: { ...appointment, agentName: agent?.name ?? "---" },
@@ -396,8 +373,6 @@ export async function sendAppointmentCreatedEmail(
  * @param {SelectClient | SelectUser} user - Database user object or client data
  * @param {SelectTenant} tenant - Tenant information for branding
  * @param {SelectAppointment} appointment - Appointment details
- * @param {string} [channelTitle] - Optional channel title/name
- * @param {string} [cancelUrl] - Optional URL to cancel appointment
  * @throws {Error} When email sending fails
  * @returns {Promise<void>}
  */
@@ -405,15 +380,16 @@ export async function sendAppointmentRequestEmail(
   user: SelectClient | SelectUser,
   tenant: SelectTenant,
   appointment: SelectAppointment,
-  channelTitle?: string,
 ): Promise<void> {
   const agentService = await AgentService.forTenant(tenant.id);
   const agent = await agentService.getAgentById(appointment.agentId);
+  const channelService = await ChannelService.forTenant(tenant.id);
+  const channel = await channelService.getChannelById(appointment.channelId);
   const { recipient, locale } = await getRecipient(user);
   // Generate email
   const subject = m["emails.appointmentRequest.subject"](
     {
-      channel: channelTitle || appointment.channelId,
+      channel: getChannelName(channel),
       tenant: tenant.longName,
     },
     { locale },
@@ -421,15 +397,16 @@ export async function sendAppointmentRequestEmail(
   const address = await getAddressFromTenant(tenant.id);
   const attachments = generateAttachmentsForAppointment(
     tenant,
-    channelTitle,
+    channel,
     agent,
     appointment,
     address,
+    locale,
   );
   const emailRender = render(AppointmentRequest, {
     props: {
       locale,
-      channel: channelTitle || appointment.channelId,
+      channel,
       user,
       tenant,
       appointment: { ...appointment, agentName: agent?.name ?? "---" },
@@ -512,16 +489,17 @@ export async function sendAppointmentUpdatedEmail(
   user: SelectClient | SelectUser,
   tenant: SelectTenant,
   appointment: SelectAppointment,
-  channelTitle?: string,
 ): Promise<void> {
   const agentService = await AgentService.forTenant(tenant.id);
   const agent = await agentService.getAgentById(appointment.agentId);
+  const channelService = await ChannelService.forTenant(tenant.id);
+  const channel = await channelService.getChannelById(appointment.channelId);
   // Create recipient directly for SelectClient type, use helper for SelectUser
   const { recipient, locale } = await getRecipient(user);
   // Generate email
   const subject = m["emails.appointmentUpdated.subject"](
     {
-      channel: channelTitle || appointment.channelId,
+      channel: getChannelName(channel),
       tenant: tenant.longName,
     },
     { locale },
@@ -529,15 +507,16 @@ export async function sendAppointmentUpdatedEmail(
   const address = await getAddressFromTenant(tenant.id);
   const attachments = generateAttachmentsForAppointment(
     tenant,
-    channelTitle,
+    channel,
     agent,
     appointment,
     address,
+    locale,
   );
   const emailRender = render(AppointmentUpdated, {
     props: {
       locale,
-      channel: channelTitle || appointment.channelId,
+      channel,
       user,
       tenant,
       appointment: { ...appointment, agentName: agent?.name ?? "---" },
@@ -556,7 +535,6 @@ export async function sendAppointmentUpdatedEmail(
  * @param {SelectClient | SelectUser} user - Database user object or client data
  * @param {SelectTenant} tenant - Tenant information for branding
  * @param {SelectAppointment} appointment - Cancelled appointment details
- * @param {string} [channelTitle] - Optional channel title/name
  * @throws {Error} When email sending fails
  * @returns {Promise<void>}
  */
@@ -564,14 +542,16 @@ export async function sendAppointmentCancelledEmail(
   user: SelectClient | SelectUser,
   tenant: SelectTenant,
   appointment: SelectAppointment,
-  channelTitle?: string,
 ): Promise<void> {
+  const channelService = await ChannelService.forTenant(tenant.id);
+  const channel = await channelService.getChannelById(appointment.channelId);
+
   // Create recipient directly for SelectClient type, use helper for SelectUser
   const { recipient, locale } = await getRecipient(user);
   // Generate email
   const subject = m["emails.appointmentCancelled.subject"](
     {
-      channel: channelTitle || appointment.channelId,
+      channel: getChannelName(channel),
       tenant: tenant.longName,
     },
     { locale },
@@ -579,7 +559,7 @@ export async function sendAppointmentCancelledEmail(
   const emailRender = render(AppointmentCancelled, {
     props: {
       locale,
-      channel: channelTitle || appointment.channelId,
+      channel,
       user,
       tenant,
       appointment: { ...appointment, agentName: "---" },

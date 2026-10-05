@@ -4,7 +4,8 @@
   import type { SupportedLocale } from "$lib/const/locales";
   import type { SelectTenant } from "$lib/server/db/central-schema";
   import { type SelectAppointment } from "$lib/server/db/tenant-schema";
-  import type { SelectClient } from "$lib/server/email/email-service";
+  import { getChannelName, type SelectClient } from "$lib/server/email/email-service";
+  import type { ChannelWithRelations } from "$lib/server/services/channel-service";
   import EmailHeadline from "./components/EmailHeadline.svelte";
   import EmailLayout from "./components/EmailLayout.svelte";
   import EmailText from "./components/EmailText.svelte";
@@ -21,7 +22,7 @@
     locale: SupportedLocale;
     user: SelectClient;
     tenant: SelectTenant;
-    channel: string;
+    channel: ChannelWithRelations | null;
     appointment: SelectAppointment & { agentName: string };
     address: {
       street: string;
@@ -42,7 +43,7 @@
   <EmailText variant="md">
     {m["emails.appointmentRequest.introduction"]({}, { locale })}
   </EmailText>
-  <EmailHeadline>{channel}</EmailHeadline>
+  <EmailHeadline>{getChannelName(channel, locale)}</EmailHeadline>
   <EmailText variant="md">
     {appointment.agentName}<br />
     {renderAppointmentDate(appointment.appointmentDate, locale, appointment.timezone)}<br />

@@ -18,7 +18,22 @@ export const GET: RequestHandler = async () => {
         appointmentDate: new Date("2024-06-30T10:00:00"),
         agentName: "Dr. John Doe",
       } as SelectAppointment & { agentName: string },
-      channel: "Vaccination Appointment",
+      channel: {
+        id: "channel-123",
+        names: {
+          en: "Vaccination Appointment",
+          de: "Impftermin",
+        },
+        descriptions: {},
+        agents: [],
+        slotTemplates: [],
+        staffIds: [],
+        color: "",
+        pause: false,
+        isPublic: true,
+        requiresConfirmation: false,
+        archived: false,
+      },
       address: {
         street: "Musterstraße",
         number: "1",

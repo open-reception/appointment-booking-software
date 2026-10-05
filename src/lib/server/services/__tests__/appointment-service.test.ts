@@ -285,9 +285,7 @@ describe("AppointmentService", () => {
       } as any);
 
       const emailModule = await import("../../email/email-service");
-      const mockGetChannelTitle = vi.fn().mockResolvedValue("Test Channel");
       const mockSendAppointmentUpdatedEmail = vi.fn().mockResolvedValue(undefined);
-      vi.spyOn(emailModule, "getChannelTitle").mockImplementation(mockGetChannelTitle);
       vi.spyOn(emailModule, "sendAppointmentUpdatedEmail").mockImplementation(
         mockSendAppointmentUpdatedEmail,
       );
@@ -303,12 +301,10 @@ describe("AppointmentService", () => {
       expect(result.agentId).toBe("agent-456");
       expect(result.appointmentDate).toEqual(new Date("2024-01-15T11:00:00Z"));
       expect(mockDb.transaction).toHaveBeenCalled();
-      expect(mockGetChannelTitle).toHaveBeenCalledWith("tenant-123", "channel-123", "de");
       expect(mockSendAppointmentUpdatedEmail).toHaveBeenCalledWith(
         { email: "client@example.com", language: "de" },
         mockTenant,
         expect.objectContaining({ agentId: "agent-456" }),
-        "Test Channel",
       );
       expect(mockCleanAndRegenerateCache).toHaveBeenCalledTimes(1);
       expect(mockCleanAndRegenerateCache).toHaveBeenCalledWith(
@@ -689,9 +685,7 @@ describe("AppointmentService", () => {
       // Mock email service
       const emailModule = await import("../../email/email-service");
       const mockSendEmail = vi.fn().mockResolvedValue(undefined);
-      const mockGetChannelTitle = vi.fn().mockResolvedValue("Test Channel");
       vi.spyOn(emailModule, "sendAppointmentCancelledEmail").mockImplementation(mockSendEmail);
-      vi.spyOn(emailModule, "getChannelTitle").mockImplementation(mockGetChannelTitle);
 
       // Mock TenantAdminService
       const tenantModule = await import("../tenant-admin-service");
@@ -738,7 +732,6 @@ describe("AppointmentService", () => {
       await deletePromise;
 
       expect(mockDb.delete).toHaveBeenCalled();
-      expect(mockGetChannelTitle).toHaveBeenCalledWith("tenant-123", "channel-123", "de");
       expect(mockCleanAndRegenerateCache).toHaveBeenCalledTimes(1);
       expect(mockCleanAndRegenerateCache).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -766,69 +759,6 @@ describe("AppointmentService", () => {
       await expect(
         service.deleteAppointmentByStaff("appointment-123", "client@example.com", "de"),
       ).rejects.toThrow(NotFoundError);
-    });
-
-    it("should use default language when not provided", async () => {
-      const { getTenantDb } = await import("../../db");
-
-      // Mock email service
-      const emailModule = await import("../../email/email-service");
-      const mockSendEmail = vi.fn().mockResolvedValue(undefined);
-      const mockGetChannelTitle = vi.fn().mockResolvedValue("Test Channel");
-      vi.spyOn(emailModule, "sendAppointmentCancelledEmail").mockImplementation(mockSendEmail);
-      vi.spyOn(emailModule, "getChannelTitle").mockImplementation(mockGetChannelTitle);
-
-      // Mock TenantAdminService
-      const tenantModule = await import("../tenant-admin-service");
-      const mockTenant = {
-        id: "tenant-123",
-        shortName: "test-clinic",
-        longName: "Test Clinic",
-        languages: ["de", "en"],
-      };
-      vi.spyOn(tenantModule.TenantAdminService, "getTenantById").mockResolvedValue({
-        tenantData: mockTenant,
-      } as any);
-
-      // Mock NotificationService
-      const notificationModule = await import("../notification-service");
-      const mockCreateNotification = vi.fn().mockResolvedValue(["notification-1"]);
-      vi.spyOn(notificationModule.NotificationService, "forTenant").mockResolvedValue({
-        createNotification: mockCreateNotification,
-      } as any);
-
-      const mockDb = {
-        select: vi.fn().mockReturnValue({
-          from: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue([mockAppointment]),
-            }),
-          }),
-        }),
-        delete: vi.fn().mockReturnValue({
-          where: vi.fn().mockResolvedValue(undefined),
-        }),
-      };
-      vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
-
-      const service = await AppointmentService.forTenant("tenant-123");
-
-      // Use a promise to track async operations
-      const deletePromise = service.deleteAppointmentByStaff(
-        "appointment-123",
-        "client@example.com",
-      );
-
-      await deletePromise;
-
-      expect(mockGetChannelTitle).toHaveBeenCalledWith("tenant-123", "channel-123", "de");
-      expect(mockCleanAndRegenerateCache).toHaveBeenCalledTimes(1);
-      expect(mockCleanAndRegenerateCache).toHaveBeenCalledWith(
-        expect.objectContaining({
-          channelId: "channel-123",
-          awaitRebuild: true,
-        }),
-      );
     });
   });
 

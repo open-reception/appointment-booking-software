@@ -25,7 +25,6 @@ import * as tenantSchema from "../db/tenant-schema";
 import { type SelectAppointment } from "../db/tenant-schema";
 import { TenantService } from "../db/tenant-service";
 import {
-  getChannelTitle,
   sendAppointmentCancelledEmail,
   sendAppointmentCreatedEmail,
   sendAppointmentRejectedEmail,
@@ -274,20 +273,17 @@ export class AppointmentService {
         language: clientLanguage,
       };
 
-      // Get channel title for the email
-      const channelTitle = await getChannelTitle(this.tenantId, channelId, clientLanguage);
-
       // Send appropriate email based on whether confirmation is required
       if (requiresConfirmation) {
-        await sendAppointmentRequestEmail(clientData, tenant, appointment, channelTitle);
+        await sendAppointmentRequestEmail(clientData, tenant, appointment);
         log.info("Appointment request email sent", {
           appointmentId: appointment.id,
           tenantId: this.tenantId,
         });
       } else if (appointment.status === "REJECTED") {
-        await sendAppointmentRejectedEmail(clientData, tenant, appointment, channelTitle);
+        await sendAppointmentRejectedEmail(clientData, tenant, appointment);
       } else {
-        await sendAppointmentCreatedEmail(clientData, tenant, appointment, channelTitle);
+        await sendAppointmentCreatedEmail(clientData, tenant, appointment);
         log.info("Appointment confirmation email sent", {
           appointmentId: appointment.id,
           tenantId: this.tenantId,
@@ -568,9 +564,6 @@ export class AppointmentService {
       throw new InternalError("Tenant not found");
     }
 
-    // Get channel title
-    const channelTitle = await getChannelTitle(this.tenantId, channelId, clientLanguage);
-
     // Send cancellation email to client (async, don't wait)
     if (clientEmail) {
       const clientData = {
@@ -578,15 +571,13 @@ export class AppointmentService {
         language: clientLanguage,
       };
 
-      sendAppointmentCancelledEmail(clientData, tenant, appointment, channelTitle).catch(
-        (error) => {
-          log.error("Failed to send appointment cancellation email", {
-            appointmentId,
-            clientEmail,
-            error: String(error),
-          });
-        },
-      );
+      sendAppointmentCancelledEmail(clientData, tenant, appointment).catch((error) => {
+        log.error("Failed to send appointment cancellation email", {
+          appointmentId,
+          clientEmail,
+          error: String(error),
+        });
+      });
     }
 
     // Regenerate schedule cache
@@ -700,9 +691,6 @@ export class AppointmentService {
       throw new InternalError("Tenant not found");
     }
 
-    // Get channel title
-    const channelTitle = await getChannelTitle(this.tenantId, channelId, clientLanguage);
-
     // Send change email to client (async, don't wait)
     if (clientEmail) {
       const clientData = {
@@ -710,16 +698,11 @@ export class AppointmentService {
         language: clientLanguage,
       };
 
-      sendAppointmentUpdatedEmail(
-        clientData,
-        tenant,
-        {
-          ...appointment,
-          agentId: newAppointment.agentId,
-          appointmentDate: newAppointment.appointmentDate,
-        },
-        channelTitle,
-      ).catch((error) => {
+      sendAppointmentUpdatedEmail(clientData, tenant, {
+        ...appointment,
+        agentId: newAppointment.agentId,
+        appointmentDate: newAppointment.appointmentDate,
+      }).catch((error) => {
         log.error("Failed to send appointment update email", {
           appointmentId,
           clientEmail,
