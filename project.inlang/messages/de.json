@@ -604,13 +604,17 @@
 			"publicBooking": {
 				"title": "Öffentliche Buchung",
 				"description": "Einstellungen für die öffentliche Buchung in diesem Kanal.",
-				"isPublic": {
-					"title": "Öffentlich",
-					"label": "Jeder kann einen Termin buchen"
-				},
-				"requiresConfirmation": {
-					"title": "Bestätigung erforderlich",
-					"label": "Termine müssen vom Personal manuell bestätigt werden"
+				"general": {
+					"title": "Allgemeine Einstellungen",
+					"description": "Diese Einstellungen steuern das öffentliche Buchungsverhalten für diesen Kanal.",
+					"isPublic": {
+						"title": "Öffentlich",
+						"label": "Jeder kann einen Termin buchen"
+					},
+					"requiresConfirmation": {
+						"title": "Bestätigung erforderlich",
+						"label": "Termine müssen vom Personal manuell bestätigt werden"
+					}
 				}
 			},
 			"notifications": {

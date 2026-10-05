@@ -51,18 +51,18 @@
     </Form.Control>
   </Form.Field>
   <FormSplit
-    title="General"
-    description="These settings control the overall booking experience for this channel."
+    title={m["channels.edit.publicBooking.general.title"]()}
+    description={m["channels.edit.publicBooking.general.description"]()}
   >
     <div class="flex flex-col gap-4">
       <Form.Field {form} name="isPublic">
         <Form.Control>
           {#snippet children({ props })}
-            <Form.Label>{m["channels.edit.publicBooking.isPublic.title"]()}</Form.Label>
+            <Form.Label>{m["channels.edit.publicBooking.general.isPublic.title"]()}</Form.Label>
             <CheckboxWithLabel
               {...props}
               bind:value={$formData.isPublic}
-              label={m["channels.edit.publicBooking.isPublic.label"]()}
+              label={m["channels.edit.publicBooking.general.isPublic.label"]()}
               onCheckedChange={(v) => {
                 $formData.isPublic = v;
               }}
@@ -74,11 +74,13 @@
       <Form.Field {form} name="requiresConfirmation">
         <Form.Control>
           {#snippet children({ props })}
-            <Form.Label>{m["channels.edit.publicBooking.requiresConfirmation.title"]()}</Form.Label>
+            <Form.Label
+              >{m["channels.edit.publicBooking.general.requiresConfirmation.title"]()}</Form.Label
+            >
             <CheckboxWithLabel
               {...props}
               bind:value={$formData.requiresConfirmation}
-              label={m["channels.edit.publicBooking.requiresConfirmation.label"]()}
+              label={m["channels.edit.publicBooking.general.requiresConfirmation.label"]()}
               onCheckedChange={(v) => {
                 $formData.requiresConfirmation = v;
               }}

@@ -612,13 +612,17 @@
 			"publicBooking": {
 				"title": "Public Booking",
 				"description": "Settings for public booking in this channel.",
-				"isPublic": {
-					"title": "Public",
-					"label": "Anyone can book an appointment"
-				},
-				"requiresConfirmation": {
-					"title": "Requires Confirmation",
-					"label": "Appointments will have to be manually confirmed by staff"
+				"general": {
+					"title": "General",
+					"description": "These settings control the overall public booking experience for this channel.",
+					"isPublic": {
+						"title": "Public",
+						"label": "Anyone can book an appointment"
+					},
+					"requiresConfirmation": {
+						"title": "Requires Confirmation",
+						"label": "Appointments will have to be manually confirmed by staff"
+					}
 				}
 			},
 			"notifications": {
