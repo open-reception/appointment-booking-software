@@ -1,11 +1,12 @@
 <script lang="ts">
   import { resolve } from "$app/paths";
   import { Badge, type BadgeVariant } from "$lib/components/ui/badge";
-  import { Button } from "$lib/components/ui/button";
+  import { Button, buttonVariants } from "$lib/components/ui/button";
   import * as Item from "$lib/components/ui/item";
+  import * as Popover from "$lib/components/ui/popover";
   import { Text } from "$lib/components/ui/typography";
   import { ChevronRight, Lock, SquarePen } from "@lucide/svelte";
-  import type { Component } from "svelte";
+  import type { Component, Snippet } from "svelte";
 
   type TBadge = { variant: BadgeVariant; label: string };
 
@@ -13,6 +14,7 @@
     title,
     description,
     disabled,
+    disabledReason,
     badges,
     Icon,
     href,
@@ -21,6 +23,7 @@
     title: string;
     description?: string;
     disabled?: boolean;
+    disabledReason?: Snippet;
     badges?: TBadge[];
     Icon?: Component;
     href?: string;
@@ -55,7 +58,29 @@
   </Item.Content>
 {/snippet}
 
-{#if disabled}
+{#if disabled && disabledReason}
+  <Item.Root variant="outline">
+    {#snippet child({ props })}
+      <Popover.Root>
+        <Popover.Trigger
+          {...props}
+          openOnHover={true}
+          class={buttonVariants({
+            variant: "groupItem",
+            size: "sm",
+            class: "text-left",
+          })}
+        >
+          {@render content()}
+          <Item.Actions>
+            <Lock class="size-4" />
+          </Item.Actions>
+        </Popover.Trigger>
+        <Popover.Content sticky="partial">{@render disabledReason()}</Popover.Content>
+      </Popover.Root>
+    {/snippet}
+  </Item.Root>
+{:else if disabled}
   <Item.Root variant="outline">
     {#snippet child({ props })}
       <Button disabled={true} variant="groupItem" {...props}>
