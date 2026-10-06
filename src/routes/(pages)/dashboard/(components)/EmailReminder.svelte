@@ -43,6 +43,9 @@
         // Skip if reminder was already sent
         if (appointment.remindedAt) return undefined;
 
+        // Skip if appointment has not been confirmed
+        if (appointment.status !== "CONFIRMED") return undefined;
+
         // Skip if appointment is booked today
         if (
           appointment.createdAt &&
