@@ -68,7 +68,7 @@
           class={buttonVariants({
             variant: "groupItem",
             size: "sm",
-            class: "text-left",
+            class: "text-left opacity-50",
           })}
         >
           {@render content()}
