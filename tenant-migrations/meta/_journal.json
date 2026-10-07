@@ -148,6 +148,13 @@
       "when": 1790969990999,
       "tag": "0020_round_callisto",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1791392825812,
+      "tag": "0021_neat_paladin",
+      "breakpoints": true
     }
   ]
 }

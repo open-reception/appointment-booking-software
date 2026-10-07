@@ -294,8 +294,10 @@ describe("AppointmentService", () => {
       const result = await service.updateAppointmentByStaff(
         "appointment-123",
         { agentId: "agent-456", appointmentDate: "2024-01-15T11:00:00Z" },
-        "client@example.com",
-        "de",
+        {
+          email: "client@example.com",
+          language: "de",
+        },
       );
 
       expect(result.agentId).toBe("agent-456");

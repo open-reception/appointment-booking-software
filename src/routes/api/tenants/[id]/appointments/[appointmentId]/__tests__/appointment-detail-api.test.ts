@@ -85,10 +85,111 @@ describe("Appointment Detail API Routes", () => {
       expect(data.appointmentDate).toBe("2024-01-15T11:00:00.000Z");
       expect(mockAppointmentService.updateAppointmentByStaff).toHaveBeenCalledWith(
         mockAppointmentId,
-        { agentId: "agent-456", appointmentDate: "2024-01-15T11:00:00.000Z" },
-        "client@example.com",
-        "de",
+        {
+          agentId: "agent-456",
+          appointmentDate: "2024-01-15T11:00:00.000Z",
+          clientEmail: "client@example.com",
+          clientLanguage: "de",
+        },
+        { email: "client@example.com", language: "de" },
       );
+    });
+
+    it("should update progress without sending client notification options", async () => {
+      mockAppointmentService.updateAppointmentByStaff.mockResolvedValue({
+        progress: "IN_PROGRESS",
+      });
+
+      const event = createMockRequestEvent({
+        request: createMockRequest({
+          progress: "IN_PROGRESS",
+          clientEmail: "client@example.com",
+          clientLanguage: "de",
+        }),
+      });
+
+      const response = await PUT(event);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.progress).toBe("IN_PROGRESS");
+      expect(mockAppointmentService.updateAppointmentByStaff).toHaveBeenCalledWith(
+        mockAppointmentId,
+        { progress: "IN_PROGRESS" },
+        undefined,
+      );
+    });
+
+    it.each([
+      ["missing", {}],
+      ["empty", { progress: "" }],
+      ["null", { progress: null }],
+      ["non-string", { progress: 42 }],
+    ])("should reject %s progress values", async (_description, body) => {
+      const event = createMockRequestEvent({
+        request: createMockRequest(body),
+      });
+
+      const response = await PUT(event);
+      const result = await response.json();
+
+      expect(response.status).toBe(422);
+      expect(result.error).toContain("Invalid request data");
+      expect(mockAppointmentService.updateAppointmentByStaff).not.toHaveBeenCalled();
+    });
+
+    it("should return 403 when permission is denied for a progress update", async () => {
+      vi.mocked(checkPermission).mockImplementationOnce(() => {
+        throw new AuthorizationError("Insufficient permissions");
+      });
+
+      const event = createMockRequestEvent({
+        request: createMockRequest({ progress: "IN_PROGRESS" }),
+      });
+
+      const response = await PUT(event);
+      const result = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(result.error).toBe("Insufficient permissions");
+      expect(mockAppointmentService.updateAppointmentByStaff).not.toHaveBeenCalled();
+    });
+
+    it("should return 404 when the appointment for a progress update is not found", async () => {
+      mockAppointmentService.updateAppointmentByStaff.mockRejectedValue(
+        new NotFoundError("Appointment not found"),
+      );
+
+      const event = createMockRequestEvent({
+        request: createMockRequest({ progress: "IN_PROGRESS" }),
+      });
+
+      const response = await PUT(event);
+      const result = await response.json();
+
+      expect(response.status).toBe(404);
+      expect(result.error).toBe("Appointment not found");
+      expect(mockAppointmentService.updateAppointmentByStaff).toHaveBeenCalledWith(
+        mockAppointmentId,
+        { progress: "IN_PROGRESS" },
+        undefined,
+      );
+    });
+
+    it("should return 500 when the service fails to update progress", async () => {
+      mockAppointmentService.updateAppointmentByStaff.mockRejectedValue(
+        new Error("Database error"),
+      );
+
+      const event = createMockRequestEvent({
+        request: createMockRequest({ progress: "IN_PROGRESS" }),
+      });
+
+      const response = await PUT(event);
+      const result = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(result.error).toBe("Internal server error");
     });
 
     it("should return 400 for invalid request payload", async () => {

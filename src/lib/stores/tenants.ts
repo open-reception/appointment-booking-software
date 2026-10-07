@@ -107,7 +107,7 @@ const triggerOnboardingNotifications = (
       const hasCompleteChannel = get(channels).channels.some(
         (c) => c.agentIds?.length > 0 && c.slotTemplates?.length > 0 && c.pause === false,
       );
-      if (!hasCompleteChannel) {
+      if (!hasCompleteChannel && curState.currentTenant?.setupState === "CHANNELS") {
         return;
       }
     }
