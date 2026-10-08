@@ -11,21 +11,30 @@
     locale,
     user,
     tenant,
-    loginUrl,
+    resetUri,
+    expirationMinutes,
   }: {
     locale: SupportedLocale;
     user: SelectClient;
     tenant: SelectTenant;
-    loginUrl: string;
+    resetUri: string;
+    expirationMinutes: number;
   } = $props();
 </script>
 
 <EmailLayout {locale}>
-  <EmailText variant="md">{m["emails.greeting"]({ name: user.email }, { locale })}</EmailText>
+  <EmailText variant="md">
+    {m["emails.greeting"]({ name: user.email }, { locale })}
+  </EmailText>
   <EmailText variant="md">
     {m["emails.pinReset.introduction"]({ tenant: tenant.longName }, { locale })}
   </EmailText>
-  <EmailButton href={loginUrl}>{m["emails.pinReset.action"]({}, { locale })}</EmailButton>
+  <EmailButton {locale} href={resetUri}>
+    {m["emails.pinReset.action"]({}, { locale })}
+  </EmailButton>
+  <EmailText variant="md">
+    {m["emails.pinReset.hint"]({ expirationMinutes }, { locale })}
+  </EmailText>
   <EmailText variant="md" color="text-light">
     {m["emails.pinReset.reason"]({}, { locale })}
   </EmailText>

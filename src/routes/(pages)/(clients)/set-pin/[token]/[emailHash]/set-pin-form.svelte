@@ -1,26 +1,25 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
+  import { page } from "$app/state";
   import { m } from "$i18n/messages.js";
-  import { UnifiedAppointmentCrypto } from "$lib/client/appointment-crypto";
   import * as Form from "$lib/components/ui/form";
   import type { EventReporter } from "$lib/components/ui/form/form-root.svelte";
-  import { Input } from "$lib/components/ui/input";
   import InputOtpCustomized from "$lib/components/ui/input-top-customized/input-otp-customized.svelte";
   import { ROUTES } from "$lib/const/routes";
   import { pinThrottleStore } from "$lib/stores/pin-throttle";
   import { publicStore } from "$lib/stores/public";
+  import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { formSchema } from "./schema";
-  import { onMount } from "svelte";
+  import { UnifiedAppointmentCrypto } from "$lib/client/appointment-crypto";
 
   let { formId, onEvent }: { formId: string; onEvent: EventReporter } = $props();
 
   const form = superForm(
     {
-      email: "",
       pin: "",
     },
     {
@@ -29,19 +28,45 @@
         onEvent({ isSubmitting: true });
         const validation = await validateForm();
         if (validation.valid && $publicStore.tenant) {
-          cancel();
+          if (!page.params.token) {
+            console.error("Missing token in URL params");
+            toast.error(m["clients.pinReset.page.error"]());
+            cancel();
+            return;
+          }
+
+          if (!page.params.emailHash) {
+            console.error("Missing email hash in URL params");
+            toast.error(m["clients.pinReset.page.error"]());
+            cancel();
+            return;
+          }
+
           $publicStore.crypto = new UnifiedAppointmentCrypto();
-          await $publicStore.crypto
-            .loginExistingClient($formData.email, $formData.pin, $publicStore.tenant.id)
-            .then(() => {
-              toast.success(m["public.login.success"]());
-              goto(resolve(ROUTES.CLIENTS.MAIN));
-            })
-            .catch(() => {
-              $formData.pin = "";
-              toast.error(m["public.login.error"]());
-              onEvent({ isSubmitting: false });
-            });
+
+          if (!$publicStore.crypto) {
+            console.error("Crypto module is not available");
+            toast.error(m["clients.pinReset.page.error"]());
+            cancel();
+            return;
+          }
+
+          const success = await $publicStore.crypto.setNewPin(
+            page.params.emailHash,
+            $formData.pin,
+            $publicStore.tenant?.id,
+            page.params.token,
+          );
+
+          $publicStore.crypto?.logoutClient();
+          if (success) {
+            toast.success(m["clients.pinReset.page.success"]());
+            goto(resolve(ROUTES.CLIENTS.MAIN));
+          } else {
+            console.error("Failed to set new PIN");
+            toast.error(m["clients.pinReset.page.error"]());
+          }
+          cancel();
         }
         onEvent({ isSubmitting: false });
       },
@@ -56,7 +81,7 @@
     // Re-evaluate whenever timeCounter changes
     // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     timeCounter; // Read for reactivity
-    if (!$formData?.email || !throttleState.throttleUntil) return false;
+    if (!$formData?.pin || !throttleState.throttleUntil) return false;
     return throttleState.throttleUntil > Date.now();
   });
 
@@ -68,15 +93,6 @@
 </script>
 
 <Form.Root {formId} {enhance}>
-  <Form.Field {form} name="email">
-    <Form.Control>
-      {#snippet children({ props })}
-        <Form.Label>{m["form.email"]()}</Form.Label>
-        <Input {...props} bind:value={$formData.email} type="email" />
-      {/snippet}
-    </Form.Control>
-    <Form.FieldErrors />
-  </Form.Field>
   <Form.Field {form} name="pin">
     <Form.Control>
       {#snippet children({ props })}

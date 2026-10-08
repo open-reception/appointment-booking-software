@@ -25,6 +25,7 @@ export const ROUTES = {
     CHANNEL_SLOTS: "/dashboard/channels/[channelId]/slots",
     CHANNEL_PUBLIC_BOOKING: "/dashboard/channels/[channelId]/public-booking",
     ABSENCES: "/dashboard/absences",
+    CLIENTS: "/dashboard/clients",
     SETTINGS: "/dashboard/settings",
     ACCOUNT: {
       MAIN: "/dashboard/account",
