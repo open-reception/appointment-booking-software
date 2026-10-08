@@ -11,13 +11,15 @@ import type { TChannel } from "$lib/types/channel";
 import { serverAppointmentStatusToUiFilterStatus } from "$lib/utils/appointments";
 import {
   getWeekStartsOn,
+  isInThePast,
+  isToday,
   localToUTCWithoutDST,
   timeUTCToLocalWithoutOffset,
 } from "$lib/utils/datetime";
 import {
   getLocalTimeZone,
-  parseAbsoluteToLocal,
   parseAbsolute,
+  parseAbsoluteToLocal,
   toCalendarDate,
   type CalendarDate,
 } from "@internationalized/date";
@@ -384,6 +386,34 @@ export const confirmAppointment = async (opts: {
   }
 };
 
+export const progressAppointment = async (opts: {
+  tenant: string;
+  appointment: string;
+  progress: string;
+}) => {
+  if (!browser) return;
+
+  let body = {};
+  body = {
+    progress: opts.progress,
+  };
+  const res = await fetch(`/api/tenants/${opts.tenant}/appointments/${opts.appointment}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+
+  if (res.status < 400) {
+    return true;
+  } else {
+    if (res.status === 401) {
+      goto(resolve(ROUTES.LOGIN));
+    } else {
+      console.error("Unable to progress appointment", opts, res.status, res.statusText);
+    }
+    return false;
+  }
+};
+
 export const openAppointmentById = async (
   calendar: TCalendar,
   channels: TChannel[],
@@ -438,4 +468,11 @@ export const openAppointmentById = async (
 export const convertDate = (dateStr: string) => {
   const zonedDateTime = parseAbsoluteToLocal(dateStr);
   return toCalendarDate(zonedDateTime);
+};
+
+export const isShowingAppointmentProgress = (
+  status: TCalendarItem["status"],
+  dateTime: Date | undefined,
+) => {
+  return status === "booked" && dateTime && (isToday(dateTime) || isInThePast(dateTime));
 };

@@ -1203,6 +1203,9 @@
 					"description": "This appointment was added successfully"
 				}
 			}
+		},
+		"progressAppointment": {
+			"error": "Failed to progress appointment"
 		}
 	},
 	"emails": {

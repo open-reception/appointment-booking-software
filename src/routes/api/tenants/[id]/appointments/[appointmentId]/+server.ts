@@ -295,14 +295,23 @@ export const GET: RequestHandler = async ({ params, locals }) => {
   }
 };
 
-const requestSchema = z.object({
-  // For sending change notifications
-  clientEmail: z.string().optional(),
-  clientLanguage: z.string().optional(),
-  // Actual update data
-  agentId: z.string().min(1),
-  appointmentDate: z.string().min(1),
-});
+const requestSchema = z.union([
+  // Updating the appointment and trigger update emails
+  z.object({
+    // For sending change notifications
+    clientEmail: z.string().optional(),
+    clientLanguage: z.string().optional(),
+    // Actual update data
+    agentId: z.string().min(1),
+    appointmentDate: z.string().min(1),
+    // Improves type guards
+    progress: z.undefined().optional(),
+  }),
+  // Just progress changes
+  z.object({
+    progress: z.string().min(1),
+  }),
+]);
 
 export const PUT: RequestHandler = async ({ params, locals, request }) => {
   const log = logger.setContext("API");
@@ -343,13 +352,20 @@ export const PUT: RequestHandler = async ({ params, locals, request }) => {
       );
     }
 
-    const { clientEmail, clientLanguage, ...updateData } = validation.data;
+    const updateData = validation.data;
+    const clientEmail = updateData.progress === undefined ? updateData.clientEmail : undefined;
+    const clientLanguage =
+      updateData.progress === undefined ? updateData.clientLanguage : undefined;
     const appointmentService = await AppointmentService.forTenant(tenantId);
     const updated = await appointmentService.updateAppointmentByStaff(
       appointmentId,
       updateData,
-      clientEmail,
-      clientLanguage,
+      clientEmail && clientLanguage
+        ? {
+            email: clientEmail,
+            language: clientLanguage,
+          }
+        : undefined,
     );
 
     if (!updated) {

@@ -1,14 +1,18 @@
 <script lang="ts">
+  import { page } from "$app/state";
+  import { m } from "$i18n/messages";
   import type { AppointmentData } from "$lib/client/appointment-crypto";
+  import { Button } from "$lib/components/ui/button";
   import { Text } from "$lib/components/ui/typography";
+  import { type SelectAppointmentProgress } from "$lib/server/db/tenant-schema";
+  import { auth } from "$lib/stores/auth";
+  import { calendarStore } from "$lib/stores/calendar";
   import { staffCrypto } from "$lib/stores/staff-crypto";
   import { type TCalendarItem } from "$lib/types/calendar";
-  import Loader2Icon from "@lucide/svelte/icons/loader-2";
-  import { calendarStore } from "$lib/stores/calendar";
-  import { Button } from "$lib/components/ui/button";
-  import { m } from "$i18n/messages";
   import { cn } from "$lib/utils";
-  import { auth } from "$lib/stores/auth";
+  import Loader2Icon from "@lucide/svelte/icons/loader-2";
+  import AppointmentProgressIcon from "./AppointmentProgressIcon.svelte";
+  import { isShowingAppointmentProgress } from "./utils";
 
   let {
     item,
@@ -126,12 +130,27 @@
 {:else if decrypted}
   <Button
     class={cn(
-      "m-0 h-full w-full cursor-pointer items-start justify-start rounded-none px-px py-px text-left leading-none break-all whitespace-pre-line text-(--channel-color-contrast) hover:bg-transparent! hover:text-(--channel-color-contrast) focus:ring-1",
+      "m-0 h-full w-full cursor-pointer items-start! justify-start! rounded-none px-1! py-1! text-left break-all whitespace-pre-line text-(--channel-color-contrast) hover:bg-transparent! hover:text-(--channel-color-contrast) focus:ring-1",
       scale === 1 ? "text-xs" : "",
     )}
     variant="ghost"
     onclick={setCalendarItem}
   >
-    {decrypted.name}
+    <div class="flow-root">
+      {#if isShowingAppointmentProgress(item.status, item.appointment?.dateTime)}
+        {#await page.data.streamed.progressStates as Promise<SelectAppointmentProgress[]> then progressStates}
+          {#if progressStates && progressStates.length > 0}
+            {@const curProgress = progressStates.find((ps) => ps.state === item.progress)}
+            {#if curProgress}
+              <AppointmentProgressIcon
+                icon={curProgress.icon}
+                class="-mt-0.5 mr-1 inline-block size-3 p-0! leading-3"
+              />
+            {/if}
+          {/if}
+        {/await}
+      {/if}
+      {decrypted.name}
+    </div>
   </Button>
 {/if}
