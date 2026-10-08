@@ -43,9 +43,14 @@ export const load = ({ cookies, locals, fetch }) => {
     try {
       const body = await res.json();
       const list = body.states as SelectAppointmentProgress[];
-      return list.sort((a, b) =>
-        getCurrentTranslation(a.names).localeCompare(getCurrentTranslation(b.names)),
-      );
+      return list
+        .filter((item) => {
+          const states = ["NOT_STARTED", "WAITING", "IN_PROGRESS", "DONE"];
+          return states.includes(item.state);
+        })
+        .sort((a, b) =>
+          getCurrentTranslation(a.names).localeCompare(getCurrentTranslation(b.names)),
+        );
     } catch (error) {
       log.error("Failed to parse appointment progress response", { error });
     }

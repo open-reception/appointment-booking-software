@@ -610,12 +610,21 @@ export class AppointmentService {
    */
   public async updateAppointmentByStaff(
     appointmentId: string,
-    updateData: { agentId?: string; appointmentDate?: string; progress?: string },
+    updateData: { agentId: string; appointmentDate: string } | { progress: string },
     emailParams?: {
       email: string | undefined;
       language: string;
     },
-  ): Promise<{ agentId: string; appointmentDate?: Date }> {
+  ): Promise<
+    | {
+        agentId: string;
+        appointmentDate: Date;
+        timezone: string;
+      }
+    | {
+        progress: string;
+      }
+  > {
     const log = logger.setContext("AppointmentService");
     log.debug("Updating appointment by staff", {
       appointmentId,
@@ -643,7 +652,7 @@ export class AppointmentService {
     const channelId = appointment.channelId;
 
     const newAppointment = await db.transaction(async (tx) => {
-      if (updateData.appointmentDate) {
+      if ("appointmentDate" in updateData && updateData.appointmentDate) {
         if (!updateData.agentId) {
           throw new ValidationError("Agent ID is required when updating appointment date");
         }
@@ -659,11 +668,15 @@ export class AppointmentService {
       const newAppointments = await tx
         .update(tenantSchema.appointment)
         .set({
-          agentId: updateData.agentId,
-          appointmentDate: updateData.appointmentDate
-            ? new Date(updateData.appointmentDate)
-            : undefined,
-          progress: updateData.progress,
+          ...("appointmentDate" in updateData
+            ? {
+                agentId: updateData.agentId,
+                appointmentDate: updateData.appointmentDate
+                  ? new Date(updateData.appointmentDate)
+                  : undefined,
+              }
+            : undefined),
+          ...("progress" in updateData ? { progress: updateData.progress } : undefined),
           updatedAt: new Date(),
         })
         .where(eq(tenantSchema.appointment.id, appointmentId))

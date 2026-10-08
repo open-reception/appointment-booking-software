@@ -300,6 +300,10 @@ describe("AppointmentService", () => {
         },
       );
 
+      if (!("agentId" in result)) {
+        throw new Error("Expected appointment update result");
+      }
+
       expect(result.agentId).toBe("agent-456");
       expect(result.appointmentDate).toEqual(new Date("2024-01-15T11:00:00Z"));
       expect(mockDb.transaction).toHaveBeenCalled();
