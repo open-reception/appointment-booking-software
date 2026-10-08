@@ -1,14 +1,26 @@
 <script lang="ts">
+  import { resolve } from "$app/paths";
   import { m } from "$i18n/messages";
   import { MaxPageWidth } from "$lib/components/layouts/max-page-width";
   import { SidebarLayout } from "$lib/components/layouts/sidebar-layout";
+  import { LoadingItemGroup } from "$lib/components/templates/loading/index.js";
+  import { PageHeadline } from "$lib/components/templates/page-headline";
+  import { GroupItem } from "$lib/components/ui/group-item";
+  import * as Item from "$lib/components/ui/item";
   import { ROUTES } from "$lib/const/routes";
-  import { Card } from "$lib/components/ui/card";
-  import { Headline } from "$lib/components/ui/typography";
-  import { EditSettingsForm } from "./(components)/edit-settings-form";
-  import { LoadingCenter } from "$lib/components/templates/loading";
+  import type { TTenantSettings } from "$lib/types/tenant";
 
   let { data } = $props();
+
+  const isAddressComplete = (address: TTenantSettings["address"]) => {
+    return (
+      address &&
+      address.street !== "" &&
+      address.number !== "" &&
+      address.zip !== "" &&
+      address.city !== ""
+    );
+  };
 </script>
 
 <svelte:head>
@@ -19,18 +31,45 @@
   breakcrumbs={[
     {
       label: m["nav.settings"](),
-      href: ROUTES.DASHBOARD.SETTINGS,
+      href: ROUTES.DASHBOARD.SETTINGS.MAIN,
     },
   ]}
 >
-  <MaxPageWidth maxWidth="lg">
+  <MaxPageWidth maxWidth="lg" class="flex flex-col gap-6">
     {#await data.streamed.item}
-      <LoadingCenter title={m["settings.loading"]()} class="h-[80vh] py-20" />
+      <LoadingItemGroup title={m["settings.loading"]()} />
     {:then item}
-      <Card>
-        <Headline style="h4" level="h1">Settings</Headline>
-        <EditSettingsForm entity={item} />
-      </Card>
+      {#if item}
+        <PageHeadline title={m["settings.overview.title"]()} />
+        <Item.Group class="gap-2">
+          <GroupItem
+            title={m["settings.general.title"]()}
+            description={m["settings.general.description"]()}
+            badges={item.longName === ""
+              ? [{ variant: "destructive", label: m["required"]() }]
+              : undefined}
+            href={resolve(ROUTES.DASHBOARD.SETTINGS.GENERAL)}
+          />
+          <GroupItem
+            title={m["settings.address.title"]()}
+            description={m["settings.address.description"]()}
+            badges={!isAddressComplete(item.address)
+              ? [{ variant: "destructive", label: m["required"]() }]
+              : undefined}
+            href={resolve(ROUTES.DASHBOARD.SETTINGS.ADDRESS)}
+          />
+          <GroupItem
+            title={m["settings.links.title"]()}
+            description={m["settings.links.description"]()}
+            href={resolve(ROUTES.DASHBOARD.SETTINGS.LINKS)}
+          />
+          <GroupItem
+            title={m["settings.advanced.title"]()}
+            description={m["settings.advanced.description"]()}
+            href={resolve(ROUTES.DASHBOARD.SETTINGS.ADVANCED)}
+          />
+        </Item.Group>
+      {/if}
     {/await}
   </MaxPageWidth>
 </SidebarLayout>

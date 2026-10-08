@@ -21,7 +21,7 @@
     },
     {
       title: m["nav.settings"](),
-      url: ROUTES.DASHBOARD.SETTINGS,
+      url: ROUTES.DASHBOARD.SETTINGS.MAIN,
       isTenantOnly: true,
       icon: SettingsIcon,
       roles: ["GLOBAL_ADMIN", "TENANT_ADMIN"],

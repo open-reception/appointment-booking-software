@@ -375,6 +375,7 @@
 					"weekdays": "Weekdays"
 		}
 	},
+	"save": "Save",
 	"cancel": "Cancel",
 	"actions": "Actions",
 	"view": "View",
@@ -741,14 +742,17 @@
 	"settings": {
 		"title": "Settings",
 		"loading": "Loading settings...",
-		"form": {
-			"sections": {
-				"general": "General",
-				"address": "Address",
-				"links": "Links",
-				"advanced": "Advanced"
-			},
-			"fields": {
+		"success": "Settings updated",
+		"error": "Error saving settings",
+		"overview": {
+			"title": "Settings"
+		},
+		"general": {
+			"title": "General",
+			"description": "Name, Description and Language settings",
+			"languages": {
+				"title": "Languages",
+				"description": "Define the languages you want to support and set a default language.",
 				"languages": {
 					"title": "Languages",
 					"description": "Define the languages your customers will see. You need to select at least one.",
@@ -761,7 +765,11 @@
 					"errors": {
 						"notInLanguages": "Default language must be one of the selected languages"
 					}
-				},
+				}
+			},
+			"branding": {
+				"title": "Branding",
+				"description": "Set name, description and logo for your organization.",
 				"longName": {
 					"title": "Name",
 					"description": "Public name of your organization."
@@ -772,7 +780,50 @@
 				"descriptions": {
 					"title": "Description (optional)",
 					"description": "Short description of your organization. Will be shown on the home page."
-				},
+				}
+			}
+		},
+		"address": {
+			"title": "Address",
+			"description": "Your organizations full address for appointments",
+			"address": {
+				"title": "Visitor Address",
+				"description": "This address will be included in appointment information for your clients."
+			}
+		},
+		"links": {
+			"title": "Links",
+			"description": "Website and legal links",
+			"website": {
+				"title": "Website",
+				"description": "If you set this, a link will be shown on the home page."
+			},
+			"legal": {
+				"title": "Legal",
+				"description": "Legal links are shown in the footer, when set."
+			}
+		},
+		"advanced": {
+			"title": "Advanced",
+			"description": "Compliance and required client data",
+			"compliance": {
+				"title": "Compliance",
+				"description": "Ensure your organization complies with legal requirements. Legal links can be set in the Links section."
+			},
+			"requirements": {
+				"title": "Requirements",
+				"description": "Specify globally required client data for publically booked appointments."
+			}
+		},
+		"form": {
+			"sections": {
+				"general": "General",
+				"address": "Address",
+				"links": "Links",
+				"advanced": "Advanced"
+			},
+			"fields": {
+				
 				"street": {
 					"title": "Street"
 				},

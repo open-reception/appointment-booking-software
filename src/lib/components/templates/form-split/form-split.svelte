@@ -6,9 +6,16 @@
   let {
     title,
     description,
+    hint,
     class: className,
     children,
-  }: { title: string; description: string; class?: string; children?: Snippet } = $props();
+  }: {
+    title: string;
+    description: string;
+    hint?: Snippet;
+    class?: string;
+    children?: Snippet;
+  } = $props();
 </script>
 
 <div class={cn("flex flex-col gap-3 md:grid md:grid-cols-3 md:gap-20", className)}>
@@ -21,8 +28,13 @@
         {description}
       </Text>
     {/if}
+    {#if hint}
+      <div class="mt-4">
+        {@render hint?.()}
+      </div>
+    {/if}
   </div>
-  <div class="col-span-2">
+  <div class="col-span-2 mt-2">
     {@render children?.()}
   </div>
 </div>

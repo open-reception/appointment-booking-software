@@ -107,7 +107,7 @@
               {
                 label: m["dashboard.onboarding.sections.settings.action"](),
                 onClick: () => {
-                  goto(resolve(ROUTES.DASHBOARD.SETTINGS));
+                  goto(resolve(ROUTES.DASHBOARD.SETTINGS.MAIN));
                 },
               },
             ],

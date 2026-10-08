@@ -92,7 +92,6 @@
                     type: "action",
                     icon: EditIcon,
                     label: m["edit"](),
-                    isMainAction: true,
                     onClick: () => {
                       curItem = item;
                       openDialog("edit");
@@ -101,6 +100,7 @@
                   {
                     type: "action",
                     icon: SelectIcon,
+                    isMainAction: true,
                     label: m["select"](),
                     onClick: () => tenantsStore.setCurrentTenant(item.id),
                   },
