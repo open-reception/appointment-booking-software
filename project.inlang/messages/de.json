@@ -367,6 +367,7 @@
 			"weekdays": "Wochentage"
 		}
 	},
+	"save": "Speichern",
 	"cancel": "Abbrechen",
 	"actions": "Aktionen",
 	"view": "Ansehen",
@@ -733,14 +734,17 @@
 	"settings": {
 		"title": "Einstellungen",
 		"loading": "Lade Einstellungen...",
-		"form": {
-			"sections": {
-				"general": "Allgemein",
-				"address": "Adresse",
-				"links": "Links",
-				"advanced": "Erweitert"
-			},
-			"fields": {
+		"success": "Einstellungen aktualisiert",
+		"error": "Fehler beim Speichern der Einstellungen",
+		"overview": {
+			"title": "Einstellungen"
+		},
+		"general": {
+			"title": "Allgemein",
+			"description": "Name, Beschreibung und Sprachen",
+			"languages": {
+				"title": "Sprachen",
+				"description": "Definiere Sprachen, die Du unterstützen möchtest und lege eine Standardsprache fest.",
 				"languages": {
 					"title": "Sprachen",
 					"description": "Wähle die Sprachen, die Klienten angezeigt bekommen sollen. Du musst mindestens Eine auswählen.",
@@ -753,7 +757,11 @@
 					"errors": {
 						"notInLanguages": "Muss eine der ausgewählten Sprachen sein"
 					}
-				},
+				}
+			},
+			"branding": {
+				"title": "Branding",
+				"description": "Lege Name, Beschreibung und Logo für deine Organisation fest.",
 				"longName": {
 					"title": "Name",
 					"description": "Der öffentliche Name Deiner Organisation."
@@ -764,7 +772,49 @@
 				"descriptions": {
 					"title": "Beschreibung (optional)",
 					"description": "Kurze Beschreibung deiner Organisation. Wird auf der Startseite angezeigt."
-				},
+				}
+			}
+		},
+		"address": {
+			"title": "Adresse",
+			"description": "Die vollständige Adresse deiner Organisation für Termine",
+			"address": {
+				"title": "Besucheradresse",
+				"description": "Diese Adresse wird in den Termininformationen für deine Klienten angezeigt."
+			}
+		},
+		"links": {
+			"title": "Links",
+			"description": "Webseite- und rechtliche Links",
+			"website": {
+				"title": "Webseite",
+				"description": "Wenn du eine Webseite angibst, wird ein Link auf der Startseite angezeigt."
+			},
+			"legal": {
+				"title": "Rechtliche Links",
+				"description": "Rechtliche Links werden in der Fußzeile angezeigt, wenn sie gesetzt sind."
+			}
+		},
+		"advanced": {
+			"title": "Erweitert",
+			"description": "Compliance und erforderliche Kundendaten",
+			"compliance": {
+				"title": "Compliance",
+				"description": "Stelle sicher, dass deine Organisation den gesetzlichen Anforderungen entspricht. Rechtliche Links können im Abschnitt Links gesetzt werden."
+			},
+			"requirements": {
+				"title": "Bedingungen",
+				"description": "Gib' an welche Informationen für alle öffentlich gebuchten Termine erforderlich sind."
+			}
+		},
+		"form": {
+			"sections": {
+				"general": "Allgemein",
+				"address": "Adresse",
+				"links": "Links",
+				"advanced": "Erweitert"
+			},
+			"fields": {
 				"street": {
 					"title": "Straße"
 				},

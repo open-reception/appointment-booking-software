@@ -103,6 +103,15 @@ const triggerOnboardingNotifications = (
   curState: TenantState,
 ) => {
   if (newCurrentTenant && newCurrentTenant?.setupState !== "READY") {
+    // In the progress on configuring settings?
+    if (
+      newCurrentTenant?.setupState === "SETTINGS" &&
+      curState.currentTenant?.setupState === "SETTINGS"
+    ) {
+      return;
+    }
+
+    // In the progress on configuring the first channel?
     if (newCurrentTenant?.setupState === "CHANNELS") {
       const hasCompleteChannel = get(channels).channels.some(
         (c) => c.agentIds?.length > 0 && c.slotTemplates?.length > 0 && c.pause === false,

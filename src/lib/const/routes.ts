@@ -25,7 +25,13 @@ export const ROUTES = {
     CHANNEL_SLOTS: "/dashboard/channels/[channelId]/slots",
     CHANNEL_PUBLIC_BOOKING: "/dashboard/channels/[channelId]/public-booking",
     ABSENCES: "/dashboard/absences",
-    SETTINGS: "/dashboard/settings",
+    SETTINGS: {
+      MAIN: "/dashboard/settings",
+      GENERAL: "/dashboard/settings/general",
+      ADDRESS: "/dashboard/settings/address",
+      LINKS: "/dashboard/settings/links",
+      ADVANCED: "/dashboard/settings/advanced",
+    },
     ACCOUNT: {
       MAIN: "/dashboard/account",
       GENERAL: "/dashboard/account/general",
