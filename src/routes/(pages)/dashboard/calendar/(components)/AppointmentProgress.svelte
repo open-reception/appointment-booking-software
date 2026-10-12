@@ -64,7 +64,7 @@
             {#if curProgress}
               <AppointmentProgressItem state={curProgress} />
             {:else}
-              Select Progress
+              {m["unknown"]()}
             {/if}
           {/if}
         </DropdownMenu.Trigger>

@@ -142,9 +142,14 @@
           {#if progressStates && progressStates.length > 0}
             {@const curProgress = progressStates.find((ps) => ps.state === item.progress)}
             {#if curProgress}
+              {@const shouldSpin =
+                curProgress.group === "IN_PROGRESS" && ["IN_PROGRESS"].includes(curProgress.icon)}
               <AppointmentProgressIcon
                 icon={curProgress.icon}
-                class="-mt-0.5 mr-1 inline-block size-3 p-0! leading-3"
+                class={cn(
+                  "-mt-0.5 mr-1 inline-block size-3 p-0! leading-3",
+                  shouldSpin ? "animate-[spin-pause_3s_ease-in-out_infinite]" : "",
+                )}
               />
             {/if}
           {/if}
@@ -154,3 +159,15 @@
     </div>
   </Button>
 {/if}
+
+<style>
+  @keyframes spin-pause {
+    0%,
+    100% {
+      transform: rotate(0deg);
+    }
+    50% {
+      transform: rotate(360deg);
+    }
+  }
+</style>
