@@ -5,6 +5,7 @@
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
   import { Separator } from "$lib/components/ui/separator";
   import { type SelectAppointmentProgress } from "$lib/server/db/tenant-schema";
+  import { auth } from "$lib/stores/auth";
   import { type CurAppointmentItem } from "$lib/stores/calendar";
   import { Loader2 } from "@lucide/svelte";
   import { toast } from "svelte-sonner";
@@ -27,6 +28,7 @@
   const onChange = async () => {
     isSubmitting = true;
 
+    auth.refreshLastActive();
     const success = await progressAppointment({
       tenant: tenantId,
       appointment: item.appointment.id,
