@@ -1245,6 +1245,9 @@
 					"description": "Der Termin wurde erfolgreich hinzugefügt"
 				}
 			}
+		},
+		"progressAppointment": {
+			"error": "Fehler beim Fortschreiten des Termins"
 		}
 	},
 	"emails": {

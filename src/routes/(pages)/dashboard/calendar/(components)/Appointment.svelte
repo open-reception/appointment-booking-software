@@ -17,6 +17,7 @@
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
   import { getClientTunnel } from "./add-appointment/utils";
+  import AppointmentProgress from "./AppointmentProgress.svelte";
   import { cancelAppointment, confirmAppointment, denyAppointment } from "./utils";
 
   let {
@@ -265,6 +266,7 @@
           </Button>
         </div>
       {/if}
+      <AppointmentProgress {tenantId} bind:item {updateCalendar} />
     </div>
   {/if}
 </ResponsiveDialog>

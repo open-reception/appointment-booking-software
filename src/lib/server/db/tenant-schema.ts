@@ -1,4 +1,4 @@
-import type { InferSelectModel } from "drizzle-orm";
+import { sql, type InferSelectModel } from "drizzle-orm";
 import {
   boolean,
   date,
@@ -15,6 +15,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import z from "zod/v4";
 
 /**
  * Database enums for tenant-specific entities
@@ -39,6 +40,24 @@ export const notificationTypes = [
 export type NotificationType = (typeof notificationTypes)[number];
 
 export const notificationTypeEnum = pgEnum("notification_type", notificationTypes);
+
+export const deadlineUnits = ["hours", "days", "weeks", "months"] as const;
+export const deadlineNames = ["bookMinAhead", "bookMaxAhead"] as const;
+
+export const deadlineSchemaDuration = z.object({
+  type: "duration",
+  value: z.number().int().min(1).max(12),
+  unit: z.enum(deadlineUnits),
+});
+export const deadlineSchema = z.union([deadlineSchemaDuration]);
+
+export const deadlinesSchema = z.object({
+  bookMinAhead: deadlineSchema.optional(),
+  bookMaxAhead: deadlineSchema.optional(),
+});
+
+export type Deadline = z.infer<typeof deadlineSchema>;
+export type Deadlines = z.infer<typeof deadlinesSchema>;
 
 /**
  * Agent table - represents personnel or staff members who can be assigned to channels
@@ -81,6 +100,11 @@ export const channel = pgTable("channel", {
   isPublic: boolean("is_public"),
   /** Whether appointments must be explicitly confirmed by staff */
   requiresConfirmation: boolean("requires_confirmation"),
+  /** Deadlines for booking an appointment within the channel */
+  deadlines: jsonb("deadlines")
+    .$type<Deadlines>()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
   /** Archived-flag */
   archived: boolean("archived").notNull().default(false),
 });
@@ -196,6 +220,27 @@ export const appointment = pgTable("appointment", {
   updatedAt: timestamp("updated_at").defaultNow(),
   /** Timestamp when the client was last reminded about the appointment */
   remindedAt: timestamp("reminded_at"),
+  /** Progress of the actual appointment taking place */
+  progress: text("progress").default("NOT_STARTED"),
+});
+
+/**
+ * Appointment Progress table - defines states for the progress of appointments
+ * @table appointment_progress
+ */
+export const appointmentProgress = pgTable("appointment_progress", {
+  /** Primary key - unique identifier */
+  id: uuid("id").primaryKey().defaultRandom(),
+  /** constant representing the progress of the appointment */
+  state: text("state").unique().notNull(),
+  /** Group to which the progress state belongs (NOT_STARTED, WAITING, IN_PROGRESS, DONE, UNKNOWN) */
+  group: text("group").notNull().default("UNKNOWN"),
+  /** Icon representing the overall progress state  */
+  icon: text("icon").notNull().default("UNKNOWN"),
+  /** Display names in multiple languages (array of strings in same order as languages) */
+  names: json("names").$type<{ [key: string]: string }>().notNull().default({}),
+  /** A progress state that cannot be removed */
+  isLocked: boolean("is_locked").default(false),
 });
 
 /**
@@ -278,6 +323,9 @@ export type SelectChannel = InferSelectModel<typeof channel>;
 
 /** Appointment record type for database queries */
 export type SelectAppointment = InferSelectModel<typeof appointment>;
+
+/** Appointment progress state record type for database queries */
+export type SelectAppointmentProgress = InferSelectModel<typeof appointmentProgress>;
 
 /** Agent record type for database queries */
 export type SelectAgent = InferSelectModel<typeof agent>;

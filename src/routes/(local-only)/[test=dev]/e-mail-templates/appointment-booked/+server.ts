@@ -33,6 +33,7 @@ export const GET: RequestHandler = async () => {
         isPublic: true,
         requiresConfirmation: false,
         archived: false,
+        deadlines: {},
       },
       address: {
         street: "Musterstraße",

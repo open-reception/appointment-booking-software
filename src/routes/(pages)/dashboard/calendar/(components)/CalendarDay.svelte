@@ -86,6 +86,7 @@
                   color: channelData.channel.color,
                   column: 0,
                   status,
+                  progress: appointment.progress || "UNKNOWN",
                   appointment: {
                     dateTime: new Date(appointment.appointmentDate),
                     encryptedPayload: appointment.encryptedPayload,
@@ -190,7 +191,7 @@
           )}
         >
           {#if ["booked", "reserved"].includes(item.status)}
-            <AppointmentPreview {item} {scale} />
+            <AppointmentPreview item={processedItems[index]} {scale} />
           {:else if item.status === "available"}
             <SlotPreview {item} />
           {/if}

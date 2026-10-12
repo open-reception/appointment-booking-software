@@ -22,7 +22,7 @@ import { centralDb, getTenantDb } from "../db";
 import type { SelectTenant } from "../db/central-schema";
 import * as centralSchema from "../db/central-schema";
 import * as tenantSchema from "../db/tenant-schema";
-import { type SelectAppointment } from "../db/tenant-schema";
+import { type SelectAppointment, type SelectAppointmentProgress } from "../db/tenant-schema";
 import { TenantService } from "../db/tenant-service";
 import {
   sendAppointmentCancelledEmail,
@@ -610,10 +610,21 @@ export class AppointmentService {
    */
   public async updateAppointmentByStaff(
     appointmentId: string,
-    updateData: { agentId: string; appointmentDate?: string },
-    clientEmail: string | undefined,
-    clientLanguage: string = "de",
-  ): Promise<{ agentId: string; appointmentDate?: Date }> {
+    updateData: { agentId: string; appointmentDate: string } | { progress: string },
+    emailParams?: {
+      email: string | undefined;
+      language: string;
+    },
+  ): Promise<
+    | {
+        agentId: string;
+        appointmentDate: Date;
+        timezone: string;
+      }
+    | {
+        progress: string;
+      }
+  > {
     const log = logger.setContext("AppointmentService");
     log.debug("Updating appointment by staff", {
       appointmentId,
@@ -641,20 +652,31 @@ export class AppointmentService {
     const channelId = appointment.channelId;
 
     const newAppointment = await db.transaction(async (tx) => {
-      await this.ensureAgentIsAvailableForSlot(tx, {
-        agentId: updateData.agentId,
-        appointmentDate: updateData.appointmentDate || appointment.appointmentDate.toISOString(),
-        duration: appointment.duration,
-      });
+      if ("appointmentDate" in updateData && updateData.appointmentDate) {
+        if (!updateData.agentId) {
+          throw new ValidationError("Agent ID is required when updating appointment date");
+        }
+
+        await this.ensureAgentIsAvailableForSlot(tx, {
+          agentId: updateData.agentId,
+          appointmentDate: updateData.appointmentDate || appointment.appointmentDate.toISOString(),
+          duration: appointment.duration,
+        });
+      }
 
       // Update the appointment
       const newAppointments = await tx
         .update(tenantSchema.appointment)
         .set({
-          agentId: updateData.agentId,
-          appointmentDate: updateData.appointmentDate
-            ? new Date(updateData.appointmentDate)
-            : undefined,
+          ...("appointmentDate" in updateData
+            ? {
+                agentId: updateData.agentId,
+                appointmentDate: updateData.appointmentDate
+                  ? new Date(updateData.appointmentDate)
+                  : undefined,
+              }
+            : undefined),
+          ...("progress" in updateData ? { progress: updateData.progress } : undefined),
           updatedAt: new Date(),
         })
         .where(eq(tenantSchema.appointment.id, appointmentId))
@@ -662,6 +684,7 @@ export class AppointmentService {
           agentId: tenantSchema.appointment.agentId,
           appointmentDate: tenantSchema.appointment.appointmentDate,
           timezone: tenantSchema.appointment.timezone,
+          progress: tenantSchema.appointment.progress,
         });
 
       log.debug("Appointment updated", {
@@ -692,10 +715,10 @@ export class AppointmentService {
     }
 
     // Send change email to client (async, don't wait)
-    if (clientEmail) {
+    if (emailParams?.email) {
       const clientData = {
-        email: clientEmail,
-        language: clientLanguage,
+        email: emailParams.email,
+        language: emailParams.language,
       };
 
       sendAppointmentUpdatedEmail(clientData, tenant, {
@@ -705,7 +728,7 @@ export class AppointmentService {
       }).catch((error) => {
         log.error("Failed to send appointment update email", {
           appointmentId,
-          clientEmail,
+          clientEmail: emailParams.email,
           error: String(error),
         });
       });
@@ -1491,6 +1514,17 @@ export class AppointmentService {
       .returning();
 
     return result[0] ?? null;
+  }
+
+  /**
+   * Get all appointment progress states for the tenant
+   */
+  public async getAppointmentProgressStates(): Promise<SelectAppointmentProgress[]> {
+    const db = await this.getDb();
+
+    const result = await db.select().from(tenantSchema.appointmentProgress);
+
+    return result;
   }
 
   /**

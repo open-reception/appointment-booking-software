@@ -1,3 +1,4 @@
+import type { SelectAppointmentProgress } from "$lib/server/db/tenant-schema";
 import type { ClientTunnelResponse } from "$lib/server/services/appointment-service";
 import type { CalendarAgent, DaySchedule } from "$lib/server/services/schedule-service";
 
@@ -62,6 +63,7 @@ export type TCalendarItem = TCalendarSlot & {
     iv?: string;
     authTag?: string;
   };
+  progress?: SelectAppointmentProgress["state"];
 };
 
 export type TCalendarSlot = {
