@@ -1,6 +1,8 @@
 import nodemailer from "nodemailer";
 import { env } from "$env/dynamic/private";
+import { dev } from "$app/environment";
 import type Mail from "nodemailer/lib/mailer";
+import type SMTPTransport from "nodemailer/lib/smtp-transport";
 import type { SelectUser } from "../db/central-schema";
 import logger from "$lib/logger";
 
@@ -62,18 +64,26 @@ export function createEmailRecipient(
  * @private
  */
 function createTransporter() {
-  if (!env.SMTP_HOST || !env.SMTP_PORT || !env.SMTP_USER || !env.SMTP_PASS) {
+  if (!env.SMTP_HOST || !env.SMTP_PORT) {
     throw new Error("SMTP configuration is incomplete. Please check your environment variables.");
   }
-  const config = {
+
+  if (!dev && (!env.SMTP_USER || !env.SMTP_PASS)) {
+    throw new Error("SMTP_USER and SMTP_PASS are mandatory in production environment.");
+  }
+
+  const config: SMTPTransport.Options = {
     host: env.SMTP_HOST,
     port: parseInt(env.SMTP_PORT),
     secure: env.SMTP_SECURE === "true",
-    auth: {
-      user: env.SMTP_USER,
-      pass: env.SMTP_PASS,
-    },
   };
+
+  if (env.SMTP_USER) {
+    config.auth = {
+      user: env.SMTP_USER,
+      pass: env.SMTP_PASS || "",
+    };
+  }
   return nodemailer.createTransport(config);
 }
 
