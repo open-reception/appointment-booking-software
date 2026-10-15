@@ -4,7 +4,7 @@ import { eq, desc, and, isNotNull } from "drizzle-orm";
 import { randomBytes } from "node:crypto";
 import { UniversalLogger } from "$lib/logger";
 import { verifyAuthenticationResponse, verifyRegistrationResponse } from "@simplewebauthn/server";
-import type { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/types";
+import type { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/server";
 import { dev } from "$app/environment";
 
 const logger = new UniversalLogger().setContext("WebAuthnService");
