@@ -2,7 +2,7 @@
   import { page } from "$app/state";
   import { m } from "$i18n/messages";
   import type { AppointmentData } from "$lib/client/appointment-crypto";
-  import { Button } from "$lib/components/ui/button";
+  import { Button, type ButtonProps } from "$lib/components/ui/button";
   import { Text } from "$lib/components/ui/typography";
   import { type SelectAppointmentProgress } from "$lib/server/db/tenant-schema";
   import { auth } from "$lib/stores/auth";
@@ -128,37 +128,44 @@
     </Text>
   </div>
 {:else if decrypted}
-  <Button
-    class={cn(
-      "m-0 h-full w-full cursor-pointer items-start! justify-start! rounded-none px-1! py-1! text-left break-all whitespace-pre-line text-(--channel-color-contrast) hover:bg-transparent! hover:text-(--channel-color-contrast) focus:ring-1",
-      scale === 1 ? "text-xs" : "",
-    )}
-    variant="ghost"
-    onclick={setCalendarItem}
-  >
-    <div class="flow-root">
-      {#if isShowingAppointmentProgress(item.status, item.appointment?.dateTime)}
-        {#await page.data.streamed.progressStates as Promise<SelectAppointmentProgress[]> then progressStates}
-          {#if progressStates && progressStates.length > 0}
-            {@const curProgress = progressStates.find((ps) => ps.state === item.progress)}
-            {#if curProgress}
-              {@const shouldSpin =
-                curProgress.group === "IN_PROGRESS" && ["IN_PROGRESS"].includes(curProgress.icon)}
-              <AppointmentProgressIcon
-                icon={curProgress.icon}
-                class={cn(
-                  "-mt-0.5 mr-1 inline-block size-3 p-0! leading-3",
-                  shouldSpin ? "animate-[spin-pause_3s_ease-in-out_infinite]" : "",
-                )}
-              />
-            {/if}
-          {/if}
-        {/await}
-      {/if}
-      {decrypted.name}
-    </div>
-  </Button>
+  {@render previewButton()}
 {/if}
+
+{#snippet previewButton(props: ButtonProps = {})}
+  {#if decrypted}
+    <Button
+      class={cn(
+        "m-0 h-full w-full cursor-pointer items-start! justify-start! rounded-none px-1! py-1! text-left break-all whitespace-pre-line text-(--channel-color-contrast) hover:bg-transparent! hover:text-(--channel-color-contrast) focus:ring-1",
+        scale === 1 ? "text-xs" : "",
+      )}
+      variant="ghost"
+      onclick={setCalendarItem}
+      {...props}
+    >
+      <div class="flow-root">
+        {#if isShowingAppointmentProgress(item.status, item.appointment?.dateTime)}
+          {#await page.data.streamed.progressStates as Promise<SelectAppointmentProgress[]> then progressStates}
+            {#if progressStates && progressStates.length > 0}
+              {@const curProgress = progressStates.find((ps) => ps.state === item.progress)}
+              {#if curProgress}
+                {@const shouldSpin =
+                  curProgress.group === "IN_PROGRESS" && ["IN_PROGRESS"].includes(curProgress.icon)}
+                <AppointmentProgressIcon
+                  icon={curProgress.icon}
+                  class={cn(
+                    "-mt-0.5 mr-1 inline-block size-3 p-0! leading-3",
+                    shouldSpin ? "animate-[spin-pause_3s_ease-in-out_infinite]" : "",
+                  )}
+                />
+              {/if}
+            {/if}
+          {/await}
+        {/if}
+        {decrypted.name}
+      </div>
+    </Button>
+  {/if}
+{/snippet}
 
 <style>
   @keyframes spin-pause {
