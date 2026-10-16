@@ -7,7 +7,7 @@
   import { type SelectAppointmentProgress } from "$lib/server/db/tenant-schema";
   import { auth } from "$lib/stores/auth";
   import { type CurAppointmentItem } from "$lib/stores/calendar";
-  import { Loader2 } from "@lucide/svelte";
+  import { ChevronDown, Loader2 } from "@lucide/svelte";
   import { toast } from "svelte-sonner";
   import AppointmentProgressItem from "./AppointmentProgressItem.svelte";
   import { isShowingAppointmentProgress, progressAppointment } from "./utils";
@@ -52,21 +52,30 @@
     {#if progressStates.length > 0}
       <DropdownMenu.Root>
         <DropdownMenu.Trigger
-          class={buttonVariants({ variant: "outline", class: "mt-5 w-full" })}
+          class={buttonVariants({
+            variant: "outline",
+            class: "mt-5 grid w-full grid-cols-[30px_1fr_30px] items-center",
+          })}
           disabled={isSubmitting}
         >
-          {#if isSubmitting}
-            <Loader2 class="animate-spin" />
-          {:else}
-            {@const curProgress = progressStates.find(
-              (ps) => ps.state === item.appointment.progress,
-            )}
-            {#if curProgress}
-              <AppointmentProgressItem state={curProgress} />
+          <div></div>
+          <div class="flex items-center justify-center gap-2">
+            {#if isSubmitting}
+              <Loader2 class="animate-spin" />
             {:else}
-              {m["unknown"]()}
+              {@const curProgress = progressStates.find(
+                (ps) => ps.state === item.appointment.progress,
+              )}
+              {#if curProgress}
+                <AppointmentProgressItem state={curProgress} />
+              {:else}
+                {m["unknown"]()}
+              {/if}
             {/if}
-          {/if}
+          </div>
+          <div>
+            <ChevronDown class="text-muted-foreground ml-auto" />
+          </div>
         </DropdownMenu.Trigger>
         <DropdownMenu.Content class="min-w-56">
           <DropdownMenu.RadioGroup bind:value={curState} onValueChange={onChange}>
