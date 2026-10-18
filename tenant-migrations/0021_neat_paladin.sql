@@ -13,7 +13,7 @@ ALTER TABLE "channel" ADD COLUMN "deadlines" jsonb DEFAULT '{}'::jsonb NOT NULL;
 
 INSERT INTO "appointment_progress" ("id", "state", "group", "icon", "names", "is_locked")
 VALUES
-('00000000-0000-0000-0000-000000000000', 'NOT_STARTED', 'NOT_STARTED', 'NOT_STARTED', '{"en": "Not here yet", "de": "Noch nicht da"}', true),
-('00000000-0000-0000-0000-000000000001', 'WAITING', 'WAITING', 'WAITING', '{"en": "Waiting", "de": "Wartet"}', false),
-('00000000-0000-0000-0000-000000000002', 'IN_PROGRESS', 'IN_PROGRESS', 'IN_PROGRESS', '{"en": "In Progress", "de": "Läuft"}', false),
-('00000000-0000-0000-0000-000000000003', 'DONE', 'DONE', 'DONE', '{"en": "Done", "de": "Fertig"}', false);
+('00000000-0000-0000-0000-000000000000', 'NOT_STARTED', 'NOT_STARTED', 'FOOTSTEPS', '{"en": "Not here yet", "de": "Noch nicht da"}', true),
+('00000000-0000-0000-0000-000000000001', 'WAITING', 'WAITING', 'ARMCHAIR', '{"en": "Waiting", "de": "Wartet"}', false),
+('00000000-0000-0000-0000-000000000002', 'IN_PROGRESS', 'IN_PROGRESS', 'REFRESH', '{"en": "In Progress", "de": "Läuft"}', false),
+('00000000-0000-0000-0000-000000000003', 'DONE', 'DONE', 'CHECK', '{"en": "Done", "de": "Fertig"}', false);

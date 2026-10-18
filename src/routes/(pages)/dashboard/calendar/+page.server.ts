@@ -10,7 +10,7 @@ const log = logger.setContext(import.meta.filename);
 
 export const load = ({ cookies, locals, fetch }) => {
   if (!locals.user?.tenantId) {
-    log.error("User trying to access channels, but has no tenantId");
+    log.error("User trying to access calendar, but has no tenantId");
     redirect(302, ROUTES.LOGOUT);
   }
 

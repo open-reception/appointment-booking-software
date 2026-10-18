@@ -2,6 +2,7 @@ import { browser } from "$app/environment";
 import { goto } from "$app/navigation";
 import { resolve } from "$app/paths";
 import { ROUTES } from "$lib/const/routes";
+import type { SelectAppointmentProgress } from "$lib/server/db/tenant-schema";
 import type { AppointmentWithKeyShare } from "$lib/server/services/schedule-service";
 import { auth } from "$lib/stores/auth";
 import { calendarStore } from "$lib/stores/calendar";
@@ -475,4 +476,15 @@ export const isShowingAppointmentProgress = (
   dateTime: Date | undefined,
 ) => {
   return status === "booked" && dateTime && (isToday(dateTime) || isInThePast(dateTime));
+};
+
+export const groupAppointmentProgress = (
+  a: SelectAppointmentProgress,
+  b: SelectAppointmentProgress,
+) => {
+  const groups = ["NOT_STARTED", "WAITING", "IN_PROGRESS", "DONE", "UNKNOWN"];
+  const indexA = groups.indexOf(a.group);
+  const indexB = groups.indexOf(b.group);
+  if (indexA === indexB) return 0;
+  return indexA - indexB;
 };

@@ -10,7 +10,11 @@
   import { ChevronDown, Loader2 } from "@lucide/svelte";
   import { toast } from "svelte-sonner";
   import AppointmentProgressItem from "./AppointmentProgressItem.svelte";
-  import { isShowingAppointmentProgress, progressAppointment } from "./utils";
+  import {
+    groupAppointmentProgress,
+    isShowingAppointmentProgress,
+    progressAppointment,
+  } from "./utils";
 
   let {
     tenantId,
@@ -79,22 +83,14 @@
         </DropdownMenu.Trigger>
         <DropdownMenu.Content class="min-w-56">
           <DropdownMenu.RadioGroup bind:value={curState} onValueChange={onChange}>
-            {@const groups = progressStates
-              .sort((a, b) => {
-                const groups = ["NOT_STARTED", "WAITING", "IN_PROGRESS", "DONE", "UNKNOWN"];
-                const indexA = groups.indexOf(a.group);
-                const indexB = groups.indexOf(b.group);
-                if (indexA === indexB) return 0;
-                return indexA - indexB;
-              })
-              .reduce(
-                (list, item) => {
-                  if (!list[item.group]) list[item.group] = [];
-                  list[item.group].push(item);
-                  return list;
-                },
-                {} as Record<string, SelectAppointmentProgress[]>,
-              )}
+            {@const groups = progressStates.sort(groupAppointmentProgress).reduce(
+              (list, item) => {
+                if (!list[item.group]) list[item.group] = [];
+                list[item.group].push(item);
+                return list;
+              },
+              {} as Record<string, SelectAppointmentProgress[]>,
+            )}
             {#each Object.keys(groups) as group, index (group)}
               {#each Object.values(groups[group]) as progressState (progressState.id)}
                 <DropdownMenu.RadioItem value={progressState.state}>

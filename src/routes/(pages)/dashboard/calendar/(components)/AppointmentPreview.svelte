@@ -149,7 +149,7 @@
               {@const curProgress = progressStates.find((ps) => ps.state === item.progress)}
               {#if curProgress}
                 {@const shouldSpin =
-                  curProgress.group === "IN_PROGRESS" && ["IN_PROGRESS"].includes(curProgress.icon)}
+                  curProgress.group === "IN_PROGRESS" && ["REFRESH"].includes(curProgress.icon)}
                 <AppointmentProgressIcon
                   icon={curProgress.icon}
                   class={cn(
