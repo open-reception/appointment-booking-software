@@ -1,10 +1,7 @@
 <script lang="ts">
   import { m } from "$i18n/messages";
   import { getLocale } from "$i18n/runtime";
-  import CalendarWeekWorkdays from "$lib/assets/custom-icons/calendar-week-workdays.svelte";
-  import CalendarWeek from "$lib/assets/custom-icons/calendar-week.svelte";
   import { Button } from "$lib/components/ui/button";
-  import * as ButtonGroup from "$lib/components/ui/button-group";
   import { CheckboxWithLabel } from "$lib/components/ui/checkbox-with-label";
   import { Label } from "$lib/components/ui/label";
   import { HorizontalPagePadding } from "$lib/components/ui/page";
@@ -18,11 +15,11 @@
   import type { TAppointmentFilter } from "$lib/types/calendar";
   import { cn } from "$lib/utils";
   import { CalendarDate, type DateValue, isWeekend } from "@internationalized/date";
-  import { Calendar, FunnelX, PanelRightClose, ZoomIn, ZoomOut } from "@lucide/svelte";
+  import { FunnelX, PanelRightClose } from "@lucide/svelte";
   import { type ComponentProps } from "svelte";
   import type { CalendarView } from "../types";
   import CalendarMonth from "./CalendarMonth.svelte";
-  import { CALENDAR_ZOOM_STEPS } from "./utils";
+  import { setViewCookie } from "./utils";
 
   let {
     shownAppointments = $bindable(),
@@ -52,21 +49,6 @@
   let channels = $derived($channelsStore.channels.filter((x) => !x.archived));
   let agents = $derived($agentsStore.agents.filter((x) => !x.archived));
 
-  const zoom = (direction: number) => {
-    auth.refreshLastActive();
-    const currentIndex = CALENDAR_ZOOM_STEPS.indexOf(scale);
-    if (currentIndex === -1) return;
-    const nextIndex = currentIndex + direction;
-    scale = CALENDAR_ZOOM_STEPS[nextIndex];
-    document.cookie = `calendarZoom=${CALENDAR_ZOOM_STEPS[nextIndex]}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Strict`;
-  };
-
-  const changeView = (newView: CalendarView) => {
-    auth.refreshLastActive();
-    view = newView;
-    document.cookie = `calendarView=${newView}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Strict`;
-  };
-
   const clearFilters = () => {
     auth.refreshLastActive();
     shownAppointments = "all";
@@ -84,70 +66,15 @@
   )}
   {...restProps}
 >
-  <Sidebar.Header class="border-sidebar-border h-16 border-b">
+  <Sidebar.Header class="border-sidebar-border h-16 border-b lg:hidden">
     <div class="flex h-full items-center gap-2">
       <Button
         size="sm"
         variant="ghost"
         onclick={() => sidebarStore.setCalendarExpanded(!sidebar.isCalendarExpanded)}
-        class="lg:hidden"
       >
         <PanelRightClose />
       </Button>
-      <ButtonGroup.Root aria-label={m["calendar.zoomOptions.title"]()}>
-        <Button
-          variant="outline"
-          size="icon"
-          disabled={CALENDAR_ZOOM_STEPS[0] === scale}
-          onclick={() => zoom(-1)}
-          title={m["calendar.zoomOptions.zoomOut"]()}
-        >
-          <ZoomOut />
-          <span class="sr-only">{m["calendar.zoomOptions.zoomOut"]()}</span>
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          disabled={CALENDAR_ZOOM_STEPS.slice(-1)[0] === scale}
-          onclick={() => zoom(1)}
-          title={m["calendar.zoomOptions.zoomIn"]()}
-        >
-          <ZoomIn />
-          <span class="sr-only">{m["calendar.zoomOptions.zoomIn"]()}</span>
-        </Button>
-      </ButtonGroup.Root>
-      <ButtonGroup.Root aria-label={m["calendar.viewOptions.title"]()}>
-        <Button
-          variant="outline"
-          size="icon"
-          onclick={() => changeView("day")}
-          class={cn(view === "day" && "bg-muted")}
-          title={m["calendar.viewOptions.day"]()}
-        >
-          <Calendar />
-          <span class="sr-only">{m["calendar.viewOptions.day"]()}</span>
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          onclick={() => changeView("week-workdays")}
-          class={cn(view === "week-workdays" && "bg-muted")}
-          title={m["calendar.viewOptions.week-workdays"]()}
-        >
-          <CalendarWeekWorkdays />
-          <span class="sr-only">{m["calendar.viewOptions.week-workdays"]()}</span>
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          onclick={() => changeView("week")}
-          class={cn(view === "week" && "bg-muted")}
-          title={m["calendar.viewOptions.week"]()}
-        >
-          <CalendarWeek />
-          <span class="sr-only">{m["calendar.viewOptions.week"]()}</span>
-        </Button>
-      </ButtonGroup.Root>
     </div>
   </Sidebar.Header>
   <Sidebar.Content>
@@ -246,7 +173,9 @@
           auth.refreshLastActive();
           sidebarStore.setCalendarExpanded(!sidebar.isCalendarExpanded);
           if (view === "week-workdays" && v && isWeekend(v, getLocale())) {
-            changeView("week");
+            auth.refreshLastActive();
+            view = "week";
+            setViewCookie("week");
           }
         }}
         class="min-h-82"

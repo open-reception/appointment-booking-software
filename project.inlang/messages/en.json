@@ -366,7 +366,7 @@
 			},
 			"empty_duration": "Select duration",
 			"template": "Template {no}",
-					"remove": "Remove teamplate {no}",
+					"remove": "Remove template {no}",
 					"from": "From",
 					"to": "To",
 					"duration": "Duration",

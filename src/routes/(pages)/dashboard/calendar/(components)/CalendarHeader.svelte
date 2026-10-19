@@ -1,7 +1,10 @@
 <script lang="ts">
   import { m } from "$i18n/messages";
   import { getLocale } from "$i18n/runtime";
+  import CalendarWeekWorkdays from "$lib/assets/custom-icons/calendar-week-workdays.svelte";
+  import CalendarWeek from "$lib/assets/custom-icons/calendar-week.svelte";
   import { Button, buttonVariants } from "$lib/components/ui/button";
+  import * as ButtonGroup from "$lib/components/ui/button-group";
   import * as Popover from "$lib/components/ui/popover/index.js";
   import { auth } from "$lib/stores/auth";
   import type { TAppointmentFilter, TCalendarMode } from "$lib/types/calendar";
@@ -13,13 +16,15 @@
     today,
     type DateValue,
   } from "@internationalized/date";
-  import { ChevronLeft, ChevronRight } from "@lucide/svelte";
+  import { Calendar, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "@lucide/svelte";
   import type { CalendarView } from "../types";
   import CalendarMode from "./CalendarMode.svelte";
   import CalendarMonth from "./CalendarMonth.svelte";
+  import { CALENDAR_ZOOM_STEPS, setViewCookie } from "./utils";
 
   let {
     selectedDate = $bindable(),
+    scale = $bindable(),
     view = $bindable(),
     mode = $bindable(),
     shownAppointments = $bindable(),
@@ -27,6 +32,7 @@
     shownAgents = $bindable(),
   }: {
     selectedDate: CalendarDate;
+    scale: number;
     view: CalendarView;
     mode: TCalendarMode;
     shownAppointments: TAppointmentFilter;
@@ -87,12 +93,27 @@
 
     return { week, year };
   };
+
+  const zoom = (direction: number) => {
+    auth.refreshLastActive();
+    const currentIndex = CALENDAR_ZOOM_STEPS.indexOf(scale);
+    if (currentIndex === -1) return;
+    const nextIndex = currentIndex + direction;
+    scale = CALENDAR_ZOOM_STEPS[nextIndex];
+    document.cookie = `calendarZoom=${CALENDAR_ZOOM_STEPS[nextIndex]}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Strict`;
+  };
+
+  const changeView = (newView: CalendarView) => {
+    auth.refreshLastActive();
+    view = newView;
+    setViewCookie(newView);
+  };
 </script>
 
 <div class="flex flex-col gap-4">
   <CalendarMode bind:mode bind:shownAppointments bind:shownAgents bind:shownChannels />
   <div
-    class="flex flex-col items-start justify-between gap-2 min-[500px]:flex-row min-[500px]:items-center"
+    class="flex flex-col items-start justify-between gap-2 min-[650px]:flex-row min-[650px]:items-center"
   >
     <div class={cn("-ml-1 flex items-center justify-between gap-5", isWeekView ? "w-60" : "w-75")}>
       <Button size="sm" variant="ghost" class="h-6 p-1!" onclick={prev}>
@@ -129,14 +150,69 @@
         <ChevronRight />
       </Button>
     </div>
-    <Button
-      size="sm"
-      variant="outline"
-      onclick={setToToday}
-      disabled={selectedDate.toString() === today(getLocalTimeZone()).toString()}
-      class="-order-1 ml-auto min-[500px]:order-0"
-    >
-      {m["calendar.today"]()}
-    </Button>
+    <div class="-order-1 ml-auto flex gap-3 min-[650px]:order-0">
+      <ButtonGroup.Root aria-label={m["calendar.zoomOptions.title"]()}>
+        <Button
+          variant="outline"
+          size="iconSm"
+          disabled={CALENDAR_ZOOM_STEPS[0] === scale}
+          onclick={() => zoom(-1)}
+          title={m["calendar.zoomOptions.zoomOut"]()}
+        >
+          <ZoomOut />
+          <span class="sr-only">{m["calendar.zoomOptions.zoomOut"]()}</span>
+        </Button>
+        <Button
+          variant="outline"
+          size="iconSm"
+          disabled={CALENDAR_ZOOM_STEPS.slice(-1)[0] === scale}
+          onclick={() => zoom(1)}
+          title={m["calendar.zoomOptions.zoomIn"]()}
+        >
+          <ZoomIn />
+          <span class="sr-only">{m["calendar.zoomOptions.zoomIn"]()}</span>
+        </Button>
+      </ButtonGroup.Root>
+      <ButtonGroup.Root aria-label={m["calendar.viewOptions.title"]()}>
+        <Button
+          variant="outline"
+          size="iconSm"
+          onclick={() => changeView("day")}
+          class={cn(view === "day" && "bg-muted")}
+          title={m["calendar.viewOptions.day"]()}
+        >
+          <Calendar />
+          <span class="sr-only">{m["calendar.viewOptions.day"]()}</span>
+        </Button>
+        <Button
+          variant="outline"
+          size="iconSm"
+          onclick={() => changeView("week-workdays")}
+          class={cn(view === "week-workdays" && "bg-muted")}
+          title={m["calendar.viewOptions.week-workdays"]()}
+        >
+          <CalendarWeekWorkdays />
+          <span class="sr-only">{m["calendar.viewOptions.week-workdays"]()}</span>
+        </Button>
+        <Button
+          variant="outline"
+          size="iconSm"
+          onclick={() => changeView("week")}
+          class={cn(view === "week" && "bg-muted")}
+          title={m["calendar.viewOptions.week"]()}
+        >
+          <CalendarWeek />
+          <span class="sr-only">{m["calendar.viewOptions.week"]()}</span>
+        </Button>
+      </ButtonGroup.Root>
+      <Button
+        size="sm"
+        variant="outline"
+        onclick={setToToday}
+        disabled={selectedDate.toString() === today(getLocalTimeZone()).toString()}
+      >
+        {m["calendar.today"]()}
+      </Button>
+    </div>
   </div>
 </div>

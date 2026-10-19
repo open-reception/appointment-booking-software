@@ -125,6 +125,7 @@
   <div class="flex flex-col gap-10">
     <CalendarHeader
       bind:selectedDate
+      bind:scale
       bind:view
       bind:mode
       bind:shownAppointments

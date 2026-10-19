@@ -25,6 +25,7 @@ import {
   type CalendarDate,
 } from "@internationalized/date";
 import { get } from "svelte/store";
+import type { CalendarView } from "../types";
 
 export const CALENDAR_ZOOM_STEPS = [1, 2, 3, 4];
 
@@ -487,4 +488,8 @@ export const groupAppointmentProgress = (
   const indexB = groups.indexOf(b.group);
   if (indexA === indexB) return 0;
   return indexA - indexB;
+};
+
+export const setViewCookie = (view: CalendarView) => {
+  document.cookie = `calendarView=${view}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Strict`;
 };
