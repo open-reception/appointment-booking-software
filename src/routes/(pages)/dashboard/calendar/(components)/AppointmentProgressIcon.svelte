@@ -11,13 +11,13 @@
   } = $props();
 </script>
 
-{#if ["NOT_STARTED", "FOOTSTEPS"].includes(icon)}
+{#if ["FOOTPRINTS"].includes(icon)}
   <Footprints class={className} />
-{:else if ["IN_PROGRESS", "REFRESH"].includes(icon)}
+{:else if ["REFRESH_CW"].includes(icon)}
   <RefreshCw class={className} />
-{:else if ["WAITING", "ARMCHAIR"].includes(icon)}
+{:else if ["ARMCHAIR"].includes(icon)}
   <Armchair class={className} />
-{:else if ["DONE", "CHECK"].includes(icon)}
+{:else if ["CHECK"].includes(icon)}
   <Check class={className} />
 {:else}
   <CircleQuestionMark class={className} />
