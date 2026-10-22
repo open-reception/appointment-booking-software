@@ -17,7 +17,7 @@ export const getTenantIdByDomain = async (
       .from(tenant)
       .orderBy(tenant.shortName)
       .limit(1);
-    return tenants[0].id || null;
+    return (tenants.length > 0 && tenants[0].id) || null;
   } else {
     // Get tenant ID by domain in production
     const cleanDomain = domain.replace("https://", "");
