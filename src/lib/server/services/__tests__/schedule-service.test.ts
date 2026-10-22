@@ -1060,7 +1060,9 @@ describe("ScheduleService", () => {
         })),
       });
 
-      const deleteWhere = vi.fn(() => Promise.resolve());
+      const deleteWhere = vi.fn(() => ({
+        returning: vi.fn(() => Promise.resolve([])),
+      }));
       (mockDb.delete as any).mockReturnValue({
         where: deleteWhere,
       });
@@ -1111,7 +1113,9 @@ describe("ScheduleService", () => {
       });
 
       (mockDb.delete as any).mockReturnValue({
-        where: vi.fn(() => Promise.resolve()),
+        where: vi.fn(() => ({
+          returning: vi.fn(() => Promise.resolve([])),
+        })),
       });
 
       const getScheduleSpy = vi.spyOn(service, "getSchedule").mockResolvedValue({
@@ -1131,7 +1135,7 @@ describe("ScheduleService", () => {
 
       const now = new Date();
       const maxEndDate = new Date(
-        Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 14, 0, 23, 59, 59, 0),
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 14, 0, 23, 59, 59, 999),
       );
 
       expect(getScheduleSpy).toHaveBeenCalledTimes(1);
@@ -1150,7 +1154,9 @@ describe("ScheduleService", () => {
         })),
       });
 
-      const deleteWhere = vi.fn(() => Promise.resolve());
+      const deleteWhere = vi.fn(() => ({
+        returning: vi.fn(() => Promise.resolve([])),
+      }));
       (mockDb.delete as any).mockReturnValue({
         where: deleteWhere,
       });
@@ -1188,7 +1194,9 @@ describe("ScheduleService", () => {
         })),
       });
 
-      const deleteWhere = vi.fn(() => Promise.resolve());
+      const deleteWhere = vi.fn(() => ({
+        returning: vi.fn(() => Promise.resolve([])),
+      }));
       (mockDb.delete as any).mockReturnValue({
         where: deleteWhere,
       });
