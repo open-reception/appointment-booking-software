@@ -1166,6 +1166,10 @@
 			"zoomIn": "zoom-in",
 			"zoomOut": "zoom-out"
 		},
+		"scrollOptions": {
+			"scrollLeft": "Scroll left",
+			"scrollRight": "Scroll right"
+		},
 		"viewOptions": {
 			"title": "Calendar view options",
 			"day": "Day",

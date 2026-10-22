@@ -135,7 +135,7 @@
   {#if decrypted}
     <Button
       class={cn(
-        "m-0 h-full w-full cursor-pointer items-start! justify-start! rounded-none px-1! py-1! text-left break-all whitespace-pre-line text-(--channel-color-contrast) hover:bg-transparent! hover:text-(--channel-color-contrast) focus:ring-1",
+        "m-0 h-full w-full cursor-pointer items-start! justify-start! rounded-none px-0.5! py-0! text-left break-all whitespace-pre-line text-(--channel-color-contrast) hover:bg-transparent! hover:text-(--channel-color-contrast) focus:ring-1",
         scale === 1 ? "text-xs" : "",
       )}
       variant="ghost"
@@ -153,7 +153,7 @@
                 <AppointmentProgressIcon
                   icon={curProgress.icon}
                   class={cn(
-                    "-mt-0.5 mr-1 inline-block size-3 p-0! leading-3",
+                    "-mt-0.5 mr-0.5 inline-block size-3 p-0! leading-3",
                     shouldSpin ? "animate-[spin-pause_3s_ease-in-out_infinite]" : "",
                   )}
                 />

@@ -28,6 +28,7 @@
   import { calendarMonthQuery } from "./(components)/queries";
   import { convertDate, getOperatingHours, openAppointmentById } from "./(components)/utils";
   import type { CalendarView } from "./types";
+  import CalendarScrollArea from "./(components)/CalendarScrollArea.svelte";
 
   const queryClient = useQueryClient();
   const tenantId = $derived($auth.user?.tenantId);
@@ -50,6 +51,7 @@
   let view: CalendarView = $state(page.data.calendarView);
   let hours = $derived.by(() => getOperatingHours(channels, calendar));
   let scale = $state(page.data.calendarZoom);
+  let isCalendarScrollableRight = $state(false);
 
   $effect(() => {
     if (calendar && history.state["sveltekit:states"]?.appointmentId) {
@@ -122,7 +124,7 @@
 </svelte:head>
 
 <SidebarLayout breakcrumbs={[{ label: m["nav.calendar"](), href: ROUTES.DASHBOARD.CALENDAR }]}>
-  <div class="flex flex-col gap-10">
+  <div class="flex flex-col gap-10 contain-inline-size">
     <CalendarHeader
       bind:selectedDate
       bind:scale
@@ -132,18 +134,9 @@
       bind:shownAgents
       bind:shownChannels
     />
-    <div
-      class="flex transition-all duration-200"
-      style:min-height={`${(hours.to - hours.from) * 60 * scale + 90 * scale}px`}
-    >
+    <CalendarScrollArea {hours} {scale} {shownAgents} bind:isCalendarScrollableRight>
       {#if view === "day"}
-        <CalendarLegend
-          day={selectedDate}
-          isLoading={calendar === undefined}
-          earliestStartHour={hours.from}
-          latestEndHour={hours.to}
-          bind:scale
-        />
+        <CalendarLegend day={selectedDate} isLoading={calendar === undefined} bind:scale />
         <CalendarDay
           day={selectedDate}
           {selectedDate}
@@ -160,6 +153,7 @@
           earliestStartHour={hours.from}
           latestEndHour={hours.to}
           isLoading={calendar === undefined}
+          {isCalendarScrollableRight}
           bind:scale
         />
       {:else}
@@ -173,10 +167,11 @@
           {view}
           earliestStartHour={hours.from}
           latestEndHour={hours.to}
+          {isCalendarScrollableRight}
           bind:scale
         />
       {/if}
-    </div>
+    </CalendarScrollArea>
   </div>
   {#snippet headerRight()}
     <Button

@@ -18,6 +18,7 @@
     latestEndHour,
     view,
     scale = $bindable(),
+    isCalendarScrollableRight,
   }: {
     selectedDate: CalendarDate;
     day: CalendarDate;
@@ -29,18 +30,13 @@
     latestEndHour: number;
     view: CalendarView;
     scale: number;
+    isCalendarScrollableRight: boolean;
   } = $props();
 
   let weekDays = $derived(getWeekDays(day, view === "week-workdays"));
 </script>
 
-<CalendarLegend
-  {day}
-  isLoading={calendar === undefined}
-  {earliestStartHour}
-  {latestEndHour}
-  bind:scale
-/>
+<CalendarLegend {day} isLoading={calendar === undefined} bind:scale />
 {#each weekDays as weekDay (weekDay.toString())}
   <CalendarDay
     day={weekDay}
@@ -61,4 +57,5 @@
   {latestEndHour}
   bind:scale
   isLoading={calendar === undefined}
+  {isCalendarScrollableRight}
 />

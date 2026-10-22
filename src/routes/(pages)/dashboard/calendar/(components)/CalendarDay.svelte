@@ -107,7 +107,11 @@
   let processedItems = $derived(positionItems(items));
 </script>
 
-<div class="relative flex w-full flex-col">
+<div
+  class="relative flex w-full flex-col"
+  data-id="calendar-day"
+  style:min-width={`${shownAgents.length ? shownAgents.length * 54 : 70}px`}
+>
   {#if isWeekView && items}
     <!-- Date -->
     {@const isSelected = selectedDate.toString() === day.toString()}
