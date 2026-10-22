@@ -620,11 +620,9 @@ export class ScheduleService {
   private async cleanCache({
     startDate,
     endDate,
-    channelId,
   }: {
     startDate: Date;
     endDate: Date;
-    channelId: string;
   }): Promise<void> {
     const db = await this.getDb();
 
@@ -634,18 +632,26 @@ export class ScheduleService {
         ? new Date(2999, 11, 31)
         : endDate;
 
-    await db
+    const deletedDates = await db
       .delete(scheduleCache)
       .where(
         and(
-          eq(scheduleCache.channel, channelId),
           between(
             scheduleCache.date,
             startDate.toISOString().split("T")[0],
             usedEndDate.toISOString().split("T")[0],
           ),
         ),
-      );
+      )
+      .returning({
+        date: scheduleCache.date,
+      });
+
+    const log = logger.setContext("ScheduleService.Buffer");
+    log.debug("Removed schedule cache entries for dates", {
+      tenantId: this.tenantId,
+      dates: deletedDates.map((d) => d.date),
+    });
   }
 
   private async generateCache({
@@ -700,14 +706,16 @@ export class ScheduleService {
             log.debug("Generating schedule cache for timezone", {
               tenantId: this.tenantId,
               channelId,
-              startDate: startOfDay(startDate, { in: tz(timeZone) }).toUTCString(),
-              endDate: endOfDay(endDate, { in: tz(timeZone) }).toUTCString(),
+              startDate: startOfDay(startDate, { in: tz(timeZone) }).toISOString(),
+              endDate: endOfDay(endDate, { in: tz(timeZone) }).toISOString(),
               timeZone,
             });
 
             await this.getSchedule({
-              startDate: startOfDay(startDate, { in: tz(timeZone) }).toUTCString(),
-              endDate: endOfDay(endDate, { in: tz(timeZone) }).toUTCString(),
+              startDate: new Date(
+                startOfDay(startDate, { in: tz(timeZone) }).getTime(),
+              ).toISOString(),
+              endDate: new Date(endOfDay(endDate, { in: tz(timeZone) }).getTime()).toISOString(),
               tenantId: this.tenantId,
               channelId,
               timeZone,
@@ -777,7 +785,7 @@ export class ScheduleService {
     const timeZones = await this.usedTimeZones();
 
     // Clear cache
-    await this.cleanCache({ startDate, endDate, channelId });
+    await this.cleanCache({ startDate, endDate });
 
     // Optionally wait for rebuild
     if (awaitRebuild) {
