@@ -1,15 +1,12 @@
 <script lang="ts">
+  import { Separator } from "$lib/components/ui/separator";
+  import { Text } from "$lib/components/ui/typography";
   import { type TAppointmentFilter, type TCalendar, type TCalendarItem } from "$lib/types/calendar";
   import { cn } from "$lib/utils";
-  import { getContrastColor } from "$lib/utils/color";
   import { toDisplayDateTime, utcToLocalWithoutDST } from "$lib/utils/datetime";
   import { CalendarDate, getLocalTimeZone, toCalendarDate, today } from "@internationalized/date";
-  import { tv } from "tailwind-variants";
-  import AppointmentPreview from "./AppointmentPreview.svelte";
-  import SlotPreview from "./SlotPreview.svelte";
+  import CalendarDayItem from "./CalendarDayItem.svelte";
   import { positionItems } from "./utils";
-  import { Text } from "$lib/components/ui/typography";
-  import { Separator } from "$lib/components/ui/separator";
 
   let {
     day = $bindable(),
@@ -108,22 +105,6 @@
   });
   // Process items to handle overlaps
   let processedItems = $derived(positionItems(items));
-
-  const hourSize = $derived(60 * scale);
-  const focusAdjustment = $derived(30 * scale);
-
-  const slotVariants = tv({
-    base: "",
-    variants: {
-      status: {
-        rejected: "border-none bg-[var(--channel-color)]", // currently not returned from back-end
-        available: "border-1 border-[var(--channel-color)] bg-background",
-        booked: "border-none bg-[var(--channel-color)]",
-        reserved:
-          "bg-[var(--channel-color)]/60 hover:bg-[var(--channel-color)]/90 border-1 border-[var(--channel-color)] border-dashed",
-      },
-    },
-  });
 </script>
 
 <div class="relative flex w-full flex-col">
@@ -165,38 +146,13 @@
       }}
     />
   {/if}
+  {@render renderProcessedItems()}
+</div>
+
+{#snippet renderProcessedItems()}
   <div class="absolute top-0 right-0 bottom-0 left-0 z-10">
     {#each processedItems as item, index (`${item.id}-${index}`)}
-      {@const top =
-        (item.startMinutes / 60) * hourSize + focusAdjustment - earliestStartHour * hourSize}
-      {@const height = item.duration * scale}
-      {@const width = 100 / item.totalColumns}
-      {@const left = item.column * width}
-      <div
-        class="absolute flex items-center rounded p-px transition-all duration-200 focus-within:z-10 focus-within:min-h-5 focus-within:scale-[1.02] focus-within:shadow-md focus-within:outline-3 hover:z-10 hover:min-h-5 hover:scale-[1.02] hover:shadow-md"
-        style:top={`${top}px`}
-        style:height={`${height}px`}
-        style:left={`${left}%`}
-        style:width={`${width}%`}
-        data-id={item.id}
-        style={item.color
-          ? `--channel-color-contrast: ${getContrastColor(item.color)};`
-          : undefined}
-      >
-        <div
-          style="--channel-color: {item.color}"
-          class={cn(
-            "h-full w-full overflow-hidden rounded leading-none",
-            slotVariants({ status: item.status }),
-          )}
-        >
-          {#if ["booked", "reserved"].includes(item.status)}
-            <AppointmentPreview item={processedItems[index]} {scale} />
-          {:else if item.status === "available"}
-            <SlotPreview {item} />
-          {/if}
-        </div>
-      </div>
+      <CalendarDayItem {item} {scale} {earliestStartHour} />
     {/each}
   </div>
-</div>
+{/snippet}

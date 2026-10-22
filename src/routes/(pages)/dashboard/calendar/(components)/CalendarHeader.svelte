@@ -178,7 +178,7 @@
           variant="outline"
           size="iconSm"
           onclick={() => changeView("day")}
-          class={cn(view === "day" && "bg-muted")}
+          class={cn(view === "day" && "bg-muted dark:bg-accent")}
           title={m["calendar.viewOptions.day"]()}
         >
           <Calendar />
@@ -188,7 +188,7 @@
           variant="outline"
           size="iconSm"
           onclick={() => changeView("week-workdays")}
-          class={cn(view === "week-workdays" && "bg-muted")}
+          class={cn(view === "week-workdays" && "bg-muted dark:bg-accent")}
           title={m["calendar.viewOptions.week-workdays"]()}
         >
           <CalendarWeekWorkdays />
@@ -198,7 +198,7 @@
           variant="outline"
           size="iconSm"
           onclick={() => changeView("week")}
-          class={cn(view === "week" && "bg-muted")}
+          class={cn(view === "week" && "bg-muted dark:bg-accent")}
           title={m["calendar.viewOptions.week"]()}
         >
           <CalendarWeek />
