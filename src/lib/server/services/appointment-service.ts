@@ -921,8 +921,10 @@ export class AppointmentService {
         duration: appointmentData.duration,
       });
 
-      const utcStart = localToUTC(new Date(appointmentData.appointmentDate));
-      this.ensureAppointmentIsWithinDeadlines(utcStart, channelResult[0].deadlines);
+      if (!staffCreated) {
+        const utcStart = localToUTC(new Date(appointmentData.appointmentDate));
+        this.ensureAppointmentIsWithinDeadlines(utcStart, channelResult[0].deadlines);
+      }
 
       const initialStatus =
         channelResult[0].requiresConfirmation && !staffCreated ? "NEW" : "CONFIRMED";
@@ -1096,8 +1098,10 @@ export class AppointmentService {
         throw new NotFoundError("Channel not found");
       }
 
-      const utcStart = localToUTC(new Date(clientData.appointmentDate));
-      this.ensureAppointmentIsWithinDeadlines(utcStart, channelResult[0].deadlines);
+      if (!staffCreated) {
+        const utcStart = localToUTC(new Date(clientData.appointmentDate));
+        this.ensureAppointmentIsWithinDeadlines(utcStart, channelResult[0].deadlines);
+      }
 
       const initialStatus =
         channelResult[0].requiresConfirmation && !staffCreated ? "NEW" : "CONFIRMED";

@@ -586,7 +586,7 @@ describe("AppointmentService", () => {
       );
     });
 
-    it("should create appointment with CONFIRMED status when staff user creates it", async () => {
+    it("should allow staff-created appointments outside the booking deadlines", async () => {
       const { getTenantDb, centralDb } = await import("../../db");
 
       // Mock authorization check - users exist
@@ -636,7 +636,14 @@ describe("AppointmentService", () => {
                   .fn()
                   .mockResolvedValueOnce([]) // Overlap-Appointment-Check → kein Konflikt
                   .mockResolvedValueOnce([])
-                  .mockResolvedValueOnce([{ id: "channel-456", deadlines: {} }]), // Channel found
+                  .mockResolvedValueOnce([
+                    {
+                      id: "channel-456",
+                      deadlines: {
+                        bookMinAhead: { type: "duration", value: 2, unit: "days" },
+                      },
+                    },
+                  ]), // Channel found
                 for: vi.fn().mockResolvedValue([{ id: "channel-456" }]),
               }),
             }),
@@ -652,17 +659,24 @@ describe("AppointmentService", () => {
       vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
 
       const service = await AppointmentService.forTenant("tenant-123");
-      const result = await service.createNewClientWithAppointment(mockClientTunnelData);
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2024-01-14T08:00:00.000Z"));
 
-      expect(result.status).toBe("CONFIRMED");
-      expect(mockTransaction).toHaveBeenCalled();
-      expect(mockCleanAndRegenerateCache).toHaveBeenCalledTimes(1);
-      expect(mockCleanAndRegenerateCache).toHaveBeenCalledWith(
-        expect.objectContaining({
-          channelId: "channel-123",
-          awaitRebuild: true,
-        }),
-      );
+      try {
+        const result = await service.createNewClientWithAppointment(mockClientTunnelData, true);
+
+        expect(result.status).toBe("CONFIRMED");
+        expect(mockTransaction).toHaveBeenCalled();
+        expect(mockCleanAndRegenerateCache).toHaveBeenCalledTimes(1);
+        expect(mockCleanAndRegenerateCache).toHaveBeenCalledWith(
+          expect.objectContaining({
+            channelId: "channel-123",
+            awaitRebuild: true,
+          }),
+        );
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 
