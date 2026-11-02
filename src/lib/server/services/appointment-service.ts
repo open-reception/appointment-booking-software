@@ -38,6 +38,9 @@ import { challengeThrottleService } from "./challenge-throttle";
 import { NotificationService } from "./notification-service";
 import { ScheduleService } from "./schedule-service";
 import { TenantAdminService } from "./tenant-admin-service";
+import { ensureItemIsWithinDeadlines } from "$lib/utils/deadlines";
+import type { Deadlines } from "../schema/channels";
+import { localToUTC } from "$lib/utils/datetime";
 
 export interface ClientTunnelData {
   tunnelId: string;
@@ -228,6 +231,12 @@ export class AppointmentService {
         appointmentDate: params.appointmentDate,
       });
       throw new ConflictError(ERRORS.APPOINTMENTS.AGENT_NOT_AVAILABLE);
+    }
+  }
+
+  private ensureAppointmentIsWithinDeadlines(utcStart: Date, deadlines: Deadlines) {
+    if (!ensureItemIsWithinDeadlines(utcStart, deadlines)) {
+      throw new ConflictError(ERRORS.APPOINTMENTS.NOT_WITHIN_DEADLINES);
     }
   }
 
@@ -880,7 +889,10 @@ export class AppointmentService {
 
     // Get channel configuration to determine initial status
     const channelResult = await db
-      .select({ requiresConfirmation: tenantSchema.channel.requiresConfirmation })
+      .select({
+        requiresConfirmation: tenantSchema.channel.requiresConfirmation,
+        deadlines: tenantSchema.channel.deadlines,
+      })
       .from(tenantSchema.channel)
       .where(
         and(
@@ -908,6 +920,9 @@ export class AppointmentService {
         appointmentDate: appointmentData.appointmentDate,
         duration: appointmentData.duration,
       });
+
+      const utcStart = localToUTC(new Date(appointmentData.appointmentDate));
+      this.ensureAppointmentIsWithinDeadlines(utcStart, channelResult[0].deadlines);
 
       const initialStatus =
         channelResult[0].requiresConfirmation && !staffCreated ? "NEW" : "CONFIRMED";
@@ -1064,7 +1079,10 @@ export class AppointmentService {
 
       // 3. Get channel configuration to determine initial status
       const channelResult = await tx
-        .select({ requiresConfirmation: tenantSchema.channel.requiresConfirmation })
+        .select({
+          requiresConfirmation: tenantSchema.channel.requiresConfirmation,
+          deadlines: tenantSchema.channel.deadlines,
+        })
         .from(tenantSchema.channel)
         .where(
           and(
@@ -1077,6 +1095,9 @@ export class AppointmentService {
       if (channelResult.length === 0) {
         throw new NotFoundError("Channel not found");
       }
+
+      const utcStart = localToUTC(new Date(clientData.appointmentDate));
+      this.ensureAppointmentIsWithinDeadlines(utcStart, channelResult[0].deadlines);
 
       const initialStatus =
         channelResult[0].requiresConfirmation && !staffCreated ? "NEW" : "CONFIRMED";

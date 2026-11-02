@@ -48,5 +48,6 @@ export const ERRORS = {
   APPOINTMENTS: {
     AGENT_NOT_AVAILABLE:
       "Selected agent is no longer available for this time slot. Please choose a different time.",
+    NOT_WITHIN_DEADLINES: "Selected appointment is not within the allowed deadlines.",
   },
 };

@@ -66,6 +66,7 @@ describe("Schedule API Route", () => {
                   pause: false,
                   requiresConfirmation: false,
                   isPublic: true,
+                  deadlines: {},
                 },
                 appointments: [
                   { id: "appointment-1", appointmentDate: "2024-01-01T10:00:00.000Z" },
@@ -129,6 +130,80 @@ describe("Schedule API Route", () => {
         endDate: "2024-01-07T23:59:59.999Z",
         timeZone: "UTC",
       });
+    });
+
+    it("should exclude slots outside the channel booking deadlines", async () => {
+      const minAheadDeadline = { type: "duration", value: 2, unit: "hours" };
+      const maxAheadDeadline = { type: "duration", value: 6, unit: "hours" };
+      const mockSchedule = {
+        period: {
+          startDate: "2024-01-01T00:00:00.000Z",
+          endDate: "2024-01-07T23:59:59.999Z",
+        },
+        schedule: [
+          {
+            date: "2024-01-01",
+            channels: {
+              "channel-1": {
+                channel: {
+                  id: "channel-1",
+                  names: { en: "Support" },
+                  descriptions: { en: "Support Channel" },
+                  pause: false,
+                  requiresConfirmation: false,
+                  isPublic: true,
+                  deadlines: {
+                    bookMinAhead: minAheadDeadline,
+                    bookMaxAhead: maxAheadDeadline,
+                  },
+                },
+                availableSlots: [
+                  {
+                    from: "2024-01-01T09:00:00.000Z",
+                    to: "2024-01-01T09:30:00.000Z",
+                    duration: 30,
+                    availableAgents: [{ id: "agent-too-soon", name: "Agent" }],
+                  },
+                  {
+                    from: "2024-01-01T11:00:00.000Z",
+                    to: "2024-01-01T11:30:00.000Z",
+                    duration: 30,
+                    availableAgents: [{ id: "agent-available", name: "Agent" }],
+                  },
+                  {
+                    from: "2024-01-01T15:00:00.000Z",
+                    to: "2024-01-01T15:30:00.000Z",
+                    duration: 30,
+                    availableAgents: [{ id: "agent-too-late", name: "Agent" }],
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      };
+
+      mockScheduleService.getSchedule.mockResolvedValueOnce(mockSchedule);
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2024-01-01T08:00:00.000Z"));
+
+      try {
+        const response = await GET(createMockRequestEvent());
+        const data = await response.json();
+
+        expect(response.status).toBe(200);
+        expect(data.schedule[0].channels["channel-1"].availableSlots).toEqual([
+          {
+            from: "2024-01-01T11:00:00.000Z",
+            to: "2024-01-01T11:30:00.000Z",
+            duration: 30,
+            availableAgents: [{ id: "agent-available", name: "Agent" }],
+          },
+        ]);
+        expect(data.schedule[0].channels["channel-1"].channel).not.toHaveProperty("deadlines");
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it("should handle missing tenant ID", async () => {
