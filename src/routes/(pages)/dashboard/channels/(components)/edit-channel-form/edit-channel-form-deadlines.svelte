@@ -1,0 +1,79 @@
+<script lang="ts">
+  import { m } from "$i18n/messages.js";
+
+  import * as Form from "$lib/components/ui/form";
+  import { Input } from "$lib/components/ui/input";
+  import { ROUTES } from "$lib/const/routes";
+  import { auth } from "$lib/stores/auth";
+  import type { TChannelWithFullAgents } from "$lib/types/channel";
+  import { untrack } from "svelte";
+  import { toast } from "svelte-sonner";
+  import { superForm } from "sveltekit-superforms";
+  import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
+  import { formSchema } from ".";
+  import { FormSplit } from "$lib/components/templates/form-split";
+  import { DeadlineDuration } from "$lib/components/ui/deadlines";
+
+  let { entity }: { entity: TChannelWithFullAgents } = $props();
+
+  const form = superForm(
+    untrack(() => ({
+      id: entity.id,
+      deadlines: entity.deadlines,
+    })),
+    {
+      dataType: "json",
+      validators: zodClient(formSchema),
+      onResult: async (event) => {
+        auth.refreshLastActive();
+        if (event.result.type === "success") {
+          toast.success(m["channels.edit.success"]());
+        } else if (event.result.type === "failure") {
+          toast.error(m["channels.edit.error"]());
+        }
+        isSubmitting = false;
+      },
+      onSubmit: () => (isSubmitting = true),
+    },
+  );
+
+  let isSubmitting = $state(false);
+
+  const { form: formData, enhance } = form;
+</script>
+
+<Form.Root {enhance} action={`${ROUTES.DASHBOARD.CHANNELS}?/edit`}>
+  <Form.Field {form} name="id" class="hidden">
+    <Form.Control>
+      {#snippet children({ props })}
+        <Input {...props} bind:value={$formData.id} type="hidden" />
+      {/snippet}
+    </Form.Control>
+  </Form.Field>
+  <FormSplit
+    title={m["channels.edit.publicBooking.deadlines.title"]()}
+    description={m["channels.edit.publicBooking.deadlines.description"]()}
+  >
+    <div class="flex flex-col gap-4">
+      <DeadlineDuration
+        {form}
+        label={m["channels.edit.publicBooking.deadlines.bookMinAhead.label"]()}
+        description={m["channels.edit.publicBooking.deadlines.bookMinAhead.description"]()}
+        name="bookMinAhead"
+        bind:value={$formData.deadlines.bookMinAhead}
+      />
+      <DeadlineDuration
+        {form}
+        label={m["channels.edit.publicBooking.deadlines.bookMaxAhead.label"]()}
+        description={m["channels.edit.publicBooking.deadlines.bookMaxAhead.description"]()}
+        name="bookMaxAhead"
+        bind:value={$formData.deadlines.bookMaxAhead}
+      />
+    </div>
+  </FormSplit>
+  <div class="mt-6 flex flex-col items-end gap-4">
+    <Form.Button size="lg" type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
+      {m["channels.edit.action"]()}
+    </Form.Button>
+  </div>
+</Form.Root>

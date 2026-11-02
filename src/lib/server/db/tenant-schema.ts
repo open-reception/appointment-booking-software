@@ -15,7 +15,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import z from "zod/v4";
+import type { Deadlines } from "../schema/channels";
 
 /**
  * Database enums for tenant-specific entities
@@ -40,24 +40,6 @@ export const notificationTypes = [
 export type NotificationType = (typeof notificationTypes)[number];
 
 export const notificationTypeEnum = pgEnum("notification_type", notificationTypes);
-
-export const deadlineUnits = ["hours", "days", "weeks", "months"] as const;
-export const deadlineNames = ["bookMinAhead", "bookMaxAhead"] as const;
-
-export const deadlineSchemaDuration = z.object({
-  type: "duration",
-  value: z.number().int().min(1).max(12),
-  unit: z.enum(deadlineUnits),
-});
-export const deadlineSchema = z.union([deadlineSchemaDuration]);
-
-export const deadlinesSchema = z.object({
-  bookMinAhead: deadlineSchema.optional(),
-  bookMaxAhead: deadlineSchema.optional(),
-});
-
-export type Deadline = z.infer<typeof deadlineSchema>;
-export type Deadlines = z.infer<typeof deadlinesSchema>;
 
 /**
  * Agent table - represents personnel or staff members who can be assigned to channels

@@ -60,6 +60,24 @@ const channelUpdateSchema = z.object({
       }),
     )
     .optional(),
+  deadlines: z
+    .object({
+      bookMinAhead: z
+        .object({
+          type: z.literal("duration"),
+          value: z.number(),
+          unit: z.enum(["minutes", "hours", "days", "weeks", "months"]),
+        })
+        .optional(),
+      bookMaxAhead: z
+        .object({
+          type: z.literal("duration"),
+          value: z.number(),
+          unit: z.enum(["minutes", "hours", "days", "weeks", "months"]),
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 export type ChannelCreationRequest = z.infer<typeof channelCreationSchema>;
@@ -305,6 +323,7 @@ export class ChannelService {
           isPublic: updateData.isPublic,
           pause: updateData.pause,
           requiresConfirmation: updateData.requiresConfirmation,
+          deadlines: updateData.deadlines,
         };
 
         // Remove undefined values
