@@ -46,7 +46,7 @@
               />
             {:else}
               <UnknownItemIcon
-                class="bg-muted text-muted-foreground size-15 rounded-full border stroke-1 p-1"
+                class="bg-muted text-muted-foreground size-8 rounded-full border stroke-1 p-1"
               />
             {/if}
             <div class="flex grow justify-between gap-1">
