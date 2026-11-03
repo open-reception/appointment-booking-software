@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AppointmentService } from "../appointment-service";
 import { NotFoundError, ConflictError } from "../../utils/errors";
+import type { Deadlines } from "../../schema/channels";
 
 // Mock dependencies
 vi.mock("../../db", () => ({
@@ -323,6 +324,56 @@ describe("AppointmentService", () => {
   });
 
   describe("createNewClientWithAppointment", () => {
+    const setupCreationWithDeadlines = async (deadlines: Deadlines) => {
+      const { getTenantDb, centralDb } = await import("../../db");
+      const mockAuthBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([{ count: "1" }]),
+      };
+      vi.mocked(centralDb.select).mockReturnValue(mockAuthBuilder as any);
+
+      const mockExistingTunnelBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([]),
+      };
+      const channelAndAvailabilityResults = vi
+        .fn()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ requiresConfirmation: true, deadlines }]);
+      const transactionBuilder = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: channelAndAvailabilityResults,
+        for: vi.fn().mockResolvedValue([{ id: "agent-123" }]),
+      };
+      const mockInsert = vi
+        .fn()
+        .mockReturnValueOnce({
+          values: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: "tunnel-123" }]),
+          }),
+        })
+        .mockReturnValueOnce({
+          values: vi.fn().mockResolvedValue(undefined),
+        });
+      const mockTransaction = vi.fn().mockImplementation(async (callback) =>
+        callback({
+          insert: mockInsert,
+          select: vi.fn().mockReturnValue(transactionBuilder),
+        }),
+      );
+
+      vi.mocked(getTenantDb).mockResolvedValue({
+        select: vi.fn().mockReturnValue(mockExistingTunnelBuilder),
+        transaction: mockTransaction,
+      } as any);
+
+      return { mockInsert, mockTransaction };
+    };
+
     it("should create client tunnel and appointment successfully", async () => {
       const { getTenantDb, centralDb } = await import("../../db");
 
@@ -373,7 +424,7 @@ describe("AppointmentService", () => {
                   .fn()
                   .mockResolvedValueOnce([]) // Overlap-Appointment-Check → kein Konflikt
                   .mockResolvedValueOnce([])
-                  .mockResolvedValueOnce([{ requiresConfirmation: true }]),
+                  .mockResolvedValueOnce([{ requiresConfirmation: true, deadlines: {} }]),
                 for: vi.fn().mockResolvedValue([{ id: "channel-456" }]),
               }),
             }),
@@ -401,6 +452,27 @@ describe("AppointmentService", () => {
           awaitRebuild: true,
         }),
       );
+    });
+
+    it.each([
+      ["minimum booking window", { bookMinAhead: { type: "duration", value: 3, unit: "hours" } }],
+      ["maximum booking window", { bookMaxAhead: { type: "duration", value: 1, unit: "minutes" } }],
+    ] as const)("rejects bookings outside the %s", async (_label, deadlines) => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2024-01-15T08:00:00.000Z"));
+
+      try {
+        const { mockInsert } = await setupCreationWithDeadlines(deadlines);
+        const service = await AppointmentService.forTenant("tenant-123");
+
+        await expect(service.createNewClientWithAppointment(mockClientTunnelData)).rejects.toThrow(
+          ConflictError,
+        );
+        expect(mockInsert).toHaveBeenCalledTimes(2);
+        expect(mockCleanAndRegenerateCache).not.toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it("should block creation when no authorized users exist", async () => {
@@ -514,7 +586,7 @@ describe("AppointmentService", () => {
       );
     });
 
-    it("should create appointment with CONFIRMED status when staff user creates it", async () => {
+    it("should allow staff-created appointments outside the booking deadlines", async () => {
       const { getTenantDb, centralDb } = await import("../../db");
 
       // Mock authorization check - users exist
@@ -564,7 +636,14 @@ describe("AppointmentService", () => {
                   .fn()
                   .mockResolvedValueOnce([]) // Overlap-Appointment-Check → kein Konflikt
                   .mockResolvedValueOnce([])
-                  .mockResolvedValueOnce([{ id: "channel-456" }]), // Channel found
+                  .mockResolvedValueOnce([
+                    {
+                      id: "channel-456",
+                      deadlines: {
+                        bookMinAhead: { type: "duration", value: 2, unit: "days" },
+                      },
+                    },
+                  ]), // Channel found
                 for: vi.fn().mockResolvedValue([{ id: "channel-456" }]),
               }),
             }),
@@ -580,17 +659,24 @@ describe("AppointmentService", () => {
       vi.mocked(getTenantDb).mockResolvedValue(mockDb as any);
 
       const service = await AppointmentService.forTenant("tenant-123");
-      const result = await service.createNewClientWithAppointment(mockClientTunnelData);
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2024-01-14T08:00:00.000Z"));
 
-      expect(result.status).toBe("CONFIRMED");
-      expect(mockTransaction).toHaveBeenCalled();
-      expect(mockCleanAndRegenerateCache).toHaveBeenCalledTimes(1);
-      expect(mockCleanAndRegenerateCache).toHaveBeenCalledWith(
-        expect.objectContaining({
-          channelId: "channel-123",
-          awaitRebuild: true,
-        }),
-      );
+      try {
+        const result = await service.createNewClientWithAppointment(mockClientTunnelData, true);
+
+        expect(result.status).toBe("CONFIRMED");
+        expect(mockTransaction).toHaveBeenCalled();
+        expect(mockCleanAndRegenerateCache).toHaveBeenCalledTimes(1);
+        expect(mockCleanAndRegenerateCache).toHaveBeenCalledWith(
+          expect.objectContaining({
+            channelId: "channel-123",
+            awaitRebuild: true,
+          }),
+        );
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 

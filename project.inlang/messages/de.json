@@ -365,6 +365,17 @@
 			"every_n_minutes": "alle {minutes} Minuten",
 			"add_template": "Vorlage hinzufügen",
 			"weekdays": "Wochentage"
+		},
+		"deadlines": {
+			"value": "Wert",
+			"unit": "Einheit",
+			"units": {
+				"minutes": "Minute(n)",
+				"hours": "Stunde(n)",
+				"days": "Tag(e)",
+				"weeks": "Woche(n)",
+				"months": "Monat(e)"
+			}
 		}
 	},
 	"save": "Speichern",
@@ -615,6 +626,18 @@
 					"requiresConfirmation": {
 						"title": "Bestätigung erforderlich",
 						"label": "Termine müssen vom Personal manuell bestätigt werden"
+					}
+				},
+				"deadlines": {
+					"title": "Fristen",
+					"description": "Verhindere öffentliche Buchungen vor/nach definierten Fristen",
+					"bookMinAhead": {
+						"label": "Erfordert minimale Vorlaufzeit",
+						"description": "Minimale Zeit, die ein Termin im Voraus gebucht werden muss"
+					},
+					"bookMaxAhead": {
+						"label": "Setze maximale Vorlaufzeit",
+						"description": "Maximale Zeit, die ein Termin im Voraus gebucht werden kann"
 					}
 				}
 			},

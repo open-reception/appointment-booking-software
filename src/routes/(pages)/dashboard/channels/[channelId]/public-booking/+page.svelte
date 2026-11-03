@@ -8,7 +8,10 @@
   import { type TChannelWithFullAgents } from "$lib/types/channel";
   import { getCurrentTranslation } from "$lib/utils/localizations";
   import ChannelNotFound from "../(components)/channel-not-found.svelte";
-  import { EditChannelFormPublicBooking } from "../../(components)/edit-channel-form";
+  import {
+    EditChannelFormPublicBooking,
+    EditChannelFormDeadlines,
+  } from "../../(components)/edit-channel-form";
 
   let { data } = $props();
 
@@ -52,6 +55,7 @@
           backHref={getChannelRoute(ROUTES.DASHBOARD.CHANNEL, channel?.id || "")}
         />
         <EditChannelFormPublicBooking entity={channel} />
+        <EditChannelFormDeadlines entity={channel} />
       {:else}
         <ChannelNotFound />
       {/if}

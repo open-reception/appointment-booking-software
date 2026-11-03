@@ -1,9 +1,10 @@
 import { json } from "@sveltejs/kit";
-import { ScheduleService } from "$lib/server/services/schedule-service";
+import { ScheduleService, type TimeSlot } from "$lib/server/services/schedule-service";
 import { BackendError, InternalError, logError, ValidationError } from "$lib/server/utils/errors";
 import type { RequestHandler } from "@sveltejs/kit";
 import { registerOpenAPIRoute } from "$lib/server/openapi";
 import logger from "$lib/logger";
+import { ensureItemIsWithinDeadlines } from "$lib/utils/deadlines";
 
 // Register OpenAPI documentation for GET
 registerOpenAPIRoute("/tenants/{id}/schedule", "GET", {
@@ -189,24 +190,35 @@ export const GET: RequestHandler = async ({ params, url }) => {
       channels: Object.fromEntries(
         Object.entries(daySchedule.channels)
           .filter(([, channelData]) => channelData.channel.isPublic && !channelData.channel.pause) // Only include public and non-paused channels
-          .map(([channelId, channelData]) => [
-            channelId,
-            {
-              channel: {
-                id: channelData.channel.id,
-                names: channelData.channel.names,
-                descriptions: channelData.channel.descriptions,
-                requiresConfirmation: channelData.channel.requiresConfirmation,
-                pause: channelData.channel.pause,
+          .map(([channelId, channelData]) => {
+            const deadlines = channelData.channel.deadlines;
+            return [
+              channelId,
+              {
+                channel: {
+                  id: channelData.channel.id,
+                  names: channelData.channel.names,
+                  descriptions: channelData.channel.descriptions,
+                  requiresConfirmation: channelData.channel.requiresConfirmation,
+                  pause: channelData.channel.pause,
+                },
+                availableSlots: channelData.availableSlots.reduce((list: TimeSlot[], slot) => {
+                  if (!ensureItemIsWithinDeadlines(new Date(slot.from), deadlines)) {
+                    return list;
+                  }
+                  return [
+                    ...list,
+                    {
+                      from: slot.from,
+                      to: slot.to,
+                      duration: slot.duration,
+                      availableAgents: slot.availableAgents,
+                    },
+                  ];
+                }, []),
               },
-              availableSlots: channelData.availableSlots.map((slot) => ({
-                from: slot.from,
-                to: slot.to,
-                duration: slot.duration,
-                availableAgents: slot.availableAgents,
-              })),
-            },
-          ]),
+            ];
+          }),
       ),
     }));
 

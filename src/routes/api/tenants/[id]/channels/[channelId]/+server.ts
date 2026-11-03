@@ -82,6 +82,35 @@ registerOpenAPIRoute("/tenants/{id}/channels/{channelId}", "GET", {
                       },
                     },
                   },
+                  deadlines: {
+                    type: "object",
+                    properties: {
+                      bookMinAhead: {
+                        type: "object",
+                        properties: {
+                          type: { type: "string", enum: ["duration"] },
+                          value: { type: "number" },
+                          unit: {
+                            type: "string",
+                            enum: ["minutes", "hours", "days", "weeks", "months"],
+                          },
+                        },
+                        required: ["type", "value", "unit"],
+                      },
+                      bookMaxAhead: {
+                        type: "object",
+                        properties: {
+                          type: { type: "string", enum: ["duration"] },
+                          value: { type: "number" },
+                          unit: {
+                            type: "string",
+                            enum: ["minutes", "hours", "days", "weeks", "months"],
+                          },
+                        },
+                        required: ["type", "value", "unit"],
+                      },
+                    },
+                  },
                 },
                 required: ["id", "names", "agents", "slotTemplates"],
               },
@@ -219,6 +248,29 @@ registerOpenAPIRoute("/tenants/{id}/channels/{channelId}", "PUT", {
               },
               description: "Slot templates for the channel",
             },
+            deadlines: {
+              type: "object",
+              properties: {
+                bookMinAhead: {
+                  type: "object",
+                  properties: {
+                    type: { type: "string", enum: ["duration"] },
+                    value: { type: "number" },
+                    unit: { type: "string", enum: ["minutes", "hours", "days", "weeks", "months"] },
+                  },
+                  required: ["type", "value", "unit"],
+                },
+                bookMaxAhead: {
+                  type: "object",
+                  properties: {
+                    type: { type: "string", enum: ["duration"] },
+                    value: { type: "number" },
+                    unit: { type: "string", enum: ["minutes", "hours", "days", "weeks", "months"] },
+                  },
+                  required: ["type", "value", "unit"],
+                },
+              },
+            },
           },
         },
       },
@@ -267,6 +319,35 @@ registerOpenAPIRoute("/tenants/{id}/channels/{channelId}", "PUT", {
                         from: { type: "string" },
                         to: { type: "string" },
                         duration: { type: "number" },
+                      },
+                    },
+                  },
+                  deadlines: {
+                    type: "object",
+                    properties: {
+                      bookMinAhead: {
+                        type: "object",
+                        properties: {
+                          type: { type: "string", enum: ["duration"] },
+                          value: { type: "number" },
+                          unit: {
+                            type: "string",
+                            enum: ["minutes", "hours", "days", "weeks", "months"],
+                          },
+                        },
+                        required: ["type", "value", "unit"],
+                      },
+                      bookMaxAhead: {
+                        type: "object",
+                        properties: {
+                          type: { type: "string", enum: ["duration"] },
+                          value: { type: "number" },
+                          unit: {
+                            type: "string",
+                            enum: ["minutes", "hours", "days", "weeks", "months"],
+                          },
+                        },
+                        required: ["type", "value", "unit"],
                       },
                     },
                   },

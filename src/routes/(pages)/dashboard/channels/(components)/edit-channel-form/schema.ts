@@ -28,6 +28,24 @@ export const formSchema = z.object({
       }),
     )
     .optional(),
+  deadlines: z
+    .object({
+      bookMinAhead: z
+        .object({
+          type: z.literal("duration"),
+          value: z.number().int().min(1).max(60),
+          unit: z.enum(["minutes", "hours", "days", "weeks", "months"]),
+        })
+        .optional(),
+      bookMaxAhead: z
+        .object({
+          type: z.literal("duration"),
+          value: z.number().int().min(1).max(60),
+          unit: z.enum(["minutes", "hours", "days", "weeks", "months"]),
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 export type FormSchema = typeof formSchema;

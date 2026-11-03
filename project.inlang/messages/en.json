@@ -373,6 +373,17 @@
 					"every_n_minutes": "every {minutes} minutes",
 					"add_template": "Add Template",
 					"weekdays": "Weekdays"
+		},
+		"deadlines": {
+			"value": "Value",
+			"unit": "Unit",
+			"units": {
+				"minutes": "Minute(s)",
+				"hours": "Hour(s)",
+				"days": "Day(s)",
+				"weeks": "Week(s)",
+				"months": "Month(s)"
+		}
 		}
 	},
 	"save": "Save",
@@ -623,6 +634,18 @@
 					"requiresConfirmation": {
 						"title": "Requires Confirmation",
 						"label": "Appointments will have to be manually confirmed by staff"
+					}
+				},
+				"deadlines": {
+					"title": "Deadlines",
+					"description": "Prevent public booking before/after defined deadlines",
+					"bookMinAhead": {
+						"label": "Require minimum lead time",
+						"description": "Minimum time an appointment has to be booked in advance"
+					},
+					"bookMaxAhead": {
+						"label": "Set maximum lead time",
+						"description": "Maximum time an appointment can be booked in advance"
 					}
 				}
 			},
