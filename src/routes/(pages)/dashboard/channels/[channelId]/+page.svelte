@@ -75,6 +75,11 @@
                         <Pause class="size-4" />
                       {/if}
                       {channel.pause ? m["channels.unpause.title"]() : m["channels.pause.title"]()}
+                      {#if channel.pause}
+                        <div class="bg-destructive size-2 rounded-full">
+                          <span class="sr-only">{m["required"]()}</span>
+                        </div>
+                      {/if}
                     </div>
                   {/if}
                 {/snippet}
