@@ -36,6 +36,7 @@ describe("Schedule API Route", () => {
     const searchParams = new URLSearchParams();
     searchParams.set("startDate", "2024-01-01T00:00:00.000Z");
     searchParams.set("endDate", "2024-01-07T23:59:59.999Z");
+    searchParams.set("channel", "channel-1");
 
     return {
       params: { id: mockTenantId },
@@ -128,6 +129,7 @@ describe("Schedule API Route", () => {
         tenantId: mockTenantId,
         startDate: "2024-01-01T00:00:00.000Z",
         endDate: "2024-01-07T23:59:59.999Z",
+        channelId: "channel-1",
         timeZone: "UTC",
       });
     });
@@ -221,6 +223,7 @@ describe("Schedule API Route", () => {
     it("should handle missing startDate parameter", async () => {
       const searchParams = new URLSearchParams();
       searchParams.set("endDate", "2024-01-07T23:59:59.999Z");
+      searchParams.set("channel", "channel-1");
 
       const event = createMockRequestEvent({
         url: { searchParams } as any,
@@ -236,6 +239,7 @@ describe("Schedule API Route", () => {
     it("should handle missing endDate parameter", async () => {
       const searchParams = new URLSearchParams();
       searchParams.set("startDate", "2024-01-01T00:00:00.000Z");
+      searchParams.set("channel", "channel-1");
 
       const event = createMockRequestEvent({
         url: { searchParams } as any,
@@ -252,6 +256,7 @@ describe("Schedule API Route", () => {
       const searchParams = new URLSearchParams();
       searchParams.set("startDate", "invalid-date");
       searchParams.set("endDate", "2024-01-07T23:59:59.999Z");
+      searchParams.set("channel", "channel-1");
 
       const event = createMockRequestEvent({
         url: { searchParams } as any,
@@ -270,6 +275,7 @@ describe("Schedule API Route", () => {
       const searchParams = new URLSearchParams();
       searchParams.set("startDate", "2024-01-07T00:00:00.000Z");
       searchParams.set("endDate", "2024-01-01T23:59:59.999Z");
+      searchParams.set("channel", "channel-1");
 
       const event = createMockRequestEvent({
         url: { searchParams } as any,
@@ -286,6 +292,7 @@ describe("Schedule API Route", () => {
       const searchParams = new URLSearchParams();
       searchParams.set("startDate", "2024-01-01T00:00:00.000Z");
       searchParams.set("endDate", "2024-04-01T23:59:59.999Z"); // More than 90 days
+      searchParams.set("channel", "channel-1");
 
       const event = createMockRequestEvent({
         url: { searchParams } as any,
@@ -334,6 +341,7 @@ describe("Schedule API Route", () => {
       const searchParams = new URLSearchParams();
       searchParams.set("startDate", "2024-01-01T00:00:00+01:00");
       searchParams.set("endDate", "2024-01-07T23:59:59+01:00");
+      searchParams.set("channel", "channel-1");
 
       const mockSchedule = {
         period: {
@@ -363,6 +371,7 @@ describe("Schedule API Route", () => {
       const searchParams = new URLSearchParams();
       searchParams.set("startDate", startDate);
       searchParams.set("endDate", endDate);
+      searchParams.set("channel", "channel-1");
 
       const mockSchedule = {
         period: { startDate, endDate },
@@ -382,6 +391,7 @@ describe("Schedule API Route", () => {
         tenantId: mockTenantId,
         startDate,
         endDate,
+        channelId: "channel-1",
         timeZone: "UTC",
       });
     });
