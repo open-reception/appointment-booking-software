@@ -922,8 +922,10 @@ export class AppointmentService {
       });
 
       if (!staffCreated) {
-        const utcStart = localToUTC(new Date(appointmentData.appointmentDate));
-        this.ensureAppointmentIsWithinDeadlines(utcStart, channelResult[0].deadlines);
+        this.ensureAppointmentIsWithinDeadlines(
+          localToUTC(new Date(appointmentData.appointmentDate)),
+          channelResult[0].deadlines,
+        );
       }
 
       const initialStatus =
@@ -1099,8 +1101,10 @@ export class AppointmentService {
       }
 
       if (!staffCreated) {
-        const utcStart = localToUTC(new Date(clientData.appointmentDate));
-        this.ensureAppointmentIsWithinDeadlines(utcStart, channelResult[0].deadlines);
+        this.ensureAppointmentIsWithinDeadlines(
+          new Date(clientData.appointmentDate),
+          channelResult[0].deadlines,
+        );
       }
 
       const initialStatus =

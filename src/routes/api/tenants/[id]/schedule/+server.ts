@@ -37,7 +37,7 @@ registerOpenAPIRoute("/tenants/{id}/schedule", "GET", {
     {
       name: "channel",
       in: "query",
-      required: false,
+      required: true,
       schema: { type: "string", format: "uuid" },
       description: "Channel ID (UUID) to filter the schedule",
     },
@@ -143,6 +143,11 @@ export const GET: RequestHandler = async ({ params, url }) => {
     const channelIdParam = url.searchParams.get("channel");
     const agentIdParam = url.searchParams.get("agent");
 
+    // Limit public retrieval to only one channel at a time
+    if (!channelIdParam) {
+      throw new ValidationError("Channel ID is required");
+    }
+
     if (!startDateParam || !endDateParam) {
       throw new ValidationError("Both startDate and endDate query parameters are required");
     }
@@ -179,7 +184,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
       tenantId,
       startDate: startDateParam,
       endDate: endDateParam,
-      channelId: channelIdParam || undefined,
+      channelId: channelIdParam,
       agentId: agentIdParam || undefined,
       timeZone: timeZoneParam,
     });
