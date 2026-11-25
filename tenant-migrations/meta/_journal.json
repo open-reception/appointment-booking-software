@@ -162,6 +162,13 @@
       "when": 1791984150240,
       "tag": "0022_wonderful_robbie_robertson",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1795536612172,
+      "tag": "0023_slot_template_position",
+      "breakpoints": true
     }
   ]
 }
