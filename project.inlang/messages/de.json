@@ -611,7 +611,11 @@
 			},
 			"slotTemplates": {
 				"title": "Zeitplan",
-				"description": "Termine werden basierend auf dem Zeitplan erstellt."
+				"description": "Termine werden basierend auf dem Zeitplan erstellt.",
+				"mixedDurations": {
+					"title": "Unterschiedliche Termindauern",
+					"description": "Die Vorlagen haben unterschiedliche Termindauern. Überschneiden sich Termine, wird die weiter oben stehende Vorlage verwendet. Dadurch können Lücken im Zeitplan entstehen."
+				}
 			},
 			"publicBooking": {
 				"title": "Öffentliche Buchung",

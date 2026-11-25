@@ -180,7 +180,7 @@ export class ChannelService {
         // 2. Create slot templates and link them to the channel
         const slotTemplates: SelectSlotTemplate[] = [];
         if (request.slotTemplates && request.slotTemplates.length > 0) {
-          for (const slotTemplateData of request.slotTemplates) {
+          for (const [position, slotTemplateData] of request.slotTemplates.entries()) {
             const slotTemplateResult = await tx
               .insert(tenantSchema.slotTemplate)
               .values({
@@ -188,6 +188,7 @@ export class ChannelService {
                 from: slotTemplateData.from,
                 to: slotTemplateData.to,
                 duration: slotTemplateData.duration,
+                position,
               })
               .returning();
 
@@ -450,7 +451,7 @@ export class ChannelService {
 
           // Process new/updated slot templates
           const newSlotTemplateIds: string[] = [];
-          for (const slotTemplateData of updateData.slotTemplates) {
+          for (const [position, slotTemplateData] of updateData.slotTemplates.entries()) {
             let slotTemplate: SelectSlotTemplate;
 
             if (slotTemplateData.id) {
@@ -462,6 +463,7 @@ export class ChannelService {
                   from: slotTemplateData.from,
                   to: slotTemplateData.to,
                   duration: slotTemplateData.duration,
+                  position,
                 })
                 .where(eq(tenantSchema.slotTemplate.id, slotTemplateData.id))
                 .returning();
@@ -480,6 +482,7 @@ export class ChannelService {
                   from: slotTemplateData.from,
                   to: slotTemplateData.to,
                   duration: slotTemplateData.duration,
+                  position,
                 })
                 .returning();
 
@@ -535,13 +538,15 @@ export class ChannelService {
               from: tenantSchema.slotTemplate.from,
               to: tenantSchema.slotTemplate.to,
               duration: tenantSchema.slotTemplate.duration,
+              position: tenantSchema.slotTemplate.position,
             })
             .from(tenantSchema.slotTemplate)
             .innerJoin(
               tenantSchema.channelSlotTemplate,
               eq(tenantSchema.slotTemplate.id, tenantSchema.channelSlotTemplate.slotTemplateId),
             )
-            .where(eq(tenantSchema.channelSlotTemplate.channelId, channelId));
+            .where(eq(tenantSchema.channelSlotTemplate.channelId, channelId))
+            .orderBy(asc(tenantSchema.slotTemplate.position));
         }
 
         // 5. Get staff IDs
@@ -649,13 +654,15 @@ export class ChannelService {
           from: tenantSchema.slotTemplate.from,
           to: tenantSchema.slotTemplate.to,
           duration: tenantSchema.slotTemplate.duration,
+          position: tenantSchema.slotTemplate.position,
         })
         .from(tenantSchema.slotTemplate)
         .innerJoin(
           tenantSchema.channelSlotTemplate,
           eq(tenantSchema.slotTemplate.id, tenantSchema.channelSlotTemplate.slotTemplateId),
         )
-        .where(eq(tenantSchema.channelSlotTemplate.channelId, channelId));
+        .where(eq(tenantSchema.channelSlotTemplate.channelId, channelId))
+        .orderBy(asc(tenantSchema.slotTemplate.position));
 
       // Get staff IDs
       const staffLinks = await db

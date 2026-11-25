@@ -1,6 +1,7 @@
 <script lang="ts">
   import { m } from "$i18n/messages.js";
   import { FormSplit } from "$lib/components/templates/form-split";
+  import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
   import * as Form from "$lib/components/ui/form";
   import { Input } from "$lib/components/ui/input";
@@ -10,6 +11,7 @@
   import { channels } from "$lib/stores/channels";
   import { tenants } from "$lib/stores/tenants";
   import type { TChannelWithFullAgents, TSlotTemplate } from "$lib/types/channel";
+  import { TriangleAlert } from "@lucide/svelte";
   import { untrack } from "svelte";
   import { toast } from "svelte-sonner";
   import { superForm } from "sveltekit-superforms";
@@ -46,6 +48,10 @@
 
   const { form: formData, enhance } = form;
 
+  let hasMixedDurations = $derived(
+    new Set($formData.slotTemplates.map((template) => template.duration)).size > 1,
+  );
+
   const onAddSlotTemplate = () => {
     $formData.slotTemplates = [
       ...$formData.slotTemplates,
@@ -81,6 +87,15 @@
             onRemove={onRemoveSlotTemplate}
           />
         {/each}
+        {#if hasMixedDurations}
+          <Alert.Root>
+            <TriangleAlert />
+            <Alert.Title>{m["channels.edit.slotTemplates.mixedDurations.title"]()}</Alert.Title>
+            <Alert.Description>
+              {m["channels.edit.slotTemplates.mixedDurations.description"]()}
+            </Alert.Description>
+          </Alert.Root>
+        {/if}
         <Button variant="outline" onclick={onAddSlotTemplate}>
           {m["components.slotTemplate.add_template"]()}
         </Button>

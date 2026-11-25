@@ -1041,6 +1041,90 @@ describe("ScheduleService", () => {
         },
       ]);
     });
+
+    describe("overlapping slot templates", () => {
+      const request: ScheduleRequest = {
+        startDate: `${jan1stNextYearString}T00:00:00.000Z`,
+        endDate: `${jan1stNextYearString}T23:59:59.999Z`,
+        timeZone: "Europe/Berlin",
+        tenantId: mockTenantId,
+      };
+
+      const channelAgents = [
+        {
+          channelId: "channel1",
+          agent: { id: "agent1", name: "Test Agent", description: null, logo: null },
+        },
+      ];
+
+      const template = (
+        id: string,
+        position: number,
+        from: string,
+        to: string,
+        duration: number,
+      ) => ({
+        slotTemplate: { id, weekdays: bitmaskForJan1stNextYear, from, to, duration, position },
+        channelId: "channel1",
+      });
+
+      const getSlotRanges = async (slotTemplates: any[]) => {
+        setupDbMocks({
+          channels: [{ id: "channel1", names: ["Test Channel"], pause: false }],
+          slotTemplates,
+          appointments: [],
+          absences: [],
+          channelAgents,
+        });
+        const result = await service.getSchedule(request, "passkeyId");
+        return result.schedule[0].channels["channel1"].availableSlots.map(
+          (slot) => `${slot.from.slice(11, 16)}-${slot.to.slice(11, 16)}`,
+        );
+      };
+
+      it("should not create duplicate slots for templates with the same duration", async () => {
+        const slots = await getSlotRanges([
+          template("allDay", 0, "09:00", "12:00", 60),
+          template("lateMorning", 1, "10:00", "12:00", 60),
+        ]);
+
+        expect(slots).toEqual(["09:00-10:00", "10:00-11:00", "11:00-12:00"]);
+      });
+
+      it("should let the earlier defined template win and accept gaps", async () => {
+        const slots = await getSlotRanges([
+          template("long", 0, "09:00", "11:00", 60),
+          template("short", 1, "10:30", "12:00", 30),
+        ]);
+
+        expect(slots).toEqual(["09:00-10:00", "10:00-11:00", "11:00-11:30", "11:30-12:00"]);
+      });
+
+      it("should keep gaps where a later template's grid is blocked", async () => {
+        const slots = await getSlotRanges([
+          template("short", 0, "09:00", "10:30", 30),
+          template("long", 1, "10:00", "13:00", 60),
+        ]);
+
+        // 10:00-11:00 overlaps 10:00-10:30 of the earlier template and is dropped
+        expect(slots).toEqual([
+          "09:00-09:30",
+          "09:30-10:00",
+          "10:00-10:30",
+          "11:00-12:00",
+          "12:00-13:00",
+        ]);
+      });
+
+      it("should order templates by position, not by query order", async () => {
+        const slots = await getSlotRanges([
+          template("short", 1, "09:00", "10:00", 30),
+          template("long", 0, "09:00", "10:00", 60),
+        ]);
+
+        expect(slots).toEqual(["09:00-10:00"]);
+      });
+    });
   });
 
   describe("cache management", () => {

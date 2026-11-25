@@ -410,7 +410,11 @@ export class ScheduleService {
       return cachedSchedule[0].data as TimeSlot[];
     }
 
-    for (const template of slotTemplates) {
+    // Earlier defined templates take precedence on overlapping slots
+    const templatesByPosition = [...slotTemplates].sort((a, b) => a.position - b.position);
+    const occupiedRanges: { start: number; end: number }[] = [];
+
+    for (const template of templatesByPosition) {
       // Parse template times
       const [fromHour, fromMinute] = template.from.split(":").map(Number);
       const [toHour, toMinute] = template.to.split(":").map(Number);
@@ -421,6 +425,17 @@ export class ScheduleService {
       const endTime = toHour * 60 + toMinute;
 
       while (currentTime + slotDuration <= endTime) {
+        // Skip slots overlapping a slot of an earlier template
+        if (
+          occupiedRanges.some(
+            (range) => currentTime < range.end && currentTime + slotDuration > range.start,
+          )
+        ) {
+          currentTime += slotDuration;
+          continue;
+        }
+        occupiedRanges.push({ start: currentTime, end: currentTime + slotDuration });
+
         const slotStartHour = Math.floor(currentTime / 60);
         const slotStartMinute = currentTime % 60;
         const slotEndTime = currentTime + slotDuration;
@@ -487,6 +502,8 @@ export class ScheduleService {
         currentTime += slotDuration;
       }
     }
+
+    availableSlots.sort((a, b) => a.from.localeCompare(b.from));
 
     // Save schedule to cache
     await db

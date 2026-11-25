@@ -619,7 +619,11 @@
 			},
 			"slotTemplates": {
 				"title": "Schedule",
-				"description": "Slots for appointments will be created based on your schedule."
+				"description": "Slots for appointments will be created based on your schedule.",
+				"mixedDurations": {
+					"title": "Different appointment durations",
+					"description": "The templates use different appointment durations. If slots overlap, the template listed first is used. This may leave gaps in the schedule."
+				}
 			},
 			"publicBooking": {
 				"title": "Public Booking",

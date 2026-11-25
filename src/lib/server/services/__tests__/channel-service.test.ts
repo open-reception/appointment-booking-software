@@ -107,6 +107,7 @@ const mockSlotTemplate = {
   from: "09:00",
   to: "17:00",
   duration: 30,
+  position: 0,
 };
 
 // Simple mock database

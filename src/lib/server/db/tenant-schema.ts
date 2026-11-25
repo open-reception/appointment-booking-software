@@ -109,6 +109,8 @@ export const slotTemplate = pgTable("slotTemplate", {
   to: time("to").notNull(),
   /** Duration of individual appointment slots in minutes */
   duration: integer("duration").notNull(),
+  /** Order of definition within the channel - earlier templates take precedence on overlapping slots */
+  position: integer("position").notNull().default(0),
 });
 
 /**

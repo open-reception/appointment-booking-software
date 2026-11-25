@@ -237,7 +237,7 @@
               <Text style="md" class="text-muted-foreground text-center">
                 {m["public.steps.slot.selectTime"]()}
               </Text>
-              {#each slots as slot, index (`${slot.from}-${index}`)}
+              {#each slots as slot (slot.from)}
                 <Button onclick={() => selectSlot(slot)} class="w-full">
                   {formatSlotTime(slot)}
                 </Button>
